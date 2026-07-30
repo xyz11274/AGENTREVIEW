@@ -1,0 +1,1208 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B1E7Pwqgl/md_content_no_appendix.md",
+  "paper_title": "COOPERATIVE TRAINING OF DESCRIPTOR AND GENERATOR NETWORKS",
+  "semantic_scholar_query": "COOPERATIVE TRAINING OF DESCRIPTOR AND GENERATOR NETWORKS",
+  "keyword_model_name": "gpt-5",
+  "retrieved_papers": [
+    {
+      "paperId": "e003dab15b83aff26f39f4d82ddaa077022f24b2",
+      "externalIds": {
+        "MAG": "2964335397",
+        "DBLP": "journals/pami/XieLGZW20",
+        "ArXiv": "1609.09408",
+        "DOI": "10.1109/TPAMI.2018.2879081",
+        "CorpusId": 7759006,
+        "PubMed": "30387724"
+      },
+      "url": "https://www.semanticscholar.org/paper/e003dab15b83aff26f39f4d82ddaa077022f24b2",
+      "title": "Cooperative Training of Descriptor and Generator Networks",
+      "year": 2016,
+      "citationCount": 150,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.1109/tpami.2018.2879081",
+        "status": "BRONZE",
+        "license": "publisher-specific-oa",
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1609.09408, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "39380386",
+          "name": "Jianwen Xie"
+        },
+        {
+          "authorId": "2146558486",
+          "name": "Yang Lu"
+        },
+        {
+          "authorId": "9659905",
+          "name": "Ruiqi Gao"
+        },
+        {
+          "authorId": "145380991",
+          "name": "Song-Chun Zhu"
+        },
+        {
+          "authorId": "39092098",
+          "name": "Y. Wu"
+        }
+      ],
+      "abstract": "This paper studies the cooperative training of two generative models for image modeling and synthesis. Both models are parametrized by convolutional neural networks (ConvNets). The first model is a deep energy-based model, whose energy function is defined by a bottom-up ConvNet, which maps the observed image to the energy. We call it the descriptor network. The second model is a generator network, which is a non-linear version of factor analysis. It is defined by a top-down ConvNet, which maps the latent factors to the observed image. The maximum likelihood learning algorithms of both models involve MCMC sampling such as Langevin dynamics. We observe that the two learning algorithms can be seamlessly interwoven into a cooperative learning algorithm that can train both models simultaneously. Specifically, within each iteration of the cooperative learning algorithm, the generator model generates initial synthesized examples to initialize a finite-step MCMC that samples and trains the energy-based descriptor model. After that, the generator model learns from how the MCMC changes its synthesized examples. That is, the descriptor model teaches the generator model by MCMC, so that the generator model accumulates the MCMC transitions and reproduces them by direct ancestral sampling. We call this scheme MCMC teaching. We show that the cooperative algorithm can learn highly realistic generative models.",
+      "title_query": true
+    },
+    {
+      "paperId": "de4f9412712560161ff64d04d2869186a8b8ecb3",
+      "externalIds": {
+        "ArXiv": "2210.04288",
+        "DBLP": "journals/corr/abs-2210-04288",
+        "DOI": "10.48550/arXiv.2210.04288",
+        "CorpusId": 252780190
+      },
+      "url": "https://www.semanticscholar.org/paper/de4f9412712560161ff64d04d2869186a8b8ecb3",
+      "title": "CoopHash: Cooperative Learning of Multipurpose Descriptor and Contrastive Pair Generator via Variational MCMC Teaching for Supervised Image Hashing",
+      "year": 2022,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "http://arxiv.org/pdf/2210.04288",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2210.04288, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "145502968",
+          "name": "Khoa D Doan"
+        },
+        {
+          "authorId": "39380386",
+          "name": "Jianwen Xie"
+        },
+        {
+          "authorId": "71888593",
+          "name": "Y. Zhu"
+        },
+        {
+          "authorId": "2118833498",
+          "name": "Yang Zhao"
+        },
+        {
+          "authorId": "2158235637",
+          "name": "Ping Li"
+        }
+      ],
+      "abstract": "Leveraging supervised information can lead to superior retrieval performance in the image hashing domain but the performance degrades significantly without enough labeled data. One effective solution to boost performance is to employ generative models, such as Generative Adversarial Networks (GANs), to generate synthetic data in an image hashing model. However, GAN-based methods are difficult to train, which prevents the hashing approaches from jointly training the generative models and the hash functions. This limitation results in sub-optimal retrieval performance. To overcome this limitation, we propose a novel framework, the generative cooperative hashing network, which is based on energy-based cooperative learning. This framework jointly learns a powerful generative representation of the data and a robust hash function via two components: a top-down contrastive pair generator that synthesizes contrastive images and a bottom-up multipurpose descriptor that simultaneously represents the images from multiple perspectives, including probability density, hash code, latent code, and category. The two components are jointly learned via a novel likelihood-based cooperative learning scheme. We conduct experiments on several real-world datasets and show that the proposed method outperforms the competing hashing supervised methods, achieving up to 10\\% relative improvement over the current state-of-the-art supervised hashing methods, and exhibits a significantly better performance in out-of-distribution retrieval.",
+      "title_query": true
+    },
+    {
+      "paperId": "73234a7f9e36beb1e80805abc852e98baa4db25c",
+      "externalIds": {
+        "MAG": "2730423413",
+        "DBLP": "phd/basesearch/Lu17",
+        "CorpusId": 21410925
+      },
+      "url": "https://www.semanticscholar.org/paper/73234a7f9e36beb1e80805abc852e98baa4db25c",
+      "title": "Coupling and Learning Hierarchical Generative and Descriptive Models for Image Synthesis and Analysis",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://www.base-search.net/Record/53db36a567a96fad8540a730004648b4635bbc77fd5bfed07f8dacfa6f56d22d, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2146558486",
+          "name": "Yang Lu"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "4a26ee5fbc29116188b3b91af53323829f79afc2",
+      "externalIds": {
+        "MAG": "1581134311",
+        "CorpusId": 263267619
+      },
+      "url": "https://www.semanticscholar.org/paper/4a26ee5fbc29116188b3b91af53323829f79afc2",
+      "title": "From animals to animats 11 : 11th International Conference on Simulation of Adaptive Behavior, SAB 2010, Paris - Clos Lucé, France, August 25-28, 2010 : proceedings",
+      "year": 2010,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null
+      },
+      "authors": [
+        {
+          "authorId": "2249201045",
+          "name": "Stéphane Doncieux"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Cooperative Training of Descriptor and Generator Networks\n    Year: 2016\n    Citations: 150\n    URL: https://www.semanticscholar.org/paper/e003dab15b83aff26f39f4d82ddaa077022f24b2\n    Abstract: This paper studies the cooperative training of two generative models for image modeling and synthesis. Both models are parametrized by convolutional neural networks (ConvNets). The first model is a deep energy-based model, whose energy function is defined by a bottom-up ConvNet, which maps the observed image to the energy. We call it the descriptor network. The second model is a generator network, which is a non-linear version of factor analysis. It is defined by a top-down ConvNet, which maps the latent factors to the observed image. The maximum likelihood learning algorithms of both models involve MCMC sampling such as Langevin dynamics. We observe that the two learning algorithms can be seamlessly interwoven into a cooperative learning algorithm that can train both models simultaneously. Specifically, within each iteration of the cooperative learning algorithm, the generator model generates initial synthesized examples to initialize a finite-step MCMC that samples and trains the energy-based descriptor model. After that, the generator model learns from how the MCMC changes its synthesized examples. That is, the descriptor model teaches the generator model by MCMC, so that the ge...\n\n[1] Title: CoopHash: Cooperative Learning of Multipurpose Descriptor and Contrastive Pair Generator via Variational MCMC Teaching for Supervised Image Hashing\n    Year: 2022\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/de4f9412712560161ff64d04d2869186a8b8ecb3\n    Abstract: Leveraging supervised information can lead to superior retrieval performance in the image hashing domain but the performance degrades significantly without enough labeled data. One effective solution to boost performance is to employ generative models, such as Generative Adversarial Networks (GANs), to generate synthetic data in an image hashing model. However, GAN-based methods are difficult to train, which prevents the hashing approaches from jointly training the generative models and the hash functions. This limitation results in sub-optimal retrieval performance. To overcome this limitation, we propose a novel framework, the generative cooperative hashing network, which is based on energy-based cooperative learning. This framework jointly learns a powerful generative representation of the data and a robust hash function via two components: a top-down contrastive pair generator that synthesizes contrastive images and a bottom-up multipurpose descriptor that simultaneously represents the images from multiple perspectives, including probability density, hash code, latent code, and category. The two components are jointly learned via a novel likelihood-based cooperative learning sc...\n\n[2] Title: Coupling and Learning Hierarchical Generative and Descriptive Models for Image Synthesis and Analysis\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/73234a7f9e36beb1e80805abc852e98baa4db25c\n\n[3] Title: From animals to animats 11 : 11th International Conference on Simulation of Adaptive Behavior, SAB 2010, Paris - Clos Lucé, France, August 25-28, 2010 : proceedings\n    Year: 2010\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/4a26ee5fbc29116188b3b91af53323829f79afc2\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        99,
+        823,
+        146
+      ],
+      "text_level": 1,
+      "text": "COOPERATIVE TRAINING OF DESCRIPTOR AND GENERATOR NETWORKS"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        170,
+        581,
+        184
+      ],
+      "text_level": null,
+      "text": "Jianwen Xie, Yang Lu, Song-Chun Zhu & Ying Nian Wu"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        185,
+        344,
+        198
+      ],
+      "text_level": null,
+      "text": "Department of Statistics"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        198,
+        431,
+        212
+      ],
+      "text_level": null,
+      "text": "University of California, Los Angeles"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        212,
+        705,
+        227
+      ],
+      "text_level": null,
+      "text": "{jianwen, yanglv}@ucla.edu, {sczhu, ywu}@stat.ucla.edu"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        263,
+        545,
+        277
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        292,
+        767,
+        474
+      ],
+      "text_level": null,
+      "text": "This paper studies the cooperative training of two probabilistic models of signals such as images. Both models are parametrized by convolutional neural networks (ConvNets). The first network is a descriptor network, which is an exponential family model or an energy-based model, whose feature statistics or energy function are defined by a bottom-up ConvNet, which maps the observed signal to the feature statistics. The second network is a generator network, which is a nonlinear version of factor a"
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        500,
+        336,
+        513
+      ],
+      "text_level": 1,
+      "text": "1 INTRODUCTION"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        529,
+        517,
+        542
+      ],
+      "text_level": 1,
+      "text": "1.1 TWO CONVNETS OF OPPOSITE DIRECTIONS"
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        555,
+        823,
+        612
+      ],
+      "text_level": null,
+      "text": "We begin with a tale that the reader of this paper can readily relate to. A student writes up an initial draft of a paper. His advisor then revises it. After that they submit the revised paper for review. The student then learns from his advisor's revision, while the advisor learns from the outside review. In this tale, the advisor guides the student, but the student does most of the work."
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        618,
+        826,
+        689
+      ],
+      "text_level": null,
+      "text": "Such is a tale we are going to tell in this paper. It is a tale of two nets. It is about two probabilistic models of signals such as images. Both models are parametrized by convolutional neural networks (ConvNets or CNNs) (LeCun et al., 1998; Krizhevsky et al., 2012). As mighty as ConvNets have become, they are still one way streets. So the two nets in our tale take two opposite directions. One is bottom-up, and the other is top-down, as illustrate by the following diagram:"
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        331,
+        694,
+        470,
+        720
+      ],
+      "text_level": null,
+      "text": "Bottom-up ConvNet features"
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        377,
+        723,
+        421,
+        750
+      ],
+      "text_level": null,
+      "text": "up signal"
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        339,
+        750,
+        460,
+        763
+      ],
+      "text_level": null,
+      "text": "(a) Descriptor Net"
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        503,
+        694,
+        635,
+        720
+      ],
+      "text_level": null,
+      "text": "Top-down ConvNet latent variables"
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        544,
+        723,
+        563,
+        738
+      ],
+      "text_level": null,
+      "text": "，"
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        545,
+        738,
+        588,
+        750
+      ],
+      "text_level": null,
+      "text": "signal"
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        511,
+        750,
+        627,
+        763
+      ],
+      "text_level": null,
+      "text": "(b) Generator Net"
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        800,
+        723,
+        823,
+        736
+      ],
+      "text_level": null,
+      "text": "(1)"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        777,
+        826,
+        888
+      ],
+      "text_level": null,
+      "text": "The simultaneous training of such two nets was first studied by the recent work of Kim & Bengio (2016). These two nets belong to two major classes of probabilistic models. (a) The exponential family models or the energy-based models (LeCun et al., 2006) or the Markov random field models (Zhu et al., 1997), where the probability distribution is defined by feature statistics or energy function computed from the signal by a bottom-up process. (b) The latent variable models or the directed graphical"
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        895,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "The two classes of models have been contrasted by Zhu (2003); Teh et al. (2003); Ngiam et al. (2011). Zhu (2003) called the two classes of models the descriptive models and the generative"
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "image",
+      "page_idx": 1,
+      "bbox": [
+        194,
+        195,
+        377,
+        287
+      ],
+      "text_level": null,
+      "text": "(a) Algorithm D"
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "image",
+      "page_idx": 1,
+      "bbox": [
+        395,
+        198,
+        568,
+        286
+      ],
+      "text_level": null,
+      "text": "(b) Algorithm G"
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "image",
+      "page_idx": 1,
+      "bbox": [
+        584,
+        103,
+        803,
+        287
+      ],
+      "text_level": null,
+      "text": "(c) CoopNets algorithm Figure 1: (a) Algorithm D involves sampling from the current model by Langevin dynamics. (b) Algorithm G involves sampling from the posterior distribution of the latent factors by Langevin dynamics. (c) CoopNets algorithm. The part of the flowchart for training the descriptor is similar to Algorithm D, except that the D1 Langevin sampling is initialized from the initial synthesized examples supplied by the generator. The part of the flowchart for training the generator can"
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        460,
+        826,
+        602
+      ],
+      "text_level": null,
+      "text": "models respectively. Both classes of models can benefit from the high capacity of the multi-layer ConvNets. (a) In the exponential family models or the energy-based models, the feature statistics or the energy function can be defined by a bottom-up ConvNet that maps the signal to the features and the energy function (Ngiam et al., 2011; Xie et al., 2016). We call the resulting model a descriptive network or a descriptor net following Zhu (2003), because it is built on descriptive feature statist"
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        619,
+        606,
+        632
+      ],
+      "text_level": 1,
+      "text": "1.2 TWO TRAINING ALGORITHMS AND THEIR COOPERATION"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        645,
+        826,
+        800
+      ],
+      "text_level": null,
+      "text": "Fig. 1(a) and (b) display the flowcharts of the maximum likelihood learning algorithms for training the descriptor and generator nets. We call the two algorithms Algorithm D and Algorithm G respectively. Algorithm D iterates two steps: Step D1 synthesizes examples by sampling from the current model by Langevin dynamics. Step D2 updates the parameters to shift the density from the synthesized examples towards the observed examples. Algorithm G also iterates two steps. Step G1 infers latent factor"
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        805,
+        823,
+        848
+      ],
+      "text_level": null,
+      "text": "In this article, we propose to couple Algorithms D and G into a cooperative training algorithm that interweaves the steps of the two algorithms seamlessly. We call the resulting algorithm the CoopNets algorithm, and we show that it can train both nets simultaneously."
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        854,
+        826,
+        926
+      ],
+      "text_level": null,
+      "text": "Figure 1(c) displays the flowchart of the CoopNets algorithm. The generator is like the student. It generates the initial draft of the synthesized examples. The descriptor is like the advisor. It revises the initial draft by initializing its Langevin dynamics from the initial draft in Step D1, which produces the revised draft of the synthesized examples. The descriptor learns from the outside review in Step D2, which is in the form of the difference between the observed examples and the revised"
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        103,
+        823,
+        160
+      ],
+      "text_level": null,
+      "text": "synthesized examples. The generator learns from how the descriptor revises the initial draft by reconstructing the revised draft in Step G2. For each synthesized example, the generator knows the latent factors that generate the initial draft, so that Step G1 can infer the latent factors by initializing its Langevin dynamics from their known values."
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        166,
+        823,
+        222
+      ],
+      "text_level": null,
+      "text": "In the CoopNets algorithm, the generator fuels the MCMC of the descriptor by supplying initial synthesized examples, which can be obtained by direct ancestral sampling. The generator then learns from the revised synthesized examples with virtually known latent factors. The cooperation is thus beneficial to both nets."
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        244,
+        341,
+        258
+      ],
+      "text_level": 1,
+      "text": "2 RELATED WORK"
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        276,
+        823,
+        361
+      ],
+      "text_level": null,
+      "text": "Our work is inspired by the generative adversarial networks (GAN) (Goodfellow et al., 2014; Denton et al., 2015; Radford et al., 2015). In GAN, the generator net is paired with a discriminator net. The two nets play adversarial roles. In our work, the generator net and the descriptor net play cooperative roles, and they feed each other the initial, revised and reconstructed synthesized data. The learning of both nets is based on maximum likelihood, and the learning process is quite stable becaus"
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        366,
+        823,
+        395
+      ],
+      "text_level": null,
+      "text": "The connection between the descriptor net and the discriminator net has been explored by Xie et al. (2016), where the descriptor can be derived from the discriminator."
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        401,
+        823,
+        500
+      ],
+      "text_level": null,
+      "text": "Our work is most similar to the recent pioneering work of Kim & Bengio (2016). In fact, the settings of the two nets are exactly the same. In their work, the generator learns from the descriptor by minimizing the Kullback-Leibler divergence from the generator to the descriptor, which can be decomposed into an energy term and an entropy term. In our work, the two nets interact with each other via synthesized data, and the generator learns from the descriptor by reconstructing the revised draft of"
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        506,
+        823,
+        550
+      ],
+      "text_level": null,
+      "text": "Our work is related to the contrastive divergence algorithm (Hinton, 2002) for training the descriptor net. The contrastive divergence initializes the MCMC sampling from the observed examples. The CoopNets algorithm initializes the MCMC sampling from the examples supplied by the generator."
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        569,
+        586,
+        585
+      ],
+      "text_level": 1,
+      "text": "3 TWO NETS AND TWO TRAINING ALGORITHMS"
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        601,
+        535,
+        616
+      ],
+      "text_level": 1,
+      "text": "3.1 DESCRIPTOR NET AND TRAINING ALGORITHM"
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        627,
+        826,
+        656
+      ],
+      "text_level": null,
+      "text": "Let  $Y$  be the  $D$ -dimensional signal, such as an image. The descriptor model is in the form of exponential tilting of a reference distribution (Xie et al., 2016):"
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        704,
+        823,
+        777
+      ],
+      "text_level": null,
+      "text": "where  $q(Y)$  is the reference distribution such as Gaussian white noise  $q(Y) \\propto \\exp \\left(-\\| Y\\| ^2 /2s^2\\right)$ ,  $f(Y;W_{\\mathcal{D}})$  ( $f$  stands for features) is the feature statistics or energy function, defined by a ConvNet whose parameters are denoted by  $W_{\\mathcal{D}}$ . This ConvNet is bottom-up because it maps the signal  $Y$  to the feature statistics. See the diagram in (1).  $Z(W_{\\mathcal{D}}) = \\int \\exp [f(Y;W_{\\mathcal{D}})]q(Y)dY = \\mathrm{E}_q\\{\\exp [f(Y;W_"
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        782,
+        825,
+        854
+      ],
+      "text_level": null,
+      "text": "Suppose we observe training examples  $\\{Y_{i}, i = 1, \\dots, n\\}$  from an unknown data distribution  $P_{\\mathrm{data}}(Y)$ . The maximum likelihood training seeks to maximize the log-likelihood function  $L_{\\mathcal{D}}(W_{\\mathcal{D}}) = \\frac{1}{n} \\sum_{i=1}^{n} \\log P_{\\mathcal{D}}(Y_{i}; W_{\\mathcal{D}})$ . If the sample size  $n$  is large, the maximum likelihood estimator minimizes  $\\mathrm{KL}(P_{\\mathrm{data}}|P_{\\mathcal{D}})$ , the Kullback-Leibler divergence from the data distri"
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        907,
+        602,
+        926
+      ],
+      "text_level": null,
+      "text": "where  $\\mathrm{E}_{W_{\\mathcal{D}}}$  denotes the expectation with respect to  $P_{\\mathcal{D}}(Y;W_{\\mathcal{D}})$ ."
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "The expectation in equation (3) is analytically intractable and has to be approximated by MCMC, such as Langevin dynamics, which iterates the following step:"
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        170,
+        823,
+        198
+      ],
+      "text_level": null,
+      "text": "where  $\\tau$  indexes the time steps of the Langevin dynamics,  $\\delta$  is the step size, and  $U_{\\tau} \\sim \\mathrm{N}(0, I_D)$  is the Gaussian white noise term."
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        205,
+        823,
+        238
+      ],
+      "text_level": null,
+      "text": "We can run  $\\tilde{n}$  parallel chains of Langevin dynamics according to (4) to obtain the synthesized examples  $\\{\\tilde{Y}_i, i = 1,\\dots,\\tilde{n}\\}$ . The Monte Carlo approximation to  $L_{\\mathcal{D}}^{\\prime}(W_{\\mathcal{D}})$  is"
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        282,
+        364,
+        299
+      ],
+      "text_level": null,
+      "text": "which is used to update  $W_{\\mathcal{D}}$"
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        305,
+        825,
+        369
+      ],
+      "text_level": null,
+      "text": "Algorithm D iterates the following two steps after initializing  $W_{\\mathcal{D}}$  and  $\\{\\tilde{Y}_i, i = 1,\\dots,\\tilde{n}\\}$ . Step D1: Run  $l_{\\mathcal{D}}$  steps of Langevin from the current  $\\{\\tilde{Y}\\}$  according to (4). Step D2: update  $W_{\\mathcal{D}}^{(t + 1)} = W_{\\mathcal{D}}^{(t)} + \\gamma_t L_{\\mathcal{D}}'(W_{\\mathcal{D}}^{(t)})$  with learning rate  $\\gamma_t$ . The convergence of such an algorithm follows Younes (1999)."
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        383,
+        532,
+        398
+      ],
+      "text_level": 1,
+      "text": "3.2 GENERATOR NET AND TRAINING ALGORITHM"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        409,
+        823,
+        439
+      ],
+      "text_level": null,
+      "text": "The generator net (Goodfellow et al., 2014) seeks to explain the signal  $Y$  of dimension  $D$  by a vector of latent factors  $X$  of dimension  $d$ , and usually  $d \\ll D$ . The model is of the following form:"
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        459,
+        823,
+        489
+      ],
+      "text_level": null,
+      "text": "$g(X;W_{\\mathcal{G}})$  ( $g$  stands for generator) is a top-down ConvNet defined by the parameters  $W_{\\mathcal{G}}$ . The ConvNet  $g$  maps the latent factors  $X$  to the signal  $Y$ . See the diagram in (1)."
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        493,
+        689,
+        510
+      ],
+      "text_level": null,
+      "text": "The joint density of model (6) is  $P_{\\mathcal{G}}(X,Y;W_{\\mathcal{G}}) = P_{\\mathcal{G}}(X)P_{\\mathcal{G}}(Y|X;W_{\\mathcal{G}})$ , and"
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        542,
+        823,
+        598
+      ],
+      "text_level": null,
+      "text": "where the constant term is independent of  $X$ ,  $Y$  and  $W_{\\mathcal{G}}$ . The marginal density is obtained by integrating out the latent factors  $X$ , i.e.,  $P_{\\mathcal{G}}(Y; W_{\\mathcal{G}}) = \\int P_{\\mathcal{G}}(X, Y; W_{\\mathcal{G}}) dX$ . The inference of  $X$  given  $Y$  is based on the posterior density  $P_{\\mathcal{G}}(X|Y; W_{\\mathcal{G}}) = P_{\\mathcal{G}}(X, Y; W_{\\mathcal{G}}) / P_{\\mathcal{G}}(Y; W_{\\mathcal{G}}) \\propto P_{\\mathcal{G}}(X, Y; W_{\\mathcal{G}})$  as a func"
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        604,
+        823,
+        662
+      ],
+      "text_level": null,
+      "text": "For the training data  $\\{Y_{i}, i = 1, \\dots, n\\}$ , the generator net can be trained by maximizing the log-likelihood  $L_{\\mathcal{G}}(W_{\\mathcal{G}}) = \\frac{1}{n} \\sum_{i=1}^{n} \\log P_{\\mathcal{G}}(Y_{i}; W_{\\mathcal{G}})$ . For large sample, the learned  $W_{\\mathcal{G}}$  minimizes the Kullback-Leibler divergence  $\\mathrm{KL}(P_{\\mathrm{data}} | P_{\\mathcal{G}})$  from the data distribution  $P_{\\mathrm{data}}$  to the model distribution  $P_{\\mathcal{G}}$ . The gradient of  $L_{\\mathc"
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        699,
+        825,
+        742
+      ],
+      "text_level": null,
+      "text": "which underlies the EM algorithm. In general, the expectation in (8) is analytically intractable, and has to be approximated by MCMC that samples from the posterior  $P_{G}(X|Y;W_{G})$ , such as Langevin dynamics, which iterates"
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        775,
+        823,
+        806
+      ],
+      "text_level": null,
+      "text": "where  $U_{\\tau} \\sim \\mathrm{N}(0, I_d)$ . With  $X_i$  sampled from  $P_{\\mathcal{G}}(X_i \\mid Y_i, W_{\\mathcal{G}})$  for each observation  $Y_i$ , the Monte Carlo approximation to  $L_{\\mathcal{G}}'(W_{\\mathcal{G}})$  is"
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        858,
+        825,
+        925
+      ],
+      "text_level": null,
+      "text": "Algorithm G iterates the following two steps after initializing  $W_{\\mathcal{G}}$  and  $\\{X_i, i = 1, \\dots, n\\}$ . Step G1: run  $l_{\\mathcal{G}}$  steps of Langevin from the current  $\\{X_i\\}$  according to (9). Step G2: update  $W_{\\mathcal{G}}^{(t+1)} = W_{\\mathcal{G}}^{(t)} + \\gamma_t L_{\\mathcal{G}}'(W_{\\mathcal{G}}^{(t)})$  with learning rate  $\\gamma_t$ . The convergence of such an algorithm follows Younes (1999)."
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        102,
+        699,
+        118
+      ],
+      "text_level": 1,
+      "text": "4 COOPNETS ALGORITHM: RECONSTRUCTING THE REVISION"
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        136,
+        823,
+        180
+      ],
+      "text_level": null,
+      "text": "In Algorithms D and G, both steps D1 and G1 are Langevin dynamics, which may be slow to converge. An interesting observation is that the two algorithms can cooperate with each other by jumpstarting each other's Langevin sampling."
+    },
+    {
+      "source_id": "SRC-059",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        185,
+        826,
+        294
+      ],
+      "text_level": null,
+      "text": "Specifically, in Step D1, we can initialize the synthesized examples by generating examples from the generator net. We first generate  $\\hat{X}_i\\sim \\mathrm{N}(0,I_d)$ , and then generate  $\\hat{Y}_i = g(\\hat{X}_i;W_{\\mathcal{G}}) + \\epsilon_i$ , for  $i = 1,\\ldots ,\\tilde{n}$ . If the current generator  $P_{\\mathcal{G}}$  is close to the current descriptor  $P_{\\mathcal{D}}$ , then the generated  $\\{\\hat{Y}_i\\}$  should be a good initialization for sampling from the descriptor net, i.e., start"
+    },
+    {
+      "source_id": "SRC-060",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        300,
+        823,
+        445
+      ],
+      "text_level": null,
+      "text": "In order to update  $W_{\\mathcal{G}}$  of the generator net, we treat the  $\\{\\hat{Y}_i, i = 1,\\dots,\\tilde{n}\\}$  produced by the above Step D1 as the training data for the generator. Since these  $\\{\\tilde{Y}_i\\}$  are obtained by the Langevin dynamics initialized from the  $\\{\\hat{Y}_i, i = 1,\\dots,\\tilde{n}\\}$  produced by the generator net with known latent factors  $\\{\\hat{X}_i, i = 1,\\dots,\\tilde{n}\\}$ , we can update  $W_{\\mathcal{G}}$  by learning from  $\\{(\\hat{Y}_i,\\hat{X}_i), i = 1,\\"
+    },
+    {
+      "source_id": "SRC-061",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        450,
+        498,
+        467
+      ],
+      "text_level": null,
+      "text": "The left diagram in (11) illustrates the basic idea."
+    },
+    {
+      "source_id": "SRC-062",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        606,
+        823,
+        696
+      ],
+      "text_level": null,
+      "text": "In the two diagrams in (11), the double-line arrows indicate generation and reconstruction by the generator net, while the dashed-line arrows indicate Langevin dynamics for revision and inference in the two nets. The diagram on the right in (11) illustrates a more rigorous method, where we initialize the Langevin inference of  $\\{X_{i}, i = 1, \\dots, \\tilde{n}\\}$  in Step G1 from  $\\{\\hat{X}_i\\}$ , and then update  $W_{\\mathcal{G}}$  in Step G2 based on  $\\{(\\tilde{Y}_i, X_i), i = 1, \\dots, \\til"
+    },
+    {
+      "source_id": "SRC-063",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        700,
+        825,
+        747
+      ],
+      "text_level": null,
+      "text": "Algorithm 1 describes the cooperative training that interweaves Algorithm D and Algorithm G. See Figure 1(c) for the flowchart of the CoopNets algorithm. In our experiments, we set  $l_{\\mathcal{G}} = 0$  and infer  $X_{i} = \\hat{X}_{i}$  for simplicity, i.e., we follow the left diagram in (11)."
+    },
+    {
+      "source_id": "SRC-064",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        752,
+        779,
+        768
+      ],
+      "text_level": null,
+      "text": "See Appendix for a theoretical understanding of the convergence of the CoopNets algorithm."
+    },
+    {
+      "source_id": "SRC-065",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        792,
+        328,
+        806
+      ],
+      "text_level": 1,
+      "text": "5 EXPERIMENTS"
+    },
+    {
+      "source_id": "SRC-066",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        825,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "We use the MatConvNet of Vedaldi & Lenc (2015) for coding. For the descriptor net, we adopt the structure of Xie et al. (2016), where the bottom-up network consists of multiple layers of convolution by linear filtering, ReLU non-linearity, and down-sampling. We adopt the structure of the generator network of Radford et al. (2015); Dosovitskiy et al. (2015), where the top-down network consists of multiple layers of deconvolution by linear superposition, ReLU non-linearity, and up-sampling, with t"
+    },
+    {
+      "source_id": "SRC-067",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        173,
+        103,
+        403,
+        118
+      ],
+      "text_level": 1,
+      "text": "Algorithm 1 CoopNets Algorithm"
+    },
+    {
+      "source_id": "SRC-068",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        173,
+        119,
+        220,
+        133
+      ],
+      "text_level": 1,
+      "text": "Input:"
+    },
+    {
+      "source_id": "SRC-069",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        173,
+        176,
+        232,
+        189
+      ],
+      "text_level": 1,
+      "text": "Output:"
+    },
+    {
+      "source_id": "SRC-070",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        181,
+        232,
+        424,
+        247
+      ],
+      "text_level": null,
+      "text": "1: Let  $t \\gets 0$ , initialize  $W_{\\mathcal{D}}$  and  $W_{\\mathcal{G}}$ ."
+    },
+    {
+      "source_id": "SRC-071",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        181,
+        248,
+        250,
+        261
+      ],
+      "text_level": 1,
+      "text": "2: repeat"
+    },
+    {
+      "source_id": "SRC-072",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        479,
+        433,
+        493
+      ],
+      "text_level": 1,
+      "text": "5.1 LEARNING TEXTURE PATTERNS"
+    },
+    {
+      "source_id": "SRC-073",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        506,
+        823,
+        549
+      ],
+      "text_level": null,
+      "text": "We learn a separate model from each texture image. The training images are collected from the Internet, and then resized to  $224 \\times 224$ . The synthesized images are of the same size as the training images."
+    },
+    {
+      "source_id": "SRC-074",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        555,
+        823,
+        626
+      ],
+      "text_level": null,
+      "text": "We use a 3-layer descriptor net, where the first layer has  $100 \\times 15$  filters with sub-sampling rate of 3 pixels, the second layer has  $70 \\times 9$  filters with sub-sampling of 1, and the third layer has  $30 \\times 7$  filters with sub-sampling of 1. We fix the standard deviation of the reference distribution of the descriptor net to be  $s = 0.012$ . We use  $L = 20$  or 30 steps of Langevin revision dynamics within each learning iteration, and the Langevin step size is set at 0.003."
+    },
+    {
+      "source_id": "SRC-075",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        632,
+        823,
+        675
+      ],
+      "text_level": null,
+      "text": "Starting from  $7 \\times 7$  latent factors, the generator net has 5 layers of deconvolution with  $5 \\times 5$  kernels (basis functions), with an up-sampling factor of 2 at each layer. The standard deviation of the noise vector is  $\\sigma = 0.3$ . The learning rate is  $10^{-6}$ ."
+    },
+    {
+      "source_id": "SRC-076",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        681,
+        826,
+        780
+      ],
+      "text_level": null,
+      "text": "We run  $10^{4}$  cooperative learning iterations to train the CoopNets. Figure 2 displays the results of generating texture patterns. For each category, the first image is the training image, and the rest are 2 of the images generated by the learned descriptor. We run  $\\tilde{n} = 6$  parallel chains for the first example, where images from 2 of them are presented. We run a single chain for the other experiments, where the synthesized images are generated at different iterations. Even though w"
+    },
+    {
+      "source_id": "SRC-077",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        799,
+        419,
+        811
+      ],
+      "text_level": 1,
+      "text": "5.2 LEARNING OBJECT PATTERNS"
+    },
+    {
+      "source_id": "SRC-078",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        825,
+        825,
+        925
+      ],
+      "text_level": null,
+      "text": "We learn a separate model for each object pattern. The training images are collected from the Internet, and then resized to  $64 \\times 64$ . The number of training images for each category is about 5. The structure of the generator network is the same as in (Radford et al., 2015; Dosovitskiy et al., 2015). We adopt a 3-layer descriptor net. The first layer has  $1004 \\times 4$  filters with sub-sampling of 2, the second layers has  $642 \\times 2$  filters with sub-sampling of 1, and the third l"
+    },
+    {
+      "source_id": "SRC-079",
+      "type": "image",
+      "page_idx": 6,
+      "bbox": [
+        253,
+        99,
+        743,
+        289
+      ],
+      "text_level": null,
+      "text": "Figure 2: Generating texture patterns. For each texture category, the first image is the training image, and the rest are 2 of the images generated by the CoopNets algorithm."
+    },
+    {
+      "source_id": "SRC-080",
+      "type": "image",
+      "page_idx": 6,
+      "bbox": [
+        202,
+        349,
+        795,
+        501
+      ],
+      "text_level": null,
+      "text": "Figure 3: Generating object patterns. For each object category, the first 3 images are 3 of the training images, and the rest are 3 of the images generated by the CoopNets algorithm."
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B1E7Pwqgl",
+  "paper_dir": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B1E7Pwqgl",
+  "review_model_name": "gpt-5",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ],
+  "reviewer_memory_contexts": {},
+  "memory_retrieval_enabled": false,
+  "memory_mode": "none"
+}

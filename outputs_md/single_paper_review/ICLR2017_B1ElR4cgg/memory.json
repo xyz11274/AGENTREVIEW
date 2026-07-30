@@ -1,0 +1,793 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1ElR4cgg/md_content_no_appendix.md",
+  "paper_title": "ADVERSARIALLY LEARNED INFERENCE",
+  "semantic_scholar_query": "ADVERSARIALLY LEARNED INFERENCE",
+  "keyword_model_name": "gpt-5.4-nano",
+  "retrieved_papers": [
+    {
+      "paperId": "fcf43325529c8b1cc26aeb52fd5d7e532abb0a40",
+      "externalIds": {
+        "ArXiv": "1606.00704",
+        "MAG": "2411541852",
+        "DBLP": "journals/corr/DumoulinBPLAMC16",
+        "CorpusId": 6104263
+      },
+      "url": "https://www.semanticscholar.org/paper/fcf43325529c8b1cc26aeb52fd5d7e532abb0a40",
+      "title": "Adversarially Learned Inference",
+      "year": 2016,
+      "citationCount": 1339,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1606.00704, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3074927",
+          "name": "Vincent Dumoulin"
+        },
+        {
+          "authorId": "3422357",
+          "name": "Ishmael Belghazi"
+        },
+        {
+          "authorId": "16443937",
+          "name": "Ben Poole"
+        },
+        {
+          "authorId": "49071560",
+          "name": "Alex Lamb"
+        },
+        {
+          "authorId": "2877311",
+          "name": "Martín Arjovsky"
+        },
+        {
+          "authorId": "3422889",
+          "name": "Olivier Mastropietro"
+        },
+        {
+          "authorId": "1760871",
+          "name": "Aaron C. Courville"
+        }
+      ],
+      "abstract": "We introduce the adversarially learned inference (ALI) model, which jointly learns a generation network and an inference network using an adversarial process. The generation network maps samples from stochastic latent variables to the data space while the inference network maps training examples in data space to the space of latent variables. An adversarial game is cast between these two networks and a discriminative network is trained to distinguish between joint latent/data-space samples from the generative network and joint samples from the inference network. We illustrate the ability of the model to learn mutually coherent inference and generation networks through the inspections of model samples and reconstructions and confirm the usefulness of the learned representations by obtaining a performance competitive with state-of-the-art on the semi-supervised SVHN and CIFAR10 tasks.",
+      "title_query": true
+    },
+    {
+      "paperId": "8d771ff210b4330a38be5e98da75f910d6b1f2ee",
+      "externalIds": {
+        "MAG": "3084607578",
+        "DBLP": "journals/corr/abs-2009-08270",
+        "CorpusId": 221761227
+      },
+      "url": "https://www.semanticscholar.org/paper/8d771ff210b4330a38be5e98da75f910d6b1f2ee",
+      "title": "Counterfactual Generation and Fairness Evaluation Using Adversarially Learned Inference",
+      "year": 2020,
+      "citationCount": 8,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://arxiv.org/abs/2009.08270, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "151203958",
+          "name": "Saloni Dash"
+        },
+        {
+          "authorId": "144676398",
+          "name": "Amit Sharma"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "c14fe5e69383fa9dfbd256965df06a99fae5558d",
+      "externalIds": {
+        "MAG": "2809129535",
+        "DBLP": "conf/kdd/DuDXZW18",
+        "DOI": "10.1145/3219819.3219957",
+        "CorpusId": 50776178
+      },
+      "url": "https://www.semanticscholar.org/paper/c14fe5e69383fa9dfbd256965df06a99fae5558d",
+      "title": "Multi-view Adversarially Learned Inference for Cross-domain Joint Distribution Matching",
+      "year": 2018,
+      "citationCount": 26,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1145/3219819.3219957?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1145/3219819.3219957, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2281806",
+          "name": "Changying Du"
+        },
+        {
+          "authorId": "3383868",
+          "name": "Changde Du"
+        },
+        {
+          "authorId": "2543387",
+          "name": "Xingyu Xie"
+        },
+        {
+          "authorId": "144333546",
+          "name": "Chen Zhang"
+        },
+        {
+          "authorId": "2144220396",
+          "name": "Hao Wang"
+        }
+      ],
+      "abstract": "Many important data mining problems can be modeled as learning a (bidirectional) multidimensional mapping between two data domains. Based on the generative adversarial networks (GANs), particularly conditional ones, cross-domain joint distribution matching is an increasingly popular kind of methods addressing such problems. Though significant advances have been achieved, there are still two main disadvantages of existing models, i.e., the requirement of large amount of paired training samples and the notorious instability of training. In this paper, we propose a multi-view adversarially learned inference (ALI) model, termed as MALI, to address these issues. Unlike the common practice of learning direct domain mappings, our model relies on shared latent representations of both domains and can generate arbitrary number of paired faking samples, benefiting from which usually very few paired samples (together with sufficient unpaired ones) is enough for learning good mappings. Extending the vanilla ALI model, we design novel discriminators to judge the quality of generated samples (both paired and unpaired), and provide theoretical analysis of our new formulation. Experiments on image-to-image translation, image-to-attribute generation (multi-label classification), attribute-to-image generation tasks demonstrate that our semi-supervised learning framework yields significant performance improvements over existing ones. Results on cross-modality retrieval show that our latent space based method can achieve competitive similarity search performance in relative fast speed, compared to those methods that compute similarities in the high-dimensional data space.",
+      "title_query": true
+    },
+    {
+      "paperId": "bc6e78be1b991c2666c70bd36d6e7986b7a7ba86",
+      "externalIds": {
+        "ArXiv": "2112.10384",
+        "DBLP": "journals/corr/abs-2112-10384",
+        "DOI": "10.1609/aaai.v36i6.20580",
+        "CorpusId": 245334878
+      },
+      "url": "https://www.semanticscholar.org/paper/bc6e78be1b991c2666c70bd36d6e7986b7a7ba86",
+      "title": "Multimodal Adversarially Learned Inference with Factorized Discriminators",
+      "year": 2021,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/20580/20339",
+        "status": "GOLD",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2112.10384, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2382313293",
+          "name": "Wenxue Chen"
+        },
+        {
+          "authorId": "1704030",
+          "name": "Jianke Zhu"
+        }
+      ],
+      "abstract": "Learning from multimodal data is an important research topic in machine learning, which has the potential to obtain better representations. In this work, we propose a novel approach to generative modeling of multimodal data based on generative adversarial networks. To learn a coherent multimodal generative model, we show that it is necessary to align different encoder distributions with the joint decoder distribution simultaneously. To this end, we construct a specific form of the discriminator to enable our model to utilize data efficiently, which can be trained constrastively. By taking advantage of contrastive learning through factorizing the discriminator, we train our model on unimodal data. We have conducted experiments on the benchmark datasets, whose promising results show that our proposed approach outperforms the-state-ofthe-art methods on a variety of metrics. The source code is publicly available at https://github.com/6b5d/mmali.",
+      "title_query": true
+    },
+    {
+      "paperId": "0fb1d1d6466fad4c566249008265f0b0a215ea4a",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2006-08089",
+        "ArXiv": "2006.08089",
+        "MAG": "3111789385",
+        "DOI": "10.1609/aaai.v35i8.16883",
+        "CorpusId": 219687393
+      },
+      "url": "https://www.semanticscholar.org/paper/0fb1d1d6466fad4c566249008265f0b0a215ea4a",
+      "title": "Generalized Adversarially Learned Inference",
+      "year": 2020,
+      "citationCount": 8,
+      "openAccessPdf": {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/16883/16690",
+        "status": "GOLD",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2006.08089, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1469066868",
+          "name": "Yatin Dandi"
+        },
+        {
+          "authorId": "51113848",
+          "name": "Homanga Bharadhwaj"
+        },
+        {
+          "authorId": "2109224633",
+          "name": "Abhishek Kumar"
+        },
+        {
+          "authorId": "145593549",
+          "name": "Piyush Rai"
+        }
+      ],
+      "abstract": "Allowing effective inference of latent vectors while training GANs can greatly increase their applicability in various downstream tasks. Recent approaches, such as ALI and BiGAN frameworks, develop methods of inference of latent variables in GANs by adversarially training an image generator along with an encoder to match two joint distributions of image and latent vector pairs. We generalize these approaches to incorporate multiple layers of feedback on reconstructions, self-supervision, and other forms of supervision based on prior or learned knowledge about the desired solutions. We achieve this by modifying the discriminator's objective to correctly identify more than two joint distributions of tuples of an arbitrary number of random variables consisting of images, latent vectors, and other variables generated through auxiliary tasks, such as reconstruction and inpainting or as outputs of suitable pre-trained models. We design a non-saturating maximization objective for the generator-encoder pair and prove that the resulting adversarial game corresponds to a global optimum that simultaneously matches all the distributions. Within our proposed framework, we introduce a novel set of techniques for providing self-supervised feedback to the model based on properties, such as patch-level correspondence and cycle consistency of reconstructions. Through comprehensive experiments, we demonstrate the efficacy, scalability, and flexibility of the proposed approach for a variety of tasks. The appendix of the paper can be found at the following link: https://drive.google.com/file/d/1i99e682CqYWMEDXlnqkqrctGLVA9viiz/view?usp=sharing",
+      "title_query": true
+    },
+    {
+      "paperId": "ab786457ee8085b129e30df14f38966961c234b3",
+      "externalIds": {
+        "MAG": "2787439980",
+        "ArXiv": "1802.01071",
+        "DBLP": "journals/corr/abs-1802-01071",
+        "CorpusId": 3709547
+      },
+      "url": "https://www.semanticscholar.org/paper/ab786457ee8085b129e30df14f38966961c234b3",
+      "title": "Hierarchical Adversarially Learned Inference",
+      "year": 2018,
+      "citationCount": 29,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1802.01071, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "31619472",
+          "name": "Mohamed Ishmael Belghazi"
+        },
+        {
+          "authorId": "2306961146",
+          "name": "Sai Rajeswar"
+        },
+        {
+          "authorId": "3422889",
+          "name": "Olivier Mastropietro"
+        },
+        {
+          "authorId": "2599281",
+          "name": "Negar Rostamzadeh"
+        },
+        {
+          "authorId": "37955812",
+          "name": "Jovana Mitrovic"
+        },
+        {
+          "authorId": "1760871",
+          "name": "Aaron C. Courville"
+        }
+      ],
+      "abstract": "We propose a novel hierarchical generative model with a simple Markovian structure and a corresponding inference model. Both the generative and inference model are trained using the adversarial learning paradigm. We demonstrate that the hierarchical structure supports the learning of progressively more abstract representations as well as providing semantically meaningful reconstructions with different levels of fidelity. Furthermore, we show that minimizing the Jensen-Shanon divergence between the generative and inference network is enough to minimize the reconstruction error. The resulting semantically meaningful hierarchical latent structure discovery is exemplified on the CelebA dataset. There, we show that the features learned by our model in an unsupervised way outperform the best handcrafted features. Furthermore, the extracted features remain competitive when compared to several recent deep supervised approaches on an attribute prediction task on CelebA. Finally, we leverage the model's inference network to achieve state-of-the-art performance on a semi-supervised variant of the MNIST digit classification task.",
+      "title_query": true
+    },
+    {
+      "paperId": "a70cd68b687c32ce65f9d5b31eb9791ece58eccd",
+      "externalIds": {
+        "ArXiv": "2007.05033",
+        "DBLP": "conf/nips/JeewajeeK20",
+        "MAG": "3106212606",
+        "CorpusId": 220486774
+      },
+      "url": "https://www.semanticscholar.org/paper/a70cd68b687c32ce65f9d5b31eb9791ece58eccd",
+      "title": "Adversarially-learned Inference via an Ensemble of Discrete Undirected Graphical Models",
+      "year": 2020,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2007.05033, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1389703782",
+          "name": "Adarsh K. Jeewajee"
+        },
+        {
+          "authorId": "1709512",
+          "name": "L. Kaelbling"
+        }
+      ],
+      "abstract": "Undirected graphical models are compact representations of joint probability distributions over random variables. To carry out an inference task of interest, graphical models of arbitrary topology can be trained using empirical risk minimization. However, when faced with new tasks, these models (EGMs) often need to be re-trained. Instead, we propose an inference-agnostic adversarial training framework for producing an ensemble of graphical models (AGMs). The ensemble is optimized to generate data, and inference is learned as a by-product of this endeavor. AGMs perform comparably with EGMs on inference tasks that the latter were specifically optimized for. Most importantly, AGMs show significantly better generalization capabilities across inference tasks. AGMs are also on par with GibbsNet, a state-of-the-art deep neural architecture, which like AGMs, allows conditioning on any subset of random variables. Finally, AGMs allow fast data sampling, competitive with Gibbs sampling from EGMs.",
+      "title_query": true
+    },
+    {
+      "paperId": "b24fcf50a82b50fbd011cc9037679ba4dcf6be8c",
+      "externalIds": {
+        "MAG": "2944587147",
+        "DOI": "10.1088/1742-6596/1187/5/052037",
+        "CorpusId": 164486969
+      },
+      "url": "https://www.semanticscholar.org/paper/b24fcf50a82b50fbd011cc9037679ba4dcf6be8c",
+      "title": "Anomaly Detection Based on PMF Encoding and Adversarially Learned Inference",
+      "year": 2019,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.1088/1742-6596/1187/5/052037",
+        "status": "GOLD",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1088/1742-6596/1187/5/052037?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1088/1742-6596/1187/5/052037, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2143838039",
+          "name": "Lin Zhang"
+        },
+        {
+          "authorId": "2382271413",
+          "name": "Wentai Yang"
+        },
+        {
+          "authorId": "145788125",
+          "name": "Hua Gan"
+        },
+        {
+          "authorId": "50651589",
+          "name": "Meng Li"
+        },
+        {
+          "authorId": "2108685025",
+          "name": "Xiaoming Wang"
+        },
+        {
+          "authorId": "1820905391",
+          "name": "G. Liang"
+        }
+      ],
+      "abstract": "In order to solve the problem of increasing the dimension and sparse feature space caused by the categorization coding method in the existing abnormal traffic detection problem, a coding method based on Probability Mass Function (PMF) is proposed. Secondly, in order to improve the ability of abnormal traffic detection algorithms to identify unknown attack type data and improve detection efficiency, we use Adversarially Learned Inference as the basic detection algorithm. The comparison experiments on the standard dataset show that the proposed method has improved the accuracy and detection efficiency greatly compared with the existing anomaly detection methods.",
+      "title_query": true
+    },
+    {
+      "paperId": "8ce773bcdb42405f6fb12c2a0b3466b55d6b019b",
+      "externalIds": {
+        "MAG": "2804076416",
+        "CorpusId": 53987371
+      },
+      "url": "https://www.semanticscholar.org/paper/8ce773bcdb42405f6fb12c2a0b3466b55d6b019b",
+      "title": "Deep Manga Colorization with Color Style Extraction by Conditional Adversarially Learned Inference",
+      "year": 2017,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://www.iaiai.org/journals/index.php/IEE/article/download/214/133, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3450631",
+          "name": "Yuusuke Kataoka"
+        },
+        {
+          "authorId": "144872058",
+          "name": "Takashi Matsubara"
+        },
+        {
+          "authorId": "1711781",
+          "name": "K. Uehara"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "1d4f087217b816691254ef0d4377094ce16eea95",
+      "externalIds": {
+        "MAG": "2946783098",
+        "DBLP": "conf/icml/BertranMPQRRS19",
+        "CorpusId": 174800114
+      },
+      "url": "https://www.semanticscholar.org/paper/1d4f087217b816691254ef0d4377094ce16eea95",
+      "title": "Adversarially Learned Representations for Information Obfuscation and Inference",
+      "year": 2019,
+      "citationCount": 60,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://proceedings.mlr.press/v97/bertran19a/bertran19a-supp.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "37335063",
+          "name": "Martín Bertrán"
+        },
+        {
+          "authorId": "144323649",
+          "name": "Natalia Martínez"
+        },
+        {
+          "authorId": "83557736",
+          "name": "Afroditi Papadaki"
+        },
+        {
+          "authorId": "2077648",
+          "name": "Qiang Qiu"
+        },
+        {
+          "authorId": "4838771",
+          "name": "M. Rodrigues"
+        },
+        {
+          "authorId": "145838359",
+          "name": "G. Reeves"
+        },
+        {
+          "authorId": "1699339",
+          "name": "G. Sapiro"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "69244cd6455392f7eb0dec90119d5c689ee6f1ba",
+      "externalIds": {
+        "DBLP": "conf/visapp/BarkerBGB23",
+        "ArXiv": "2303.03925",
+        "DOI": "10.5220/0011684700003417",
+        "CorpusId": 257361488
+      },
+      "url": "https://www.semanticscholar.org/paper/69244cd6455392f7eb0dec90119d5c689ee6f1ba",
+      "title": "Robust Semi-Supervised Anomaly Detection via Adversarially Learned Continuous Noise Corruption",
+      "year": 2023,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.5220/0011684700003417",
+        "status": "HYBRID",
+        "license": "CCBYNCND",
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2303.03925, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "32912356",
+          "name": "Jack W. Barker"
+        },
+        {
+          "authorId": "40336981",
+          "name": "Neelanjan Bhowmik"
+        },
+        {
+          "authorId": "1997982868",
+          "name": "Yona Falinie A. Gaus"
+        },
+        {
+          "authorId": "1803808",
+          "name": "T. Breckon"
+        }
+      ],
+      "abstract": "Anomaly detection is the task of recognising novel samples which deviate significantly from pre-establishednormality. Abnormal classes are not present during training meaning that models must learn effective rep-resentations solely across normal class data samples. Deep Autoencoders (AE) have been widely used foranomaly detection tasks, but suffer from overfitting to a null identity function. To address this problem, weimplement a training scheme applied to a Denoising Autoencoder (DAE) which introduces an efficient methodof producing Adversarially Learned Continuous Noise (ALCN) to maximally globally corrupt the input priorto denoising. Prior methods have applied similar approaches of adversarial training to increase the robustnessof DAE, however they exhibit limitations such as slow inference speed reducing their real-world applicabilityor producing generalised obfuscation which is more trivial to denoise. We show through rigorous evaluationthat our ALCN method of regularisation during training improves AUC performance during inference whileremaining efficient over both classical, leave-one-out novelty detection tasks with the variations-: 9 (normal)vs. 1 (abnormal)&1 (normal) vs. 9 (abnormal); MNIST - AUCavg: 0.890&0.989, CIFAR-10 - AUCavg: 0.670&0.742, in addition to challenging real-world anomaly detection tasks: industrial inspection (MVTEC-AD -AUCavg: 0.780) and plant disease detection (Plant Village - AUC: 0.770) when compared to prior approaches.",
+      "title_query": true
+    },
+    {
+      "paperId": "275dc558b44636bfb432c8000cafeb7ca0f3d4e2",
+      "externalIds": {
+        "MAG": "2804084874",
+        "DBLP": "journals/corr/abs-1805-07862",
+        "ArXiv": "1805.07862",
+        "CorpusId": 29170403
+      },
+      "url": "https://www.semanticscholar.org/paper/275dc558b44636bfb432c8000cafeb7ca0f3d4e2",
+      "title": "Featurized Bidirectional GAN: Adversarial Defense via Adversarially Learned Semantic Inference",
+      "year": 2018,
+      "citationCount": 15,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1805.07862, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "46171962",
+          "name": "Ruying Bao"
+        },
+        {
+          "authorId": "2114787718",
+          "name": "Sihang Liang"
+        },
+        {
+          "authorId": "2109099145",
+          "name": "Qingcan Wang"
+        }
+      ],
+      "abstract": "Deep neural networks have been demonstrated to be vulnerable to adversarial attacks, where small perturbations intentionally added to the original inputs can fool the classifier. In this paper, we propose a defense method, Featurized Bidirectional Generative Adversarial Networks (FBGAN), to extract the semantic features of the input and filter the non-semantic perturbation. FBGAN is pre-trained on the clean dataset in an unsupervised manner, adversarially learning a bidirectional mapping between the high-dimensional data space and the low-dimensional semantic space; also mutual information is applied to disentangle the semantically meaningful features. After the bidirectional mapping, the adversarial data can be reconstructed to denoised data, which could be fed into any pre-trained classifier. We empirically show the quality of reconstruction images and the effectiveness of defense.",
+      "title_query": true
+    },
+    {
+      "paperId": "ad3017393e279a4db4900097829e9e9ba63acd22",
+      "externalIds": {
+        "DBLP": "conf/amia/AverittVRP20",
+        "CorpusId": 233199006
+      },
+      "url": "https://www.semanticscholar.org/paper/ad3017393e279a4db4900097829e9e9ba63acd22",
+      "title": "Adversarially-Learned Balancing Weights for Causal Inference",
+      "year": 2020,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://knowledge.amia.org/72332-amia-1.4602255/t004-1.4605866/t004-1.4605867/3410636-1.4606192/3412003-1.4606189, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "11050635",
+          "name": "A. Averitt"
+        },
+        {
+          "authorId": "1481699314",
+          "name": "Natnicha Vanitchanant"
+        },
+        {
+          "authorId": "2615814",
+          "name": "R. Ranganath"
+        },
+        {
+          "authorId": "3237761",
+          "name": "A. Perotte"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "5a3d26f0cc2442a2ff0bffde3ababf6d45e7bcc6",
+      "externalIds": {
+        "MAG": "2982469842",
+        "PubMedCentral": "6864864",
+        "DBLP": "journals/sensors/KangK19",
+        "DOI": "10.3390/s19214709",
+        "CorpusId": 207817006,
+        "PubMed": "31671509"
+      },
+      "url": "https://www.semanticscholar.org/paper/5a3d26f0cc2442a2ff0bffde3ababf6d45e7bcc6",
+      "title": "Adversarially Learned Total Variability Embedding for Speaker Recognition with Random Digit Strings",
+      "year": 2019,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "https://www.mdpi.com/1424-8220/19/21/4709/pdf?version=1572406043",
+        "status": "GOLD",
+        "license": "CCBY",
+        "disclaimer": "Notice: Paper or abstract available at https://pmc.ncbi.nlm.nih.gov/articles/PMC6864864, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3404042",
+          "name": "Woohyun Kang"
+        },
+        {
+          "authorId": "1687497",
+          "name": "N. Kim"
+        }
+      ],
+      "abstract": "Over the recent years, various research has been conducted to investigate methods for verifying users with a short randomized pass-phrase due to the increasing demand for voice-based authentication systems. In this paper, we propose a novel technique for extracting an i-vector-like feature based on an adversarially learned inference (ALI) model which summarizes the variability within the Gaussian mixture model (GMM) distribution through a nonlinear process. Analogous to the previously proposed variational autoencoder (VAE)-based feature extractor, the proposed ALI-based model is trained to generate the GMM supervector according to the maximum likelihood criterion given the Baum–Welch statistics of the input utterance. However, to prevent the potential loss of information caused by the Kullback–Leibler divergence (KL divergence) regularization adopted in the VAE-based model training, the newly proposed ALI-based feature extractor exploits a joint discriminator to ensure that the generated latent variable and the GMM supervector are more realistic. The proposed framework is compared with the conventional i-vector and VAE-based methods using the TIDIGITS dataset. Experimental results show that the proposed method can represent the uncertainty caused by the short duration better than the VAE-based method. Furthermore, the proposed approach has shown great performance when applied in association with the standard i-vector framework.",
+      "title_query": true
+    },
+    {
+      "paperId": "c17f3218e3b85f3426e981edf80135ee05f82ecb",
+      "externalIds": {
+        "ArXiv": "2510.21184",
+        "DBLP": "journals/corr/abs-2510-21184",
+        "DOI": "10.48550/arXiv.2510.21184",
+        "CorpusId": 282384677
+      },
+      "url": "https://www.semanticscholar.org/paper/c17f3218e3b85f3426e981edf80135ee05f82ecb",
+      "title": "Reducing the Probability of Undesirable Outputs in Language Models Using Probabilistic Inference",
+      "year": 2025,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2510.21184, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2298853216",
+          "name": "Stephen Zhao"
+        },
+        {
+          "authorId": "2387879083",
+          "name": "Aidan Li"
+        },
+        {
+          "authorId": "27633668",
+          "name": "Rob Brekelmans"
+        },
+        {
+          "authorId": "2265066445",
+          "name": "R. Grosse"
+        }
+      ],
+      "abstract": "Reinforcement learning (RL) has become a predominant technique to align language models (LMs) with human preferences or promote outputs which are deemed to be desirable by a given reward function. Standard RL approaches optimize average reward, while methods explicitly focused on reducing the probability of undesired outputs typically come at a cost to average-case performance. To improve this tradeoff, we introduce RePULSe, a new training method that augments the standard RL loss with an additional loss that uses learned proposals to guide sampling low-reward outputs, and then reduces those outputs'probability. We run experiments demonstrating that RePULSe produces a better tradeoff of expected reward versus the probability of undesired outputs and is more adversarially robust, compared to standard RL alignment approaches and alternatives.",
+      "title_query": true
+    },
+    {
+      "paperId": "3b07d6a163c3b6cc75c3805dfbff60f1458e121b",
+      "externalIds": {
+        "ArXiv": "1702.08235",
+        "DBLP": "journals/corr/Huszar17",
+        "MAG": "2594374979",
+        "CorpusId": 1176485
+      },
+      "url": "https://www.semanticscholar.org/paper/3b07d6a163c3b6cc75c3805dfbff60f1458e121b",
+      "title": "Variational Inference using Implicit Distributions",
+      "year": 2017,
+      "citationCount": 143,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1702.08235, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3108066",
+          "name": "Ferenc Huszár"
+        }
+      ],
+      "abstract": "Generative adversarial networks (GANs) have given us a great tool to fit implicit generative models to data. Implicit distributions are ones we can sample from easily, and take derivatives of samples with respect to model parameters. These models are highly expressive and we argue they can prove just as useful for variational inference (VI) as they are for generative modelling. Several papers have proposed GAN-like algorithms for inference, however, connections to the theory of VI are not always well understood. This paper provides a unifying review of existing algorithms establishing connections between variational autoencoders, adversarially learned inference, operator VI, GAN-based image reconstruction, and more. Secondly, the paper provides a framework for building new algorithms: depending on the way the variational bound is expressed we introduce prior-contrastive and joint-contrastive methods, and show practical inference algorithms based on either density ratio estimation or denoising.",
+      "title_query": true
+    },
+    {
+      "paperId": "8971c56ece046786c27a97a02244f25ac28a32b1",
+      "externalIds": {
+        "MAG": "3168211080",
+        "CorpusId": 235366443
+      },
+      "url": "https://www.semanticscholar.org/paper/8971c56ece046786c27a97a02244f25ac28a32b1",
+      "title": "Covariate Shift Adaptation for Adversarially Robust Classifier",
+      "year": 2021,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://aisecure-workshop.github.io/aml-iclr2021/papers/2.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "40456486",
+          "name": "Jay Nandy"
+        },
+        {
+          "authorId": "2959887",
+          "name": "Sudipan Saha"
+        },
+        {
+          "authorId": "144793401",
+          "name": "W. Hsu"
+        },
+        {
+          "authorId": "1390489982",
+          "name": "Mong Li Lee"
+        },
+        {
+          "authorId": "46875441",
+          "name": "Xiaoxiang Zhu"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "8c2d2b5bb781254a45265bc636b3f24a2fac4126",
+      "externalIds": {
+        "ArXiv": "1901.08730",
+        "CorpusId": 59291964
+      },
+      "url": "https://www.semanticscholar.org/paper/8c2d2b5bb781254a45265bc636b3f24a2fac4126",
+      "title": "Better accuracy with quantified privacy: representations learned via reconstructive adversarial network",
+      "year": 2019,
+      "citationCount": 14,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1901.08730, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2108636687",
+          "name": "Sicong Liu"
+        },
+        {
+          "authorId": "4260659",
+          "name": "Anshumali Shrivastava"
+        },
+        {
+          "authorId": "1683723",
+          "name": "Junzhao Du"
+        },
+        {
+          "authorId": "2171880383",
+          "name": "Lin Zhong"
+        }
+      ],
+      "abstract": "The remarkable success of machine learning, especially deep learning, has produced a variety of cloud-based services for mobile users. Such services require an end user to send data to the service provider, which presents a serious challenge to end-user privacy. To address this concern, prior works either add noise to the data or send features extracted from the raw data. They struggle to balance between the utility and privacy because added noise reduces utility and raw data can be reconstructed from extracted features. This work represents a methodical departure from prior works: we balance between a measure of privacy and another of utility by leveraging adversarial learning to find a sweeter tradeoff. We design an encoder that optimizes against the reconstruction error (a measure of privacy), adversarially by a Decoder, and the inference accuracy (a measure of utility) by a Classifier. The result is RAN, a novel deep model with a new training algorithm that automatically extracts features for classification that are both private and useful. It turns out that adversarially forcing the extracted features to only conveys the intended information required by classification leads to an implicit regularization leading to better classification accuracy than the original model which completely ignores privacy. Thus, we achieve better privacy with better utility, a surprising possibility in machine learning! We conducted extensive experiments on five popular datasets over four training schemes, and demonstrate the superiority of RAN compared with existing alternatives.",
+      "title_query": true
+    },
+    {
+      "paperId": "e37bde2765c0869982c48a7bbd139d0c63246fa6",
+      "externalIds": {
+        "MAG": "2963489463",
+        "DBLP": "journals/corr/abs-1712-04120",
+        "ArXiv": "1712.04120",
+        "CorpusId": 2126418
+      },
+      "url": "https://www.semanticscholar.org/paper/e37bde2765c0869982c48a7bbd139d0c63246fa6",
+      "title": "GibbsNet: Iterative Adversarial Inference for Deep Graphical Models",
+      "year": 2017,
+      "citationCount": 14,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1712.04120, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "49071560",
+          "name": "Alex Lamb"
+        },
+        {
+          "authorId": "40482726",
+          "name": "R. Devon Hjelm"
+        },
+        {
+          "authorId": "2825246",
+          "name": "Yaroslav Ganin"
+        },
+        {
+          "authorId": "40061310",
+          "name": "Joseph Paul Cohen"
+        },
+        {
+          "authorId": "1760871",
+          "name": "Aaron C. Courville"
+        },
+        {
+          "authorId": "1751762",
+          "name": "Yoshua Bengio"
+        }
+      ],
+      "abstract": "Directed latent variable models that formulate the joint distribution as $p(x,z) = p(z) p(x \\mid z)$ have the advantage of fast and exact sampling. However, these models have the weakness of needing to specify $p(z)$, often with a simple fixed prior that limits the expressiveness of the model. Undirected latent variable models discard the requirement that $p(z)$ be specified with a prior, yet sampling from them generally requires an iterative procedure such as blocked Gibbs-sampling that may require many steps to draw samples from the joint distribution $p(x, z)$. We propose a novel approach to learning the joint distribution between the data and a latent code which uses an adversarially learned iterative procedure to gradually refine the joint distribution, $p(x, z)$, to better match with the data distribution on each step. GibbsNet is the best of both worlds both in theory and in practice. Achieving the speed and simplicity of a directed latent variable model, it is guaranteed (assuming the adversarial game reaches the virtual training criteria global minimum) to produce samples from $p(x, z)$ with only a few sampling iterations. Achieving the expressiveness and flexibility of an undirected latent variable model, GibbsNet does away with the need for an explicit $p(z)$ and has the ability to do attribute prediction, class-conditional generation, and joint image-attribute modeling in a single model which is not trained for any of these specific tasks. We show empirically that GibbsNet is able to learn a more complex $p(z)$ and show that this leads to improved inpainting and iterative refinement of $p(x, z)$ for dozens of steps and stable generation without collapse for thousands of steps, despite being trained on only a few steps.",
+      "title_query": true
+    },
+    {
+      "paperId": "78f6cbfd190ee63597c9a7d9f88d5c8959abd436",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1901-08730",
+        "MAG": "2912012050",
+        "CorpusId": 260490490
+      },
+      "url": "https://www.semanticscholar.org/paper/78f6cbfd190ee63597c9a7d9f88d5c8959abd436",
+      "title": "Better accuracy with quantified privacy: representations learned via reconstructive adversarial network",
+      "year": 2018,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://arxiv.org/abs/1901.08730, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2108636687",
+          "name": "Sicong Liu"
+        },
+        {
+          "authorId": "4260659",
+          "name": "Anshumali Shrivastava"
+        },
+        {
+          "authorId": "1683723",
+          "name": "Junzhao Du"
+        },
+        {
+          "authorId": "2171880383",
+          "name": "Lin Zhong"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Adversarially Learned Inference\n    Year: 2016\n    Citations: 1339\n    URL: https://www.semanticscholar.org/paper/fcf43325529c8b1cc26aeb52fd5d7e532abb0a40\n    Abstract: We introduce the adversarially learned inference (ALI) model, which jointly learns a generation network and an inference network using an adversarial process. The generation network maps samples from stochastic latent variables to the data space while the inference network maps training examples in data space to the space of latent variables. An adversarial game is cast between these two networks and a discriminative network is trained to distinguish between joint latent/data-space samples from the generative network and joint samples from the inference network. We illustrate the ability of the model to learn mutually coherent inference and generation networks through the inspections of model samples and reconstructions and confirm the usefulness of the learned representations by obtaining a performance competitive with state-of-the-art on the semi-supervised SVHN and CIFAR10 tasks.\n\n[1] Title: Counterfactual Generation and Fairness Evaluation Using Adversarially Learned Inference\n    Year: 2020\n    Citations: 8\n    URL: https://www.semanticscholar.org/paper/8d771ff210b4330a38be5e98da75f910d6b1f2ee\n\n[2] Title: Multi-view Adversarially Learned Inference for Cross-domain Joint Distribution Matching\n    Year: 2018\n    Citations: 26\n    URL: https://www.semanticscholar.org/paper/c14fe5e69383fa9dfbd256965df06a99fae5558d\n    Abstract: Many important data mining problems can be modeled as learning a (bidirectional) multidimensional mapping between two data domains. Based on the generative adversarial networks (GANs), particularly conditional ones, cross-domain joint distribution matching is an increasingly popular kind of methods addressing such problems. Though significant advances have been achieved, there are still two main disadvantages of existing models, i.e., the requirement of large amount of paired training samples and the notorious instability of training. In this paper, we propose a multi-view adversarially learned inference (ALI) model, termed as MALI, to address these issues. Unlike the common practice of learning direct domain mappings, our model relies on shared latent representations of both domains and can generate arbitrary number of paired faking samples, benefiting from which usually very few paired samples (together with sufficient unpaired ones) is enough for learning good mappings. Extending the vanilla ALI model, we design novel discriminators to judge the quality of generated samples (both paired and unpaired), and provide theoretical analysis of our new formulation. Experiments on image-...\n\n[3] Title: Multimodal Adversarially Learned Inference with Factorized Discriminators\n    Year: 2021\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/bc6e78be1b991c2666c70bd36d6e7986b7a7ba86\n    Abstract: Learning from multimodal data is an important research topic in machine learning, which has the potential to obtain better representations. In this work, we propose a novel approach to generative modeling of multimodal data based on generative adversarial networks. To learn a coherent multimodal generative model, we show that it is necessary to align different encoder distributions with the joint decoder distribution simultaneously. To this end, we construct a specific form of the discriminator to enable our model to utilize data efficiently, which can be trained constrastively. By taking advantage of contrastive learning through factorizing the discriminator, we train our model on unimodal data. We have conducted experiments on the benchmark datasets, whose promising results show that our proposed approach outperforms the-state-ofthe-art methods on a variety of metrics. The source code is publicly available at https://github.com/6b5d/mmali.\n\n[4] Title: Generalized Adversarially Learned Inference\n    Year: 2020\n    Citations: 8\n    URL: https://www.semanticscholar.org/paper/0fb1d1d6466fad4c566249008265f0b0a215ea4a\n    Abstract: Allowing effective inference of latent vectors while training GANs can greatly increase their applicability in various downstream tasks. Recent approaches, such as ALI and BiGAN frameworks, develop methods of inference of latent variables in GANs by adversarially training an image generator along with an encoder to match two joint distributions of image and latent vector pairs. We generalize these approaches to incorporate multiple layers of feedback on reconstructions, self-supervision, and other forms of supervision based on prior or learned knowledge about the desired solutions. We achieve this by modifying the discriminator's objective to correctly identify more than two joint distributions of tuples of an arbitrary number of random variables consisting of images, latent vectors, and other variables generated through auxiliary tasks, such as reconstruction and inpainting or as outputs of suitable pre-trained models. We design a non-saturating maximization objective for the generator-encoder pair and prove that the resulting adversarial game corresponds to a global optimum that simultaneously matches all the distributions. Within our proposed framework, we introduce a novel set ...\n\n[5] Title: Hierarchical Adversarially Learned Inference\n    Year: 2018\n    Citations: 29\n    URL: https://www.semanticscholar.org/paper/ab786457ee8085b129e30df14f38966961c234b3\n    Abstract: We propose a novel hierarchical generative model with a simple Markovian structure and a corresponding inference model. Both the generative and inference model are trained using the adversarial learning paradigm. We demonstrate that the hierarchical structure supports the learning of progressively more abstract representations as well as providing semantically meaningful reconstructions with different levels of fidelity. Furthermore, we show that minimizing the Jensen-Shanon divergence between the generative and inference network is enough to minimize the reconstruction error. The resulting semantically meaningful hierarchical latent structure discovery is exemplified on the CelebA dataset. There, we show that the features learned by our model in an unsupervised way outperform the best handcrafted features. Furthermore, the extracted features remain competitive when compared to several recent deep supervised approaches on an attribute prediction task on CelebA. Finally, we leverage the model's inference network to achieve state-of-the-art performance on a semi-supervised variant of the MNIST digit classification task.\n\n[6] Title: Adversarially-learned Inference via an Ensemble of Discrete Undirected Graphical Models\n    Year: 2020\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/a70cd68b687c32ce65f9d5b31eb9791ece58eccd\n    Abstract: Undirected graphical models are compact representations of joint probability distributions over random variables. To carry out an inference task of interest, graphical models of arbitrary topology can be trained using empirical risk minimization. However, when faced with new tasks, these models (EGMs) often need to be re-trained. Instead, we propose an inference-agnostic adversarial training framework for producing an ensemble of graphical models (AGMs). The ensemble is optimized to generate data, and inference is learned as a by-product of this endeavor. AGMs perform comparably with EGMs on inference tasks that the latter were specifically optimized for. Most importantly, AGMs show significantly better generalization capabilities across inference tasks. AGMs are also on par with GibbsNet, a state-of-the-art deep neural architecture, which like AGMs, allows conditioning on any subset of random variables. Finally, AGMs allow fast data sampling, competitive with Gibbs sampling from EGMs.\n\n[7] Title: Anomaly Detection Based on PMF Encoding and Adversarially Learned Inference\n    Year: 2019\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/b24fcf50a82b50fbd011cc9037679ba4dcf6be8c\n    Abstract: In order to solve the problem of increasing the dimension and sparse feature space caused by the categorization coding method in the existing abnormal traffic detection problem, a coding method based on Probability Mass Function (PMF) is proposed. Secondly, in order to improve the ability of abnormal traffic detection algorithms to identify unknown attack type data and improve detection efficiency, we use Adversarially Learned Inference as the basic detection algorithm. The comparison experiments on the standard dataset show that the proposed method has improved the accuracy and detection efficiency greatly compared with the existing anomaly detection methods.\n\n[8] Title: Deep Manga Colorization with Color Style Extraction by Conditional Adversarially Learned Inference\n    Year: 2017\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/8ce773bcdb42405f6fb12c2a0b3466b55d6b019b\n\n[9] Title: Adversarially Learned Representations for Information Obfuscation and Inference\n    Year: 2019\n    Citations: 60\n    URL: https://www.semanticscholar.org/paper/1d4f087217b816691254ef0d4377094ce16eea95\n\n[10] Title: Robust Semi-Supervised Anomaly Detection via Adversarially Learned Continuous Noise Corruption\n    Year: 2023\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/69244cd6455392f7eb0dec90119d5c689ee6f1ba\n    Abstract: Anomaly detection is the task of recognising novel samples which deviate significantly from pre-establishednormality. Abnormal classes are not present during training meaning that models must learn effective rep-resentations solely across normal class data samples. Deep Autoencoders (AE) have been widely used foranomaly detection tasks, but suffer from overfitting to a null identity function. To address this problem, weimplement a training scheme applied to a Denoising Autoencoder (DAE) which introduces an efficient methodof producing Adversarially Learned Continuous Noise (ALCN) to maximally globally corrupt the input priorto denoising. Prior methods have applied similar approaches of adversarial training to increase the robustnessof DAE, however they exhibit limitations such as slow inference speed reducing their real-world applicabilityor producing generalised obfuscation which is more trivial to denoise. We show through rigorous evaluationthat our ALCN method of regularisation during training improves AUC performance during inference whileremaining efficient over both classical, leave-one-out novelty detection tasks with the variations-: 9 (normal)vs. 1 (abnormal)&1 (normal) vs...\n\n[11] Title: Featurized Bidirectional GAN: Adversarial Defense via Adversarially Learned Semantic Inference\n    Year: 2018\n    Citations: 15\n    URL: https://www.semanticscholar.org/paper/275dc558b44636bfb432c8000cafeb7ca0f3d4e2\n    Abstract: Deep neural networks have been demonstrated to be vulnerable to adversarial attacks, where small perturbations intentionally added to the original inputs can fool the classifier. In this paper, we propose a defense method, Featurized Bidirectional Generative Adversarial Networks (FBGAN), to extract the semantic features of the input and filter the non-semantic perturbation. FBGAN is pre-trained on the clean dataset in an unsupervised manner, adversarially learning a bidirectional mapping between the high-dimensional data space and the low-dimensional semantic space; also mutual information is applied to disentangle the semantically meaningful features. After the bidirectional mapping, the adversarial data can be reconstructed to denoised data, which could be fed into any pre-trained classifier. We empirically show the quality of reconstruction images and the effectiveness of defense.\n\n[12] Title: Adversarially-Learned Balancing Weights for Causal Inference\n    Year: 2020\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/ad3017393e279a4db4900097829e9e9ba63acd22\n\n[13] Title: Adversarially Learned Total Variability Embedding for Speaker Recognition with Random Digit Strings\n    Year: 2019\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/5a3d26f0cc2442a2ff0bffde3ababf6d45e7bcc6\n    Abstract: Over the recent years, various research has been conducted to investigate methods for verifying users with a short randomized pass-phrase due to the increasing demand for voice-based authentication systems. In this paper, we propose a novel technique for extracting an i-vector-like feature based on an adversarially learned inference (ALI) model which summarizes the variability within the Gaussian mixture model (GMM) distribution through a nonlinear process. Analogous to the previously proposed variational autoencoder (VAE)-based feature extractor, the proposed ALI-based model is trained to generate the GMM supervector according to the maximum likelihood criterion given the Baum–Welch statistics of the input utterance. However, to prevent the potential loss of information caused by the Kullback–Leibler divergence (KL divergence) regularization adopted in the VAE-based model training, the newly proposed ALI-based feature extractor exploits a joint discriminator to ensure that the generated latent variable and the GMM supervector are more realistic. The proposed framework is compared with the conventional i-vector and VAE-based methods using the TIDIGITS dataset. Experimental results ...\n\n[14] Title: Reducing the Probability of Undesirable Outputs in Language Models Using Probabilistic Inference\n    Year: 2025\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/c17f3218e3b85f3426e981edf80135ee05f82ecb\n    Abstract: Reinforcement learning (RL) has become a predominant technique to align language models (LMs) with human preferences or promote outputs which are deemed to be desirable by a given reward function. Standard RL approaches optimize average reward, while methods explicitly focused on reducing the probability of undesired outputs typically come at a cost to average-case performance. To improve this tradeoff, we introduce RePULSe, a new training method that augments the standard RL loss with an additional loss that uses learned proposals to guide sampling low-reward outputs, and then reduces those outputs'probability. We run experiments demonstrating that RePULSe produces a better tradeoff of expected reward versus the probability of undesired outputs and is more adversarially robust, compared to standard RL alignment approaches and alternatives.\n\n[15] Title: Variational Inference using Implicit Distributions\n    Year: 2017\n    Citations: 143\n    URL: https://www.semanticscholar.org/paper/3b07d6a163c3b6cc75c3805dfbff60f1458e121b\n    Abstract: Generative adversarial networks (GANs) have given us a great tool to fit implicit generative models to data. Implicit distributions are ones we can sample from easily, and take derivatives of samples with respect to model parameters. These models are highly expressive and we argue they can prove just as useful for variational inference (VI) as they are for generative modelling. Several papers have proposed GAN-like algorithms for inference, however, connections to the theory of VI are not always well understood. This paper provides a unifying review of existing algorithms establishing connections between variational autoencoders, adversarially learned inference, operator VI, GAN-based image reconstruction, and more. Secondly, the paper provides a framework for building new algorithms: depending on the way the variational bound is expressed we introduce prior-contrastive and joint-contrastive methods, and show practical inference algorithms based on either density ratio estimation or denoising.\n\n[16] Title: Covariate Shift Adaptation for Adversarially Robust Classifier\n    Year: 2021\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/8971c56ece046786c27a97a02244f25ac28a32b1\n\n[17] Title: Better accuracy with quantified privacy: representations learned via reconstructive adversarial network\n    Year: 2019\n    Citations: 14\n    URL: https://www.semanticscholar.org/paper/8c2d2b5bb781254a45265bc636b3f24a2fac4126\n    Abstract: The remarkable success of machine learning, especially deep learning, has produced a variety of cloud-based services for mobile users. Such services require an end user to send data to the service provider, which presents a serious challenge to end-user privacy. To address this concern, prior works either add noise to the data or send features extracted from the raw data. They struggle to balance between the utility and privacy because added noise reduces utility and raw data can be reconstructed from extracted features. This work represents a methodical departure from prior works: we balance between a measure of privacy and another of utility by leveraging adversarial learning to find a sweeter tradeoff. We design an encoder that optimizes against the reconstruction error (a measure of privacy), adversarially by a Decoder, and the inference accuracy (a measure of utility) by a Classifier. The result is RAN, a novel deep model with a new training algorithm that automatically extracts features for classification that are both private and useful. It turns out that adversarially forcing the extracted features to only conveys the intended information required by classification leads to...\n\n[18] Title: GibbsNet: Iterative Adversarial Inference for Deep Graphical Models\n    Year: 2017\n    Citations: 14\n    URL: https://www.semanticscholar.org/paper/e37bde2765c0869982c48a7bbd139d0c63246fa6\n    Abstract: Directed latent variable models that formulate the joint distribution as $p(x,z) = p(z) p(x \\mid z)$ have the advantage of fast and exact sampling. However, these models have the weakness of needing to specify $p(z)$, often with a simple fixed prior that limits the expressiveness of the model. Undirected latent variable models discard the requirement that $p(z)$ be specified with a prior, yet sampling from them generally requires an iterative procedure such as blocked Gibbs-sampling that may require many steps to draw samples from the joint distribution $p(x, z)$. We propose a novel approach to learning the joint distribution between the data and a latent code which uses an adversarially learned iterative procedure to gradually refine the joint distribution, $p(x, z)$, to better match with the data distribution on each step. GibbsNet is the best of both worlds both in theory and in practice. Achieving the speed and simplicity of a directed latent variable model, it is guaranteed (assuming the adversarial game reaches the virtual training criteria global minimum) to produce samples from $p(x, z)$ with only a few sampling iterations. Achieving the expressiveness and flexibility of an...\n\n[19] Title: Better accuracy with quantified privacy: representations learned via reconstructive adversarial network\n    Year: 2018\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/78f6cbfd190ee63597c9a7d9f88d5c8959abd436\n",
+  "sample_id": "ICLR2017_B1ElR4cgg",
+  "paper_dir": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1ElR4cgg",
+  "review_model_name": "gpt-5.4-nano",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG"
+  ]
+}

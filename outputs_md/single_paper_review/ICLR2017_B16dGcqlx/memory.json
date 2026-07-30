@@ -1,0 +1,785 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B16dGcqlx/md_content_no_appendix.md",
+  "paper_title": "THIRD PERSON IMITATION LEARNING",
+  "semantic_scholar_query": "THIRD PERSON IMITATION LEARNING",
+  "keyword_model_name": "gpt-5.4-nano",
+  "retrieved_papers": [
+    {
+      "paperId": "2e1a1b9c2e8feeb31c6855292859bf94101e8382",
+      "externalIds": {
+        "ArXiv": "1703.01703",
+        "DBLP": "journals/corr/StadieAS17",
+        "MAG": "2591957724",
+        "CorpusId": 14724343
+      },
+      "url": "https://www.semanticscholar.org/paper/2e1a1b9c2e8feeb31c6855292859bf94101e8382",
+      "title": "Third-Person Imitation Learning",
+      "year": 2017,
+      "citationCount": 244,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1703.01703, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3275284",
+          "name": "Bradly C. Stadie"
+        },
+        {
+          "authorId": "1689992",
+          "name": "P. Abbeel"
+        },
+        {
+          "authorId": "1701686",
+          "name": "I. Sutskever"
+        }
+      ],
+      "abstract": "Reinforcement learning (RL) makes it possible to train agents capable of achieving sophisticated goals in complex and uncertain environments. A key difficulty in reinforcement learning is specifying a reward function for the agent to optimize. Traditionally, imitation learning in RL has been used to overcome this problem. Unfortunately, hitherto imitation learning methods tend to require that demonstrations are supplied in the first-person: the agent is provided with a sequence of states and a specification of the actions that it should have taken. While powerful, this kind of imitation learning is limited by the relatively hard problem of collecting first-person demonstrations. Humans address this problem by learning from third-person demonstrations: they observe other humans perform tasks, infer the task, and accomplish the same task themselves. \nIn this paper, we present a method for unsupervised third-person imitation learning. Here third-person refers to training an agent to correctly achieve a simple goal in a simple environment when it is provided a demonstration of a teacher achieving the same goal but from a different viewpoint; and unsupervised refers to the fact that the agent receives only these third-person demonstrations, and is not provided a correspondence between teacher states and student states. Our methods primary insight is that recent advances from domain confusion can be utilized to yield domain agnostic features which are crucial during the training process. To validate our approach, we report successful experiments on learning from third-person demonstrations in a pointmass domain, a reacher domain, and inverted pendulum.",
+      "title_query": true
+    },
+    {
+      "paperId": "86ff08680aa9eff4f751ead8a27e818e688d4cb1",
+      "externalIds": {
+        "ArXiv": "2108.01069",
+        "DBLP": "journals/corr/abs-2108-01069",
+        "DOI": "10.1109/IROS51168.2021.9636363",
+        "CorpusId": 236772575
+      },
+      "url": "https://www.semanticscholar.org/paper/86ff08680aa9eff4f751ead8a27e818e688d4cb1",
+      "title": "Self-Supervised Disentangled Representation Learning for Third-Person Imitation Learning",
+      "year": 2021,
+      "citationCount": 31,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/2108.01069",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2108.01069, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "41032695",
+          "name": "Jinghuan Shang"
+        },
+        {
+          "authorId": "1766489",
+          "name": "M. Ryoo"
+        }
+      ],
+      "abstract": "Humans learn to imitate by observing others. However, robot imitation learning generally requires expert demonstrations in the first-person view (FPV). Collecting such FPV videos for every robot could be very expensive.Third-person imitation learning (TPIL) is the concept of learning action policies by observing other agents in a third-person view (TPV), similar to what humans do. This ultimately allows utilizing human and robot demonstration videos in TPV from many different data sources, for the policy learning. In this paper, we present a TPIL approach for robot tasks with egomotion. Although many robot tasks with ground/aerial mobility often involve actions with camera egomotion, study on TPIL for such tasks has been limited. Here, FPV and TPV observations are visually very different; FPV shows egomotion while the agent appearance is only observable in TPV. To enable better state learning for TPIL, we propose our disentangled representation learning method. We use a dual auto-encoder structure plus representation permutation loss and time-contrastive loss to ensure the state and viewpoint representations are well disentangled. Our experiments show the effectiveness of our approach.",
+      "title_query": true
+    },
+    {
+      "paperId": "a30d4d8329ccc71529ad0a3547b8eb0822924274",
+      "externalIds": {
+        "DBLP": "conf/atal/ChenLGC23",
+        "DOI": "10.5555/3545946.3598954",
+        "CorpusId": 258845814
+      },
+      "url": "https://www.semanticscholar.org/paper/a30d4d8329ccc71529ad0a3547b8eb0822924274",
+      "title": "TiLD: Third-person Imitation Learning by Estimating Domain Cognitive Differences of Visual Demonstrations",
+      "year": 2023,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.5555/3545946.3598954?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.5555/3545946.3598954, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2144252065",
+          "name": "Zixuan Chen"
+        },
+        {
+          "authorId": "35660603",
+          "name": "Wenbin Li"
+        },
+        {
+          "authorId": "49658113",
+          "name": "Yang Gao"
+        },
+        {
+          "authorId": "14672072",
+          "name": "L. Chen"
+        }
+      ],
+      "abstract": "To enable agents to effectively imitate from the third-person visual demonstrations in complex imitation learning (IL) tasks, in this paper, we propose a new IL method, which is namedt hird-person i mitation l earning by estimating d omain cognitive differences (TiLD). The proposed TiLD is able to eliminate the domain cognitive difference between the samples from different perspectives, so as to achieve the purpose of allowing agent to directly learn from the third-person demonstrations. Experimental results indicate that TiLD can achieve significant performance improvements over the existing state-of-the-art IL methods, when dealing with imitation learning tasks with third-person expert demonstrations.",
+      "title_query": true
+    },
+    {
+      "paperId": "e78f8f0ef9ac43ffca937ad39d8ddfb632195a31",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2312-16365",
+        "ArXiv": "2312.16365",
+        "DOI": "10.48550/arXiv.2312.16365",
+        "CorpusId": 266573173
+      },
+      "url": "https://www.semanticscholar.org/paper/e78f8f0ef9ac43ffca937ad39d8ddfb632195a31",
+      "title": "Active Third-Person Imitation Learning",
+      "year": 2023,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2312.16365, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2276608423",
+          "name": "Timo Klein"
+        },
+        {
+          "authorId": "116534561",
+          "name": "Susan G. Weinberger"
+        },
+        {
+          "authorId": "1703727",
+          "name": "A. Singla"
+        },
+        {
+          "authorId": "3302876",
+          "name": "Sebastian Tschiatschek"
+        }
+      ],
+      "abstract": "We consider the problem of third-person imitation learning with the additional challenge that the learner must select the perspective from which they observe the expert. In our setting, each perspective provides only limited information about the expert's behavior, and the learning agent must carefully select and combine information from different perspectives to achieve competitive performance. This setting is inspired by real-world imitation learning applications, e.g., in robotics, a robot might observe a human demonstrator via camera and receive information from different perspectives depending on the camera's position. We formalize the aforementioned active third-person imitation learning problem, theoretically analyze its characteristics, and propose a generative adversarial network-based active learning approach. Empirically, we demstrate that our proposed approach can effectively learn from expert demonstrations and explore the importance of different architectural choices for the learner's performance.",
+      "title_query": true
+    },
+    {
+      "paperId": "a738f169b6229fd2e28fcb24a736675c9106baaa",
+      "externalIds": {
+        "DBLP": "conf/aaai/JiangZCZJ20",
+        "MAG": "3037937167",
+        "DOI": "10.1609/aaai.v34i10.7181",
+        "CorpusId": 219182358
+      },
+      "url": "https://www.semanticscholar.org/paper/a738f169b6229fd2e28fcb24a736675c9106baaa",
+      "title": "Third-Person Imitation Learning via Image Difference and Variational Discriminator Bottleneck (Student Abstract)",
+      "year": 2020,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.1609/aaai.v34i10.7181",
+        "status": "GOLD",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1609/aaai.v34i10.7181?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1609/aaai.v34i10.7181, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2115484954",
+          "name": "Chong Jiang"
+        },
+        {
+          "authorId": "2079174",
+          "name": "Zongzhang Zhang"
+        },
+        {
+          "authorId": "2144252065",
+          "name": "Zixuan Chen"
+        },
+        {
+          "authorId": "1870353",
+          "name": "Jiacheng Zhu"
+        },
+        {
+          "authorId": "2107975697",
+          "name": "Junpeng Jiang"
+        }
+      ],
+      "abstract": "Third-person imitation learning (TPIL) is a variant of generative adversarial imitation learning and can learn an expert-like policy from third-person expert demonstrations. Third-person expert demonstrations usually exist in the form of videos recorded in a third-person perspective, and there is a lack of direct correspondence with samples generated by agent. To alleviate this problem, we improve TPIL by applying image difference and variational discriminator bottleneck. Empirically, our new method has better performance than TPIL on two MuJoCo tasks, Reacher and Inverted Pendulum.",
+      "title_query": true
+    },
+    {
+      "paperId": "802df6909fe4ad69d016438a6c24ff74e940a1e6",
+      "externalIds": {
+        "DBLP": "conf/cig/FarhangMHMY24",
+        "DOI": "10.1109/CoG60054.2024.10645651",
+        "CorpusId": 271972380
+      },
+      "url": "https://www.semanticscholar.org/paper/802df6909fe4ad69d016438a6c24ff74e940a1e6",
+      "title": "Humanlike Behavior in a Third-Person Shooter with Imitation Learning",
+      "year": 2024,
+      "citationCount": 9,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/CoG60054.2024.10645651?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/CoG60054.2024.10645651, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2317098497",
+          "name": "Alexander R. Farhang"
+        },
+        {
+          "authorId": "2317101972",
+          "name": "Brendan Mulcahy"
+        },
+        {
+          "authorId": "1484131432",
+          "name": "Daniel Holden"
+        },
+        {
+          "authorId": "2256154311",
+          "name": "Iain Matthews"
+        },
+        {
+          "authorId": "2390177510",
+          "name": "Yisong Yue"
+        }
+      ],
+      "abstract": "We tackle the problem of generating humanlike bot behavior by learning from human demonstrations. We developed a controlled gym environment to collect data on a subset of human behavior-namely aiming and target acquisition in single opponent settings. We introduce an identity-conditioned causal transformer to produce humanlike behavior of a controllable quality on a per-frame basis that captures the differences in skill and style between conditioned players.",
+      "title_query": true
+    },
+    {
+      "paperId": "3914f523b44748fa1f868c6822fd4969edf76e09",
+      "externalIds": {
+        "DBLP": "conf/icdl/GarelloRNS22",
+        "DOI": "10.1109/ICDL53763.2022.9962214",
+        "CorpusId": 254102863
+      },
+      "url": "https://www.semanticscholar.org/paper/3914f523b44748fa1f868c6822fd4969edf76e09",
+      "title": "Towards Third-Person Visual Imitation Learning Using Generative Adversarial Networks",
+      "year": 2022,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICDL53763.2022.9962214?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICDL53763.2022.9962214, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1573870980",
+          "name": "Luca Garello"
+        },
+        {
+          "authorId": "143807743",
+          "name": "F. Rea"
+        },
+        {
+          "authorId": "2600472",
+          "name": "Nicoletta Noceti"
+        },
+        {
+          "authorId": "1923910",
+          "name": "A. Sciutti"
+        }
+      ],
+      "abstract": "Imitation Learning plays a key role during our development since it allows us to learn from more expert agents. This cognitive ability implies the remapping of seen actions in our perspective. However, in the field of robotics the perspective mismatch between demonstrator and imitator is usually neglected under the assumption that the imitator has access to the explicit joints configuration of the demonstrator or that they both share the same perspective of the environment. Focusing on the perspective translation problem, in this paper we propose a generative approach that shifts the perspective of actions from third person to first person by using RGB videos. In addition to the first person view of the action our model generates an embedded representation of it. This numerical description is autonomously learnt following a time-consistent pattern and without the need of human supervision. In the experimental evaluation, we show that it is possible to exploit these two information to infer robot control during the imitation phase. Additionally, after training on synthetic data, we tested our model in a real scenario.",
+      "title_query": true
+    },
+    {
+      "paperId": "bbd93f7a687cdece41b2d92399525f03cc00cede",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1911-09676",
+        "MAG": "2970705309",
+        "ArXiv": "1911.09676",
+        "CorpusId": 202780168
+      },
+      "url": "https://www.semanticscholar.org/paper/bbd93f7a687cdece41b2d92399525f03cc00cede",
+      "title": "Third-Person Visual Imitation Learning via Decoupled Hierarchical Controller",
+      "year": 2019,
+      "citationCount": 138,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1911.09676, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "50465425",
+          "name": "Pratyusha Sharma"
+        },
+        {
+          "authorId": "38236002",
+          "name": "Deepak Pathak"
+        },
+        {
+          "authorId": "1726095131",
+          "name": "A. Gupta"
+        }
+      ],
+      "abstract": "We study a generalized setup for learning from demonstration to build an agent that can manipulate novel objects in unseen scenarios by looking at only a single video of human demonstration from a third-person perspective. To accomplish this goal, our agent should not only learn to understand the intent of the demonstrated third-person video in its context but also perform the intended task in its environment configuration. Our central insight is to enforce this structure explicitly during learning by decoupling what to achieve (intended task) from how to perform it (controller). We propose a hierarchical setup where a high-level module learns to generate a series of first-person sub-goals conditioned on the third-person video demonstration, and a low-level controller predicts the actions to achieve those sub-goals. Our agent acts from raw image observations without any access to the full state information. We show results on a real robotic platform using Baxter for the manipulation tasks of pouring and placing objects in a box. Project video is available at https://pathak22.github.io/hierarchical-imitation/",
+      "title_query": true
+    },
+    {
+      "paperId": "7ce8f4a5ab555afb18e54cfc760de9d1080044e6",
+      "externalIds": {
+        "DBLP": "conf/uai/ZweigB20",
+        "ArXiv": "2002.12446",
+        "MAG": "3008803413",
+        "CorpusId": 211572794
+      },
+      "url": "https://www.semanticscholar.org/paper/7ce8f4a5ab555afb18e54cfc760de9d1080044e6",
+      "title": "Provably Efficient Third-Person Imitation from Offline Observation",
+      "year": 2020,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2002.12446, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "40576688",
+          "name": "Aaron Zweig"
+        },
+        {
+          "authorId": "143627859",
+          "name": "Joan Bruna"
+        }
+      ],
+      "abstract": "Domain adaptation in imitation learning represents an essential step towards improving generalizability. However, even in the restricted setting of third-person imitation where transfer is between isomorphic Markov Decision Processes, there are no strong guarantees on the performance of transferred policies. We present problem-dependent, statistical learning guarantees for third-person imitation from observation in an offline setting, and a lower bound on performance in the online setting.",
+      "title_query": true
+    },
+    {
+      "paperId": "3b73fcd2f383fc3c887938ade5e596f82806b60b",
+      "externalIds": {
+        "CorpusId": 237350679
+      },
+      "url": "https://www.semanticscholar.org/paper/3b73fcd2f383fc3c887938ade5e596f82806b60b",
+      "title": "Third-Person Visual Imitation Learning Using Generative Adversarial Networks",
+      "year": 2021,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://openreview.net/pdf?id=4I_sUTUULSs, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "a7769bb71fbdb88b017b29be6db3e0614f19a7d9",
+      "externalIds": {
+        "ArXiv": "2509.25097",
+        "DBLP": "journals/corr/abs-2509-25097",
+        "DOI": "10.48550/arXiv.2509.25097",
+        "CorpusId": 281675752
+      },
+      "url": "https://www.semanticscholar.org/paper/a7769bb71fbdb88b017b29be6db3e0614f19a7d9",
+      "title": "Curriculum Imitation Learning of Distributed Multi-Robot Policies",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2509.25097, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2382928070",
+          "name": "Jes'us Roche"
+        },
+        {
+          "authorId": "2349541385",
+          "name": "Eduardo Sebasti'an"
+        },
+        {
+          "authorId": "1727836",
+          "name": "E. Montijano"
+        }
+      ],
+      "abstract": "Learning control policies for multi-robot systems (MRS) remains a major challenge due to long-term coordination and the difficulty of obtaining realistic training data. In this work, we address both limitations within an imitation learning framework. First, we shift the typical role of Curriculum Learning in MRS, from scalability with the number of robots, to focus on improving long-term coordination. We propose a curriculum strategy that gradually increases the length of expert trajectories during training, stabilizing learning and enhancing the accuracy of long-term behaviors. Second, we introduce a method to approximate the egocentric perception of each robot using only third-person global state demonstrations. Our approach transforms idealized trajectories into locally available observations by filtering neighbors, converting reference frames, and simulating onboard sensor variability. Both contributions are integrated into a physics-informed technique to produce scalable, distributed policies from observations. We conduct experiments across two tasks with varying team sizes and noise levels. Results show that our curriculum improves long-term accuracy, while our perceptual estimation method yields policies that are robust to realistic uncertainty. Together, these strategies enable the learning of robust, distributed controllers from global demonstrations, even in the absence of expert actions or onboard measurements.",
+      "title_query": true
+    },
+    {
+      "paperId": "a59d04ceaa9b055b75c19d6bb367b89f9549bb7d",
+      "externalIds": {
+        "DBLP": "conf/icit2/ZhangZFLZ24",
+        "DOI": "10.1109/ICIT58233.2024.10540679",
+        "CorpusId": 270260213
+      },
+      "url": "https://www.semanticscholar.org/paper/a59d04ceaa9b055b75c19d6bb367b89f9549bb7d",
+      "title": "Self-Supervised Bayesian Visual Imitation Learning Applied to Robotic Pouring",
+      "year": 2024,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICIT58233.2024.10540679?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICIT58233.2024.10540679, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2267308515",
+          "name": "Dandan Zhang"
+        },
+        {
+          "authorId": "2149515734",
+          "name": "Yuan Zheng"
+        },
+        {
+          "authorId": "2163470171",
+          "name": "Wen Fan"
+        },
+        {
+          "authorId": "2276954856",
+          "name": "Nathan F. Lepora"
+        },
+        {
+          "authorId": "2049003395",
+          "name": "Zhengyou Zhang"
+        }
+      ],
+      "abstract": "Humans can learn to perform new tasks by watching a few examples of experts' demonstration videos and applying the learned knowledge to different scenarios. To enable robots to have a similar ability, we propose a self-supervised Bayesian visual imitation learning approach, which enables the robot to learn manipulation skills by watching humans from a third-person view. We chose the robotic pouring task as an example to evaluate the effectiveness of the proposed method. First, a spatial-temporal feature embedding (STFE) model is trained in a self-supervised learning manner, which encodes the prior knowledge obtained from human demonstration. Following that, the STFE model is fine-tuned using a few groups of demonstration data collected via teleoperating the robot for feature extraction, while an action generation model is trained for task execution with the embedded features of visual observation data as input. To further enhance the success rate of task execution, an adaptive safety boundary is constructed based on Bayesian inference to regulate the robot's action during the online deployment. Experimental results indicate that with the proposed method, automatic pouring can be achieved with a high success rate while data efficiency can be ensured11For more details, please view our project website: https://sites.1google.com/view/rsspouring/home/.",
+      "title_query": true
+    },
+    {
+      "paperId": "9be3dd97b6195d4d3819fae492ea99ef62ab281c",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2404-03386",
+        "ArXiv": "2404.03386",
+        "DOI": "10.48550/arXiv.2404.03386",
+        "CorpusId": 268889257
+      },
+      "url": "https://www.semanticscholar.org/paper/9be3dd97b6195d4d3819fae492ea99ef62ab281c",
+      "title": "SENSOR: Imitate Third-Person Expert's Behaviors via Active Sensoring",
+      "year": 2024,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2404.03386, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2295786124",
+          "name": "Kaichen Huang"
+        },
+        {
+          "authorId": "2294871888",
+          "name": "Minghao Shao"
+        },
+        {
+          "authorId": "2291965541",
+          "name": "Shenghua Wan"
+        },
+        {
+          "authorId": "2295181709",
+          "name": "Hai-Hang Sun"
+        },
+        {
+          "authorId": "2292151268",
+          "name": "Shuai Feng"
+        },
+        {
+          "authorId": "2291914909",
+          "name": "Le Gan"
+        },
+        {
+          "authorId": "2291959312",
+          "name": "De-Chuan Zhan"
+        }
+      ],
+      "abstract": "In many real-world visual Imitation Learning (IL) scenarios, there is a misalignment between the agent's and the expert's perspectives, which might lead to the failure of imitation. Previous methods have generally solved this problem by domain alignment, which incurs extra computation and storage costs, and these methods fail to handle the \\textit{hard cases} where the viewpoint gap is too large. To alleviate the above problems, we introduce active sensoring in the visual IL setting and propose a model-based SENSory imitatOR (SENSOR) to automatically change the agent's perspective to match the expert's. SENSOR jointly learns a world model to capture the dynamics of latent states, a sensor policy to control the camera, and a motor policy to control the agent. Experiments on visual locomotion tasks show that SENSOR can efficiently simulate the expert's perspective and strategy, and outperforms most baseline methods.",
+      "title_query": true
+    },
+    {
+      "paperId": "8361d12bd467ef56d65dcf9612a11a64ef10bff7",
+      "externalIds": {
+        "DBLP": "conf/icra/ChangCSS23",
+        "DOI": "10.1109/ICRA48891.2023.10161364",
+        "CorpusId": 259338415
+      },
+      "url": "https://www.semanticscholar.org/paper/8361d12bd467ef56d65dcf9612a11a64ef10bff7",
+      "title": "Automated Action Evaluation for Robotic Imitation Learning via Siamese Neural Networks",
+      "year": 2023,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICRA48891.2023.10161364?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICRA48891.2023.10161364, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "144872139",
+          "name": "Xiang Chang"
+        },
+        {
+          "authorId": "2070266187",
+          "name": "F. Chao"
+        },
+        {
+          "authorId": "144109865",
+          "name": "C. Shang"
+        },
+        {
+          "authorId": "2069019172",
+          "name": "Qiang Shen"
+        }
+      ],
+      "abstract": "Despite recent advances in video-guided robotic imitation learning, many methods still rely on human experts to provide sparse rewards that indicate whether robots have successfully completed tasks. The challenge of enabling robots to autonomously evaluate whether their actions can complete complex, multi-stage tasks remains unresolved. In this work, we propose an efficient few-shot robotic learning algorithm that centres around learning and evaluating from a third-person perspective to address the aforementioned challenge. We develop a novel Siamese neural network-based robotic action-state evaluation system, named “Behavior-Outcome Dual Assessment” (BODA), in our robotic imitation learning system, so as to replace artificial evaluations from human experts in multi-stage imitation learning processes and to improve learning efficiency. In this way, one video demonstration of a target task is divided into several stages. For each stage, we design two Siamese neural network-based evaluation modules in BODA: One module focuses on action changes, and the other handles working environment changes. The two modules work together to provide a comprehensive assessment of the robot's completion of each stage from the view of both the action and working environment changes. Then, BODA is integrated within a model-based reinforcement learning framework to enable the completion of our imitation learning cycle. Extensive experiments demonstrate that the evaluation processes of BODA can automatically and accurately evaluate task completion status without human intervention. In contrast to conventional methods, BODA is able to keep the accumulation of errors within acceptable limits through self-assessment in stages.",
+      "title_query": true
+    },
+    {
+      "paperId": "03770e91a8676ed07c56c7ae6813c487c2a8049e",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1909-12971",
+        "MAG": "3090443808",
+        "ArXiv": "1909.12971",
+        "DOI": "10.1109/ICRA40945.2020.9196602",
+        "CorpusId": 203593907
+      },
+      "url": "https://www.semanticscholar.org/paper/03770e91a8676ed07c56c7ae6813c487c2a8049e",
+      "title": "Zero-shot Imitation Learning from Demonstrations for Legged Robot Visual Navigation",
+      "year": 2019,
+      "citationCount": 27,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/1909.12971",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1909.12971, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "4753513",
+          "name": "Xinlei Pan"
+        },
+        {
+          "authorId": "28292148",
+          "name": "Tingnan Zhang"
+        },
+        {
+          "authorId": "2237986488",
+          "name": "Brian Ichter"
+        },
+        {
+          "authorId": "145520045",
+          "name": "Aleksandra Faust"
+        },
+        {
+          "authorId": "1739176520",
+          "name": "Jie Tan"
+        },
+        {
+          "authorId": "2248552",
+          "name": "Sehoon Ha"
+        }
+      ],
+      "abstract": "Imitation learning is a popular approach for training effective visual navigation policies. However, collecting expert demonstrations for legged robots is challenging as these robots can be hard to control, move slowly, and cannot operate continuously for long periods of time. In this work, we propose a zero-shot imitation learning framework for training a goal-driven visual navigation policy on a legged robot from human demonstrations (third-person perspective), allowing for high-quality navigation and cost-effective data collection. However, imitation learning from third-person demonstrations raises unique challenges. First, these demonstrations are captured from different camera perspectives, which we address via a feature disentanglement network (FDN) that extracts perspective-invariant state features. Second, as transition dynamics vary between systems, we reconstruct missing action labels by either building an inverse model of the robot’s dynamics in the feature space and applying it to the human demonstrations or developing a Graphic User Interface (GUI) to label human demonstrations. To train a navigation policy we use a model-based imitation learning approach with FDN and action-labeled human demonstrations. We show that our framework can learn an effective policy for a legged robot, Laikago, from human demonstrations in both simulated and real-world environments. Our approach is zero-shot as the robot never navigates the same paths during training as those at testing time. We justify our framework by performing a comparative study.",
+      "title_query": true
+    },
+    {
+      "paperId": "b336051e051f36b480493e8ebe4627fc07037840",
+      "externalIds": {
+        "CorpusId": 235431996
+      },
+      "url": "https://www.semanticscholar.org/paper/b336051e051f36b480493e8ebe4627fc07037840",
+      "title": "Embodied Generative Third Person View Translation and Encoding",
+      "year": 2020,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://i-rim.it/wp-content/uploads/2020/12/I-RIM_2020_paper_122.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1573870980",
+          "name": "Luca Garello"
+        },
+        {
+          "authorId": "143807743",
+          "name": "F. Rea"
+        },
+        {
+          "authorId": "1923910",
+          "name": "A. Sciutti"
+        },
+        {
+          "authorId": "2600472",
+          "name": "Nicoletta Noceti"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "a4625c45c5dcfbbc8c028f7ad6aa8cab2e8a829a",
+      "externalIds": {
+        "MAG": "3089739707",
+        "ArXiv": "1911.05864",
+        "DBLP": "journals/corr/abs-1911-05864",
+        "DOI": "10.1109/ICRA40945.2020.9197172",
+        "CorpusId": 208006467
+      },
+      "url": "https://www.semanticscholar.org/paper/a4625c45c5dcfbbc8c028f7ad6aa8cab2e8a829a",
+      "title": "Motion Reasoning for Goal-Based Imitation Learning",
+      "year": 2019,
+      "citationCount": 12,
+      "openAccessPdf": {
+        "url": "http://arxiv.org/pdf/1911.05864",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1911.05864, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "38485317",
+          "name": "De-An Huang"
+        },
+        {
+          "authorId": "2820136",
+          "name": "Yu-Wei Chao"
+        },
+        {
+          "authorId": "1977464",
+          "name": "Chris Paxton"
+        },
+        {
+          "authorId": "51310625",
+          "name": "Xinke Deng"
+        },
+        {
+          "authorId": "48004138",
+          "name": "Li Fei-Fei"
+        },
+        {
+          "authorId": "9200530",
+          "name": "Juan Carlos Niebles"
+        },
+        {
+          "authorId": "1873736",
+          "name": "Animesh Garg"
+        },
+        {
+          "authorId": "145197953",
+          "name": "D. Fox"
+        }
+      ],
+      "abstract": "We address goal-based imitation learning, where the aim is to output the symbolic goal from a third-person video demonstration. This enables the robot to plan for execution and reproduce the same goal in a completely different environment. The key challenge is that the goal of a video demonstration is often ambiguous at the level of semantic actions. The human demonstrators might unintentionally achieve certain subgoals in the demonstrations with their actions. Our main contribution is to propose a motion reasoning framework that combines task and motion planning to disambiguate the true intention of the demonstrator in the video demonstration. This allows us to recognize the goals that cannot be disambiguated by previous action-based approaches. We evaluate our approach on a new dataset of 96 video demonstrations in a mockup kitchen environment. We show that our motion reasoning plays an important role in recognizing the actual goal of the demonstrator and improves the success rate by over 20%. We further show that by using the automatically inferred goal from the video demonstration, our robot is able to reproduce the same task in a real kitchen environment.",
+      "title_query": true
+    },
+    {
+      "paperId": "36ccafdc1c53c17000cca27009a36da09b983685",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1911-01103",
+        "MAG": "2984165007",
+        "ArXiv": "1911.01103",
+        "DOI": "10.1109/LRA.2020.2977835",
+        "CorpusId": 207869744
+      },
+      "url": "https://www.semanticscholar.org/paper/36ccafdc1c53c17000cca27009a36da09b983685",
+      "title": "Learning One-Shot Imitation From Humans Without Humans",
+      "year": 2019,
+      "citationCount": 87,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/1911.01103",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1911.01103, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "48075787",
+          "name": "Alessandro Bonardi"
+        },
+        {
+          "authorId": "2055291154",
+          "name": "Stephen James"
+        },
+        {
+          "authorId": "2052135690",
+          "name": "A. Davison"
+        }
+      ],
+      "abstract": "Humans can naturally learn to execute a new task by seeing it performed by other individuals once, and then reproduce it in a variety of configurations. Endowing robots with this ability of imitating humans from third person is a very immediate and natural way of teaching new tasks. Only recently, through meta-learning, there have been successful attempts to one-shot imitation learning from humans; however, these approaches require a lot of human resources to collect the data in the real world to train the robot. But is there a way to remove the need for real world human demonstrations during training? We show that with Task-Embedded Control Networks, we can infer control polices by embedding human demonstrations that can condition a control policy and achieve one-shot imitation learning. Importantly, we do not use a real human arm to supply demonstrations during training, but instead leverage domain randomisation in an application that has not been seen before: sim-to-real transfer on humans. Upon evaluating our approach on pushing and placing tasks in both simulation and in the real world, we show that in comparison to a system that was trained on real-world data we are able to achieve similar results by utilising only simulation data. Videos can be found here: https://sites.google.com/view/tecnets-humans.",
+      "title_query": true
+    },
+    {
+      "paperId": "b31186f984a1808c3cd41146c6d1bdf2dbc9814f",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2506-15847",
+        "ArXiv": "2506.15847",
+        "DOI": "10.48550/arXiv.2506.15847",
+        "CorpusId": 279464682
+      },
+      "url": "https://www.semanticscholar.org/paper/b31186f984a1808c3cd41146c6d1bdf2dbc9814f",
+      "title": "SafeMimic: Towards Safe and Autonomous Human-to-Robot Imitation for Mobile Manipulation",
+      "year": 2025,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2506.15847, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "113548550",
+          "name": "Arpit Bahety"
+        },
+        {
+          "authorId": "2367737766",
+          "name": "Arnav Balaji"
+        },
+        {
+          "authorId": "2300094477",
+          "name": "Ben Abbatematteo"
+        },
+        {
+          "authorId": "2065917078",
+          "name": "Roberto Mart'in-Mart'in"
+        }
+      ],
+      "abstract": "For robots to become efficient helpers in the home, they must learn to perform new mobile manipulation tasks simply by watching humans perform them. Learning from a single video demonstration from a human is challenging as the robot needs to first extract from the demo what needs to be done and how, translate the strategy from a third to a first-person perspective, and then adapt it to be successful with its own morphology. Furthermore, to mitigate the dependency on costly human monitoring, this learning process should be performed in a safe and autonomous manner. We present SafeMimic, a framework to learn new mobile manipulation skills safely and autonomously from a single third-person human video. Given an initial human video demonstration of a multi-step mobile manipulation task, SafeMimic first parses the video into segments, inferring both the semantic changes caused and the motions the human executed to achieve them and translating them to an egocentric reference. Then, it adapts the behavior to the robot's own morphology by sampling candidate actions around the human ones, and verifying them for safety before execution in a receding horizon fashion using an ensemble of safety Q-functions trained in simulation. When safe forward progression is not possible, SafeMimic backtracks to previous states and attempts a different sequence of actions, adapting both the trajectory and the grasping modes when required for its morphology. As a result, SafeMimic yields a strategy that succeeds in the demonstrated behavior and learns task-specific actions that reduce exploration in future attempts. Our experiments show that our method allows robots to safely and efficiently learn multi-step mobile manipulation behaviors from a single human demonstration, from different users, and in different environments, with improvements over state-of-the-art baselines across seven tasks",
+      "title_query": true
+    },
+    {
+      "paperId": "d28b9f65c849eba9ba2b27f7e91906f46fbe7fa1",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2207-09450",
+        "ArXiv": "2207.09450",
+        "DOI": "10.15607/rss.2022.xviii.026",
+        "CorpusId": 248941578
+      },
+      "url": "https://www.semanticscholar.org/paper/d28b9f65c849eba9ba2b27f7e91906f46fbe7fa1",
+      "title": "Human-to-Robot Imitation in the Wild",
+      "year": 2022,
+      "citationCount": 236,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.15607/rss.2022.xviii.026",
+        "status": "BRONZE",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2207.09450, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "8527563",
+          "name": "Shikhar Bahl"
+        },
+        {
+          "authorId": "2117767136",
+          "name": "Abhi Gupta"
+        },
+        {
+          "authorId": "2004879394",
+          "name": "Deepak Pathak"
+        }
+      ],
+      "abstract": "We approach the problem of learning by watching humans in the wild. While traditional approaches in Imitation and Reinforcement Learning are promising for learning in the real world, they are either sample inefficient or are constrained to lab settings. Meanwhile, there has been a lot of success in processing passive, unstructured human data. We propose tackling this problem via an efficient one-shot robot learning algorithm, centered around learning from a third-person perspective. We call our method WHIRL: In-the-Wild Human Imitating Robot Learning. WHIRL extracts a prior over the intent of the human demonstrator, using it to initialize our agent's policy. We introduce an efficient real-world policy learning scheme that improves using interactions. Our key contributions are a simple sampling-based policy optimization approach, a novel objective function for aligning human and robot videos as well as an exploration method to boost sample efficiency. We show one-shot generalization and success in real-world settings, including 20 different manipulation tasks in the wild. Videos and talk at https://human2robot.github.io",
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Third-Person Imitation Learning\n    Year: 2017\n    Citations: 244\n    URL: https://www.semanticscholar.org/paper/2e1a1b9c2e8feeb31c6855292859bf94101e8382\n    Abstract: Reinforcement learning (RL) makes it possible to train agents capable of achieving sophisticated goals in complex and uncertain environments. A key difficulty in reinforcement learning is specifying a reward function for the agent to optimize. Traditionally, imitation learning in RL has been used to overcome this problem. Unfortunately, hitherto imitation learning methods tend to require that demonstrations are supplied in the first-person: the agent is provided with a sequence of states and a specification of the actions that it should have taken. While powerful, this kind of imitation learning is limited by the relatively hard problem of collecting first-person demonstrations. Humans address this problem by learning from third-person demonstrations: they observe other humans perform tasks, infer the task, and accomplish the same task themselves. \nIn this paper, we present a method for unsupervised third-person imitation learning. Here third-person refers to training an agent to correctly achieve a simple goal in a simple environment when it is provided a demonstration of a teacher achieving the same goal but from a different viewpoint; and unsupervised refers to the fact that the...\n\n[1] Title: Self-Supervised Disentangled Representation Learning for Third-Person Imitation Learning\n    Year: 2021\n    Citations: 31\n    URL: https://www.semanticscholar.org/paper/86ff08680aa9eff4f751ead8a27e818e688d4cb1\n    Abstract: Humans learn to imitate by observing others. However, robot imitation learning generally requires expert demonstrations in the first-person view (FPV). Collecting such FPV videos for every robot could be very expensive.Third-person imitation learning (TPIL) is the concept of learning action policies by observing other agents in a third-person view (TPV), similar to what humans do. This ultimately allows utilizing human and robot demonstration videos in TPV from many different data sources, for the policy learning. In this paper, we present a TPIL approach for robot tasks with egomotion. Although many robot tasks with ground/aerial mobility often involve actions with camera egomotion, study on TPIL for such tasks has been limited. Here, FPV and TPV observations are visually very different; FPV shows egomotion while the agent appearance is only observable in TPV. To enable better state learning for TPIL, we propose our disentangled representation learning method. We use a dual auto-encoder structure plus representation permutation loss and time-contrastive loss to ensure the state and viewpoint representations are well disentangled. Our experiments show the effectiveness of our appro...\n\n[2] Title: TiLD: Third-person Imitation Learning by Estimating Domain Cognitive Differences of Visual Demonstrations\n    Year: 2023\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/a30d4d8329ccc71529ad0a3547b8eb0822924274\n    Abstract: To enable agents to effectively imitate from the third-person visual demonstrations in complex imitation learning (IL) tasks, in this paper, we propose a new IL method, which is namedt hird-person i mitation l earning by estimating d omain cognitive differences (TiLD). The proposed TiLD is able to eliminate the domain cognitive difference between the samples from different perspectives, so as to achieve the purpose of allowing agent to directly learn from the third-person demonstrations. Experimental results indicate that TiLD can achieve significant performance improvements over the existing state-of-the-art IL methods, when dealing with imitation learning tasks with third-person expert demonstrations.\n\n[3] Title: Active Third-Person Imitation Learning\n    Year: 2023\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/e78f8f0ef9ac43ffca937ad39d8ddfb632195a31\n    Abstract: We consider the problem of third-person imitation learning with the additional challenge that the learner must select the perspective from which they observe the expert. In our setting, each perspective provides only limited information about the expert's behavior, and the learning agent must carefully select and combine information from different perspectives to achieve competitive performance. This setting is inspired by real-world imitation learning applications, e.g., in robotics, a robot might observe a human demonstrator via camera and receive information from different perspectives depending on the camera's position. We formalize the aforementioned active third-person imitation learning problem, theoretically analyze its characteristics, and propose a generative adversarial network-based active learning approach. Empirically, we demstrate that our proposed approach can effectively learn from expert demonstrations and explore the importance of different architectural choices for the learner's performance.\n\n[4] Title: Third-Person Imitation Learning via Image Difference and Variational Discriminator Bottleneck (Student Abstract)\n    Year: 2020\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/a738f169b6229fd2e28fcb24a736675c9106baaa\n    Abstract: Third-person imitation learning (TPIL) is a variant of generative adversarial imitation learning and can learn an expert-like policy from third-person expert demonstrations. Third-person expert demonstrations usually exist in the form of videos recorded in a third-person perspective, and there is a lack of direct correspondence with samples generated by agent. To alleviate this problem, we improve TPIL by applying image difference and variational discriminator bottleneck. Empirically, our new method has better performance than TPIL on two MuJoCo tasks, Reacher and Inverted Pendulum.\n\n[5] Title: Humanlike Behavior in a Third-Person Shooter with Imitation Learning\n    Year: 2024\n    Citations: 9\n    URL: https://www.semanticscholar.org/paper/802df6909fe4ad69d016438a6c24ff74e940a1e6\n    Abstract: We tackle the problem of generating humanlike bot behavior by learning from human demonstrations. We developed a controlled gym environment to collect data on a subset of human behavior-namely aiming and target acquisition in single opponent settings. We introduce an identity-conditioned causal transformer to produce humanlike behavior of a controllable quality on a per-frame basis that captures the differences in skill and style between conditioned players.\n\n[6] Title: Towards Third-Person Visual Imitation Learning Using Generative Adversarial Networks\n    Year: 2022\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/3914f523b44748fa1f868c6822fd4969edf76e09\n    Abstract: Imitation Learning plays a key role during our development since it allows us to learn from more expert agents. This cognitive ability implies the remapping of seen actions in our perspective. However, in the field of robotics the perspective mismatch between demonstrator and imitator is usually neglected under the assumption that the imitator has access to the explicit joints configuration of the demonstrator or that they both share the same perspective of the environment. Focusing on the perspective translation problem, in this paper we propose a generative approach that shifts the perspective of actions from third person to first person by using RGB videos. In addition to the first person view of the action our model generates an embedded representation of it. This numerical description is autonomously learnt following a time-consistent pattern and without the need of human supervision. In the experimental evaluation, we show that it is possible to exploit these two information to infer robot control during the imitation phase. Additionally, after training on synthetic data, we tested our model in a real scenario.\n\n[7] Title: Third-Person Visual Imitation Learning via Decoupled Hierarchical Controller\n    Year: 2019\n    Citations: 138\n    URL: https://www.semanticscholar.org/paper/bbd93f7a687cdece41b2d92399525f03cc00cede\n    Abstract: We study a generalized setup for learning from demonstration to build an agent that can manipulate novel objects in unseen scenarios by looking at only a single video of human demonstration from a third-person perspective. To accomplish this goal, our agent should not only learn to understand the intent of the demonstrated third-person video in its context but also perform the intended task in its environment configuration. Our central insight is to enforce this structure explicitly during learning by decoupling what to achieve (intended task) from how to perform it (controller). We propose a hierarchical setup where a high-level module learns to generate a series of first-person sub-goals conditioned on the third-person video demonstration, and a low-level controller predicts the actions to achieve those sub-goals. Our agent acts from raw image observations without any access to the full state information. We show results on a real robotic platform using Baxter for the manipulation tasks of pouring and placing objects in a box. Project video is available at https://pathak22.github.io/hierarchical-imitation/\n\n[8] Title: Provably Efficient Third-Person Imitation from Offline Observation\n    Year: 2020\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/7ce8f4a5ab555afb18e54cfc760de9d1080044e6\n    Abstract: Domain adaptation in imitation learning represents an essential step towards improving generalizability. However, even in the restricted setting of third-person imitation where transfer is between isomorphic Markov Decision Processes, there are no strong guarantees on the performance of transferred policies. We present problem-dependent, statistical learning guarantees for third-person imitation from observation in an offline setting, and a lower bound on performance in the online setting.\n\n[9] Title: Third-Person Visual Imitation Learning Using Generative Adversarial Networks\n    Year: 2021\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/3b73fcd2f383fc3c887938ade5e596f82806b60b\n\n[10] Title: Curriculum Imitation Learning of Distributed Multi-Robot Policies\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/a7769bb71fbdb88b017b29be6db3e0614f19a7d9\n    Abstract: Learning control policies for multi-robot systems (MRS) remains a major challenge due to long-term coordination and the difficulty of obtaining realistic training data. In this work, we address both limitations within an imitation learning framework. First, we shift the typical role of Curriculum Learning in MRS, from scalability with the number of robots, to focus on improving long-term coordination. We propose a curriculum strategy that gradually increases the length of expert trajectories during training, stabilizing learning and enhancing the accuracy of long-term behaviors. Second, we introduce a method to approximate the egocentric perception of each robot using only third-person global state demonstrations. Our approach transforms idealized trajectories into locally available observations by filtering neighbors, converting reference frames, and simulating onboard sensor variability. Both contributions are integrated into a physics-informed technique to produce scalable, distributed policies from observations. We conduct experiments across two tasks with varying team sizes and noise levels. Results show that our curriculum improves long-term accuracy, while our perceptual est...\n\n[11] Title: Self-Supervised Bayesian Visual Imitation Learning Applied to Robotic Pouring\n    Year: 2024\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/a59d04ceaa9b055b75c19d6bb367b89f9549bb7d\n    Abstract: Humans can learn to perform new tasks by watching a few examples of experts' demonstration videos and applying the learned knowledge to different scenarios. To enable robots to have a similar ability, we propose a self-supervised Bayesian visual imitation learning approach, which enables the robot to learn manipulation skills by watching humans from a third-person view. We chose the robotic pouring task as an example to evaluate the effectiveness of the proposed method. First, a spatial-temporal feature embedding (STFE) model is trained in a self-supervised learning manner, which encodes the prior knowledge obtained from human demonstration. Following that, the STFE model is fine-tuned using a few groups of demonstration data collected via teleoperating the robot for feature extraction, while an action generation model is trained for task execution with the embedded features of visual observation data as input. To further enhance the success rate of task execution, an adaptive safety boundary is constructed based on Bayesian inference to regulate the robot's action during the online deployment. Experimental results indicate that with the proposed method, automatic pouring can be ac...\n\n[12] Title: SENSOR: Imitate Third-Person Expert's Behaviors via Active Sensoring\n    Year: 2024\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/9be3dd97b6195d4d3819fae492ea99ef62ab281c\n    Abstract: In many real-world visual Imitation Learning (IL) scenarios, there is a misalignment between the agent's and the expert's perspectives, which might lead to the failure of imitation. Previous methods have generally solved this problem by domain alignment, which incurs extra computation and storage costs, and these methods fail to handle the \\textit{hard cases} where the viewpoint gap is too large. To alleviate the above problems, we introduce active sensoring in the visual IL setting and propose a model-based SENSory imitatOR (SENSOR) to automatically change the agent's perspective to match the expert's. SENSOR jointly learns a world model to capture the dynamics of latent states, a sensor policy to control the camera, and a motor policy to control the agent. Experiments on visual locomotion tasks show that SENSOR can efficiently simulate the expert's perspective and strategy, and outperforms most baseline methods.\n\n[13] Title: Automated Action Evaluation for Robotic Imitation Learning via Siamese Neural Networks\n    Year: 2023\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/8361d12bd467ef56d65dcf9612a11a64ef10bff7\n    Abstract: Despite recent advances in video-guided robotic imitation learning, many methods still rely on human experts to provide sparse rewards that indicate whether robots have successfully completed tasks. The challenge of enabling robots to autonomously evaluate whether their actions can complete complex, multi-stage tasks remains unresolved. In this work, we propose an efficient few-shot robotic learning algorithm that centres around learning and evaluating from a third-person perspective to address the aforementioned challenge. We develop a novel Siamese neural network-based robotic action-state evaluation system, named “Behavior-Outcome Dual Assessment” (BODA), in our robotic imitation learning system, so as to replace artificial evaluations from human experts in multi-stage imitation learning processes and to improve learning efficiency. In this way, one video demonstration of a target task is divided into several stages. For each stage, we design two Siamese neural network-based evaluation modules in BODA: One module focuses on action changes, and the other handles working environment changes. The two modules work together to provide a comprehensive assessment of the robot's complet...\n\n[14] Title: Zero-shot Imitation Learning from Demonstrations for Legged Robot Visual Navigation\n    Year: 2019\n    Citations: 27\n    URL: https://www.semanticscholar.org/paper/03770e91a8676ed07c56c7ae6813c487c2a8049e\n    Abstract: Imitation learning is a popular approach for training effective visual navigation policies. However, collecting expert demonstrations for legged robots is challenging as these robots can be hard to control, move slowly, and cannot operate continuously for long periods of time. In this work, we propose a zero-shot imitation learning framework for training a goal-driven visual navigation policy on a legged robot from human demonstrations (third-person perspective), allowing for high-quality navigation and cost-effective data collection. However, imitation learning from third-person demonstrations raises unique challenges. First, these demonstrations are captured from different camera perspectives, which we address via a feature disentanglement network (FDN) that extracts perspective-invariant state features. Second, as transition dynamics vary between systems, we reconstruct missing action labels by either building an inverse model of the robot’s dynamics in the feature space and applying it to the human demonstrations or developing a Graphic User Interface (GUI) to label human demonstrations. To train a navigation policy we use a model-based imitation learning approach with FDN and ...\n\n[15] Title: Embodied Generative Third Person View Translation and Encoding\n    Year: 2020\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/b336051e051f36b480493e8ebe4627fc07037840\n\n[16] Title: Motion Reasoning for Goal-Based Imitation Learning\n    Year: 2019\n    Citations: 12\n    URL: https://www.semanticscholar.org/paper/a4625c45c5dcfbbc8c028f7ad6aa8cab2e8a829a\n    Abstract: We address goal-based imitation learning, where the aim is to output the symbolic goal from a third-person video demonstration. This enables the robot to plan for execution and reproduce the same goal in a completely different environment. The key challenge is that the goal of a video demonstration is often ambiguous at the level of semantic actions. The human demonstrators might unintentionally achieve certain subgoals in the demonstrations with their actions. Our main contribution is to propose a motion reasoning framework that combines task and motion planning to disambiguate the true intention of the demonstrator in the video demonstration. This allows us to recognize the goals that cannot be disambiguated by previous action-based approaches. We evaluate our approach on a new dataset of 96 video demonstrations in a mockup kitchen environment. We show that our motion reasoning plays an important role in recognizing the actual goal of the demonstrator and improves the success rate by over 20%. We further show that by using the automatically inferred goal from the video demonstration, our robot is able to reproduce the same task in a real kitchen environment.\n\n[17] Title: Learning One-Shot Imitation From Humans Without Humans\n    Year: 2019\n    Citations: 87\n    URL: https://www.semanticscholar.org/paper/36ccafdc1c53c17000cca27009a36da09b983685\n    Abstract: Humans can naturally learn to execute a new task by seeing it performed by other individuals once, and then reproduce it in a variety of configurations. Endowing robots with this ability of imitating humans from third person is a very immediate and natural way of teaching new tasks. Only recently, through meta-learning, there have been successful attempts to one-shot imitation learning from humans; however, these approaches require a lot of human resources to collect the data in the real world to train the robot. But is there a way to remove the need for real world human demonstrations during training? We show that with Task-Embedded Control Networks, we can infer control polices by embedding human demonstrations that can condition a control policy and achieve one-shot imitation learning. Importantly, we do not use a real human arm to supply demonstrations during training, but instead leverage domain randomisation in an application that has not been seen before: sim-to-real transfer on humans. Upon evaluating our approach on pushing and placing tasks in both simulation and in the real world, we show that in comparison to a system that was trained on real-world data we are able to a...\n\n[18] Title: SafeMimic: Towards Safe and Autonomous Human-to-Robot Imitation for Mobile Manipulation\n    Year: 2025\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/b31186f984a1808c3cd41146c6d1bdf2dbc9814f\n    Abstract: For robots to become efficient helpers in the home, they must learn to perform new mobile manipulation tasks simply by watching humans perform them. Learning from a single video demonstration from a human is challenging as the robot needs to first extract from the demo what needs to be done and how, translate the strategy from a third to a first-person perspective, and then adapt it to be successful with its own morphology. Furthermore, to mitigate the dependency on costly human monitoring, this learning process should be performed in a safe and autonomous manner. We present SafeMimic, a framework to learn new mobile manipulation skills safely and autonomously from a single third-person human video. Given an initial human video demonstration of a multi-step mobile manipulation task, SafeMimic first parses the video into segments, inferring both the semantic changes caused and the motions the human executed to achieve them and translating them to an egocentric reference. Then, it adapts the behavior to the robot's own morphology by sampling candidate actions around the human ones, and verifying them for safety before execution in a receding horizon fashion using an ensemble of safet...\n\n[19] Title: Human-to-Robot Imitation in the Wild\n    Year: 2022\n    Citations: 236\n    URL: https://www.semanticscholar.org/paper/d28b9f65c849eba9ba2b27f7e91906f46fbe7fa1\n    Abstract: We approach the problem of learning by watching humans in the wild. While traditional approaches in Imitation and Reinforcement Learning are promising for learning in the real world, they are either sample inefficient or are constrained to lab settings. Meanwhile, there has been a lot of success in processing passive, unstructured human data. We propose tackling this problem via an efficient one-shot robot learning algorithm, centered around learning from a third-person perspective. We call our method WHIRL: In-the-Wild Human Imitating Robot Learning. WHIRL extracts a prior over the intent of the human demonstrator, using it to initialize our agent's policy. We introduce an efficient real-world policy learning scheme that improves using interactions. Our key contributions are a simple sampling-based policy optimization approach, a novel objective function for aligning human and robot videos as well as an exploration method to boost sample efficiency. We show one-shot generalization and success in real-world settings, including 20 different manipulation tasks in the wild. Videos and talk at https://human2robot.github.io\n",
+  "sample_id": "ICLR2017_B16dGcqlx",
+  "paper_dir": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B16dGcqlx",
+  "review_model_name": "gpt-5.4-nano",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG"
+  ]
+}

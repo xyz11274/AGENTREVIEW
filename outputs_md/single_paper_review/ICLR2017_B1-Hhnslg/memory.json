@@ -1,0 +1,1530 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1-Hhnslg/md_content_no_appendix.md",
+  "paper_title": "PROTOTYPICAL NETWORKS FOR FEW-SHOT LEARNING",
+  "semantic_scholar_query": "PROTOTYPICAL NETWORKS FOR FEW-SHOT LEARNING",
+  "keyword_model_name": "gpt-5.4-nano",
+  "retrieved_papers": [
+    {
+      "paperId": "c269858a7bb34e8350f2442ccf37797856ae9bca",
+      "externalIds": {
+        "DBLP": "conf/nips/SnellSZ17",
+        "ArXiv": "1703.05175",
+        "MAG": "2950537964",
+        "CorpusId": 309759
+      },
+      "url": "https://www.semanticscholar.org/paper/c269858a7bb34e8350f2442ccf37797856ae9bca",
+      "title": "Prototypical Networks for Few-shot Learning",
+      "year": 2017,
+      "citationCount": 9830,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1703.05175, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "39770136",
+          "name": "Jake Snell"
+        },
+        {
+          "authorId": "1754860",
+          "name": "Kevin Swersky"
+        },
+        {
+          "authorId": "1804104",
+          "name": "R. Zemel"
+        }
+      ],
+      "abstract": "We propose Prototypical Networks for the problem of few-shot classification, where a classifier must generalize to new classes not seen in the training set, given only a small number of examples of each new class. Prototypical Networks learn a metric space in which classification can be performed by computing distances to prototype representations of each class. Compared to recent approaches for few-shot learning, they reflect a simpler inductive bias that is beneficial in this limited-data regime, and achieve excellent results. We provide an analysis showing that some simple design decisions can yield substantial improvements over recent approaches involving complicated architectural choices and meta-learning. We further extend Prototypical Networks to zero-shot learning and achieve state-of-the-art results on the CU-Birds dataset.",
+      "title_query": true
+    },
+    {
+      "paperId": "6931f0f670be7acdef3af3a7fa1ceaefa86d3b08",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2006-12739",
+        "MAG": "3094624443",
+        "ArXiv": "2006.12739",
+        "DOI": "10.1145/3340531.3411922",
+        "CorpusId": 219981234
+      },
+      "url": "https://www.semanticscholar.org/paper/6931f0f670be7acdef3af3a7fa1ceaefa86d3b08",
+      "title": "Graph Prototypical Networks for Few-shot Learning on Attributed Networks",
+      "year": 2020,
+      "citationCount": 206,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/2006.12739",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2006.12739, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "66807781",
+          "name": "Kaize Ding"
+        },
+        {
+          "authorId": "46584367",
+          "name": "Jianling Wang"
+        },
+        {
+          "authorId": "2040455",
+          "name": "Jundong Li"
+        },
+        {
+          "authorId": "145800151",
+          "name": "Kai Shu"
+        },
+        {
+          "authorId": "2039481",
+          "name": "Chenghao Liu"
+        },
+        {
+          "authorId": "145896397",
+          "name": "Huan Liu"
+        }
+      ],
+      "abstract": "Attributed networks nowadays are ubiquitous in a myriad of high-impact applications, such as social network analysis, financial fraud detection, and drug discovery. As a central analytical task on attributed networks, node classification has received much attention in the research community. In real-world attributed networks, a large portion of node classes only contains limited labeled instances, rendering a long-tail node class distribution. Existing node classification algorithms are unequipped to handle the few-shot node classes. As a remedy, few-shot learning has attracted a surge of attention in the research community. Yet, few-shot node classification remains a challenging problem as we need to address the following questions: (i) How to extract meta-knowledge from an attributed network for few-shot node classification? (ii) How to identify the informativeness of each labeled instance for building a robust and effective model? To answer these questions, in this paper, we propose a graph meta-learning framework -- Graph Prototypical Networks (GPN). By constructing a pool of semi-supervised node classification tasks to mimic the real test environment, GPN is able to perform meta-learning on an attributed network and derive a highly generalizable model for handling the target classification task. Extensive experiments demonstrate the superior capability of GPN in few-shot node classification.",
+      "title_query": true
+    },
+    {
+      "paperId": "3618b3ce722a1f390aa2fd63b06ff7ed955b034b",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2011-08899",
+        "MAG": "3103390191",
+        "ArXiv": "2011.08899",
+        "DOI": "10.1109/WACV48630.2021.00269",
+        "CorpusId": 227012662
+      },
+      "url": "https://www.semanticscholar.org/paper/3618b3ce722a1f390aa2fd63b06ff7ed955b034b",
+      "title": "Multimodal Prototypical Networks for Few-shot Learning",
+      "year": 2020,
+      "citationCount": 111,
+      "openAccessPdf": {
+        "url": "http://arxiv.org/pdf/2011.08899",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2011.08899, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2296789165",
+          "name": "Frederik Pahde"
+        },
+        {
+          "authorId": "2753268",
+          "name": "M. Puscas"
+        },
+        {
+          "authorId": "35660331",
+          "name": "T. Klein"
+        },
+        {
+          "authorId": "1848946",
+          "name": "Moin Nabi"
+        }
+      ],
+      "abstract": "Although providing exceptional results for many computer vision tasks, state-of-the-art deep learning algorithms catastrophically struggle in low data scenarios. However, if data in additional modalities exist (e.g. text) this can compensate for the lack of data and improve the classification results. To overcome this data scarcity, we design a cross-modal feature generation framework capable of enriching the low populated embedding space in few-shot scenarios, leveraging data from the auxiliary modality. Specifically, we train a generative model that maps text data into the visual feature space to obtain more reliable prototypes. This allows to exploit data from additional modalities (e.g. text) during training while the ultimate task at test time remains classification with exclusively visual data. We show that in such cases nearest neighbor classification is a viable approach and outperform state-of-the-art single-modal and multimodal few-shot learning methods on the CUB-200 and Oxford-102 datasets.",
+      "title_query": true
+    },
+    {
+      "paperId": "1487485b1fe3e94bc170e588d98bbedec09a1945",
+      "externalIds": {
+        "DBLP": "journals/prl/JiCYPZ20",
+        "MAG": "3040834782",
+        "DOI": "10.1016/j.patrec.2020.07.015",
+        "CorpusId": 225580744
+      },
+      "url": "https://www.semanticscholar.org/paper/1487485b1fe3e94bc170e588d98bbedec09a1945",
+      "title": "Improved prototypical networks for few-Shot learning",
+      "year": 2020,
+      "citationCount": 125,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1016/j.patrec.2020.07.015?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1016/j.patrec.2020.07.015, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "143780023",
+          "name": "Zhong Ji"
+        },
+        {
+          "authorId": "2005110159",
+          "name": "Xingliang Chai"
+        },
+        {
+          "authorId": "50133856",
+          "name": "Yunlong Yu"
+        },
+        {
+          "authorId": "145134722",
+          "name": "Yanwei Pang"
+        },
+        {
+          "authorId": "1720488",
+          "name": "Zhongfei Zhang"
+        }
+      ],
+      "abstract": "Abstract Few-Shot Learning (FSL) aims at recognizing the target classes that only a few samples are available for training. The current approaches mostly address FSL by learning a generalized class-level metric while neglect the intra-class distribution information. In this work, we propose Improved Prototypical Networks (IPN) to address this issue. Inspired by the observation that the intra-class samples differ greatly in revealing the class distribution, we first propose an attention-analogous strategy to explore the class distribution information by distributing different weights to samples based on their representativeness. Besides, to further explore the discriminative information across classes, we propose a distance scaling strategy to reduce the intra-class difference while enlarge the inter-class difference. The experimental results on two benchmark datasets show the superiority of the proposed model against the state-of-the-art approaches.",
+      "title_query": true
+    },
+    {
+      "paperId": "2e1e5de3732185eb0b7003478635a8e28429434b",
+      "externalIds": {
+        "DBLP": "journals/eswa/LimLLT24",
+        "DOI": "10.1016/j.eswa.2023.122173",
+        "CorpusId": 264370097
+      },
+      "url": "https://www.semanticscholar.org/paper/2e1e5de3732185eb0b7003478635a8e28429434b",
+      "title": "SSL-ProtoNet: Self-supervised Learning Prototypical Networks for few-shot learning",
+      "year": 2023,
+      "citationCount": 74,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1016/j.eswa.2023.122173?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1016/j.eswa.2023.122173, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2148578902",
+          "name": "J. Lim"
+        },
+        {
+          "authorId": "30039300",
+          "name": "K. Lim"
+        },
+        {
+          "authorId": "84161127",
+          "name": "C. Lee"
+        },
+        {
+          "authorId": "2162619859",
+          "name": "Y. Tan"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "feaecb5f7a8d29636650db7c0b480f55d098a6a7",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1708-02735",
+        "MAG": "2744116293",
+        "ArXiv": "1708.02735",
+        "CorpusId": 19524161
+      },
+      "url": "https://www.semanticscholar.org/paper/feaecb5f7a8d29636650db7c0b480f55d098a6a7",
+      "title": "Gaussian Prototypical Networks for Few-Shot Learning on Omniglot",
+      "year": 2017,
+      "citationCount": 91,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1708.02735, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "30176974",
+          "name": "Stanislav Fort"
+        }
+      ],
+      "abstract": "We propose a novel architecture for k-shot classification on the Omniglot dataset. Building on prototypical networks, we extend their architecture to what we call Gaussian prototypical networks. Prototypical networks learn a map between images and embedding vectors, and use their clustering for classification. In our model, a part of the encoder output is interpreted as a confidence region estimate about the embedding point, and expressed as a Gaussian covariance matrix. Our network then constructs a direction and class dependent distance metric on the embedding space, using uncertainties of individual data points as weights. We show that Gaussian prototypical networks are a preferred architecture over vanilla prototypical networks with an equivalent number of parameters. We report results consistent with state-of-the-art performance in 1-shot and 5-shot classification both in 5-way and 20-way regime on the Omniglot dataset. We explore artificially down-sampling a fraction of images in the training set, which improves our performance. Our experiments therefore lead us to hypothesize that Gaussian prototypical networks might perform better in less homogeneous, noisier datasets, which are commonplace in real world applications.",
+      "title_query": true
+    },
+    {
+      "paperId": "5d22aae8db05549d7a8ce16c4587bc11a7a48ab8",
+      "externalIds": {
+        "DBLP": "journals/symmetry/ZhaoCWWC25",
+        "DOI": "10.3390/sym17050796",
+        "CorpusId": 278795190
+      },
+      "url": "https://www.semanticscholar.org/paper/5d22aae8db05549d7a8ce16c4587bc11a7a48ab8",
+      "title": "ProFusion: Multimodal Prototypical Networks for Few-Shot Learning with Feature Fusion",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.3390/sym17050796?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.3390/sym17050796, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2362856066",
+          "name": "Jia Zhao"
+        },
+        {
+          "authorId": "2363512972",
+          "name": "Ziyang Cao"
+        },
+        {
+          "authorId": "2257999709",
+          "name": "Huiling Wang"
+        },
+        {
+          "authorId": "2362806355",
+          "name": "Xu Wang"
+        },
+        {
+          "authorId": "2363248135",
+          "name": "Yingzhou Chen"
+        }
+      ],
+      "abstract": "Existing few-shot learning models leverage vision-language pre-trained models to alleviate the data scarcity problem. However, such models usually process visual and text information separately, which causes still inherent disparities between cross-modal features. Therefore, we propose the ProFusion model, which leverages multimodal pre-trained models and prototypical networks to construct multiple prototypes. Specifically, ProFusion generates image and text prototypes symmetrically using the visual encoder and text encoder, while integrating visual and text information through the fusion module to create more expressive multimodal feature fusion prototypes. Additionally, we introduce the alignment module to ensure consistency between image and text prototypes. During inference, ProFusion calculates the similarity of test images to the three types of prototypes separately and applies a weighted sum to generate the final prediction. Experiments demonstrate that ProFusion performs outstanding classification tasks on 15 benchmark datasets.",
+      "title_query": true
+    },
+    {
+      "paperId": "431b998f1135e3ae9020c3746f1d1aa197f8ba58",
+      "externalIds": {
+        "ArXiv": "2202.13474",
+        "DBLP": "conf/icip/ZareiK22",
+        "DOI": "10.1109/ICIP46576.2022.9897572",
+        "CorpusId": 247158923
+      },
+      "url": "https://www.semanticscholar.org/paper/431b998f1135e3ae9020c3746f1d1aa197f8ba58",
+      "title": "Interpretable Concept-Based Prototypical Networks for Few-Shot Learning",
+      "year": 2022,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/2202.13474",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2202.13474, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "151505693",
+          "name": "M. Zarei"
+        },
+        {
+          "authorId": "37828302",
+          "name": "M. Komeili"
+        }
+      ],
+      "abstract": "Few-shot learning aims at recognizing new instances from classes with limited samples. This challenging task is usually alleviated by performing meta-learning on similar tasks. However, the resulting models are black-boxes. There has been growing concerns about deploying black-box machine learning models and FSL is not an exception in this regard. In this paper, we propose a method for FSL based on a set of human-interpretable concepts. It constructs a set of metric spaces associated with the concepts and classifies samples of novel classes by aggregating concept-specific decisions. The proposed method does not require concept annotations for query samples. This interpretable method achieved results on a par with six previously state-of-the-art black-box FSL methods on the CUB fine-grained bird classification dataset.",
+      "title_query": true
+    },
+    {
+      "paperId": "670a09b4237b5b1091031d967bde74cb87d753f7",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2111-00698",
+        "ArXiv": "2111.00698",
+        "DOI": "10.1109/ISBI52829.2022.9761403",
+        "CorpusId": 240354480
+      },
+      "url": "https://www.semanticscholar.org/paper/670a09b4237b5b1091031d967bde74cb87d753f7",
+      "title": "Influential Prototypical Networks for Few Shot Learning: A Dermatological Case Study",
+      "year": 2021,
+      "citationCount": 7,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/2111.00698",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2111.00698, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2074933499",
+          "name": "Ranjana Roy Chowdhury"
+        },
+        {
+          "authorId": "2133448954",
+          "name": "Deepti R. Bathula"
+        }
+      ],
+      "abstract": "Prototypical network (PN) is a simple yet effective few shot learning strategy. It is a metric-based meta-learning technique where classification is performed by computing Euclidean distances to prototypical representations of each class. Conventional PN attributes equal importance to all samples and generates prototypes by simply averaging the support sample embeddings belonging to each class. In this work, we propose a novel version of PN that attributes weights to support samples corresponding to their influence on the support sample distribution. Influence weights of samples are calculated based on maximum mean discrepancy (MMD) between the mean embeddings of sample distributions including and excluding the sample. Comprehensive evaluation of our proposed influential PN (IPNet) is performed by comparing its performance with other baseline PNs on three different benchmark dermatological datasets. IPNet outperforms all baseline models with compelling results across all three datasets and various N -way, K-shot classification tasks. Findings from cross-domain adaptation experiments further establish the generalizability of IPNet.",
+      "title_query": true
+    },
+    {
+      "paperId": "fb245ee3740a747e3d54b20b75b97dd65d703a9e",
+      "externalIds": {
+        "DOI": "10.1109/ICICN59530.2023.10392466",
+        "CorpusId": 267202653
+      },
+      "url": "https://www.semanticscholar.org/paper/fb245ee3740a747e3d54b20b75b97dd65d703a9e",
+      "title": "WDSN: A Weighted Difference Scaling Network Based on the Prototypical Networks for Few-Shot Learning",
+      "year": 2023,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICICN59530.2023.10392466?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICICN59530.2023.10392466, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2343098114",
+          "name": "Xiang Xu"
+        },
+        {
+          "authorId": "2280978219",
+          "name": "Qili Chen"
+        }
+      ],
+      "abstract": "This paper presented a weighted difference scaling network (WDSN) based on the prototypical network. Firstly, for the intra-class distribution information, we designed a weighting module that assigned different weights to all samples in the same class according to the representativeness of the samples to generate more representative class prototypes. Secondly, we designed a differential scaling module aimed at further improving the classification performance of the prototype network by reducing intra-class differences and amplifying interclass differences. We conducted experiments on two benchmark datasets, and the experimental results showed that WDSN achieved significant progress compared to the prototypical network, and also outperformed some related methods in recent years.",
+      "title_query": true
+    },
+    {
+      "paperId": "956d4a97e0ed8f08391f8d4e362b635a8f43b046",
+      "externalIds": {
+        "ArXiv": "2208.09345",
+        "DBLP": "journals/corr/abs-2208-09345",
+        "DOI": "10.48550/arXiv.2208.09345",
+        "CorpusId": 251710485
+      },
+      "url": "https://www.semanticscholar.org/paper/956d4a97e0ed8f08391f8d4e362b635a8f43b046",
+      "title": "IPNET: Influential Prototypical Networks for Few Shot Learning",
+      "year": 2022,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "http://arxiv.org/pdf/2208.09345",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2208.09345, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2074933499",
+          "name": "Ranjana Roy Chowdhury"
+        },
+        {
+          "authorId": "2133448954",
+          "name": "Deepti R. Bathula"
+        }
+      ],
+      "abstract": "Prototypical network (PN) is a simple yet effective few shot learning strategy. It is a metric-based meta-learning technique where classification is performed by computing Euclidean distances to prototypical representations of each class. Conventional PN attributes equal importance to all samples and generates prototypes by simply averaging the support sample embeddings belonging to each class. In this work, we propose a novel version of PN that attributes weights to support samples corresponding to their influence on the support sample distribution. Influence weights of samples are calculated based on maximum mean discrepancy (MMD) between the mean embeddings of sample distributions including and excluding the sample. Further, the influence factor of a sample is measured using MMD based on the shift in the distribution in the absence of that sample.",
+      "title_query": true
+    },
+    {
+      "paperId": "9e9be84ee3793f9bc951b7680368d1b8ec9113a2",
+      "externalIds": {
+        "MAG": "3103648295",
+        "DBLP": "journals/corr/abs-2011-03367",
+        "ArXiv": "2011.03367",
+        "CorpusId": 226278023
+      },
+      "url": "https://www.semanticscholar.org/paper/9e9be84ee3793f9bc951b7680368d1b8ec9113a2",
+      "title": "Disentangling 3D Prototypical Networks For Few-Shot Concept Learning",
+      "year": 2020,
+      "citationCount": 22,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2011.03367, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1381902419",
+          "name": "Mihir Prabhudesai"
+        },
+        {
+          "authorId": "1845916500",
+          "name": "Shamit Lal"
+        },
+        {
+          "authorId": "2111849117",
+          "name": "Darshan Patil"
+        },
+        {
+          "authorId": "1693704",
+          "name": "H. Tung"
+        },
+        {
+          "authorId": "34939798",
+          "name": "Adam W. Harley"
+        },
+        {
+          "authorId": "1705557",
+          "name": "Katerina Fragkiadaki"
+        }
+      ],
+      "abstract": "We present neural architectures that disentangle RGB-D images into objects' shapes and styles and a map of the background scene, and explore their applications for few-shot 3D object detection and few-shot concept classification. Our networks incorporate architectural biases that reflect the image formation process, 3D geometry of the world scene, and shape-style interplay. They are trained end-to-end self-supervised by predicting views in static scenes, alongside a small number of 3D object boxes. Objects and scenes are represented in terms of 3D feature grids in the bottleneck of the network. We show that the proposed 3D neural representations are compositional: they can generate novel 3D scene feature maps by mixing object shapes and styles, resizing and adding the resulting object 3D feature maps over background scene feature maps. We show that classifiers for object categories, color, materials, and spatial relationships trained over the disentangled 3D feature sub-spaces generalize better with dramatically fewer examples than the current state-of-the-art, and enable a visual question answering system that uses them as its modules to generalize one-shot to novel objects in the scene.",
+      "title_query": true
+    },
+    {
+      "paperId": "73395723274816d2288187b29cd2c278ef4f873f",
+      "externalIds": {
+        "MAG": "3046698617",
+        "DOI": "10.1109/ICEIEC49280.2020.9152261",
+        "CorpusId": 220939399
+      },
+      "url": "https://www.semanticscholar.org/paper/73395723274816d2288187b29cd2c278ef4f873f",
+      "title": "Prototypical Siamese Networks for Few-shot Learning",
+      "year": 2020,
+      "citationCount": 149,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICEIEC49280.2020.9152261?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICEIEC49280.2020.9152261, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "48094083",
+          "name": "Junhua Wang"
+        },
+        {
+          "authorId": "49337547",
+          "name": "Yongping Zhai"
+        }
+      ],
+      "abstract": "We propose a novel architecture, called Prototypical Siamese Networks, for few-shot learning, where a classifier must generalize to new classes not seen in the training set, given only a few examples of each class. Prototypical Siamese Networks add a new module to siamese networks to learn a high quality prototypical representation of each class. Compared to recent methods for few-shot learning, our method achieves state-of-the-art performance on few-shot learning. Experiments on two benchmarks validate the effectiveness of the proposed method.",
+      "title_query": true
+    },
+    {
+      "paperId": "2554840acdb60408d899f91b9bb9437e94ad8dab",
+      "externalIds": {
+        "DBLP": "journals/access/MalikGSA25",
+        "DOI": "10.1109/ACCESS.2025.3565802",
+        "CorpusId": 278244247
+      },
+      "url": "https://www.semanticscholar.org/paper/2554840acdb60408d899f91b9bb9437e94ad8dab",
+      "title": "Few-Shot Learning With Prototypical Networks for Improved Memory Forensics",
+      "year": 2025,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.1109/access.2025.3565802",
+        "status": "GOLD",
+        "license": "CCBYNCND",
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ACCESS.2025.3565802?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ACCESS.2025.3565802, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2359833334",
+          "name": "Muhammad Fahad Malik"
+        },
+        {
+          "authorId": "2317219498",
+          "name": "Ammara Gul"
+        },
+        {
+          "authorId": "37513731",
+          "name": "Ayesha Saadia"
+        },
+        {
+          "authorId": "1943369",
+          "name": "F. Alserhani"
+        }
+      ],
+      "abstract": "Securing computer systems requires effective methods for malware detection. Memory forensics analyzes memory dumps to identify malicious activity, but faces challenges including large and complex datasets, constantly evolving malware threats, and limited labeled data for training algorithms among others. This research introduces a novel approach for malware detection using memory forensics and prototypical networks. As the first application of prototypical networks to the Dumpware10 dataset (to the best of authors knowledge), our findings highlight the potential of few-shot learning for memory forensics-based malware detection, opening new avenues for research in this domain. Prototypical networks are a type of few-shot learning algorithm that excels at classifying new categories with minimal examples. Utilizing the publicly available Dumpware10 dataset, which includes 10 malware classes and one benign class, we preprocess memory dumps using denoising and A-Hash functions to reduce noise and redundancy. The prototypical network is trained on the first four malware classes and the benign class. It’s then tested on a dataset with one additional class (first five malware classes and the benign class). We progressively increase the number of test classes to eleven. Within each training episode, five training images are used as support samples, with all remaining images designated as query samples. Our goal isn’t to predict exact class labels, but to assess the similarity between query images and prototypes using a distance metric. If the label of a prototype matches the query image and the distance falls below a threshold, it’s considered a true positive. This approach achieves an average accuracy of 92% with eleven classes, the highest across all scenarios and comparable to previous work using machine and deep learning algorithms on this dataset.",
+      "title_query": true
+    },
+    {
+      "paperId": "ff8916b585ee4740d4b7a4dc2ebfab667c975262",
+      "externalIds": {
+        "DBLP": "conf/milcom/SuleymanovKCLHKMST25",
+        "DOI": "10.1109/MILCOM64451.2025.11310333",
+        "CorpusId": 284376365
+      },
+      "url": "https://www.semanticscholar.org/paper/ff8916b585ee4740d4b7a4dc2ebfab667c975262",
+      "title": "SSPNet: Semi-Supervised Prototypical Networks for Few-Shot Network Intrusion Detection",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/MILCOM64451.2025.11310333?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/MILCOM64451.2025.11310333, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "66825339",
+          "name": "U. Suleymanov"
+        },
+        {
+          "authorId": "2313931013",
+          "name": "Murat Kantarcioglu"
+        },
+        {
+          "authorId": "2402854251",
+          "name": "Kevin S. Chan"
+        },
+        {
+          "authorId": "134381947",
+          "name": "Michael De Lucia"
+        },
+        {
+          "authorId": "3071249",
+          "name": "Kevin W. Hamlen"
+        },
+        {
+          "authorId": "2270997533",
+          "name": "Latifur Khan"
+        },
+        {
+          "authorId": "2402065119",
+          "name": "Sharad Mehrotra"
+        },
+        {
+          "authorId": "144231976",
+          "name": "A. Swami"
+        },
+        {
+          "authorId": "72558235",
+          "name": "B. Thuraisingham"
+        }
+      ],
+      "abstract": "Network Intrusion Detection Systems (NIDS) play a crucial role in protecting digital infrastructures against evolving cyber threats. However, the increasing sophistication and frequency of novel attacks, combined with the limited access to labeled training data, pose significant challenges to traditional machine learning-based detection methods. To address these challenges, we propose a novel semi-supervised training schema to enhance Prototypical Networks for few-shot learning in NIDS. Our approach integrates a semi-supervised prototypical loss that leverages pseudo-labels from high-confidence samples, improving representation learning and model performance.We evaluate our method on benchmark network intrusion detection datasets, where we demonstrate its ability to generalize to novel attack classes with few labeled samples. Experimental results show that the proposed semi-supervised Prototypical Networks (SSPNet) outperforms standard Prototypical Networks and other competing models, particularly in scenarios where newly introduced target attack categories are highly dissimilar to source attacks: it performs 24% better on ACI-IoT-2023 Network Traffic Dataset and 15% better on CICIDS2017 than the standard Prototypical Networks. Our findings highlight the potential of semi-supervised few-shot learning in increasing the adaptability and reliability of NIDS in countering emerging cyber threats.",
+      "title_query": true
+    },
+    {
+      "paperId": "48e518961fb3ec472c132d00608fade3561a0040",
+      "externalIds": {
+        "DOI": "10.1109/IATMSI64286.2025.10985676",
+        "CorpusId": 278432120
+      },
+      "url": "https://www.semanticscholar.org/paper/48e518961fb3ec472c132d00608fade3561a0040",
+      "title": "Attention-Enhanced Prototypical Networks for Few-Shot Microaneurysm Detection in Diabetic Retinopathy Images",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/IATMSI64286.2025.10985676?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/IATMSI64286.2025.10985676, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2333117135",
+          "name": "Sarah Pendhari"
+        },
+        {
+          "authorId": "2345996638",
+          "name": "Rishi Kewalya"
+        },
+        {
+          "authorId": "2389469996",
+          "name": "F. Rizvi"
+        },
+        {
+          "authorId": "2359990211",
+          "name": "Mohd Salique Khan"
+        },
+        {
+          "authorId": "120479404",
+          "name": "Nazneen A. Pendhari"
+        }
+      ],
+      "abstract": "Early detection of microaneurysms in diabetic retinopathy (DR) is essential for prohibiting vision loss, yet automated detection remains difficult due to the limited labeled data and the subtle nature of these lesions. This paper presents a few-shot learning approach that synergistically combines dual attention mechanisms with prototypical networks for microaneurysm detection in fundus images. Our architecture implements a modified ResNet-50 backbone enhanced with spatial and channel attention modules, optimized specifically for small lesion detection. The spatial attention module generates precise localization maps, while the channel attention mechanism adaptively weights feature importance. This is integrated with a prototypical network framework that enables efficient learning from limited labeled examples through metric-based classification. Evaluated on the IDRiD dataset, our method achieves state-of-the-art performance with an AUC-ROC of 0.947, sensitivity of 0.892, and specificity of 0.941, significantly outperforming traditional deep learning approaches. The model demonstrates robust performance with as few as 5 shots per class, while maintaining high detection accuracy (0.915 F1-score) using only 5% of the training data needed by conventional methods. Ablation studies demonstrate the effectiveness of our dual attention mechanism, with the full model showing a 2.4% improvement in AUC-ROC over the baseline prototypical network.",
+      "title_query": true
+    },
+    {
+      "paperId": "277f4e83f61475cd5e1bc9fbef02ba1c4fba343f",
+      "externalIds": {
+        "DOI": "10.1007/s13196-025-00366-5",
+        "CorpusId": 275635524
+      },
+      "url": "https://www.semanticscholar.org/paper/277f4e83f61475cd5e1bc9fbef02ba1c4fba343f",
+      "title": "Wood species classification using prototypical networks: a few shot learning model",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://api.unpaywall.org/v2/10.1007/s13196-025-00366-5?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1007/s13196-025-00366-5, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2258329467",
+          "name": "M. Diviya"
+        },
+        {
+          "authorId": "2334414194",
+          "name": "M. Subramanian"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "40b55e01915be1805a5890e7f0376303c55ae292",
+      "externalIds": {
+        "ArXiv": "2410.05302",
+        "DBLP": "journals/corr/abs-2410-05302",
+        "DOI": "10.1109/MLSP58920.2024.10734723",
+        "CorpusId": 273227890
+      },
+      "url": "https://www.semanticscholar.org/paper/40b55e01915be1805a5890e7f0376303c55ae292",
+      "title": "Episodic Fine-Tuning Prototypical Networks for Optimization-Based Few-Shot Learning: Application to Audio Classification",
+      "year": 2024,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "https://hal.science/hal-04720291v1/file/Proto-MAML_MLSP_2024.pdf",
+        "status": "GREEN",
+        "license": "other-oa",
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2410.05302, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2324970135",
+          "name": "Xuanyu Zhuang"
+        },
+        {
+          "authorId": "2237987938",
+          "name": "Geoffroy Peeters"
+        },
+        {
+          "authorId": "2060044798",
+          "name": "G. Richard"
+        }
+      ],
+      "abstract": "The Prototypical Network (ProtoNet) has emerged as a popular choice in Few-shot Learning (FSL) scenarios due to its remarkable performance and straightforward implementation. Building upon such success, we first p ropose a simple (yet n ovel) method to fine-tune a P rotoNet o n t he (labeled) s upport s et o f t he test episode of a $C$-way-$K$-shot test episode (without using the query set which is only used for evaluation). We then propose an algorithmic framework that combines ProtoNet with optimization-based FSL algorithms (MAML and Meta-Curvature) to work with such a fine-tuning m ethod. Since optimization-based algorithms endow the target learner model with the ability to fast adaption to only a few samples, we utilize ProtoNet as the target model to enhance its fine-tuning performance with the help of a specifically designed episodic fine-tuning s trategy. The experimental results confirm that our proposed models, MAML-Proto and MC-Proto, combined with our unique fine-tuning m ethod, o utperform regular P rotoNet b y a large margin in few-shot audio classification t asks on t he ESC-50 and Speech Commands v2 datasets. We note that although we have only applied our model to the audio domain, it is a general method and can be easily extended to other domains.",
+      "title_query": true
+    },
+    {
+      "paperId": "00b92ae5cb848bfc185361e336d3658f9503c866",
+      "externalIds": {
+        "DOI": "10.3390/sym18040670",
+        "CorpusId": 287566413
+      },
+      "url": "https://www.semanticscholar.org/paper/00b92ae5cb848bfc185361e336d3658f9503c866",
+      "title": "Asymmetric Cross-Modal Prototypical Networks for Few-Shot Image Classification",
+      "year": 2026,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.3390/sym18040670?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.3390/sym18040670, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2361478622",
+          "name": "Shengyu Xie"
+        },
+        {
+          "authorId": "2430812418",
+          "name": "Guobin Deng"
+        },
+        {
+          "authorId": "2298394770",
+          "name": "Xingxing Yang"
+        },
+        {
+          "authorId": "2313688829",
+          "name": "Jie Zhou"
+        },
+        {
+          "authorId": "2206111152",
+          "name": "Jinyun Tang"
+        },
+        {
+          "authorId": "2378284385",
+          "name": "Ke-jing Huang"
+        }
+      ],
+      "abstract": "Few-shot image classification requires models to generalize from limited labeled examples. While metric-based approaches such as Prototypical Networks have demonstrated strong performance, they rely exclusively on visual features and ignore the rich semantic information encoded in class names. This paper presents a systematic empirical study investigating the interaction between visual and semantic modalities in few-shot learning. We present Asymmetric Cross-Modal Prototypical Networks(ACM-ProtoNet), a controlled experimental framework which augments standard prototypical learning with frozen CLIP text encoders to incorporate zero-cost linguistic priors. Our method explicitly models the symmetric relationshipbetween visual and semantic modalities through learnable projection heads that map both image and text features into a shared embedding space. Image and text prototypes are fused via a learnable scalar gate α∈(0,1), allowing adaptive balancing of modalities. Under our experimental setup (frozen CLIP encoders, scalar fusion gate, simple template-based prompts), we observe an asymmetric pattern in comprehensive ablation studies on miniImageNet: cross-modal integration yields a statistically significant improvement in five-shot (+2.12 pp, p=0.03125, Wilcoxon signed-rank test over five seeds) but not in one-shot (−0.09 pp, n.s.) learning. Our key contribution is not achieving state-of-the-art accuracy but rather providing controlled empirical evidence about cross-modal interaction patterns under specific design constraints. Further analysis shows that: (1) structured semantic information is essential—random text features harm performance by 7.4–8.1 percentage points; (2) projection heads provide asymmetric benefits, more critical in one-shot (−2.85 pp when removed) than in five-shot learning (−0.74 pp); (3) text-only prototypes achieve near-random performance (≈20%), suggesting that semantics alone are insufficient in our setup; (4) shuffled-class-name ablation confirms genuine semantic binding, where randomly permuting class-name assignments causes consistent degradation (five-shot: −5.74 pp, p<0.001; one-shot: −3.83 pp, p<0.001 across five seeds). These findings, specific to our simple fusion design, reveal an asymmetric pattern that is equally consistent with two hypotheses: (i) semantic priors may require sufficient visual context to be useful, or (ii) our scalar fusion gate may lack the capacity to leverage text in the extreme low-data regime of one-shot learning. This ambiguity motivates future work with more expressive fusion mechanisms and stronger text representations.",
+      "title_query": true
+    },
+    {
+      "paperId": "17e742d2d48f0103664a9468454807076b41bd44",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2012-09831",
+        "ArXiv": "2012.09831",
+        "MAG": "3110874594",
+        "CorpusId": 229165454
+      },
+      "url": "https://www.semanticscholar.org/paper/17e742d2d48f0103664a9468454807076b41bd44",
+      "title": "On Episodes, Prototypical Networks, and Few-shot Learning",
+      "year": 2020,
+      "citationCount": 132,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2012.09831, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2008166763",
+          "name": "Steinar Laenen"
+        },
+        {
+          "authorId": "2271057",
+          "name": "Luca Bertinetto"
+        }
+      ],
+      "abstract": "Episodic learning is a popular practice among researchers and practitioners interested in few-shot learning. It consists of organising training in a series of learning problems, each relying on small \"support\" and \"query\" sets to mimic the few-shot circumstances encountered during evaluation. In this paper, we investigate the usefulness of episodic learning in Prototypical Networks and Matching Networks, two of the most popular algorithms making use of this practice. Surprisingly, in our experiments we found that, for Prototypical and Matching Networks, it is detrimental to use the episodic learning strategy of separating training samples between support and query set, as it is a data-inefficient way to exploit training batches. These \"non-episodic\" variants, which are closely related to the classic Neighbourhood Component Analysis, reliably improve over their episodic counterparts in multiple datasets, achieving an accuracy that (in the case of Prototypical Networks) is competitive with the state-of-the-art, despite being extremely simple.",
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Prototypical Networks for Few-shot Learning\n    Year: 2017\n    Citations: 9830\n    URL: https://www.semanticscholar.org/paper/c269858a7bb34e8350f2442ccf37797856ae9bca\n    Abstract: We propose Prototypical Networks for the problem of few-shot classification, where a classifier must generalize to new classes not seen in the training set, given only a small number of examples of each new class. Prototypical Networks learn a metric space in which classification can be performed by computing distances to prototype representations of each class. Compared to recent approaches for few-shot learning, they reflect a simpler inductive bias that is beneficial in this limited-data regime, and achieve excellent results. We provide an analysis showing that some simple design decisions can yield substantial improvements over recent approaches involving complicated architectural choices and meta-learning. We further extend Prototypical Networks to zero-shot learning and achieve state-of-the-art results on the CU-Birds dataset.\n\n[1] Title: Graph Prototypical Networks for Few-shot Learning on Attributed Networks\n    Year: 2020\n    Citations: 206\n    URL: https://www.semanticscholar.org/paper/6931f0f670be7acdef3af3a7fa1ceaefa86d3b08\n    Abstract: Attributed networks nowadays are ubiquitous in a myriad of high-impact applications, such as social network analysis, financial fraud detection, and drug discovery. As a central analytical task on attributed networks, node classification has received much attention in the research community. In real-world attributed networks, a large portion of node classes only contains limited labeled instances, rendering a long-tail node class distribution. Existing node classification algorithms are unequipped to handle the few-shot node classes. As a remedy, few-shot learning has attracted a surge of attention in the research community. Yet, few-shot node classification remains a challenging problem as we need to address the following questions: (i) How to extract meta-knowledge from an attributed network for few-shot node classification? (ii) How to identify the informativeness of each labeled instance for building a robust and effective model? To answer these questions, in this paper, we propose a graph meta-learning framework -- Graph Prototypical Networks (GPN). By constructing a pool of semi-supervised node classification tasks to mimic the real test environment, GPN is able to perform me...\n\n[2] Title: Multimodal Prototypical Networks for Few-shot Learning\n    Year: 2020\n    Citations: 111\n    URL: https://www.semanticscholar.org/paper/3618b3ce722a1f390aa2fd63b06ff7ed955b034b\n    Abstract: Although providing exceptional results for many computer vision tasks, state-of-the-art deep learning algorithms catastrophically struggle in low data scenarios. However, if data in additional modalities exist (e.g. text) this can compensate for the lack of data and improve the classification results. To overcome this data scarcity, we design a cross-modal feature generation framework capable of enriching the low populated embedding space in few-shot scenarios, leveraging data from the auxiliary modality. Specifically, we train a generative model that maps text data into the visual feature space to obtain more reliable prototypes. This allows to exploit data from additional modalities (e.g. text) during training while the ultimate task at test time remains classification with exclusively visual data. We show that in such cases nearest neighbor classification is a viable approach and outperform state-of-the-art single-modal and multimodal few-shot learning methods on the CUB-200 and Oxford-102 datasets.\n\n[3] Title: Improved prototypical networks for few-Shot learning\n    Year: 2020\n    Citations: 125\n    URL: https://www.semanticscholar.org/paper/1487485b1fe3e94bc170e588d98bbedec09a1945\n    Abstract: Abstract Few-Shot Learning (FSL) aims at recognizing the target classes that only a few samples are available for training. The current approaches mostly address FSL by learning a generalized class-level metric while neglect the intra-class distribution information. In this work, we propose Improved Prototypical Networks (IPN) to address this issue. Inspired by the observation that the intra-class samples differ greatly in revealing the class distribution, we first propose an attention-analogous strategy to explore the class distribution information by distributing different weights to samples based on their representativeness. Besides, to further explore the discriminative information across classes, we propose a distance scaling strategy to reduce the intra-class difference while enlarge the inter-class difference. The experimental results on two benchmark datasets show the superiority of the proposed model against the state-of-the-art approaches.\n\n[4] Title: SSL-ProtoNet: Self-supervised Learning Prototypical Networks for few-shot learning\n    Year: 2023\n    Citations: 74\n    URL: https://www.semanticscholar.org/paper/2e1e5de3732185eb0b7003478635a8e28429434b\n\n[5] Title: Gaussian Prototypical Networks for Few-Shot Learning on Omniglot\n    Year: 2017\n    Citations: 91\n    URL: https://www.semanticscholar.org/paper/feaecb5f7a8d29636650db7c0b480f55d098a6a7\n    Abstract: We propose a novel architecture for k-shot classification on the Omniglot dataset. Building on prototypical networks, we extend their architecture to what we call Gaussian prototypical networks. Prototypical networks learn a map between images and embedding vectors, and use their clustering for classification. In our model, a part of the encoder output is interpreted as a confidence region estimate about the embedding point, and expressed as a Gaussian covariance matrix. Our network then constructs a direction and class dependent distance metric on the embedding space, using uncertainties of individual data points as weights. We show that Gaussian prototypical networks are a preferred architecture over vanilla prototypical networks with an equivalent number of parameters. We report results consistent with state-of-the-art performance in 1-shot and 5-shot classification both in 5-way and 20-way regime on the Omniglot dataset. We explore artificially down-sampling a fraction of images in the training set, which improves our performance. Our experiments therefore lead us to hypothesize that Gaussian prototypical networks might perform better in less homogeneous, noisier datasets, whic...\n\n[6] Title: ProFusion: Multimodal Prototypical Networks for Few-Shot Learning with Feature Fusion\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/5d22aae8db05549d7a8ce16c4587bc11a7a48ab8\n    Abstract: Existing few-shot learning models leverage vision-language pre-trained models to alleviate the data scarcity problem. However, such models usually process visual and text information separately, which causes still inherent disparities between cross-modal features. Therefore, we propose the ProFusion model, which leverages multimodal pre-trained models and prototypical networks to construct multiple prototypes. Specifically, ProFusion generates image and text prototypes symmetrically using the visual encoder and text encoder, while integrating visual and text information through the fusion module to create more expressive multimodal feature fusion prototypes. Additionally, we introduce the alignment module to ensure consistency between image and text prototypes. During inference, ProFusion calculates the similarity of test images to the three types of prototypes separately and applies a weighted sum to generate the final prediction. Experiments demonstrate that ProFusion performs outstanding classification tasks on 15 benchmark datasets.\n\n[7] Title: Interpretable Concept-Based Prototypical Networks for Few-Shot Learning\n    Year: 2022\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/431b998f1135e3ae9020c3746f1d1aa197f8ba58\n    Abstract: Few-shot learning aims at recognizing new instances from classes with limited samples. This challenging task is usually alleviated by performing meta-learning on similar tasks. However, the resulting models are black-boxes. There has been growing concerns about deploying black-box machine learning models and FSL is not an exception in this regard. In this paper, we propose a method for FSL based on a set of human-interpretable concepts. It constructs a set of metric spaces associated with the concepts and classifies samples of novel classes by aggregating concept-specific decisions. The proposed method does not require concept annotations for query samples. This interpretable method achieved results on a par with six previously state-of-the-art black-box FSL methods on the CUB fine-grained bird classification dataset.\n\n[8] Title: Influential Prototypical Networks for Few Shot Learning: A Dermatological Case Study\n    Year: 2021\n    Citations: 7\n    URL: https://www.semanticscholar.org/paper/670a09b4237b5b1091031d967bde74cb87d753f7\n    Abstract: Prototypical network (PN) is a simple yet effective few shot learning strategy. It is a metric-based meta-learning technique where classification is performed by computing Euclidean distances to prototypical representations of each class. Conventional PN attributes equal importance to all samples and generates prototypes by simply averaging the support sample embeddings belonging to each class. In this work, we propose a novel version of PN that attributes weights to support samples corresponding to their influence on the support sample distribution. Influence weights of samples are calculated based on maximum mean discrepancy (MMD) between the mean embeddings of sample distributions including and excluding the sample. Comprehensive evaluation of our proposed influential PN (IPNet) is performed by comparing its performance with other baseline PNs on three different benchmark dermatological datasets. IPNet outperforms all baseline models with compelling results across all three datasets and various N -way, K-shot classification tasks. Findings from cross-domain adaptation experiments further establish the generalizability of IPNet.\n\n[9] Title: WDSN: A Weighted Difference Scaling Network Based on the Prototypical Networks for Few-Shot Learning\n    Year: 2023\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/fb245ee3740a747e3d54b20b75b97dd65d703a9e\n    Abstract: This paper presented a weighted difference scaling network (WDSN) based on the prototypical network. Firstly, for the intra-class distribution information, we designed a weighting module that assigned different weights to all samples in the same class according to the representativeness of the samples to generate more representative class prototypes. Secondly, we designed a differential scaling module aimed at further improving the classification performance of the prototype network by reducing intra-class differences and amplifying interclass differences. We conducted experiments on two benchmark datasets, and the experimental results showed that WDSN achieved significant progress compared to the prototypical network, and also outperformed some related methods in recent years.\n\n[10] Title: IPNET: Influential Prototypical Networks for Few Shot Learning\n    Year: 2022\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/956d4a97e0ed8f08391f8d4e362b635a8f43b046\n    Abstract: Prototypical network (PN) is a simple yet effective few shot learning strategy. It is a metric-based meta-learning technique where classification is performed by computing Euclidean distances to prototypical representations of each class. Conventional PN attributes equal importance to all samples and generates prototypes by simply averaging the support sample embeddings belonging to each class. In this work, we propose a novel version of PN that attributes weights to support samples corresponding to their influence on the support sample distribution. Influence weights of samples are calculated based on maximum mean discrepancy (MMD) between the mean embeddings of sample distributions including and excluding the sample. Further, the influence factor of a sample is measured using MMD based on the shift in the distribution in the absence of that sample.\n\n[11] Title: Disentangling 3D Prototypical Networks For Few-Shot Concept Learning\n    Year: 2020\n    Citations: 22\n    URL: https://www.semanticscholar.org/paper/9e9be84ee3793f9bc951b7680368d1b8ec9113a2\n    Abstract: We present neural architectures that disentangle RGB-D images into objects' shapes and styles and a map of the background scene, and explore their applications for few-shot 3D object detection and few-shot concept classification. Our networks incorporate architectural biases that reflect the image formation process, 3D geometry of the world scene, and shape-style interplay. They are trained end-to-end self-supervised by predicting views in static scenes, alongside a small number of 3D object boxes. Objects and scenes are represented in terms of 3D feature grids in the bottleneck of the network. We show that the proposed 3D neural representations are compositional: they can generate novel 3D scene feature maps by mixing object shapes and styles, resizing and adding the resulting object 3D feature maps over background scene feature maps. We show that classifiers for object categories, color, materials, and spatial relationships trained over the disentangled 3D feature sub-spaces generalize better with dramatically fewer examples than the current state-of-the-art, and enable a visual question answering system that uses them as its modules to generalize one-shot to novel objects in the...\n\n[12] Title: Prototypical Siamese Networks for Few-shot Learning\n    Year: 2020\n    Citations: 149\n    URL: https://www.semanticscholar.org/paper/73395723274816d2288187b29cd2c278ef4f873f\n    Abstract: We propose a novel architecture, called Prototypical Siamese Networks, for few-shot learning, where a classifier must generalize to new classes not seen in the training set, given only a few examples of each class. Prototypical Siamese Networks add a new module to siamese networks to learn a high quality prototypical representation of each class. Compared to recent methods for few-shot learning, our method achieves state-of-the-art performance on few-shot learning. Experiments on two benchmarks validate the effectiveness of the proposed method.\n\n[13] Title: Few-Shot Learning With Prototypical Networks for Improved Memory Forensics\n    Year: 2025\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/2554840acdb60408d899f91b9bb9437e94ad8dab\n    Abstract: Securing computer systems requires effective methods for malware detection. Memory forensics analyzes memory dumps to identify malicious activity, but faces challenges including large and complex datasets, constantly evolving malware threats, and limited labeled data for training algorithms among others. This research introduces a novel approach for malware detection using memory forensics and prototypical networks. As the first application of prototypical networks to the Dumpware10 dataset (to the best of authors knowledge), our findings highlight the potential of few-shot learning for memory forensics-based malware detection, opening new avenues for research in this domain. Prototypical networks are a type of few-shot learning algorithm that excels at classifying new categories with minimal examples. Utilizing the publicly available Dumpware10 dataset, which includes 10 malware classes and one benign class, we preprocess memory dumps using denoising and A-Hash functions to reduce noise and redundancy. The prototypical network is trained on the first four malware classes and the benign class. It’s then tested on a dataset with one additional class (first five malware classes and t...\n\n[14] Title: SSPNet: Semi-Supervised Prototypical Networks for Few-Shot Network Intrusion Detection\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/ff8916b585ee4740d4b7a4dc2ebfab667c975262\n    Abstract: Network Intrusion Detection Systems (NIDS) play a crucial role in protecting digital infrastructures against evolving cyber threats. However, the increasing sophistication and frequency of novel attacks, combined with the limited access to labeled training data, pose significant challenges to traditional machine learning-based detection methods. To address these challenges, we propose a novel semi-supervised training schema to enhance Prototypical Networks for few-shot learning in NIDS. Our approach integrates a semi-supervised prototypical loss that leverages pseudo-labels from high-confidence samples, improving representation learning and model performance.We evaluate our method on benchmark network intrusion detection datasets, where we demonstrate its ability to generalize to novel attack classes with few labeled samples. Experimental results show that the proposed semi-supervised Prototypical Networks (SSPNet) outperforms standard Prototypical Networks and other competing models, particularly in scenarios where newly introduced target attack categories are highly dissimilar to source attacks: it performs 24% better on ACI-IoT-2023 Network Traffic Dataset and 15% better on CICI...\n\n[15] Title: Attention-Enhanced Prototypical Networks for Few-Shot Microaneurysm Detection in Diabetic Retinopathy Images\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/48e518961fb3ec472c132d00608fade3561a0040\n    Abstract: Early detection of microaneurysms in diabetic retinopathy (DR) is essential for prohibiting vision loss, yet automated detection remains difficult due to the limited labeled data and the subtle nature of these lesions. This paper presents a few-shot learning approach that synergistically combines dual attention mechanisms with prototypical networks for microaneurysm detection in fundus images. Our architecture implements a modified ResNet-50 backbone enhanced with spatial and channel attention modules, optimized specifically for small lesion detection. The spatial attention module generates precise localization maps, while the channel attention mechanism adaptively weights feature importance. This is integrated with a prototypical network framework that enables efficient learning from limited labeled examples through metric-based classification. Evaluated on the IDRiD dataset, our method achieves state-of-the-art performance with an AUC-ROC of 0.947, sensitivity of 0.892, and specificity of 0.941, significantly outperforming traditional deep learning approaches. The model demonstrates robust performance with as few as 5 shots per class, while maintaining high detection accuracy (0....\n\n[16] Title: Wood species classification using prototypical networks: a few shot learning model\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/277f4e83f61475cd5e1bc9fbef02ba1c4fba343f\n\n[17] Title: Episodic Fine-Tuning Prototypical Networks for Optimization-Based Few-Shot Learning: Application to Audio Classification\n    Year: 2024\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/40b55e01915be1805a5890e7f0376303c55ae292\n    Abstract: The Prototypical Network (ProtoNet) has emerged as a popular choice in Few-shot Learning (FSL) scenarios due to its remarkable performance and straightforward implementation. Building upon such success, we first p ropose a simple (yet n ovel) method to fine-tune a P rotoNet o n t he (labeled) s upport s et o f t he test episode of a $C$-way-$K$-shot test episode (without using the query set which is only used for evaluation). We then propose an algorithmic framework that combines ProtoNet with optimization-based FSL algorithms (MAML and Meta-Curvature) to work with such a fine-tuning m ethod. Since optimization-based algorithms endow the target learner model with the ability to fast adaption to only a few samples, we utilize ProtoNet as the target model to enhance its fine-tuning performance with the help of a specifically designed episodic fine-tuning s trategy. The experimental results confirm that our proposed models, MAML-Proto and MC-Proto, combined with our unique fine-tuning m ethod, o utperform regular P rotoNet b y a large margin in few-shot audio classification t asks on t he ESC-50 and Speech Commands v2 datasets. We note that although we have only applied our model to t...\n\n[18] Title: Asymmetric Cross-Modal Prototypical Networks for Few-Shot Image Classification\n    Year: 2026\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/00b92ae5cb848bfc185361e336d3658f9503c866\n    Abstract: Few-shot image classification requires models to generalize from limited labeled examples. While metric-based approaches such as Prototypical Networks have demonstrated strong performance, they rely exclusively on visual features and ignore the rich semantic information encoded in class names. This paper presents a systematic empirical study investigating the interaction between visual and semantic modalities in few-shot learning. We present Asymmetric Cross-Modal Prototypical Networks(ACM-ProtoNet), a controlled experimental framework which augments standard prototypical learning with frozen CLIP text encoders to incorporate zero-cost linguistic priors. Our method explicitly models the symmetric relationshipbetween visual and semantic modalities through learnable projection heads that map both image and text features into a shared embedding space. Image and text prototypes are fused via a learnable scalar gate α∈(0,1), allowing adaptive balancing of modalities. Under our experimental setup (frozen CLIP encoders, scalar fusion gate, simple template-based prompts), we observe an asymmetric pattern in comprehensive ablation studies on miniImageNet: cross-modal integration yields a st...\n\n[19] Title: On Episodes, Prototypical Networks, and Few-shot Learning\n    Year: 2020\n    Citations: 132\n    URL: https://www.semanticscholar.org/paper/17e742d2d48f0103664a9468454807076b41bd44\n    Abstract: Episodic learning is a popular practice among researchers and practitioners interested in few-shot learning. It consists of organising training in a series of learning problems, each relying on small \"support\" and \"query\" sets to mimic the few-shot circumstances encountered during evaluation. In this paper, we investigate the usefulness of episodic learning in Prototypical Networks and Matching Networks, two of the most popular algorithms making use of this practice. Surprisingly, in our experiments we found that, for Prototypical and Matching Networks, it is detrimental to use the episodic learning strategy of separating training samples between support and query set, as it is a data-inefficient way to exploit training batches. These \"non-episodic\" variants, which are closely related to the classic Neighbourhood Component Analysis, reliably improve over their episodic counterparts in multiple datasets, achieving an accuracy that (in the case of Prototypical Networks) is competitive with the state-of-the-art, despite being extremely simple.\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        99,
+        563,
+        146
+      ],
+      "text_level": 1,
+      "text": "PROTOTYPICAL NETWORKS FOR FEW-SHOT LEARNING"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        167,
+        532,
+        184
+      ],
+      "text_level": null,
+      "text": "Jake Snell $^{1*}$ , Kevin Swersky $^{2}$  & Richard S. Zemel $^{1}$"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        185,
+        333,
+        198
+      ],
+      "text_level": null,
+      "text": "<sup>1</sup>University of Toronto"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        199,
+        240,
+        213
+      ],
+      "text_level": null,
+      "text": "${}^{2}$  Twitter"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        250,
+        545,
+        265
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        282,
+        767,
+        464
+      ],
+      "text_level": null,
+      "text": "A recent approach to few-shot classification called matching networks has demonstrated the benefits of coupling metric learning with a training procedure that mimics test. This approach relies on an attention scheme that forms a distribution over all points in the support set, scaling poorly with its size. We propose a more streamlined approach, prototypical networks, that learns a metric space in which few-shot classification can be performed by computing Euclidean distances to prototype repres"
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        492,
+        336,
+        507
+      ],
+      "text_level": 1,
+      "text": "1 INTRODUCTION"
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        523,
+        826,
+        636
+      ],
+      "text_level": null,
+      "text": "One-shot classification (Miller et al., 2000; Lake et al., 2011; Koch, 2015) (and more generally, few-shot classification) is a problem in which a classifier must be adapted to accommodate new classes not seen in training, given only a single  $(n)$  example(s) of these classes. A classical approach, such as retraining the model on the new data, would severely overfit. While the problem is quite difficult, it has been demonstrated that people have the ability to successfully perform one-shot cla"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        642,
+        826,
+        824
+      ],
+      "text_level": null,
+      "text": "To overcome this, much progress has been made recently in applying metric learning (Goldberger et al., 2004; Kulis, 2012; Bellet et al., 2013) to one-shot tasks. Most recently, (Vinyals et al., 2016) proposed a metric learning approach that they call matching networks. This approach uses an attention mechanism over a learned embedding of the support set in order to predict class labels for the points to be classified, a.k.a the \"query set\". It optionally allows the embeddings to be conditioned o"
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        829,
+        823,
+        902
+      ],
+      "text_level": null,
+      "text": "In this paper, we propose a few-shot learning classifier based on a relatively simple idea: there exists an embedding, where points belonging to a class cluster around a single prototype. This inductive bias is a useful one to combat overfitting for one-shot tasks. Our approach also comes with the benefit that it is very simple to implement, and computationally fast. In order to do this, we learn a non-linear mapping of the input into an embedding space using a neural network, and take the class"
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        103,
+        823,
+        159
+      ],
+      "text_level": null,
+      "text": "prototype to be the mean of the support set in the embedding space. Classification is then performed by simply finding the nearest prototype to the embedded query point. We find that this approach yields competitive results with matching networks and other one-shot learning approaches, despite being much simpler."
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        166,
+        823,
+        263
+      ],
+      "text_level": null,
+      "text": "A related problem is known as zero-shot learning, where instead of being given a small number of examples of a new class at test-time, each class comes with a set of meta-information, often attributes, that give a high level description of that class. The idea then is to learn a mapping from input examples to the high-level attributes of their member class. We adapt the idea of prototypical networks to this setting by learning a secondary embedding of the attribute vector such that the image emb"
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        286,
+        343,
+        301
+      ],
+      "text_level": 1,
+      "text": "2 RELATED WORK"
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        319,
+        823,
+        484
+      ],
+      "text_level": null,
+      "text": "Neighborhood Components Analysis (NCA) (Goldberger et al., 2004) learns a Mahalanobis distance to maximize K-nearest-neighbour's (KNN) leave-one-out accuracy in the transformed space. A distribution over the neighbors of each data point is computed according to a softmax over the corresponding Mahalanobis distances. This distribution is marginalized to form a distribution over class assignments and the projection matrix is updated via gradient descent to maximize the probability of the true clas"
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        492,
+        823,
+        659
+      ],
+      "text_level": null,
+      "text": "Our approach is similar to the nearest class mean approach of (Mensink et al., 2013) from the metric learning literature, where each class is represented by the mean of its examples, and classification is performed by finding the prototype that is closest to the query point. Their approach was developed to rapidly incorporate new classes into a classifier without retraining, however it relies on a linear embedding and is designed to handle the case where the novel classes come with many examples"
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        666,
+        823,
+        792
+      ],
+      "text_level": null,
+      "text": "In matching networks (Vinyals et al., 2016) they propose a meta-learning strategy in which training mimics test by stochastically creating one-shot \"episodes\". We adopt the same strategy when training our models. They, like us, use neural networks to non-linearly transform data points into a space that is more amenable to classification. However, matching networks make predictions by computing attention weights over each point in the support set. This becomes computationally expensive as the siz"
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        174,
+        797,
+        823,
+        922
+      ],
+      "text_level": null,
+      "text": "The neural statistician (Edwards & Storkey, 2016) extends the variational autoencoder (Kingma & Welling, 2013) to learn generative models of datasets rather than individual points. One component of the neural statistician is the \"statistic network\" which summarizes a set of data points into a statistic vector. It does this by encoding each point within a dataset, taking a sample mean, and applying a post-processing network to obtain an approximate posterior over the statistic vector. Edwards & S"
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        103,
+        823,
+        160
+      ],
+      "text_level": null,
+      "text": "is a discriminative model which is more appropriate because our primary task, one-shot learning, is also discriminative. Discriminative training has the added benefit of lending our model more flexibility in both the way we compute summary statistics and use them to make predictions at test time."
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        166,
+        826,
+        279
+      ],
+      "text_level": null,
+      "text": "There are many other approaches to one-shot learning that employ very different techniques from ours. Koch uses siamese networks to predict the probability that two images belong to the same class. Lake et al. devise a hierarchical Bayesian generative model of how a handwritten character is created in order to perform one-shot learning on the Omniglot dataset. Santoro et al. propose memory augmented neural networks (MANN) that reference an external memory in a similar fashion to neural Turing ma"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        301,
+        437,
+        316
+      ],
+      "text_level": 1,
+      "text": "3 PROTOTYPICAL NETWORKS"
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        334,
+        823,
+        380
+      ],
+      "text_level": null,
+      "text": "At prediction time we are given a support set of  $N$  labeled examples:  $S = \\{(x_{i},y_{i})\\}_{i = 1}^{N} = S^{1}\\cup \\ldots \\cup$ $S^K$  where  $S^k = \\{(x,y)\\in S\\mid y = k\\}$ . Our method computes a class representation  $c_{k}$ , or prototype, of each class through an embedding function  $f_{\\theta}(x)$  parameterized by learnable parameters  $\\theta$ :"
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        454,
+        823,
+        483
+      ],
+      "text_level": null,
+      "text": "Given a test point  $\\tilde{x}$ , prototypical networks form a distribution over classes based on a softmax over the Euclidean distances between its embedding and the prototypes:"
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        553,
+        650,
+        569
+      ],
+      "text_level": null,
+      "text": "Learning proceeds by maximizing the log-probability of the true class  $\\tilde{y}$ :"
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        630,
+        826,
+        674
+      ],
+      "text_level": null,
+      "text": "We train in an episodic manner similar to Vinyals et al. (2016) by randomly selecting a subset of classes from the training set, then choosing a subset of examples within each class to act as the support set and the remainder to serve as test points."
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        691,
+        419,
+        705
+      ],
+      "text_level": 1,
+      "text": "3.1 PROTOTYPE NORMALIZATION"
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        720,
+        823,
+        821
+      ],
+      "text_level": null,
+      "text": "In episodic training, the support set is randomly chosen from among the training points. In datasets with high variability this can lead to a large variance in the class prototypes,  $c$ , between episodes. In order to reduce this variability, we found that it can sometimes be beneficial to normalize the prototypes,  $\\bar{c}_k = \\frac{c_k}{\\|c_k\\|}$  and use  $\\bar{c}_k$  in place of  $c_k$  in Equation (2). This ensures that the prototypes always lie on the unit sphere, although the query poin"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        840,
+        586,
+        854
+      ],
+      "text_level": 1,
+      "text": "3.2 PREDICTING THE WEIGHTS OF A LINEAR CLASSIFIER"
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        867,
+        825,
+        925
+      ],
+      "text_level": null,
+      "text": "A simple analysis is useful in gaining insight into the nature of the learned classifier (a similar analysis appears in Mensink et al. (2013)). When we use Euclidean distance to measure the distance between a query point and the class prototypes, then the loss function in (2) is equivalent to a linear classifier with a particular parameterization. To see this, we expand the term within the exponent:"
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        186,
+        823,
+        215
+      ],
+      "text_level": null,
+      "text": "The first term in Equation (4) is constant with respect to the class  $k$ , so it does not affect the softmax probabilities. We can write the remaining terms as a linear classifier as follows:"
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        323,
+        823,
+        378
+      ],
+      "text_level": null,
+      "text": "We can view this through the lens of meta-learning, where the model is predicting the weights and biases of a linear classifier using a simple function of the mean of the embedded support set. By contrast, the predictive function in matching networks is a generalization of a nearest neighbor classifier, rather than a linear classifier."
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        386,
+        823,
+        428
+      ],
+      "text_level": null,
+      "text": "When using prototype normalization, the biases  $b_{k}$  will all be 1, and the class weights  $w_{k}$  will be restricted to have a norm of 2. In this case, using Euclidean distance becomes proportional to cosine distance."
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        435,
+        826,
+        575
+      ],
+      "text_level": null,
+      "text": "A natural question is whether it makes sense to use multiple prototypes per class instead of just one. If each support point were to be considered a prototype, then this would be analogous to doing nearest neighbor classification in the embedding space, which would be computationally expensive. On the other hand, if the number of prototypes per class is fixed, then this would require a partitioning scheme. This has been proposed in Mensink et al. (2013) and Rippel et al. (2016), however both met"
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        595,
+        339,
+        609
+      ],
+      "text_level": 1,
+      "text": "3.3 DESIGN CHOICES"
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        625,
+        823,
+        708
+      ],
+      "text_level": null,
+      "text": "There are still a number of design choices that need to be made with this model in order to achieve optimal performance. One such choice is in deciding how many classes we would like the classifier to operate over during each training episode. For example, at test time we might be evaluating on 5-way classification, but at training time we could train each episode with 20-way classification. We found in general that training on a larger number of classes per episode improves performance, even if"
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        715,
+        823,
+        772
+      ],
+      "text_level": null,
+      "text": "Another choice involves the possible decoupling of the  $n$  in  $n$ -shot between training and testing. We could train on 1-shot, but test on 5-shot or vice-versa. We found that it is typically better to match the shot at training and testing; that is, when it comes to the shot, to match the training procedure to the test procedure. We demonstrate this empirically in the Experiments section below."
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        777,
+        823,
+        808
+      ],
+      "text_level": null,
+      "text": "Finally, we need to specify whether to use prototype normalization. We found that normalization generally acts as a regularizer and speeds up training."
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        833,
+        328,
+        848
+      ],
+      "text_level": 1,
+      "text": "4 EXPERIMENTS"
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        867,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "For few-shot learning, we performed experiments on Omniglot (Lake et al., 2011), the miniImagenet version of ILSVRC-2012 (Russakovsky et al., 2015) proposed by (Vinyals et al., 2016). For zero-shot learning, we perform experiments on the 2011 version of the Caltech UCSD bird dataset (CUB200 2011) (Welinder et al., 2010)."
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        103,
+        294,
+        118
+      ],
+      "text_level": 1,
+      "text": "4.1 OMNIGLOT"
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        130,
+        826,
+        242
+      ],
+      "text_level": null,
+      "text": "Omniglot (Lake et al., 2011) is a dataset of 1623 handwritten characters collected from 50 alphabets. There are 20 examples associated with each character, where each example was drawn by a different human subject. We follow the procedure of (Vinyals et al., 2016) by augmenting the characters with rotations in multiples of 90 degrees and using 1200 characters for training and the remainder for evaluation. Our embedding architecture mirrors that of Matching Nets and is composed of four blocks of "
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        248,
+        823,
+        305
+      ],
+      "text_level": null,
+      "text": "We trained prototypical networks using episodes designed for 1-shot learning, i.e., the support sets during training consist of a single input example, and we train using 20-way classification. Our results are as good or better than those reported in matching networks, and to our knowledge represent the state-of-the-art on this dataset using these splits."
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        486,
+        323,
+        500
+      ],
+      "text_level": 1,
+      "text": "4.2 miniIMAGENET"
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        512,
+        823,
+        570
+      ],
+      "text_level": null,
+      "text": "The miniImageNet dataset (Vinyals et al., 2016) is derived from the larger ImageNet dataset (Deng et al., 2009). It consists of 60,000 color images of size  $84 \\times 84$  divided into 100 classes with 600 examples each. It is designed for testing one-shot learning algorithms, where 80 classes are chosen for training, and 20 for testing."
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        575,
+        826,
+        688
+      ],
+      "text_level": null,
+      "text": "Classification results for miniImageNet are shown in Table 2. The embedding architecture we used for miniImagenet is the same as our experiments for Omniglot, though here it results in a 1600-dimensional output space due to the increased size of the images. We trained two versions of prototypical networks, one with episodes containing a single support examples per class (denoted by 1-shot) and one with five support examples per class (denoted by 5-shot). All episodes contained 20 randomly sample"
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        344,
+        811,
+        651,
+        828
+      ],
+      "text_level": null,
+      "text": "Table 2: miniImageNet classification accuracy"
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        854,
+        616,
+        869
+      ],
+      "text_level": 1,
+      "text": "4.3 ZERO-SHOT LEARNING ON THE CUB-200 BIRDS DATASET"
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        881,
+        825,
+        925
+      ],
+      "text_level": null,
+      "text": "In order to assess the suitability of our approach for zero-shot learning, we also run experiments on the Caltech UCSD bird dataset (Welinder et al., 2010). This dataset contains 11,788 images of 200 bird species. We follow the dataset split provided by (Welinder et al., 2010) and the common practice"
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        326,
+        184,
+        671,
+        199
+      ],
+      "text_level": null,
+      "text": "Table 3: CUB-200 zero-shot classification accuracy"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        224,
+        823,
+        253
+      ],
+      "text_level": null,
+      "text": "of cropping the image using the ground-truth bounding box annotation of the birds (Donahue et al., 2014; Zhang et al., 2014)."
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        258,
+        826,
+        371
+      ],
+      "text_level": null,
+      "text": "We follow the procedure of (Zhang et al., 2014) and use a pre-trained Alexnet (Krizhevsky et al., 2012) architecture with a final linear embedding to produce a 256-dimensional output space and fine-tune the network based on our objective. In order to obtain class prototypes, we use a simple linear mapping on top of the 312-dimensional attributes per class provided in the dataset. Note that this approach is much simpler than that of Liao et al. (2016), which trains an SVM on top of a learned feat"
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        378,
+        823,
+        421
+      ],
+      "text_level": null,
+      "text": "Table 3 shows that we achieve state-of-the-art over existing methods by a large margin. Unlike current approaches, prototypical networks are trained end-to-end and do not require a structured SVM to perform zero-shot prediction."
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        426,
+        823,
+        470
+      ],
+      "text_level": null,
+      "text": "Figure 1 shows a t-SNE (Maaten & Hinton, 2008) visualization of the image embedding using the prototypical networks model trained for one-shot classification. We can see that the image embeddings group the birds by visual features such as their color and their environment."
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        489,
+        320,
+        505
+      ],
+      "text_level": 1,
+      "text": "5 CONCLUSION"
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        521,
+        826,
+        660
+      ],
+      "text_level": null,
+      "text": "We have proposed a simple method called prototypical networks for few-shot learning based on the idea that we can represent each class by the mean of its examples in a representation space learned by a neural network. We train these networks to specifically perform well in the few-shot setting by using episodic training. Prototypical networks are simple to implement, and computationally efficient. We showed that this approach is equivalent to predicting the weights of a linear classifier, where "
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        676,
+        328,
+        689
+      ],
+      "text_level": 1,
+      "text": "ACKNOWLEDGMENTS"
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        699,
+        823,
+        756
+      ],
+      "text_level": null,
+      "text": "We would like to thank Sachin Ravi and Hugo Larochelle for help in setting up the Omniglot and miniImage data. We would also like to thank Renjie Liao for assistance with the CUB-200 zero-shot procedure and Oriol Vinyals for confirming details regarding the Omniglot and miniImagenet splits and matching nets architectures."
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "image",
+      "page_idx": 6,
+      "bbox": [
+        174,
+        101,
+        823,
+        603
+      ],
+      "text_level": null,
+      "text": "Figure 1: A t-SNE visualization of the unseen classes using the learned embedding of a prototypical-network on the CUB dataset. Images belonging to the same species of bird should ideally be clustered together in this space."
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        173,
+        681,
+        287,
+        698
+      ],
+      "text_level": 1,
+      "text": "REFERENCES"
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B1-Hhnslg",
+  "paper_dir": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1-Hhnslg",
+  "review_model_name": "gpt-5.4-nano",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ]
+}

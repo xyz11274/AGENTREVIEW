@@ -1,0 +1,1332 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B16dGcqlx/md_content_no_appendix.md",
+  "paper_title": "THIRD PERSON IMITATION LEARNING",
+  "semantic_scholar_query": "THIRD PERSON IMITATION LEARNING",
+  "keyword_model_name": "gpt-5",
+  "retrieved_papers": [
+    {
+      "paperId": "2e1a1b9c2e8feeb31c6855292859bf94101e8382",
+      "externalIds": {
+        "ArXiv": "1703.01703",
+        "DBLP": "journals/corr/StadieAS17",
+        "MAG": "2591957724",
+        "CorpusId": 14724343
+      },
+      "url": "https://www.semanticscholar.org/paper/2e1a1b9c2e8feeb31c6855292859bf94101e8382",
+      "title": "Third-Person Imitation Learning",
+      "year": 2017,
+      "citationCount": 246,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1703.01703, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3275284",
+          "name": "Bradly C. Stadie"
+        },
+        {
+          "authorId": "1689992",
+          "name": "P. Abbeel"
+        },
+        {
+          "authorId": "1701686",
+          "name": "I. Sutskever"
+        }
+      ],
+      "abstract": "Reinforcement learning (RL) makes it possible to train agents capable of achieving sophisticated goals in complex and uncertain environments. A key difficulty in reinforcement learning is specifying a reward function for the agent to optimize. Traditionally, imitation learning in RL has been used to overcome this problem. Unfortunately, hitherto imitation learning methods tend to require that demonstrations are supplied in the first-person: the agent is provided with a sequence of states and a specification of the actions that it should have taken. While powerful, this kind of imitation learning is limited by the relatively hard problem of collecting first-person demonstrations. Humans address this problem by learning from third-person demonstrations: they observe other humans perform tasks, infer the task, and accomplish the same task themselves. \nIn this paper, we present a method for unsupervised third-person imitation learning. Here third-person refers to training an agent to correctly achieve a simple goal in a simple environment when it is provided a demonstration of a teacher achieving the same goal but from a different viewpoint; and unsupervised refers to the fact that the agent receives only these third-person demonstrations, and is not provided a correspondence between teacher states and student states. Our methods primary insight is that recent advances from domain confusion can be utilized to yield domain agnostic features which are crucial during the training process. To validate our approach, we report successful experiments on learning from third-person demonstrations in a pointmass domain, a reacher domain, and inverted pendulum.",
+      "title_query": true
+    },
+    {
+      "paperId": "86ff08680aa9eff4f751ead8a27e818e688d4cb1",
+      "externalIds": {
+        "ArXiv": "2108.01069",
+        "DBLP": "journals/corr/abs-2108-01069",
+        "DOI": "10.1109/IROS51168.2021.9636363",
+        "CorpusId": 236772575
+      },
+      "url": "https://www.semanticscholar.org/paper/86ff08680aa9eff4f751ead8a27e818e688d4cb1",
+      "title": "Self-Supervised Disentangled Representation Learning for Third-Person Imitation Learning",
+      "year": 2021,
+      "citationCount": 31,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/2108.01069",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2108.01069, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "41032695",
+          "name": "Jinghuan Shang"
+        },
+        {
+          "authorId": "1766489",
+          "name": "M. Ryoo"
+        }
+      ],
+      "abstract": "Humans learn to imitate by observing others. However, robot imitation learning generally requires expert demonstrations in the first-person view (FPV). Collecting such FPV videos for every robot could be very expensive.Third-person imitation learning (TPIL) is the concept of learning action policies by observing other agents in a third-person view (TPV), similar to what humans do. This ultimately allows utilizing human and robot demonstration videos in TPV from many different data sources, for the policy learning. In this paper, we present a TPIL approach for robot tasks with egomotion. Although many robot tasks with ground/aerial mobility often involve actions with camera egomotion, study on TPIL for such tasks has been limited. Here, FPV and TPV observations are visually very different; FPV shows egomotion while the agent appearance is only observable in TPV. To enable better state learning for TPIL, we propose our disentangled representation learning method. We use a dual auto-encoder structure plus representation permutation loss and time-contrastive loss to ensure the state and viewpoint representations are well disentangled. Our experiments show the effectiveness of our approach.",
+      "title_query": true
+    },
+    {
+      "paperId": "a30d4d8329ccc71529ad0a3547b8eb0822924274",
+      "externalIds": {
+        "DBLP": "conf/atal/ChenLGC23",
+        "DOI": "10.5555/3545946.3598954",
+        "CorpusId": 258845814
+      },
+      "url": "https://www.semanticscholar.org/paper/a30d4d8329ccc71529ad0a3547b8eb0822924274",
+      "title": "TiLD: Third-person Imitation Learning by Estimating Domain Cognitive Differences of Visual Demonstrations",
+      "year": 2023,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.5555/3545946.3598954?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.5555/3545946.3598954, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2144252065",
+          "name": "Zixuan Chen"
+        },
+        {
+          "authorId": "35660603",
+          "name": "Wenbin Li"
+        },
+        {
+          "authorId": "49658113",
+          "name": "Yang Gao"
+        },
+        {
+          "authorId": "14672072",
+          "name": "L. Chen"
+        }
+      ],
+      "abstract": "To enable agents to effectively imitate from the third-person visual demonstrations in complex imitation learning (IL) tasks, in this paper, we propose a new IL method, which is namedt hird-person i mitation l earning by estimating d omain cognitive differences (TiLD). The proposed TiLD is able to eliminate the domain cognitive difference between the samples from different perspectives, so as to achieve the purpose of allowing agent to directly learn from the third-person demonstrations. Experimental results indicate that TiLD can achieve significant performance improvements over the existing state-of-the-art IL methods, when dealing with imitation learning tasks with third-person expert demonstrations.",
+      "title_query": true
+    },
+    {
+      "paperId": "e78f8f0ef9ac43ffca937ad39d8ddfb632195a31",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2312-16365",
+        "ArXiv": "2312.16365",
+        "DOI": "10.48550/arXiv.2312.16365",
+        "CorpusId": 266573173
+      },
+      "url": "https://www.semanticscholar.org/paper/e78f8f0ef9ac43ffca937ad39d8ddfb632195a31",
+      "title": "Active Third-Person Imitation Learning",
+      "year": 2023,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2312.16365, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2276608423",
+          "name": "Timo Klein"
+        },
+        {
+          "authorId": "116534561",
+          "name": "Susan G. Weinberger"
+        },
+        {
+          "authorId": "1703727",
+          "name": "A. Singla"
+        },
+        {
+          "authorId": "3302876",
+          "name": "Sebastian Tschiatschek"
+        }
+      ],
+      "abstract": "We consider the problem of third-person imitation learning with the additional challenge that the learner must select the perspective from which they observe the expert. In our setting, each perspective provides only limited information about the expert's behavior, and the learning agent must carefully select and combine information from different perspectives to achieve competitive performance. This setting is inspired by real-world imitation learning applications, e.g., in robotics, a robot might observe a human demonstrator via camera and receive information from different perspectives depending on the camera's position. We formalize the aforementioned active third-person imitation learning problem, theoretically analyze its characteristics, and propose a generative adversarial network-based active learning approach. Empirically, we demstrate that our proposed approach can effectively learn from expert demonstrations and explore the importance of different architectural choices for the learner's performance.",
+      "title_query": true
+    },
+    {
+      "paperId": "a738f169b6229fd2e28fcb24a736675c9106baaa",
+      "externalIds": {
+        "DBLP": "conf/aaai/JiangZCZJ20",
+        "MAG": "3037937167",
+        "DOI": "10.1609/aaai.v34i10.7181",
+        "CorpusId": 219182358
+      },
+      "url": "https://www.semanticscholar.org/paper/a738f169b6229fd2e28fcb24a736675c9106baaa",
+      "title": "Third-Person Imitation Learning via Image Difference and Variational Discriminator Bottleneck (Student Abstract)",
+      "year": 2020,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.1609/aaai.v34i10.7181",
+        "status": "GOLD",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1609/aaai.v34i10.7181?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1609/aaai.v34i10.7181, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2115484954",
+          "name": "Chong Jiang"
+        },
+        {
+          "authorId": "2079174",
+          "name": "Zongzhang Zhang"
+        },
+        {
+          "authorId": "2144252065",
+          "name": "Zixuan Chen"
+        },
+        {
+          "authorId": "1870353",
+          "name": "Jiacheng Zhu"
+        },
+        {
+          "authorId": "2107975697",
+          "name": "Junpeng Jiang"
+        }
+      ],
+      "abstract": "Third-person imitation learning (TPIL) is a variant of generative adversarial imitation learning and can learn an expert-like policy from third-person expert demonstrations. Third-person expert demonstrations usually exist in the form of videos recorded in a third-person perspective, and there is a lack of direct correspondence with samples generated by agent. To alleviate this problem, we improve TPIL by applying image difference and variational discriminator bottleneck. Empirically, our new method has better performance than TPIL on two MuJoCo tasks, Reacher and Inverted Pendulum.",
+      "title_query": true
+    },
+    {
+      "paperId": "802df6909fe4ad69d016438a6c24ff74e940a1e6",
+      "externalIds": {
+        "DBLP": "conf/cig/FarhangMHMY24",
+        "DOI": "10.1109/CoG60054.2024.10645651",
+        "CorpusId": 271972380
+      },
+      "url": "https://www.semanticscholar.org/paper/802df6909fe4ad69d016438a6c24ff74e940a1e6",
+      "title": "Humanlike Behavior in a Third-Person Shooter with Imitation Learning",
+      "year": 2024,
+      "citationCount": 9,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/CoG60054.2024.10645651?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/CoG60054.2024.10645651, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2317098497",
+          "name": "Alexander R. Farhang"
+        },
+        {
+          "authorId": "2317101972",
+          "name": "Brendan Mulcahy"
+        },
+        {
+          "authorId": "1484131432",
+          "name": "Daniel Holden"
+        },
+        {
+          "authorId": "2256154311",
+          "name": "Iain Matthews"
+        },
+        {
+          "authorId": "2390177510",
+          "name": "Yisong Yue"
+        }
+      ],
+      "abstract": "We tackle the problem of generating humanlike bot behavior by learning from human demonstrations. We developed a controlled gym environment to collect data on a subset of human behavior-namely aiming and target acquisition in single opponent settings. We introduce an identity-conditioned causal transformer to produce humanlike behavior of a controllable quality on a per-frame basis that captures the differences in skill and style between conditioned players.",
+      "title_query": true
+    },
+    {
+      "paperId": "3914f523b44748fa1f868c6822fd4969edf76e09",
+      "externalIds": {
+        "DBLP": "conf/icdl/GarelloRNS22",
+        "DOI": "10.1109/ICDL53763.2022.9962214",
+        "CorpusId": 254102863
+      },
+      "url": "https://www.semanticscholar.org/paper/3914f523b44748fa1f868c6822fd4969edf76e09",
+      "title": "Towards Third-Person Visual Imitation Learning Using Generative Adversarial Networks",
+      "year": 2022,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1109/ICDL53763.2022.9962214?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1109/ICDL53763.2022.9962214, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1573870980",
+          "name": "Luca Garello"
+        },
+        {
+          "authorId": "143807743",
+          "name": "F. Rea"
+        },
+        {
+          "authorId": "2600472",
+          "name": "Nicoletta Noceti"
+        },
+        {
+          "authorId": "1923910",
+          "name": "A. Sciutti"
+        }
+      ],
+      "abstract": "Imitation Learning plays a key role during our development since it allows us to learn from more expert agents. This cognitive ability implies the remapping of seen actions in our perspective. However, in the field of robotics the perspective mismatch between demonstrator and imitator is usually neglected under the assumption that the imitator has access to the explicit joints configuration of the demonstrator or that they both share the same perspective of the environment. Focusing on the perspective translation problem, in this paper we propose a generative approach that shifts the perspective of actions from third person to first person by using RGB videos. In addition to the first person view of the action our model generates an embedded representation of it. This numerical description is autonomously learnt following a time-consistent pattern and without the need of human supervision. In the experimental evaluation, we show that it is possible to exploit these two information to infer robot control during the imitation phase. Additionally, after training on synthetic data, we tested our model in a real scenario.",
+      "title_query": true
+    },
+    {
+      "paperId": "bbd93f7a687cdece41b2d92399525f03cc00cede",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1911-09676",
+        "MAG": "2970705309",
+        "ArXiv": "1911.09676",
+        "CorpusId": 202780168
+      },
+      "url": "https://www.semanticscholar.org/paper/bbd93f7a687cdece41b2d92399525f03cc00cede",
+      "title": "Third-Person Visual Imitation Learning via Decoupled Hierarchical Controller",
+      "year": 2019,
+      "citationCount": 139,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1911.09676, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "50465425",
+          "name": "Pratyusha Sharma"
+        },
+        {
+          "authorId": "38236002",
+          "name": "Deepak Pathak"
+        },
+        {
+          "authorId": "1726095131",
+          "name": "A. Gupta"
+        }
+      ],
+      "abstract": "We study a generalized setup for learning from demonstration to build an agent that can manipulate novel objects in unseen scenarios by looking at only a single video of human demonstration from a third-person perspective. To accomplish this goal, our agent should not only learn to understand the intent of the demonstrated third-person video in its context but also perform the intended task in its environment configuration. Our central insight is to enforce this structure explicitly during learning by decoupling what to achieve (intended task) from how to perform it (controller). We propose a hierarchical setup where a high-level module learns to generate a series of first-person sub-goals conditioned on the third-person video demonstration, and a low-level controller predicts the actions to achieve those sub-goals. Our agent acts from raw image observations without any access to the full state information. We show results on a real robotic platform using Baxter for the manipulation tasks of pouring and placing objects in a box. Project video is available at https://pathak22.github.io/hierarchical-imitation/",
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Third-Person Imitation Learning\n    Year: 2017\n    Citations: 246\n    URL: https://www.semanticscholar.org/paper/2e1a1b9c2e8feeb31c6855292859bf94101e8382\n    Abstract: Reinforcement learning (RL) makes it possible to train agents capable of achieving sophisticated goals in complex and uncertain environments. A key difficulty in reinforcement learning is specifying a reward function for the agent to optimize. Traditionally, imitation learning in RL has been used to overcome this problem. Unfortunately, hitherto imitation learning methods tend to require that demonstrations are supplied in the first-person: the agent is provided with a sequence of states and a specification of the actions that it should have taken. While powerful, this kind of imitation learning is limited by the relatively hard problem of collecting first-person demonstrations. Humans address this problem by learning from third-person demonstrations: they observe other humans perform tasks, infer the task, and accomplish the same task themselves. \nIn this paper, we present a method for unsupervised third-person imitation learning. Here third-person refers to training an agent to correctly achieve a simple goal in a simple environment when it is provided a demonstration of a teacher achieving the same goal but from a different viewpoint; and unsupervised refers to the fact that the...\n\n[1] Title: Self-Supervised Disentangled Representation Learning for Third-Person Imitation Learning\n    Year: 2021\n    Citations: 31\n    URL: https://www.semanticscholar.org/paper/86ff08680aa9eff4f751ead8a27e818e688d4cb1\n    Abstract: Humans learn to imitate by observing others. However, robot imitation learning generally requires expert demonstrations in the first-person view (FPV). Collecting such FPV videos for every robot could be very expensive.Third-person imitation learning (TPIL) is the concept of learning action policies by observing other agents in a third-person view (TPV), similar to what humans do. This ultimately allows utilizing human and robot demonstration videos in TPV from many different data sources, for the policy learning. In this paper, we present a TPIL approach for robot tasks with egomotion. Although many robot tasks with ground/aerial mobility often involve actions with camera egomotion, study on TPIL for such tasks has been limited. Here, FPV and TPV observations are visually very different; FPV shows egomotion while the agent appearance is only observable in TPV. To enable better state learning for TPIL, we propose our disentangled representation learning method. We use a dual auto-encoder structure plus representation permutation loss and time-contrastive loss to ensure the state and viewpoint representations are well disentangled. Our experiments show the effectiveness of our appro...\n\n[2] Title: TiLD: Third-person Imitation Learning by Estimating Domain Cognitive Differences of Visual Demonstrations\n    Year: 2023\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/a30d4d8329ccc71529ad0a3547b8eb0822924274\n    Abstract: To enable agents to effectively imitate from the third-person visual demonstrations in complex imitation learning (IL) tasks, in this paper, we propose a new IL method, which is namedt hird-person i mitation l earning by estimating d omain cognitive differences (TiLD). The proposed TiLD is able to eliminate the domain cognitive difference between the samples from different perspectives, so as to achieve the purpose of allowing agent to directly learn from the third-person demonstrations. Experimental results indicate that TiLD can achieve significant performance improvements over the existing state-of-the-art IL methods, when dealing with imitation learning tasks with third-person expert demonstrations.\n\n[3] Title: Active Third-Person Imitation Learning\n    Year: 2023\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/e78f8f0ef9ac43ffca937ad39d8ddfb632195a31\n    Abstract: We consider the problem of third-person imitation learning with the additional challenge that the learner must select the perspective from which they observe the expert. In our setting, each perspective provides only limited information about the expert's behavior, and the learning agent must carefully select and combine information from different perspectives to achieve competitive performance. This setting is inspired by real-world imitation learning applications, e.g., in robotics, a robot might observe a human demonstrator via camera and receive information from different perspectives depending on the camera's position. We formalize the aforementioned active third-person imitation learning problem, theoretically analyze its characteristics, and propose a generative adversarial network-based active learning approach. Empirically, we demstrate that our proposed approach can effectively learn from expert demonstrations and explore the importance of different architectural choices for the learner's performance.\n\n[4] Title: Third-Person Imitation Learning via Image Difference and Variational Discriminator Bottleneck (Student Abstract)\n    Year: 2020\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/a738f169b6229fd2e28fcb24a736675c9106baaa\n    Abstract: Third-person imitation learning (TPIL) is a variant of generative adversarial imitation learning and can learn an expert-like policy from third-person expert demonstrations. Third-person expert demonstrations usually exist in the form of videos recorded in a third-person perspective, and there is a lack of direct correspondence with samples generated by agent. To alleviate this problem, we improve TPIL by applying image difference and variational discriminator bottleneck. Empirically, our new method has better performance than TPIL on two MuJoCo tasks, Reacher and Inverted Pendulum.\n\n[5] Title: Humanlike Behavior in a Third-Person Shooter with Imitation Learning\n    Year: 2024\n    Citations: 9\n    URL: https://www.semanticscholar.org/paper/802df6909fe4ad69d016438a6c24ff74e940a1e6\n    Abstract: We tackle the problem of generating humanlike bot behavior by learning from human demonstrations. We developed a controlled gym environment to collect data on a subset of human behavior-namely aiming and target acquisition in single opponent settings. We introduce an identity-conditioned causal transformer to produce humanlike behavior of a controllable quality on a per-frame basis that captures the differences in skill and style between conditioned players.\n\n[6] Title: Towards Third-Person Visual Imitation Learning Using Generative Adversarial Networks\n    Year: 2022\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/3914f523b44748fa1f868c6822fd4969edf76e09\n    Abstract: Imitation Learning plays a key role during our development since it allows us to learn from more expert agents. This cognitive ability implies the remapping of seen actions in our perspective. However, in the field of robotics the perspective mismatch between demonstrator and imitator is usually neglected under the assumption that the imitator has access to the explicit joints configuration of the demonstrator or that they both share the same perspective of the environment. Focusing on the perspective translation problem, in this paper we propose a generative approach that shifts the perspective of actions from third person to first person by using RGB videos. In addition to the first person view of the action our model generates an embedded representation of it. This numerical description is autonomously learnt following a time-consistent pattern and without the need of human supervision. In the experimental evaluation, we show that it is possible to exploit these two information to infer robot control during the imitation phase. Additionally, after training on synthetic data, we tested our model in a real scenario.\n\n[7] Title: Third-Person Visual Imitation Learning via Decoupled Hierarchical Controller\n    Year: 2019\n    Citations: 139\n    URL: https://www.semanticscholar.org/paper/bbd93f7a687cdece41b2d92399525f03cc00cede\n    Abstract: We study a generalized setup for learning from demonstration to build an agent that can manipulate novel objects in unseen scenarios by looking at only a single video of human demonstration from a third-person perspective. To accomplish this goal, our agent should not only learn to understand the intent of the demonstrated third-person video in its context but also perform the intended task in its environment configuration. Our central insight is to enforce this structure explicitly during learning by decoupling what to achieve (intended task) from how to perform it (controller). We propose a hierarchical setup where a high-level module learns to generate a series of first-person sub-goals conditioned on the third-person video demonstration, and a low-level controller predicts the actions to achieve those sub-goals. Our agent acts from raw image observations without any access to the full state information. We show results on a real robotic platform using Baxter for the manipulation tasks of pouring and placing objects in a box. Project video is available at https://pathak22.github.io/hierarchical-imitation/\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        99,
+        633,
+        119
+      ],
+      "text_level": 1,
+      "text": "THIRD PERSON IMITATION LEARNING"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        142,
+        555,
+        159
+      ],
+      "text_level": null,
+      "text": "Bradly C Stadie $^{1,2}$ , Pieter Abbeel $^{1,3}$ , Ilya Sutskever $^{1}$"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        203,
+        544,
+        215
+      ],
+      "text_level": null,
+      "text": "{bstadie, pieter, ilyasu,}@openai.com"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        253,
+        545,
+        268
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        286,
+        766,
+        398
+      ],
+      "text_level": null,
+      "text": "Reinforcement learning (RL) makes it possible to train agents capable of achieving sophisticated goals in complex and uncertain environments. A key difficulty in reinforcement learning is specifying a reward function for the agent to optimize. Humans overcome this difficulty by imitating other humans. Imitation learning in RL works well whenever the demonstrations are given in the first person: the agent is provided with a sequence of states and a specification of the actions that it should have"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        401,
+        766,
+        443
+      ],
+      "text_level": null,
+      "text": "Humans address this problem by learning from third person demonstrations: they observe other humans perform tasks, infer the task, and accomplish the same task themselves."
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        446,
+        766,
+        530
+      ],
+      "text_level": null,
+      "text": "In this paper, we present a method for unsupervised third person imitation learning. By using ideas from domain confusion, we are able to train an agent to correctly achieve a simple goal in a simple environment when it is provided a demonstration of a teacher achieving the same goal but from a different viewpoint. Crucially, the agent receives only these demonstrations, and is not provided a correspondence between teacher states and student states."
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        561,
+        336,
+        577
+      ],
+      "text_level": 1,
+      "text": "1 INTRODUCTION"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        595,
+        826,
+        680
+      ],
+      "text_level": null,
+      "text": "Reinforcement learning (RL) is a framework for training agents to maximize complex rewards in large, unknown, stochastic environments. In recent years, combining techniques from deep learning with reinforcement learning has yielded a string of successful applications in game playing and robotics Mnih et al. (2015; 2016); Schulman et al. (2015a). These successful applications, and the speed at which the abilities of RL algorithms have been increasing, makes it an exciting area of research with si"
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        686,
+        826,
+        799
+      ],
+      "text_level": null,
+      "text": "One of the major weaknesses of RL is the need to manually specify a reward function. For each task we wish our agent to accomplish, we must provide it with a reward function whose maximizer will precisely recover the desired behavior. This weakness is addressed by the field of Inverse Reinforcement Learning (IRL). Given a set of expert trajectories, IRL algorithms produce a reward function under which these the expert trajectories enjoy the property of optimality. Recently, there has been a sign"
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        805,
+        823,
+        875
+      ],
+      "text_level": null,
+      "text": "While IRL algorithms are appealing, they impose the somewhat unrealistic requirement that the demonstrations should be provided from the first person point of view with respect to the agent. Human beings learn to imitate entirely from third person demonstrations – i.e., by observing other humans achieve goals. Indeed, in many situations, first person demonstrations are outright impossible to obtain. Meanwhile, third person demonstrations are often relatively easy to obtain."
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        881,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "The goal of this paper is to develop an algorithm for third person imitation learning. Advances in this class of algorithms would significantly improve the state of robotics, because it will enable anyone to easily teach robots news skills and abilities. Importantly, we want our algorithm"
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "to be unsupervised: it should be able to observe another agent perform a task, infer that there is an underlying correspondence to itself, and find a way to accomplish the same task."
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        138,
+        826,
+        223
+      ],
+      "text_level": null,
+      "text": "In this paper we will consider pixel level third person learning, where the student and the teacher observe the environment through cameras that have different viewpoints. The teacher will show the student how it accomplishes a task, and the student must replicate the teacher's behavior. However, given the twist that the student and the teacher receive fundamentally different observations, it will be essential for the student to infer a correspondence between its observations and the teacher's d"
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        229,
+        823,
+        314
+      ],
+      "text_level": null,
+      "text": "We offer an approach to this problem by borrowing ideas from domain confusion Tzeng et al. (2014) and generative adversarial networks (GANs) Goodfellow et al. (2014). The high-level idea is to introduce an optimizer under which we can recover both a domain-agnostic representation of the agent's observations, and a cost function which utilizes this domain-agnostic representation to capture the essence of expert trajectories. We formulate this as a third-person RL-GAN problem, and our solution bui"
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        320,
+        823,
+        391
+      ],
+      "text_level": null,
+      "text": "Surprisingly, we find that this simple approach has been able to solve the problems that are presented in this paper (illustrated in Figure 1), even though the student's observations are related in a complicated way to the teacher's demonstrations, given that the observations and the demonstrations are pixel-level. As techniques for training GANs become more stable and capable, we expect our algorithm to be able to infer solve harder third-person imitation tasks without any direct supervision."
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "image",
+      "page_idx": 1,
+      "bbox": [
+        207,
+        529,
+        393,
+        654
+      ],
+      "text_level": null,
+      "text": "Figure 1: From left to right, the three domains we consider in this paper: pointmass, teacher, and pendulum. Top-row is the third person view of a teacher demonstration. Bottom row is the agent's view in their version of the environment."
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        739,
+        346,
+        753
+      ],
+      "text_level": 1,
+      "text": "2 RELATED WORK"
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        771,
+        826,
+        924
+      ],
+      "text_level": null,
+      "text": "Imitation learning (also learning from demonstrations or programming by demonstration) considers the problem of acquiring skills from observing demonstrations. Imitation learning has a long history, with several good survey articles, including (Schaal, 1999; Calinon, 2009; Argall et al., 2009). Two main lines of work within imitation learning are behavioral cloning, where the demonstrations are used to directly learn a mapping from observations to actions using supervised learning, potentially w"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "learning (Ratliff et al., 2007; Levine et al., 2011; Wulfmeier et al., 2015; Finn et al., 2016; Ho & Ermon, 2016)."
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        138,
+        826,
+        319
+      ],
+      "text_level": null,
+      "text": "This past work, however, is not directly applicable to the 3rd person imitation learning setting. In 3rd person imitation learning, the observations and actions obtained from the demonstrations are not the same as what the imitator agent will be faced with. A typical scenario would be: the imitator agent watches a human perform a demonstration, and then has to execute that same task. As discussed in Nehaniv & Dautenhahn (2001) the \"what and how to imitate\" questions become significantly more cha"
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        325,
+        823,
+        383
+      ],
+      "text_level": null,
+      "text": "The most closely related work to ours is by Finn et al. (2016); Ho & Ermon (2016); Wulfmeier et al. (2015), who also consider inverse reinforcement learning directly from raw sensory data. However, the applicability of their approaches is limited to the first person setting. Indeed, matching raw sensory observations (as strived for in this prior work) is impractical in the 3rd person setting."
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        388,
+        823,
+        446
+      ],
+      "text_level": null,
+      "text": "Our work also closely builds on advances in generative adversarial networks Goodfellow et al. (2014), which are very closely related to imitation learning as explained in Finn et al. (2016); Ho & Ermon (2016). In our optimization formulation, we apply the gradient flipping technique from Ganin & Lempitsky (2014)."
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        452,
+        826,
+        578
+      ],
+      "text_level": null,
+      "text": "The problem of adapting what is learned in one domain to another domain has been studied extensively in computer vision in the supervised learning setting Yang et al. (2007); Mansour et al. (2009); Kulis et al. (2011); Aytar & Zisserman (2011); Duan et al. (2012); Hoffman et al. (2013); Long & Wang (2015). It has also been shown that features trained in one domain can often be relevant to other domains Donahue et al. (2014). The work most closely related to ours is Tzeng et al. (2014; 2015), who"
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        584,
+        823,
+        655
+      ],
+      "text_level": null,
+      "text": "Our approach to third person imitation learning relies on reinforcement learning from raw sensory data in the imitator domain. Several recent advances in deep reinforcement learning have made this practical, including Deep Q-Networks (Mnih et al., 2015), Trust Region Policy Optimization (Schulman et al., 2015a), A3C Mnih et al. (2016), and Generalized Advantage Estimation (Schulman et al., 2015b). Our approach uses Trust Region Policy Optimization."
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        678,
+        506,
+        694
+      ],
+      "text_level": 1,
+      "text": "3 BACKGROUND AND PRELIMINARIES"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        712,
+        823,
+        768
+      ],
+      "text_level": null,
+      "text": "A discrete-time finite-horizon discounted Markov decision process (MDP) is represented by a tuple  $M = (\\mathcal{S}, \\mathcal{A}, \\mathcal{P}, r, \\rho_0, \\gamma, T)$ , in which  $\\mathcal{S}$  is a state set,  $\\mathcal{A}$  an action set,  $\\mathcal{P}: \\mathcal{S} \\times \\mathcal{A} \\times \\mathcal{S} \\to \\mathbb{R}_+$  a transition probability distribution,  $r: \\mathcal{S} \\times \\mathcal{A} \\to \\mathbb{R}$  a reward function,  $\\rho_0: \\mathcal{S} \\to \\mathbb{R}_+$  an initial state distri"
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        773,
+        823,
+        821
+      ],
+      "text_level": null,
+      "text": "In the reinforcement learning setting, the goal is to find a policy  $\\pi_{\\theta}:\\mathcal{S}\\times \\mathcal{A}\\to \\mathbb{R}_{+}$  parametrized by  $\\theta$  that maximizes the expected discounted sum of rewards incurred,  $\\eta (\\pi_{\\theta}) = \\mathbb{E}_{\\pi_{\\theta}}[\\sum_{t = 0}^{T}\\gamma^{t}c(s_{t})]$ , where  $s_0\\sim \\rho_0(s_0)$ ,  $a_{t}\\sim \\pi_{\\theta}(a_{t}|s_{t})$ , and  $s_{t + 1}\\sim \\mathcal{P}(s_{t + 1}|s_t,a_t)$ ."
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        825,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "In the (first person) imitation learning setting, we are not given the reward function. Instead we are given traces (i.e., sequences of states traversed) by an expert who acts according to an unknown policy  $\\pi_E$ . The goal is to find a policy  $\\pi_{\\theta}$  that performs as well as the expert against the unknown reward function. It was shown in Abbeel & Ng (2004) that this can be achieved through inverse reinforcement learning by finding a policy  $\\pi_{\\theta}$  that matches the expert's "
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "$\\pi_{\\theta}$  that makes it impossible for a discriminator (in their work a deep neural net) to distinguish states visited by the expert from states visited by the imitator agent. This can be formalized as follows:"
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        190,
+        826,
+        428
+      ],
+      "text_level": null,
+      "text": "Here, the expectations are over the states experienced by the policy of the imitator agent,  $\\pi_{\\theta}$ , and by the policy of the expert,  $\\pi_E$ , respectively.  $\\mathcal{D}_R$  is the discriminator, which outputs the probability of a state having originated from a trace from the imitator policy  $\\pi_{\\theta}$ . If the discriminator is perfectly able to distinguish which policy originated state-action pairs, then  $\\mathcal{D}_R$  will consistently output a probability of 1 in the first"
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        433,
+        823,
+        460
+      ],
+      "text_level": null,
+      "text": "In our work we will have more terms in the objective, so for compactness of notation, we will realize the discriminative minimization from Eqn. (1) as follows:"
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        500,
+        823,
+        529
+      ],
+      "text_level": null,
+      "text": "Where  $s_i$  is state  $i$ ,  $c_{\\ell_i}$  is the correct class label (was the state  $s_i$  obtained from an expert vs. from a non-expert), and  $CE$  is the standard cross entropy loss."
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        547,
+        797,
+        580
+      ],
+      "text_level": 1,
+      "text": "4 A FORMAL DEFINITION OF THE THIRD PERSON IMITATION LEARNING PROBLEM"
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        595,
+        823,
+        667
+      ],
+      "text_level": null,
+      "text": "Formally, the third person imitation learning problem can be stated as follows. Suppose we are given two Markov Decision Processes  $M_{\\pi_E}$  and  $M_{\\pi_\\theta}$ . Suppose further there exists a set of rollouts  $\\rho = \\{(s_1, \\ldots, s_n)\\}_{i=0}^n$  which were generated under a policy  $\\pi_E$  acting optimally under  $R_{\\pi_E}$ . In third person imitation learning, one attempts to recover by proxy through  $\\rho$  a policy  $\\pi_\\theta = f(\\rho)$  which acts optimally with respect to  "
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        685,
+        653,
+        700
+      ],
+      "text_level": 1,
+      "text": "5 A THIRD PERSON IMITATION LEARNING ALGORITHM"
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        715,
+        369,
+        729
+      ],
+      "text_level": 1,
+      "text": "5.1 GAME FORMULATION"
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        741,
+        823,
+        813
+      ],
+      "text_level": null,
+      "text": "In this section, we discuss a simple algorithm for third person imitation learning. This algorithm is able to successfully discriminate between expert and novice policies, even when the policies are executed under different environments. Subsequently, this discrimination signal can be used to train expert policies in new domains via RL by training the novice policy to fool the discriminator, thus forcing it to match the expert policy."
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        818,
+        823,
+        861
+      ],
+      "text_level": null,
+      "text": "In third person learning, observations are more typically available rather than direct state access, so going forward we will work with observations  $o_{t}$  instead of states  $s_t$  as representing the expert traces. The top row of Figure 6.2 illustrates what this observations are like in our experiments."
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        867,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "We begin by recalling that in the algorithm proposed by Ho & Ermon (2016) the loss in Equation 2 is utilized to train a discriminator  $\\mathcal{D}_R$  capable of distinguishing expert vs non-expert policies. Unfortunately, (2) will likely fail in cases when the expert and non-expert act in different environments, since  $\\mathcal{D}_R$  will quickly learn these differences and use them as a strong classification signal."
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        103,
+        826,
+        214
+      ],
+      "text_level": null,
+      "text": "To handle the third-person setting, where expert and novice are in different environments, we consider that  $\\mathcal{D}_R$  works by first extracting features from  $o_t$ , and then using these features to make a classification. Suppose then that we partition  $\\mathcal{D}_R$  into a feature extractor  $\\mathcal{D}_F$  and the actual classifier which assigns probabilities to the outputs of  $D_F$ . Overloading notation, we will refer to the classifier as  $\\mathcal{D}_R$  going forward. For ex"
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        277,
+        823,
+        321
+      ],
+      "text_level": null,
+      "text": "Where MI is mutual information and hence we have abused notation slightly and used  $\\mathcal{D}_R$ ,  $D_F$ , and  $d_{\\ell}$  to mean the classifier, feature extractor, and the domain label as well as distributions over these objects."
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        327,
+        823,
+        371
+      ],
+      "text_level": null,
+      "text": "The mutual information term can be instantiated by introducing another classifier  $\\mathcal{D}_D$ , which takes features produced by  $D_F$  and outputs the probability that those features were produced by in the expert vs. non-expert environment. If  $\\sigma_i = D_F(o_i)$ , then the problem can be written as"
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        426,
+        689,
+        441
+      ],
+      "text_level": null,
+      "text": "In words, we wish to minimize class loss while maximizing domain confusion."
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        446,
+        823,
+        546
+      ],
+      "text_level": null,
+      "text": "Often, it can be difficult for even humans to judge a static image as expert vs. non-expert because it does not convey any information about the environmental change affected by the agent's actions. For example, if a pointmass is attempting to move to a target location and starts far away from its goal state, it can be difficult to judge if the policy itself is bad or the initialization was simply unlucky. In response to this difficulty, we give  $\\mathcal{D}_R$  access to not only the image at "
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        551,
+        433,
+        566
+      ],
+      "text_level": null,
+      "text": "This renders the following formulation:"
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        640,
+        823,
+        667
+      ],
+      "text_level": null,
+      "text": "Note we also want to optimize over  $\\mathcal{D}_F$ , the feature extractor, but it feeds both into  $\\mathcal{D}_R$  and into  $\\mathcal{D}_D$ , which are competing (hidden under  $\\sigma$ ), which we will address now."
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        675,
+        823,
+        732
+      ],
+      "text_level": null,
+      "text": "To deal with the competition over  $\\mathcal{D}_F$ , we introduce a function  $\\mathcal{G}$  that acts as the identity when moving forward through a directed acyclic graph and flips the sign when backpropagating through the graph. This technique has enjoyed recent success in computer vision. See, for example, (Ganin & Lempitsky, 2014). With this trick, the problem reduces to its final form"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        797,
+        823,
+        868
+      ],
+      "text_level": null,
+      "text": "In Equation (5), we flip the gradient's sign during backpropagation of  $D_F$  with respect to the domain classification loss. This corresponds to stochastic gradient ascent away from features that are useful for domain classification, thus ensuring that  $D_F$  produces domain agnostic features. Equation 5 can be solved efficiently with stochastic gradient descent. Here  $\\lambda$  is a hyperparameter that determines the trade-off made between the objectives that are competing over  $\\mathcal{D"
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        875,
+        823,
+        902
+      ],
+      "text_level": null,
+      "text": "To ensure sufficient signal for discrimination between expert and non-expert, we collect third person demonstrations in the expert domain from both an expert and from a non-expert."
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        909,
+        602,
+        925
+      ],
+      "text_level": null,
+      "text": "Our complete formulation is graphically summarized in Figure 2."
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "image",
+      "page_idx": 5,
+      "bbox": [
+        181,
+        101,
+        831,
+        330
+      ],
+      "text_level": null,
+      "text": "Figure 2: Architecture diagram for third person imitation learning. Images at time  $t$  and  $t + 4$  are sent through a feature extractor to obtain  $F(o_{t})$  and  $F(o_{t + 4})$ . Subsequently, these feature vectors are reused in two places. First, they are concatenated and used to predict whether the samples are drawn from expert or non-expert trajectories. Second,  $F(o_{t})$  is utilized to predict a domain label (expert vs. novice domain). During backpropagation, the sign on the domain "
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        510,
+        303,
+        523
+      ],
+      "text_level": 1,
+      "text": "5.2 ALGORITHM"
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        539,
+        823,
+        568
+      ],
+      "text_level": null,
+      "text": "To solve the game formulation in Equation (5), we perform alternating (partial) optimization over the policy  $\\pi_{\\theta}$  and the reward function and domain confusion encoded through  $\\mathcal{D}_R, \\mathcal{D}_D, \\mathcal{D}_F$ ."
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        574,
+        823,
+        603
+      ],
+      "text_level": null,
+      "text": "The optimization over  $\\mathcal{D}_R, \\mathcal{D}_D, \\mathcal{D}_F$  is done through stochastic gradient descent with ADAM Kingma & Ba (2014)."
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        609,
+        823,
+        679
+      ],
+      "text_level": null,
+      "text": "Our generator  $(\\pi_{\\theta})$  step is similar to the generator step in the algorithm by (Ho & Ermon, 2016). We simply use  $-\\log \\mathcal{D}_R$  as the reward. Using policy gradient methods (TRPO), we train the generator to minimize this cost and thus push the policy further towards replicating expert behavior. Once the generator step is done, we start again with the discriminator step. The entire process is summarized in algorithm 1."
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        708,
+        328,
+        723
+      ],
+      "text_level": 1,
+      "text": "6 EXPERIMENTS"
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        744,
+        596,
+        760
+      ],
+      "text_level": null,
+      "text": "We seek to answer the following questions through experiments:"
+    },
+    {
+      "source_id": "SRC-059",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        662,
+        328,
+        674
+      ],
+      "text_level": 1,
+      "text": "6.1 ENVIRONMENTS"
+    },
+    {
+      "source_id": "SRC-060",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        691,
+        823,
+        763
+      ],
+      "text_level": null,
+      "text": "To evaluate our algorithm, we consider three environments in the MuJoCo physics simulator. There are two different versions of each environment, an expert variant and a novice variant. Our goal is to train a cost function that is domain agnostic, and hence can be trained with images on the expert domain but nevertheless produce a reasonable cost on the novice domain. See Figure 1 for a visualization of the differences between expert and novice environments for the three tasks."
+    },
+    {
+      "source_id": "SRC-061",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        768,
+        823,
+        797
+      ],
+      "text_level": null,
+      "text": "Point: A pointmass attempts to reach a point in a plane. The color of the target and the camera angle change between domains."
+    },
+    {
+      "source_id": "SRC-062",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        805,
+        823,
+        862
+      ],
+      "text_level": null,
+      "text": "Reacher: A two DOF arm attempts to reach a designated point in the plane. The camera angle, the length of the arms, and the color of the target point are changed between domains. Note that changing the camera angle significantly alters the image background color from largely gray to roughly 30 percent black. This presents a significant challenge for our method."
+    },
+    {
+      "source_id": "SRC-063",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        867,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "Inverted Pendulum: A classic RL task wherein a pendulum must be made to balance via control. For this domain, We only change the color of the pendulum and not the camera angle. Since there is no target point, we found that changing the camera angle left the domain invariant representations with too little information and resulted in a failure case. In contrast to some traditional renderings"
+    },
+    {
+      "source_id": "SRC-064",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "of this problem, we do not terminate an episode when the agent falls but rather allow data collection to continue for a fixed horizon."
+    },
+    {
+      "source_id": "SRC-065",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        171,
+        148,
+        316,
+        162
+      ],
+      "text_level": 1,
+      "text": "6.2 EVALUATIONS"
+    },
+    {
+      "source_id": "SRC-066",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        174,
+        826,
+        287
+      ],
+      "text_level": null,
+      "text": "Is it possible to solve the third person imitation learning problem in simple settings? In Figure 3, we see that our proposed algorithm is indeed able to recover reasonable policies for all three tasks we examined. Initially, the training is quite unstable due to the domain confusion wreaking havoc on the learned cost. However, after several iterations the policies eventually head towards reasonable local minima and the standard deviation over the reward distribution shrinks substantially. Final"
+    },
+    {
+      "source_id": "SRC-067",
+      "type": "image",
+      "page_idx": 7,
+      "bbox": [
+        189,
+        297,
+        387,
+        391
+      ],
+      "text_level": null,
+      "text": "Figure 3: Reward vs training iteration for teacher, inverted pendulum, and point environments. The learning curves are averaged over 5 trials with error bars represent one standard deviation in the reward distribution at the given point."
+    },
+    {
+      "source_id": "SRC-068",
+      "type": "image",
+      "page_idx": 7,
+      "bbox": [
+        189,
+        479,
+        383,
+        571
+      ],
+      "text_level": null,
+      "text": "Figure 4: Domain accuracy vs. training iteration for reacher, inverted pendulum, and point environments."
+    },
+    {
+      "source_id": "SRC-069",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        641,
+        826,
+        753
+      ],
+      "text_level": null,
+      "text": "Does the algorithm we propose benefit from both domain confusion and the multi-time step input? We answer this question with the experiments summarized in Figure 5. This experiment compares our approach with: (i) our approach without the domain confusion loss; (ii) our approach without the multi-time step input; (iii) our approach without the domain confusion loss and without the multi-time step input (which is very similar to the approach in Ho & Ermon (2016)). We see that adding domain confusi"
+    },
+    {
+      "source_id": "SRC-070",
+      "type": "image",
+      "page_idx": 7,
+      "bbox": [
+        189,
+        766,
+        380,
+        858
+      ],
+      "text_level": null,
+      "text": "Figure 5: Reward vs iteration for reacher, inverted pendulum, and point environments with no domain confusion and no velocity (red), domain confusion (orange), velocity (brown), and both domain confusion and velocity (blue)."
+    },
+    {
+      "source_id": "SRC-071",
+      "type": "text",
+      "page_idx": 8,
+      "bbox": [
+        169,
+        103,
+        823,
+        188
+      ],
+      "text_level": null,
+      "text": "How sensitive is our proposed algorithm to the selection of hyper-parameters used in deployment? Figure 6 shows the effect of the domain confusion coefficient  $\\lambda$ , which trades off how much we should weight the domain confusion objective vs. the standard cost-recovery objective, on the final performance of the algorithm. Setting  $\\lambda$  too low results in slower learning and features that are not domain-invariant. Setting  $\\lambda$  too high results in an objective that is too quick"
+    },
+    {
+      "source_id": "SRC-072",
+      "type": "text",
+      "page_idx": 8,
+      "bbox": [
+        169,
+        194,
+        826,
+        294
+      ],
+      "text_level": null,
+      "text": "For multi-time step input, one must choose the number of look-ahead frames that are utilized. If too small a window is chosen, the agent's actions have not affected a large amount of change in the environment and it is difficult to discern any additional class signal over static images. If too large a time-frame passes, causality becomes difficult to interpolate and the agent does worse than simply being trained on static frames. Figure 7 illustrates that no number of look-ahead frames is consis"
+    },
+    {
+      "source_id": "SRC-073",
+      "type": "image",
+      "page_idx": 8,
+      "bbox": [
+        189,
+        308,
+        385,
+        401
+      ],
+      "text_level": null,
+      "text": "Figure 6: Reward of final trained policy vs domain confusion weight  $\\lambda$  for reacher, inverted pendulum, and point environments."
+    },
+    {
+      "source_id": "SRC-074",
+      "type": "image",
+      "page_idx": 8,
+      "bbox": [
+        189,
+        483,
+        385,
+        575
+      ],
+      "text_level": null,
+      "text": "Figure 7: Reward of final trained policy vs number of look-ahead frames for reacher, inverted pendulum, and point environments."
+    },
+    {
+      "source_id": "SRC-075",
+      "type": "text",
+      "page_idx": 8,
+      "bbox": [
+        171,
+        652,
+        486,
+        667
+      ],
+      "text_level": 1,
+      "text": "7 DISCUSSION AND FUTURE WORK"
+    },
+    {
+      "source_id": "SRC-076",
+      "type": "text",
+      "page_idx": 8,
+      "bbox": [
+        169,
+        685,
+        823,
+        770
+      ],
+      "text_level": null,
+      "text": "In this paper, we presented the problem of third person imitation learning. We argue that this problem will be important going forward, as techniques in reinforcement learning and generative adversarial learning improve and the cost of collecting first person samples remains high. We presented an algorithm which builds on Generative Adversarial Imitation Learning and is capable of solving simple third person imitation tasks. One promising direction of future work in this area is to jointly train"
+    },
+    {
+      "source_id": "SRC-077",
+      "type": "text",
+      "page_idx": 8,
+      "bbox": [
+        171,
+        791,
+        287,
+        805
+      ],
+      "text_level": 1,
+      "text": "REFERENCES"
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B16dGcqlx",
+  "paper_dir": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B16dGcqlx",
+  "review_model_name": "gpt-5",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ],
+  "reviewer_memory_contexts": {},
+  "memory_retrieval_enabled": false,
+  "memory_mode": "none"
+}

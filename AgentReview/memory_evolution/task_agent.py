@@ -1,0 +1,186 @@
+import json
+import re
+from dataclasses import MISSING, fields
+from typing import Any, Dict, Type
+
+from agentreview.single_paper_review_roles import (
+    build_meta_reviewer_config,
+    build_specialist_reviewer_configs,
+)
+
+from .tasks import META_TASK, SPECIALIST_TASKS
+
+
+def _annotation_name(annotation: Any) -> str:
+    return getattr(annotation, "__name__", str(annotation).replace("typing.", ""))
+
+
+def dataclass_schema(dataclass_type: Type) -> Dict[str, Any]:
+    properties = {}
+    required = []
+    for item in fields(dataclass_type):
+        properties[item.name] = {"type": _annotation_name(item.type)}
+        if item.default is MISSING and item.default_factory is MISSING:
+            required.append(item.name)
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+        "additionalProperties": False,
+    }
+
+
+def _parse_json_object(response: str) -> Dict[str, Any]:
+    text = (response or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+        if not match:
+            raise
+        value = json.loads(match.group(0))
+    if not isinstance(value, dict):
+        raise ValueError("Expected a JSON object")
+    return value
+
+
+def _matches_annotation(value: Any, annotation: Any) -> bool:
+    name = getattr(annotation, "__name__", str(annotation)).lower()
+    if "list" in name:
+        return isinstance(value, list)
+    if "dict" in name:
+        return isinstance(value, dict)
+    if "bool" in name:
+        return isinstance(value, bool)
+    if "int" in name:
+        return isinstance(value, int) and not isinstance(value, bool)
+    if "float" in name:
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(value, str)
+
+
+class TaskAgent:
+    """Fixed prompting wrapper whose behavior is influenced only by program instructions."""
+
+    def __init__(
+        self,
+        toolkit,
+        system_prompt: str = "You are a precise task agent.",
+        task_id: str = "",
+    ):
+        self.toolkit = toolkit
+        self.system_prompt = system_prompt
+        self.task_id = task_id
+
+    def _complete(self, prompt: str, agent_name: str = "Memory Harness") -> str:
+        return self.toolkit.llm_completion(
+            [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            agent_name=agent_name,
+        )
+
+    def _structured_completion(self, prompt: str, dataclass_type: Type):
+        value = _parse_json_object(
+            self._complete(prompt, agent_name=f"Memory {dataclass_type.__name__}")
+        )
+        items = list(fields(dataclass_type))
+        expected = {item.name for item in items}
+        required = {
+            item.name
+            for item in items
+            if item.default is MISSING and item.default_factory is MISSING
+        }
+        actual = set(value)
+        missing = required - actual
+        extra = actual - expected
+        if missing or extra:
+            raise ValueError(
+                f"JSON fields do not match {dataclass_type.__name__}: "
+                f"missing={sorted(missing)}, extra={sorted(extra)}"
+            )
+        invalid = [
+            item.name
+            for item in items
+            if item.name in value
+            and not _matches_annotation(value[item.name], item.type)
+        ]
+        if invalid:
+            raise TypeError(
+                f"JSON field types do not match {dataclass_type.__name__}: "
+                f"{sorted(invalid)}"
+            )
+        return dataclass_type(**value)
+
+    def extract_knowledge_item(self, program, raw_text: str):
+        schema = json.dumps(dataclass_schema(program.KnowledgeItem), ensure_ascii=False)
+        prompt = f"""
+{program.INSTRUCTION_KNOWLEDGE_ITEM}
+
+Text:
+{raw_text}
+
+The KnowledgeItem must conform to this schema:
+{schema}
+
+Output ONLY a valid JSON object matching the schema fields. No explanation.
+""".strip()
+        return self._structured_completion(prompt, program.KnowledgeItem)
+
+    def generate_query(self, program, question: str):
+        schema = json.dumps(dataclass_schema(program.Query), ensure_ascii=False)
+        prompt = f"""
+{program.INSTRUCTION_QUERY}
+
+Question:
+{question}
+
+The Query must conform to this schema:
+{schema}
+
+Output ONLY a valid JSON object matching the schema fields. No explanation.
+""".strip()
+        return self._structured_completion(prompt, program.Query)
+
+    def generate_response(self, program, question: str, memory_context: str) -> str:
+        prompt = f"""
+{program.INSTRUCTION_RESPONSE}
+
+Always-on knowledge:
+{program.ALWAYS_ON_KNOWLEDGE}
+
+Original question:
+{question}
+
+Memory context:
+{memory_context}
+
+Provide the final answer only.
+""".strip()
+        return self._complete(prompt, agent_name="Memory Response").strip()
+
+
+def build_task_agent(toolkit, task_id: str) -> TaskAgent:
+    """Build the fixed task agent; candidates cannot alter this system prompt."""
+    if task_id == META_TASK:
+        config = build_meta_reviewer_config()
+        return TaskAgent(
+            toolkit,
+            system_prompt=config["role_desc"],
+            task_id=task_id,
+        )
+    if task_id not in SPECIALIST_TASKS:
+        raise ValueError(f"Unknown review task: {task_id}")
+    configs = {
+        config["metadata"]["review_dimension"]: config
+        for config in build_specialist_reviewer_configs()
+    }
+    return TaskAgent(
+        toolkit,
+        system_prompt=configs[task_id]["role_desc"],
+        task_id=task_id,
+    )

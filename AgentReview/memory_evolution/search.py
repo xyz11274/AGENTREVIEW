@@ -1,0 +1,645 @@
+import json
+import math
+import random
+import shutil
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from .evaluator import evaluate_program
+from .models import Episode, EvalItem
+from .quality import QualityResult, check_program_path
+from .reflector import (
+    ChangeLog,
+    EvalFeedback,
+    EvolutionConstraints,
+    compile_fix_loop,
+    mutate_program,
+    validate_mutation_scope,
+)
+from .subset_selection import (
+    build_static_validation_set,
+    sample_rotating_validation_set,
+    select_episode_subset,
+)
+
+
+@dataclass
+class EvolutionConfig:
+    output_dir: str = "runs/mstar"
+    task_description: str = ""
+    iterations: int = 20
+    static_size: int = 25
+    rotating_size: int = 5
+    temperature: float = 0.15
+    episode_budget: Optional[int] = None
+    seed: int = 0
+    dry_run: bool = False
+    max_fix_attempts: int = 3
+    write_timeout: float = 60.0
+    read_timeout: float = 60.0
+    max_llm_calls_per_operation: int = 1
+    task_id: str = ""
+    selection_repeats: int = 3
+    selection_top_k: int = 3
+    parent_policy: str = "softmax"
+    mutation_scope: str = "full"
+    task_model_name: str = ""
+    reflector_model_name: str = ""
+    judge_model_name: str = ""
+    classifier_adapter: str = ""
+    classifier_adapter_sha256: str = ""
+    review_split_revision: str = ""
+    review_classify_revision: str = ""
+    embedding_adapter: str = ""
+    embedding_adapter_sha256: str = ""
+    embedding_model_name: str = ""
+    embedding_revision: str = ""
+    formal: bool = True
+    review_request_sha256: str = ""
+    data_manifest_sha256: str = ""
+    semantic_scholar_cache_sha256: str = ""
+    seed_program_sha256: Dict[str, str] = field(default_factory=dict)
+    experiment_kind: str = "formal"
+
+    @classmethod
+    def from_value(cls, value):
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, dict):
+            known = {field.name for field in cls.__dataclass_fields__.values()}
+            return cls(**{key: item for key, item in value.items() if key in known})
+        raise TypeError("config must be EvolutionConfig or dict")
+
+
+@dataclass
+class ProgramCandidate:
+    program_id: str
+    path: str
+    parent_id: Optional[str]
+    iteration: int
+    static_score: float
+    quality: QualityResult
+    change_log: ChangeLog
+    lineage: List[ChangeLog] = field(default_factory=list)
+
+
+@dataclass
+class EvolutionResult:
+    best_program_path: str
+    best_program_id: str
+    best_score: float
+    output_dir: str
+    pool_size: int
+    static_validation_ids: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _append_jsonl(path: Path, value: Dict[str, Any]) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(value, ensure_ascii=False) + "\n")
+
+
+def _write_traces(path: Path, program_id: str, traces: List[Dict[str, Any]]) -> None:
+    with path.open("a", encoding="utf-8") as handle:
+        for trace in traces:
+            handle.write(
+                json.dumps(
+                    {"program_id": program_id, **trace}, ensure_ascii=False
+                )
+                + "\n"
+            )
+
+
+def _candidate_record(
+    candidate: ProgramCandidate,
+    rotating_score: float = 0.0,
+    compile_errors: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    return {
+        "program_id": candidate.program_id,
+        "parent_id": candidate.parent_id,
+        "iteration": candidate.iteration,
+        "static_score": candidate.static_score,
+        "rotating_score": rotating_score,
+        "quality_passed": candidate.quality.passed,
+        "compile_errors": compile_errors or candidate.quality.errors,
+        "change_summary": candidate.change_log.summary,
+    }
+
+
+def _softmax_parent(candidates, temperature: float, rng: random.Random):
+    eligible = [candidate for candidate in candidates if candidate.quality.passed]
+    if not eligible:
+        raise RuntimeError("No quality-passing program is available for mutation")
+    temperature = max(float(temperature), 1e-6)
+    logits = [candidate.static_score / temperature for candidate in eligible]
+    maximum = max(logits)
+    weights = [math.exp(logit - maximum) for logit in logits]
+    return rng.choices(eligible, weights=weights, k=1)[0]
+
+
+def _select_parent(candidates, config: EvolutionConfig, rng: random.Random):
+    if config.parent_policy == "best":
+        eligible = [candidate for candidate in candidates if candidate.quality.passed]
+        return max(eligible, key=lambda candidate: candidate.static_score)
+    if config.parent_policy != "softmax":
+        raise ValueError(f"Unknown parent policy: {config.parent_policy}")
+    return _softmax_parent(candidates, config.temperature, rng)
+
+
+def _item_id(item) -> str:
+    if isinstance(item, dict):
+        return str(item.get("id", ""))
+    return str(getattr(item, "id", ""))
+
+
+def _reference_programs(candidates: List[ProgramCandidate], parent_id: str) -> List[str]:
+    """Expose scored high/low population designs without validation case content."""
+    eligible = [
+        candidate
+        for candidate in candidates
+        if candidate.quality.passed and candidate.program_id != parent_id
+    ]
+    ordered = sorted(eligible, key=lambda candidate: candidate.static_score)
+    selected = []
+    for candidate in (
+        ordered[-1:] + ordered[:1] + ordered[len(ordered) // 2 : len(ordered) // 2 + 1]
+    ):
+        if candidate not in selected:
+            selected.append(candidate)
+    return [
+        (
+            f"# population_program_id={candidate.program_id} "
+            f"static_score={candidate.static_score:.6f}\n"
+            + Path(candidate.path).read_text(encoding="utf-8")
+        )
+        for candidate in selected[:3]
+    ]
+
+
+def run_evolution(
+    seed_program_paths: List[str],
+    episodes,
+    validation_items,
+    task_agent,
+    toolkit,
+    metric,
+    config,
+    reflector_client=None,
+) -> EvolutionResult:
+    cfg = EvolutionConfig.from_value(config)
+    reflector = reflector_client or toolkit
+    print(
+        "[MSTAR] Starting evolution: "
+        f"iterations={cfg.iterations}, static_size={cfg.static_size}, "
+        f"rotating_size={cfg.rotating_size}, episode_budget={cfg.episode_budget}",
+        flush=True,
+    )
+    rng = random.Random(cfg.seed)
+    output_dir = Path(cfg.output_dir).resolve()
+    pool_dir = output_dir / "pool"
+    traces_dir = output_dir / "traces"
+    pool_dir.mkdir(parents=True, exist_ok=True)
+    traces_dir.mkdir(parents=True, exist_ok=True)
+    scores_path = output_dir / "scores.jsonl"
+    lineage_path = output_dir / "lineage.jsonl"
+    scores_path.write_text("", encoding="utf-8")
+    lineage_path.write_text("", encoding="utf-8")
+    (output_dir / "config.json").write_text(
+        json.dumps(asdict(cfg), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    episode_values = [Episode.from_value(item) for item in episodes]
+    validation_values = [EvalItem.from_value(item) for item in validation_items]
+    print(
+        f"[MSTAR] Loaded data: episodes={len(episode_values)}, "
+        f"validation={len(validation_values)}",
+        flush=True,
+    )
+    if not seed_program_paths:
+        raise ValueError("At least one seed program path is required")
+    if not validation_values:
+        raise ValueError("Validation data must contain at least one item")
+    if cfg.static_size <= 0:
+        raise ValueError("static_size must be greater than zero")
+    static_items = build_static_validation_set(
+        validation_values,
+        toolkit,
+        n_static=cfg.static_size,
+        seed=cfg.seed,
+        allow_random_fallback=not cfg.formal,
+    )
+    static_ids = {_item_id(item) for item in static_items}
+    remaining_items = [
+        item for item in validation_values if _item_id(item) not in static_ids
+    ]
+    budget = cfg.episode_budget
+    if budget is None:
+        budget = 5 * len(static_items)
+    selected_episodes = select_episode_subset(
+        episode_values,
+        static_items,
+        toolkit,
+        budget=budget,
+        allow_random_fallback=not cfg.formal,
+    )
+    _write_json(
+        output_dir / "selection.json",
+        {
+            "static_validation_ids": sorted(static_ids),
+            "episode_ids": [episode.id for episode in selected_episodes],
+        },
+    )
+    print(
+        f"[MSTAR] Selected static_validation={len(static_items)}, "
+        f"selected_episodes={len(selected_episodes)}",
+        flush=True,
+    )
+
+    constraints = EvolutionConstraints(
+        task_description=cfg.task_description,
+        max_llm_calls_per_operation=cfg.max_llm_calls_per_operation,
+        write_timeout=cfg.write_timeout,
+        read_timeout=cfg.read_timeout,
+        mutation_scope=cfg.mutation_scope,
+    )
+    candidates: List[ProgramCandidate] = []
+    seed_names = ["vector", "llm_summarizer", "experience"]
+    for index, source in enumerate(seed_program_paths):
+        suffix = seed_names[index] if index < len(seed_names) else f"seed_{index}"
+        program_id = f"program_{index:03d}_seed_{suffix}"
+        target = pool_dir / f"{program_id}.py"
+        shutil.copyfile(source, target)
+        print(f"[MSTAR] Seed {program_id}: quality check started", flush=True)
+        quality = check_program_path(
+            str(target),
+            toolkit=toolkit,
+            write_timeout=cfg.write_timeout,
+            read_timeout=cfg.read_timeout,
+        )
+        if quality.passed:
+            print(f"[MSTAR] Seed {program_id}: static evaluation started", flush=True)
+            evaluation = evaluate_program(
+                str(target),
+                selected_episodes,
+                static_items,
+                task_agent,
+                toolkit,
+                metric,
+                write_timeout=cfg.write_timeout,
+                read_timeout=cfg.read_timeout,
+                collect_traces=False,
+            )
+            score = evaluation.mean_score
+            print(
+                f"[MSTAR] Seed {program_id}: score={score:.4f}, "
+                f"traces={len(evaluation.traces)}",
+                flush=True,
+            )
+        else:
+            evaluation = None
+            score = 0.0
+            print(
+                f"[MSTAR] Seed {program_id}: quality failed: {quality.errors}",
+                flush=True,
+            )
+        change_log = ChangeLog(summary=f"Seed program: {suffix}", score=score)
+        candidate = ProgramCandidate(
+            program_id=program_id,
+            path=str(target),
+            parent_id=None,
+            iteration=0,
+            static_score=score,
+            quality=quality,
+            change_log=change_log,
+            lineage=[change_log],
+        )
+        candidates.append(candidate)
+        _append_jsonl(scores_path, _candidate_record(candidate))
+        _append_jsonl(
+            lineage_path,
+            {
+                "program_id": program_id,
+                "parent_id": None,
+                "iteration": 0,
+                "change_log": asdict(change_log),
+                "quality": quality.to_dict(),
+            },
+        )
+
+    next_index = len(candidates)
+    if not cfg.dry_run:
+        for iteration in range(1, max(0, cfg.iterations) + 1):
+            parent = _select_parent(candidates, cfg, rng)
+            print(
+                f"[MSTAR] Iteration {iteration}: parent={parent.program_id}, "
+                f"parent_static_score={parent.static_score:.4f}",
+                flush=True,
+            )
+            rotating_items = sample_rotating_validation_set(
+                remaining_items,
+                n_rotating=cfg.rotating_size,
+                seed=cfg.seed + iteration,
+            )
+            rotating_eval = evaluate_program(
+                parent.path,
+                selected_episodes,
+                rotating_items,
+                task_agent,
+                toolkit,
+                metric,
+                write_timeout=cfg.write_timeout,
+                read_timeout=cfg.read_timeout,
+            )
+            print(
+                f"[MSTAR] Iteration {iteration}: rotating_score="
+                f"{rotating_eval.mean_score:.4f}",
+                flush=True,
+            )
+            _write_traces(
+                traces_dir / f"iter_{iteration:03d}_rotating.jsonl",
+                parent.program_id,
+                rotating_eval.traces,
+            )
+            feedback = EvalFeedback(
+                static_score=parent.static_score,
+                rotating_score=rotating_eval.mean_score,
+                failed_cases=rotating_eval.failed_cases,
+                success_cases=rotating_eval.success_cases,
+                traces=rotating_eval.traces,
+                task_description=cfg.task_description,
+                write_examples=[
+                    trace
+                    for trace in rotating_eval.traces
+                    if trace.get("phase") == "write" and trace.get("success")
+                ][:2],
+                debug_logs=[
+                    trace
+                    for trace in rotating_eval.traces
+                    if not trace.get("success", True)
+                ][:10],
+                feedback_seed=cfg.seed + iteration,
+            )
+
+            program_id = f"program_{next_index:03d}_child"
+            next_index += 1
+            target = pool_dir / f"{program_id}.py"
+            try:
+                parent_code = Path(parent.path).read_text(encoding="utf-8")
+                print(f"[MSTAR] Iteration {iteration}: reflector mutation started", flush=True)
+                mutation = mutate_program(
+                    parent_code,
+                    feedback,
+                    parent.lineage,
+                    reflector,
+                    constraints,
+                    reference_programs=_reference_programs(
+                        candidates, parent.program_id
+                    ),
+                )
+                code = mutation.program_code
+                change_log = mutation.change_log
+                mutation_error = None
+            except Exception as exc:
+                mutation_error = f"{type(exc).__name__}: {exc}"
+                print(
+                    f"[MSTAR] Iteration {iteration}: reflector failed: {mutation_error}",
+                    flush=True,
+                )
+                _append_jsonl(
+                    scores_path,
+                    {
+                        "program_id": None,
+                        "parent_id": parent.program_id,
+                        "iteration": iteration,
+                        "static_score": None,
+                        "rotating_score": rotating_eval.mean_score,
+                        "quality_passed": False,
+                        "compile_errors": [mutation_error],
+                        "change_summary": "Reflector failed; no child admitted",
+                    },
+                )
+                _append_jsonl(
+                    lineage_path,
+                    {
+                        "program_id": None,
+                        "parent_id": parent.program_id,
+                        "iteration": iteration,
+                        "rotating_score": rotating_eval.mean_score,
+                        "admitted": False,
+                        "error": mutation_error,
+                    },
+                )
+                continue
+            target.write_text(code, encoding="utf-8")
+            quality = check_program_path(
+                str(target),
+                toolkit=toolkit,
+                write_timeout=cfg.write_timeout,
+                read_timeout=cfg.read_timeout,
+            )
+            fix_attempts = 0
+            if not quality.passed and mutation_error is None:
+                print(
+                    f"[MSTAR] Iteration {iteration}: compile-fix started: "
+                    f"{quality.errors}",
+                    flush=True,
+                )
+                fixed = compile_fix_loop(
+                    code,
+                    quality.errors,
+                    max_attempts=cfg.max_fix_attempts,
+                    llm_client=reflector,
+                    constraints=constraints,
+                    toolkit=toolkit,
+                )
+                fix_attempts = fixed.attempts
+                code = fixed.program_code
+                scope_valid = True
+                try:
+                    validate_mutation_scope(
+                        parent_code,
+                        code,
+                        cfg.mutation_scope,
+                    )
+                except ValueError as exc:
+                    scope_valid = False
+                    quality = QualityResult(
+                        passed=False,
+                        static_errors=[str(exc)],
+                    )
+                target.write_text(code, encoding="utf-8")
+                if scope_valid:
+                    quality = check_program_path(
+                        str(target),
+                        toolkit=toolkit,
+                        write_timeout=cfg.write_timeout,
+                        read_timeout=cfg.read_timeout,
+                    )
+
+            static_eval = None
+            if quality.passed:
+                print(f"[MSTAR] Iteration {iteration}: static evaluation started", flush=True)
+                static_eval = evaluate_program(
+                    str(target),
+                    selected_episodes,
+                    static_items,
+                    task_agent,
+                    toolkit,
+                    metric,
+                    write_timeout=cfg.write_timeout,
+                    read_timeout=cfg.read_timeout,
+                    collect_traces=False,
+                )
+                static_score = static_eval.mean_score
+                print(
+                    f"[MSTAR] Iteration {iteration}: child_score={static_score:.4f}",
+                    flush=True,
+                )
+            else:
+                static_score = 0.0
+                print(
+                    f"[MSTAR] Iteration {iteration}: child quality failed: "
+                    f"{quality.errors}",
+                    flush=True,
+                )
+            change_log.score = static_score
+            candidate = ProgramCandidate(
+                program_id=program_id,
+                path=str(target),
+                parent_id=parent.program_id,
+                iteration=iteration,
+                static_score=static_score,
+                quality=quality,
+                change_log=change_log,
+                lineage=parent.lineage + [change_log],
+            )
+            candidates.append(candidate)
+            compile_errors = list(quality.errors)
+            if mutation_error:
+                compile_errors.insert(0, mutation_error)
+            _append_jsonl(
+                scores_path,
+                _candidate_record(
+                    candidate,
+                    rotating_score=rotating_eval.mean_score,
+                    compile_errors=compile_errors,
+                ),
+            )
+            _append_jsonl(
+                lineage_path,
+                {
+                    "program_id": program_id,
+                    "parent_id": parent.program_id,
+                    "iteration": iteration,
+                    "parent_static_score": parent.static_score,
+                    "static_score": static_score,
+                    "rotating_score": rotating_eval.mean_score,
+                    "change_log": asdict(change_log),
+                    "quality": quality.to_dict(),
+                    "compile_fix_attempts": fix_attempts,
+                },
+            )
+
+    eligible = [candidate for candidate in candidates if candidate.quality.passed]
+    if not eligible:
+        raise RuntimeError("All seed and child programs failed quality gates")
+    ranked = sorted(
+        eligible,
+        key=lambda candidate: candidate.static_score,
+        reverse=True,
+    )[: max(1, int(cfg.selection_top_k))]
+    repeat_count = max(1, int(cfg.selection_repeats))
+    repeated_selection = []
+    for candidate in ranked:
+        repeated_scores = []
+        for _ in range(repeat_count):
+            repeated = evaluate_program(
+                candidate.path,
+                selected_episodes,
+                static_items,
+                task_agent,
+                toolkit,
+                metric,
+                collect_traces=False,
+                write_timeout=cfg.write_timeout,
+                read_timeout=cfg.read_timeout,
+            )
+            repeated_scores.append(repeated.mean_score)
+        mean = sum(repeated_scores) / len(repeated_scores)
+        variance = sum((score - mean) ** 2 for score in repeated_scores) / len(
+            repeated_scores
+        )
+        repeated_selection.append(
+            {
+                "candidate": candidate,
+                "scores": repeated_scores,
+                "mean": mean,
+                "variance": variance,
+            }
+        )
+    selected = max(
+        repeated_selection,
+        key=lambda value: (value["mean"], -value["variance"]),
+    )
+    best = selected["candidate"]
+    best_path = output_dir / "best_program.py"
+    shutil.copyfile(best.path, best_path)
+    print(
+        f"[MSTAR] Best program={best.program_id}, score={selected['mean']:.4f}",
+        flush=True,
+    )
+    final_evaluation = evaluate_program(
+        str(best_path),
+        selected_episodes,
+        static_items,
+        task_agent,
+        toolkit,
+        metric,
+        collect_traces=False,
+        write_timeout=cfg.write_timeout,
+        read_timeout=cfg.read_timeout,
+    )
+    best_report = {
+        "program_id": best.program_id,
+        "static_score": best.static_score,
+        "selection_mean": selected["mean"],
+        "selection_variance": selected["variance"],
+        "selection_repeats": repeated_selection and [
+            {
+                "program_id": value["candidate"].program_id,
+                "scores": value["scores"],
+                "mean": value["mean"],
+                "variance": value["variance"],
+            }
+            for value in repeated_selection
+        ],
+        "source_path": best.path,
+        "quality": best.quality.to_dict(),
+        "change_log": asdict(best.change_log),
+        "static_validation_ids": sorted(static_ids),
+        "final_static_evaluation": {
+            "mean_score": final_evaluation.mean_score,
+            "runtime_stats": final_evaluation.runtime_stats,
+            "error": final_evaluation.error,
+            "case_content_hidden": True,
+        },
+        "test_set_used": False,
+    }
+    _write_json(output_dir / "best_eval_report.json", best_report)
+    return EvolutionResult(
+        best_program_path=str(best_path),
+        best_program_id=best.program_id,
+        best_score=selected["mean"],
+        output_dir=str(output_dir),
+        pool_size=len(candidates),
+        static_validation_ids=sorted(static_ids),
+    )
