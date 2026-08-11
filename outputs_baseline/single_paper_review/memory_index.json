@@ -1,0 +1,120 @@
+{
+  "by_sample_id": {
+    "ICLR2017_B1-Hhnslg": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1-Hhnslg",
+    "ICLR2017_B1-q5Pqxl": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1-q5Pqxl",
+    "ICLR2017_B16Jem9xe": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B16Jem9xe",
+    "ICLR2017_B16dGcqlx": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B16dGcqlx",
+    "ICLR2017_B184E5qee": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B184E5qee",
+    "ICLR2017_B186cP9gx": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B186cP9gx",
+    "ICLR2017_B1E7Pwqgl": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1E7Pwqgl",
+    "ICLR2017_B1ElR4cgg": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1ElR4cgg",
+    "ICLR2017_B1G9tvcgx": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1G9tvcgx",
+    "ICLR2017_B1GOWV5eg": "/data0/xyj/shengao/AgentReview_0611/outputs_baseline/single_paper_review/ICLR2017_B1GOWV5eg"
+  },
+  "by_title_normalized": {
+    "prototypical networks for few-shot learning": [
+      "ICLR2017_B1-Hhnslg"
+    ],
+    "machine comprehension using match-lstm and answer pointer": [
+      "ICLR2017_B1-q5Pqxl"
+    ],
+    "learning in implicit generative models": [
+      "ICLR2017_B16Jem9xe"
+    ],
+    "third person imitation learning": [
+      "ICLR2017_B16dGcqlx"
+    ],
+    "improving neural language models with a continuous cache": [
+      "ICLR2017_B184E5qee"
+    ],
+    "singularity of the hessian in deep learning": [
+      "ICLR2017_B186cP9gx"
+    ],
+    "cooperative training of descriptor and generator networks": [
+      "ICLR2017_B1E7Pwqgl"
+    ],
+    "adversarially learned inference": [
+      "ICLR2017_B1ElR4cgg"
+    ],
+    "neural machine translation with latent semantic of image and text": [
+      "ICLR2017_B1G9tvcgx"
+    ],
+    "learning to repeat: fine grained action repetition for deep reinforcement learning": [
+      "ICLR2017_B1GOWV5eg"
+    ]
+  },
+  "by_reviewer": {
+    "Reviewer QUAL": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ],
+    "Reviewer CLAR": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ],
+    "Reviewer SIGN": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ],
+    "Reviewer ORIG": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ],
+    "Reviewer POL": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ],
+    "Final Meta-Reviewer": [
+      "ICLR2017_B1-Hhnslg",
+      "ICLR2017_B1-q5Pqxl",
+      "ICLR2017_B16Jem9xe",
+      "ICLR2017_B16dGcqlx",
+      "ICLR2017_B184E5qee",
+      "ICLR2017_B186cP9gx",
+      "ICLR2017_B1E7Pwqgl",
+      "ICLR2017_B1ElR4cgg",
+      "ICLR2017_B1G9tvcgx",
+      "ICLR2017_B1GOWV5eg"
+    ]
+  }
+}

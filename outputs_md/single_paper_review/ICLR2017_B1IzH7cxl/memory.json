@@ -1,0 +1,688 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1IzH7cxl/md_content_no_appendix.md",
+  "paper_title": "A NEURAL STOCHASTIC VOLATILITY MODEL",
+  "semantic_scholar_query": "A NEURAL STOCHASTIC VOLATILITY MODEL",
+  "keyword_model_name": "gpt-5.4-nano",
+  "retrieved_papers": [
+    {
+      "paperId": "2aa11d8a772e72a8f3a52e1b9124e052ab2818fb",
+      "externalIds": {
+        "MAG": "2753672439",
+        "DBLP": "conf/aaai/LuoZXW18",
+        "ArXiv": "1712.00504",
+        "DOI": "10.1609/aaai.v32i1.12124",
+        "CorpusId": 3404333
+      },
+      "url": "https://www.semanticscholar.org/paper/2aa11d8a772e72a8f3a52e1b9124e052ab2818fb",
+      "title": "A Neural Stochastic Volatility Model",
+      "year": 2017,
+      "citationCount": 64,
+      "openAccessPdf": {
+        "url": "https://ojs.aaai.org/index.php/AAAI/article/download/12124/11983",
+        "status": "BRONZE",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1712.00504, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "48846956",
+          "name": "Rui Luo"
+        },
+        {
+          "authorId": "2108309275",
+          "name": "Weinan Zhang"
+        },
+        {
+          "authorId": "2108880352",
+          "name": "Xiaojun Xu"
+        },
+        {
+          "authorId": "39055225",
+          "name": "Jun Wang"
+        }
+      ],
+      "abstract": "\n \n In this paper, we show that the recent integration of statistical models with deep recurrent neural networks provides a new way of formulating volatility (the degree of variation of time series) models that have been widely used in time series analysis and prediction in finance. The model comprises a pair of complementary stochastic recurrent neural networks: the generative network models the joint distribution of the stochastic volatility process; the inference network approximates the conditional distribution of the latent variables given the observables. Our focus here is on the formulation of temporal dynamics of volatility over time under a stochastic recurrent neural network framework. Experiments on real-world stock price datasets demonstrate that the proposed model generates a better volatility estimation and prediction that outperforms mainstream methods, e.g., deterministic models such as GARCH and its variants, and stochastic models namely the MCMC-based stochvol as well as the Gaussian-process-based, on average negative log-likelihood.\n \n",
+      "title_query": true
+    },
+    {
+      "paperId": "646903ea5dc3bf73e1c0cebb0671f1ed2ebbb230",
+      "externalIds": {
+        "DOI": "10.1016/j.rinam.2025.100661",
+        "CorpusId": 282446569
+      },
+      "url": "https://www.semanticscholar.org/paper/646903ea5dc3bf73e1c0cebb0671f1ed2ebbb230",
+      "title": "Commodity options pricing under Wishart stochastic volatility model equipped with jump process: Model calibration by an optimized neural network",
+      "year": 2025,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1016/j.rinam.2025.100661?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1016/j.rinam.2025.100661, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2276812711",
+          "name": "A. Hamdi"
+        },
+        {
+          "authorId": "2248605151",
+          "name": "M. Noorani"
+        },
+        {
+          "authorId": "2400323",
+          "name": "F. Mehrdoust"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "e36346858c565118a802044ae9103da87c020d03",
+      "externalIds": {
+        "DOI": "10.61784/jtfe3061",
+        "CorpusId": 282431144
+      },
+      "url": "https://www.semanticscholar.org/paper/e36346858c565118a802044ae9103da87c020d03",
+      "title": "DEEP LEARNING APPROACHES TO STOCHASTIC VOLATILITY MODEL CALIBRATION: A COMPARATIVE ANALYSIS OF NEURAL SDES AND TRADITIONAL METHODS",
+      "year": 2025,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.61784/jtfe3061?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.61784/jtfe3061, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "783f3b50492773b5e0df186830c2fe2ff000cb65",
+      "externalIds": {
+        "DBLP": "conf/icaif/HoshisashiPB25",
+        "DOI": "10.1145/3768292.3770350",
+        "CorpusId": 283065881
+      },
+      "url": "https://www.semanticscholar.org/paper/783f3b50492773b5e0df186830c2fe2ff000cb65",
+      "title": "Probability‑Density‑Consistent Physics-Informed Neural Networks for Stochastic Local Volatility Model Calibration",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1145/3768292.3770350?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1145/3768292.3770350, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2211532846",
+          "name": "Kentaro Hoshisashi"
+        },
+        {
+          "authorId": "2261494906",
+          "name": "Carolyn E. Phelan"
+        },
+        {
+          "authorId": "2261494315",
+          "name": "Paolo Barucca"
+        }
+      ],
+      "abstract": "Calibrating stochastic local volatility (SLV) models to market implied volatility surfaces remains an inherently complex and ill-posed inverse problem, as it involves solving nonlinear PDEs under sparse and noisy data, while simultaneously ensuring consistency with the underlying risk-neutral probability density. We present a probability density-consistent PINNs (PDC-PINNs) that embeds the forward Kolmogorov Fokker Planck equation and the risk-neutral density constraints whose joint validity ensures the absence of static and dynamic arbitrage. A self-adaptive bilevel optimiser is developed to balance the PDE, data-fit, and density losses by rescaling them according to gradient magnitudes for stabilising learning. In synthetic and real foreign exchange datasets, PDC-PINNs match or exceed the accuracy of conventional calibrators while halving computational time through TPU vectorisation and producing reasonable surfaces that remain all constraints. The framework further enables consistent pricing of path-dependent options and generalises to other constrained financial PDE problems.",
+      "title_query": true
+    },
+    {
+      "paperId": "336e2c34d046e6e746023b9c98dd9aaedba8e0ac",
+      "externalIds": {
+        "ArXiv": "2503.14829",
+        "CorpusId": 277113383
+      },
+      "url": "https://www.semanticscholar.org/paper/336e2c34d046e6e746023b9c98dd9aaedba8e0ac",
+      "title": "Stochastic Volatility Model with Sticky Drawdown and Drawup Processes: A Deep Learning Approach",
+      "year": 2025,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2503.14829, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2350775009",
+          "name": "Yuhao Liu"
+        },
+        {
+          "authorId": "152836965",
+          "name": "Pingping Jiang"
+        },
+        {
+          "authorId": "2350435434",
+          "name": "Gongqiu Zhang"
+        }
+      ],
+      "abstract": "We propose a new financial model, the stochastic volatility model with sticky drawdown and drawup processes (SVSDU model), which enables us to capture the features of winning and losing streaks that are common across financial markets but can not be captured simultaneously by the existing financial models. Moreover, the SVSDU model retains the advantages of the stochastic volatility models. Since there are not closed-form option pricing formulas under the SVSDU model and the existing simulation methods for the sticky diffusion processes are really time-consuming, we develop a deep neural network to solve the corresponding high-dimensional parametric partial differential equation (PDE), where the solution to the PDE is the pricing function of a European option according to the Feynman-Kac Theorem, and validate the accuracy and efficiency of our deep learning approach. We also propose a novel calibration framework for our model, and demonstrate the calibration performances of our models on both simulated data and historical data. The calibration results on SPX option data show that the SVSDU model is a good representation of the asset value dynamic, and both winning and losing streaks are accounted for in option values. Our model opens new horizons for modeling and predicting the dynamics of asset prices in financial markets.",
+      "title_query": true
+    },
+    {
+      "paperId": "0e024eac4c1fd01ceb95bab8eedd05e0dc4b1e36",
+      "externalIds": {
+        "MAG": "2909629876",
+        "DOI": "10.2139/SSRN.3288882",
+        "CorpusId": 68102474
+      },
+      "url": "https://www.semanticscholar.org/paper/0e024eac4c1fd01ceb95bab8eedd05e0dc4b1e36",
+      "title": "An artificial neural network representation of the SABR stochastic volatility model",
+      "year": 2018,
+      "citationCount": 39,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.2139/SSRN.3288882?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.2139/SSRN.3288882, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "144410577",
+          "name": "W. Mcghee"
+        }
+      ],
+      "abstract": "In this article, the Universal Approximation Theorem of Artificial Neural Networks (ANNs) is applied to the SABR stochastic volatility model in order to construct highly efficient representations. Initially, the SABR approximation of Hagan et al. [2002] is considered, then a more accurate integration scheme of McGhee [2011] as well as a two factor finite difference scheme. The resulting ANN calculates 10,000 times faster than the finite difference scheme whilst maintaining a high degree of accuracy. As a result, the ANN dispenses with the need for the commonly used SABR Approximation.",
+      "title_query": true
+    },
+    {
+      "paperId": "febc585b7a5ac18e6df66c7bea689fa12ed8ab07",
+      "externalIds": {
+        "DOI": "10.1108/cfri-07-2024-0389",
+        "CorpusId": 283537787
+      },
+      "url": "https://www.semanticscholar.org/paper/febc585b7a5ac18e6df66c7bea689fa12ed8ab07",
+      "title": "Deep neural networks for the valuation of equity and real-estate index American options under models with stochastic volatility",
+      "year": 2025,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1108/cfri-07-2024-0389?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1108/cfri-07-2024-0389, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2396254522",
+          "name": "Bibi Sameenah Kauthar Bolaky"
+        },
+        {
+          "authorId": "103556823",
+          "name": "J. Narsoo"
+        },
+        {
+          "authorId": "3076335",
+          "name": "N. Thakoor"
+        },
+        {
+          "authorId": "2398584",
+          "name": "D. Tangman"
+        },
+        {
+          "authorId": "2506955",
+          "name": "M. Bhuruth"
+        }
+      ],
+      "abstract": "\n \n The primary objective of this research is to develop new algorithms in the framework of deep neural networks for the valuation of options under dynamics driven by stochastic volatility models. We aim to use the Heston model for equity options to demonstrate the accuracy of our approach.\n \n \n \n Physics-informed neural networks (PINNs) are trained to minimize a loss function that includes terms from the partial differential equation residuals, initial condition and boundary conditions evaluated at selected points in the space-time domain. Speed and accuracy comparisons are carried out against single hidden-layer neural networks, called physics-informed extreme learning machines (PIELMs). American options are formulated as linear complementarity problems, and PINNs are applied in conjunction with penalty methods for the computation of the option prices.\n \n \n \n For American options under the Heston model, PINNs yield accurate prices. Computed Greeks sensitivities are in close agreement with those reported for mesh-based methods. In contrast to mesh-based penalty methods for American options, PINNs work with smaller values of the penalty term. For the real estate index American option problem, numerical prices obtained using PINNs have comparable accuracies as those obtained by a high-order radial basis functions finite difference scheme.\n \n \n \n There is a lack of reliable pricing models for pricing property derivatives. This work contributes to developing accurate neural network algorithms.\n \n \n \n The development of informed neural networks and informed extreme learning machines for realistic two-factor real-world option contracts constitutes a novel approach in the field of financial derivatives.\n",
+      "title_query": true
+    },
+    {
+      "paperId": "2749a1e46b1c2fe868900e519f76ed2b2add97b8",
+      "externalIds": {
+        "DOI": "10.1063/5.0263909",
+        "CorpusId": 278284467,
+        "PubMed": "40315126"
+      },
+      "url": "https://www.semanticscholar.org/paper/2749a1e46b1c2fe868900e519f76ed2b2add97b8",
+      "title": "Optimal calculations for the space-time fractional derivative option pricing models with stochastic liquidity risk and volatility using a combination neural network.",
+      "year": 2025,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1063/5.0263909?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1063/5.0263909, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2327937340",
+          "name": "Lina Song"
+        },
+        {
+          "authorId": "2327851394",
+          "name": "Yangcheng Luo"
+        },
+        {
+          "authorId": "2292695308",
+          "name": "Xueting Yan"
+        },
+        {
+          "authorId": "2377286411",
+          "name": "Shuqi Zhang"
+        }
+      ],
+      "abstract": "This work incorporates a stochastic liquidity risk, stochastic volatility, and Caputo-type fractional derivatives into European option pricing and establishes two novel space-time fractional hybrid models to capture the nonlinearity and non-stationarity of price evolution processes. The combination neural network algorithm with the defined nonlinear test solutions is designed to solve the fractional derivative models with the initial condition, Dirichlet and Robin boundary conditions. When the influence of a liquidity risk is removed, the studied models are reduced to the space-time fractional Heston models, and the pricing results are compared with the analytical formula of the classical Heston model. In the presence of a liquidity risk, the pricing models under the Caputo and Caputo-Fabrizio fractional derivatives are tested based on the market data. The applications and comparison results prove that the dynamical models demonstrated in the work have small prediction errors and can highly fit market data. The designed combination neural network can effectively handle the mixed problems of the high-dimensional fractional derivative equations and derive the optimal approximations under a stochastic liquidity risk and volatility.",
+      "title_query": true
+    },
+    {
+      "paperId": "560e5743df23ce7c9cb94087e3f4e6789d593cfe",
+      "externalIds": {
+        "DOI": "10.3390/jrfm16030192",
+        "CorpusId": 257517470
+      },
+      "url": "https://www.semanticscholar.org/paper/560e5743df23ce7c9cb94087e3f4e6789d593cfe",
+      "title": "Pricing Multi-Asset Bermudan Commodity Options with Stochastic Volatility Using Neural Networks",
+      "year": 2023,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "https://www.mdpi.com/1911-8074/16/3/192/pdf?version=1678770239",
+        "status": "GOLD",
+        "license": "CCBY",
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.3390/jrfm16030192?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.3390/jrfm16030192, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2211532846",
+          "name": "Kentaro Hoshisashi"
+        },
+        {
+          "authorId": "49006810",
+          "name": "Yuji Yamada"
+        }
+      ],
+      "abstract": "It has been recognized that volatility in commodity markets fluctuates significantly depending on the demand–supply relationship and geopolitical risk, and that risk and financial management using multivariate derivatives are becoming more important. This study illustrates an application of multi-layered neural networks for multi-dimensional Bermudan option pricing problems assuming a multi-asset stochastic volatility model in commodity markets. In addition, we aim to identify continuation value functions for these option pricing problems by implementing smooth activation functions in the neural networks and evaluating their accuracy compared with other activation functions or regression techniques. First, we express the underlying asset dynamics using the multi-asset stochastic volatility model with mean reversion properties in the commodity market and formulate the multivariate Bermudan commodity option pricing problem. Subsequently, we apply multi-layer perceptrons in the neural network to represent the continuation value functions of Bermudan commodity options, wherein the entire neural network is trained using the least-squares Monte Carlo simulation method. Finally, we perform numerical experiments and demonstrate that applications of neural networks for Bermudan options in a multi-dimensional commodity market achieve sufficient accuracy with regard to various aspects, including changing the exercise dates, the number of layers/neurons, and the dimension of the problem.",
+      "title_query": true
+    },
+    {
+      "paperId": "14888befb27ca282841dd3264c3118fd42dc5dbd",
+      "externalIds": {
+        "ArXiv": "2605.06670",
+        "CorpusId": 288111060
+      },
+      "url": "https://www.semanticscholar.org/paper/14888befb27ca282841dd3264c3118fd42dc5dbd",
+      "title": "Stochastic Policy Gradient Methods in the Uncertain Volatility Model",
+      "year": 2026,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2605.06670, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1403082168",
+          "name": "L. Abbas-Turki"
+        },
+        {
+          "authorId": "46242690",
+          "name": "J. Chassagneux"
+        },
+        {
+          "authorId": "101798423",
+          "name": "Jean-Philippe Lemor"
+        },
+        {
+          "authorId": "2406845019",
+          "name": "Gr'egoire Loeper"
+        },
+        {
+          "authorId": "2433817301",
+          "name": "Simon Sananes"
+        }
+      ],
+      "abstract": "The multidimensional Uncertain Volatility Model leads to robust option pricing problems under joint volatility and correlation uncertainty. Their numerical resolution quickly becomes challenging because the associated stochastic control problem is high-dimensional. We propose a backward actor-critic stochastic policy gradient scheme tailored to this setting. The method combines a discrete dynamic programming principle with Proximal Policy Optimization and shallow neural-network approximations of both the value function and the control policy. A key ingredient is the policy parameterization: continuous controls are represented through a squashed Gaussian policy built on a C-vine representation of correlation matrices, which enforces positive semidefiniteness by construction. Numerical experiments on a range of multidimensional derivatives show that the method yields accurate prices, remains computationally efficient, and compares favorably with existing Monte Carlo and machine-learning-based benchmarks for robust pricing in the Uncertain Volatility Model.",
+      "title_query": true
+    },
+    {
+      "paperId": "2ef2ebbdd6aba026d7db5dce1d7bb34a7a7e0667",
+      "externalIds": {
+        "ArXiv": "1906.02884",
+        "DOI": "10.1080/07350015.2022.2028631",
+        "CorpusId": 246241118
+      },
+      "url": "https://www.semanticscholar.org/paper/2ef2ebbdd6aba026d7db5dce1d7bb34a7a7e0667",
+      "title": "A Statistical Recurrent Stochastic Volatility Model for Stock Markets",
+      "year": 2019,
+      "citationCount": 16,
+      "openAccessPdf": {
+        "url": "http://arxiv.org/pdf/1906.02884",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1906.02884, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2007691739",
+          "name": "Trong-Nghia Nguyen"
+        },
+        {
+          "authorId": "2941842",
+          "name": "Minh-Ngoc Tran"
+        },
+        {
+          "authorId": "144861521",
+          "name": "D. Gunawan"
+        },
+        {
+          "authorId": "144402257",
+          "name": "R. Kohn"
+        }
+      ],
+      "abstract": "Abstract The stochastic volatility (SV) model and its variants are widely used in the financial sector, while recurrent neural network (RNN) models are successfully used in many large-scale industrial applications of deep learning. We combine these two methods in a nontrivial way and propose a model, which we call the statistical recurrent stochastic volatility (SR-SV) model, to capture the dynamics of stochastic volatility. The proposed model is able to capture complex volatility effects, for example, nonlinearity and long-memory auto-dependence, overlooked by the conventional SV models, is statistically interpretable and has an impressive out-of-sample forecast performance. These properties are carefully discussed and illustrated through extensive simulation studies and applications to five international stock index datasets: the German stock index DAX30, the Hong Kong stock index HSI50, the France market index CAC40, the U.S. stock market index SP500 and the Canada market index TSX250. An user-friendly software package together with the examples reported in the article are available at https://github.com/vbayeslab.",
+      "title_query": true
+    },
+    {
+      "paperId": "3facfa30a6f8b173d79e6f7e2d6a39584a381775",
+      "externalIds": {
+        "DOI": "10.59782/sidr.v3i1.137",
+        "CorpusId": 273302328
+      },
+      "url": "https://www.semanticscholar.org/paper/3facfa30a6f8b173d79e6f7e2d6a39584a381775",
+      "title": "Option Pricing Based on Neural Stochastic Differential Equations",
+      "year": 2024,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.59782/sidr.v3i1.137",
+        "status": "HYBRID",
+        "license": "CCBYNCND",
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.59782/sidr.v3i1.137?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.59782/sidr.v3i1.137, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "30676617",
+          "name": "X. Ji"
+        },
+        {
+          "authorId": "2325699914",
+          "name": "Jiantao Dong"
+        },
+        {
+          "authorId": "2242947501",
+          "name": "Tao Hao"
+        }
+      ],
+      "abstract": "Firstly, based on the Black-Scholes stock price model, the neural stochastic differential equation (NSDE) model was established by parameterizing the asset return rate and volatility as a drift network and a diffusion network, respectively. Secondly, in the empirical analysis, the underlying asset as a single stock option was used as the research object, and real stock data was used for the network training and testing. The experimental results show that the NSDE model can overcome the defects of the constant assumption of the Black-Scholes model. Finally, for the case where the price of the underlying asset of the option was unobservable, we proposed that the price of any target option and the price of a known option could be constrained within the Wasserstein distance of their risk-neutral equivalent martingale measure, and theoretically proved the method.",
+      "title_query": true
+    },
+    {
+      "paperId": "ed5c2c4a12430f43864734b580416f44730bc147",
+      "externalIds": {
+        "ArXiv": "2512.12250",
+        "DBLP": "journals/corr/abs-2512-12250",
+        "DOI": "10.48550/arXiv.2512.12250",
+        "CorpusId": 283896903
+      },
+      "url": "https://www.semanticscholar.org/paper/ed5c2c4a12430f43864734b580416f44730bc147",
+      "title": "Stochastic Volatility Modelling with LSTM Networks: A Hybrid Approach for S&P 500 Index Volatility Forecasting",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2512.12250, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1485361651",
+          "name": "A. Perekhodko"
+        },
+        {
+          "authorId": "74214430",
+          "name": "R. Ślepaczuk"
+        }
+      ],
+      "abstract": "Accurate volatility forecasting is essential in banking, investment, and risk management, because expectations about future market movements directly influence current decisions. This study proposes a hybrid modelling framework that integrates a Stochastic Volatility model with a Long Short Term Memory neural network. The SV model improves statistical precision and captures latent volatility dynamics, especially in response to unforeseen events, while the LSTM network enhances the model's ability to detect complex nonlinear patterns in financial time series. The forecasting is conducted using daily data from the S and P 500 index, covering the period from January 1 1998 to December 31 2024. A rolling window approach is employed to train the model and generate one step ahead volatility forecasts. The performance of the hybrid SV-LSTM model is evaluated through both statistical testing and investment simulations. The results show that the hybrid approach outperforms both the standalone SV and LSTM models and contributes to the development of volatility modelling techniques, providing a foundation for improving risk assessment and strategic investment planning in the context of the S and P 500.",
+      "title_query": true
+    },
+    {
+      "paperId": "c761be049d87598f64c75c7b3b975d05d27ca9a0",
+      "externalIds": {
+        "MAG": "3019317279",
+        "DOI": "10.1080/00949655.2020.1747463",
+        "CorpusId": 219055811
+      },
+      "url": "https://www.semanticscholar.org/paper/c761be049d87598f64c75c7b3b975d05d27ca9a0",
+      "title": "European call price modelling using neural networks in considering volatility as stochastic with comparison to the Heston model",
+      "year": 2020,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1080/00949655.2020.1747463?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1080/00949655.2020.1747463, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "102734049",
+          "name": "Yacin Jerbi"
+        },
+        {
+          "authorId": "98040017",
+          "name": "S. Chaabene"
+        }
+      ],
+      "abstract": "ABSTRACT The aim of this paper is to model the European call price using neural networks (NNs). Many existing works have treated the problem as Hutchinson et al. [(1994). A nonparametric approach to pricing and hedging derivative securities via learning networks. J Finance. 49(3):851–889] Compared to these previous studies, the originality of our work consists in considering the volatility as stochastic and then to compare the NN’s results to those of Heston (1993) model rather than to those of Black and Scholes [(1973 May–Jun). The pricing of options and corporate liabilities. J Polit Econ. 81(3):637–654)] as Hutchinson et al. did. We base our empirical work on real data (12 contracts on CAC40 index from the period January 2005 to January 2007). We found that the NNs approach gives better performances than the Heston’s, in terms of accuracy and convergence speed.",
+      "title_query": true
+    },
+    {
+      "paperId": "f30647956431f914eedba8828a71aa46f611da56",
+      "externalIds": {
+        "DBLP": "conf/sac/MaVTC25",
+        "DOI": "10.1145/3672608.3707874",
+        "CorpusId": 278603328
+      },
+      "url": "https://www.semanticscholar.org/paper/f30647956431f914eedba8828a71aa46f611da56",
+      "title": "Deep Generative Calibration on Stochastic Volatility Models with Applications in FX Barrier Options",
+      "year": 2025,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1145/3672608.3707874?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1145/3672608.3707874, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "48521143",
+          "name": "Yanqing Ma"
+        },
+        {
+          "authorId": "2268341002",
+          "name": "Carmine Ventre"
+        },
+        {
+          "authorId": "2191898851",
+          "name": "Renzo Tiranti"
+        },
+        {
+          "authorId": "2362540704",
+          "name": "Aiming Chen"
+        }
+      ],
+      "abstract": "This paper proposes a two-step approach to efficiently calibrate the stochastic models for the foreign exchange (FX) barrier options by utilising the predictive and generative power of machine learning. To tackle the limited availability of market prices from brokers, we propose a framework to first augment the model parameters via a generative model, the Variational Autoencoder Generative Adversarial Network (VAE-GAN) model, and then calibrate the model parameters with neural networks to approximate the mapping between synthetic market data and model parameters. In this work, we examine the performance of our two-step calibration approach by comparing it with the traditional calibration process in terms of robustness and efficiency. We evaluate our calibration using two performance metrics employed by major financial institutions. The results indicate that our method not only speeds up the calibration process from hours to seconds but also increases the variety of the dataset, covering a broader range of market conditions. Finally, we use the values output by our calibration method as initial values in the traditional calibrator. This approach helps the traditional calibrator achieve optimal parameters by either improving running time or the quality of the solutions, resulting in a closer match between the model-implied prices and the market prices.",
+      "title_query": true
+    },
+    {
+      "paperId": "3975f7acf3d6ef30570ff3ca58f383a04e89f395",
+      "externalIds": {
+        "DOI": "10.4108/eai.12-1-2024.2347143",
+        "CorpusId": 270647638
+      },
+      "url": "https://www.semanticscholar.org/paper/3975f7acf3d6ef30570ff3ca58f383a04e89f395",
+      "title": "Bayesian Inference for Statistics Recurrent Stochastic Volatility",
+      "year": 2024,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.4108/eai.12-1-2024.2347143?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.4108/eai.12-1-2024.2347143, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2237990200",
+          "name": "Weihan Qiu"
+        }
+      ],
+      "abstract": ". Stochastic volatility model is an important model for studying financial time series. Due to the very complex volatility of financial markets, it is particularly important to analyze the characteristics of non-linearity and long memory. Moreover, the traditional stochastic volatility model does not explain the self-dependence in statistical sense, which will affect the model's capture of volatility effect.In this paper, a statistical recurrence volatility model is established. The cyclic neural network is used to model the time series so as to draw the long dependence at the moment, thus overcoming the limitation that the traditional random model can only explain the short dependence, and the nonlinear transformation is used to replace the logarithmic transformation of the traditional random model. We combine in-depth learning with stock volatility to simulate five international stock index data sets: Swiss stock index SWX, French market index CAC, and Singapore stock market index STI. In addition, SMC and particle MCMC are used to perform Bayesian inference on this parameter state space model. Compared with the other three traditional models, the Statistics Recurrence Stock Volatility model is superior to SV, NSV and LMSV in describing the complex fluctuation effect, and provides better off-sample prediction.In order to better combine RNN and SV models, we use a special type of RNN model, namely the Statistical Cyclic Unit (SRU) structure, which can capture the complex wave effects ignored by the traditional SV model while retaining the basic components of the SV model. This combination enables the SR-SV model to achieve flexible and excellent prediction performance by using in-depth learning, and fills up the weakness of neural network in explanation.",
+      "title_query": true
+    },
+    {
+      "paperId": "a59005f87349ec27ad1072b241c4df2cdf1d1a54",
+      "externalIds": {
+        "DBLP": "conf/aaai/ZhaoZNL24",
+        "ArXiv": "2402.06642",
+        "DOI": "10.48550/arXiv.2402.06642",
+        "CorpusId": 267627582
+      },
+      "url": "https://www.semanticscholar.org/paper/a59005f87349ec27ad1072b241c4df2cdf1d1a54",
+      "title": "From GARCH to Neural Network for Volatility Forecast",
+      "year": 2024,
+      "citationCount": 14,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2402.06642, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2114872698",
+          "name": "Pengfei Zhao"
+        },
+        {
+          "authorId": "2174795042",
+          "name": "Haoren Zhu"
+        },
+        {
+          "authorId": "2284338937",
+          "name": "Wilfred Siu Hung Ng"
+        },
+        {
+          "authorId": "2283867652",
+          "name": "Dik Lun Lee"
+        }
+      ],
+      "abstract": "Volatility, as a measure of uncertainty, plays a crucial role in numerous financial activities such as risk management. The Econometrics and Machine Learning communities have developed two distinct approaches for financial volatility forecasting: the stochastic approach and the neural network (NN) approach. Despite their individual strengths, these methodologies have conventionally evolved in separate research trajectories with little interaction between them. This study endeavors to bridge this gap by establishing an equivalence relationship between models of the GARCH family and their corresponding NN counterparts. With the equivalence relationship established, we introduce an innovative approach, named GARCH-NN, for constructing NN-based volatility models. It obtains the NN counterparts of GARCH models and integrates them as components into an established NN architecture, thereby seamlessly infusing volatility stylized facts (SFs) inherent in the GARCH models into the neural network. We develop the GARCH-LSTM model to showcase the power of GARCH-NN approach. Experiment results validate that amalgamating the NN counterparts of the GARCH family models into established NN models leads to enhanced outcomes compared to employing the stochastic and NN models in isolation.",
+      "title_query": true
+    },
+    {
+      "paperId": "5dcdf1548b7859153f62bdd09f56e0cb8ac55c93",
+      "externalIds": {
+        "DOI": "10.1080/14697688.2024.2396977",
+        "CorpusId": 272920682
+      },
+      "url": "https://www.semanticscholar.org/paper/5dcdf1548b7859153f62bdd09f56e0cb8ac55c93",
+      "title": "FuNVol: multi-asset implied volatility market simulator using functional principal components and neural SDEs",
+      "year": 2024,
+      "citationCount": 4,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://api.unpaywall.org/v2/10.1080/14697688.2024.2396977?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1080/14697688.2024.2396977, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "21114949",
+          "name": "Vedant Choudhary"
+        },
+        {
+          "authorId": "2559267",
+          "name": "S. Jaimungal"
+        },
+        {
+          "authorId": "34339977",
+          "name": "Maxime Bergeron"
+        }
+      ],
+      "abstract": "We introduce a new approach for generating sequences of implied volatility (IV) surfaces across multiple assets that are faithful to historical prices. We do so using a combination of functional data analysis and neural stochastic differential equations (SDEs) combined with a probability integral transform penalty to reduce model misspecification. We demonstrate that learning the joint dynamics of IV surfaces and prices produces market scenarios that are consistent with historical features and lie within the sub-manifold of surfaces that are essentially free of static arbitrage. Finally, we demonstrate that delta hedging using the simulated surfaces generates profit and loss (P&L) distributions that are consistent with realized P&Ls.",
+      "title_query": true
+    },
+    {
+      "paperId": "fae9eb29accec055e2d5eb8d4e570de8414b632a",
+      "externalIds": {
+        "MAG": "2964851717",
+        "PubMedCentral": "6697415",
+        "DOI": "10.1101/371203",
+        "CorpusId": 52839861,
+        "PubMed": "31368892"
+      },
+      "url": "https://www.semanticscholar.org/paper/fae9eb29accec055e2d5eb8d4e570de8414b632a",
+      "title": "Multivariate stochastic volatility modeling of neural data",
+      "year": 2018,
+      "citationCount": 10,
+      "openAccessPdf": {
+        "url": "https://doi.org/10.7554/elife.42950",
+        "status": "GOLD",
+        "license": "CCBY",
+        "disclaimer": "Notice: Paper or abstract available at https://pmc.ncbi.nlm.nih.gov/articles/PMC6697415, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "143825235",
+          "name": "Tung D Phan"
+        },
+        {
+          "authorId": "2136302892",
+          "name": "Jessica A. Wacther"
+        },
+        {
+          "authorId": "1913449",
+          "name": "E. Solomon"
+        },
+        {
+          "authorId": "2564529",
+          "name": "M. Kahana"
+        }
+      ],
+      "abstract": "Because multivariate autoregressive models have failed to adequately account for the complexity of neural signals, researchers have predominantly relied on non-parametric methods when studying the relations between brain and behavior. Using medial temporal lobe (MTL) recordings from 96 neurosurgical patients, we show that time series models with volatility described by a multivariate stochastic latent-variable process and lagged interactions between signals in different brain regions provide new insights into the dynamics of brain function. The implied volatility inferred from our process positively correlates with high-frequency spectral activity, a signal that correlates with neuronal activity. We show that volatility features derived from our model can reliably decode memory states, and that this classifier performs as well as those using spectral features. Using the directional connections between brain regions during complex cognitive process provided by the model, we uncovered perirhinal-hippocampal desynchronization in the MTL regions that is associated with successful memory encoding.",
+      "title_query": true
+    },
+    {
+      "paperId": "ae522b2ed7bba09097023dea92f07f950d450b65",
+      "externalIds": {
+        "MAG": "1519678479",
+        "CorpusId": 11612067
+      },
+      "url": "https://www.semanticscholar.org/paper/ae522b2ed7bba09097023dea92f07f950d450b65",
+      "title": "Grey — Artificial and neural network stochastic volatility model: Intraday return realized volatility forecasting",
+      "year": 2011,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null
+      },
+      "authors": [
+        {
+          "authorId": "39848322",
+          "name": "Hsiao-Fen Hsiao"
+        },
+        {
+          "authorId": "2108157934",
+          "name": "Zhe-Ming Wang"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: A Neural Stochastic Volatility Model\n    Year: 2017\n    Citations: 64\n    URL: https://www.semanticscholar.org/paper/2aa11d8a772e72a8f3a52e1b9124e052ab2818fb\n    Abstract: In this paper, we show that the recent integration of statistical models with deep recurrent neural networks provides a new way of formulating volatility (the degree of variation of time series) models that have been widely used in time series analysis and prediction in finance. The model comprises a pair of complementary stochastic recurrent neural networks: the generative network models the joint distribution of the stochastic volatility process; the inference network approximates the conditional distribution of the latent variables given the observables. Our focus here is on the formulation of temporal dynamics of volatility over time under a stochastic recurrent neural network framework. Experiments on real-world stock price datasets demonstrate that the proposed model generates a better volatility estimation and prediction that outperforms mainstream methods, e.g., deterministic models such as GARCH and its variants, and stochastic models namely the MCMC-based stochvol as well as the Gaussian-process-based, on average negative log-likelihood.\n\n[1] Title: Commodity options pricing under Wishart stochastic volatility model equipped with jump process: Model calibration by an optimized neural network\n    Year: 2025\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/646903ea5dc3bf73e1c0cebb0671f1ed2ebbb230\n\n[2] Title: DEEP LEARNING APPROACHES TO STOCHASTIC VOLATILITY MODEL CALIBRATION: A COMPARATIVE ANALYSIS OF NEURAL SDES AND TRADITIONAL METHODS\n    Year: 2025\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/e36346858c565118a802044ae9103da87c020d03\n\n[3] Title: Probability‑Density‑Consistent Physics-Informed Neural Networks for Stochastic Local Volatility Model Calibration\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/783f3b50492773b5e0df186830c2fe2ff000cb65\n    Abstract: Calibrating stochastic local volatility (SLV) models to market implied volatility surfaces remains an inherently complex and ill-posed inverse problem, as it involves solving nonlinear PDEs under sparse and noisy data, while simultaneously ensuring consistency with the underlying risk-neutral probability density. We present a probability density-consistent PINNs (PDC-PINNs) that embeds the forward Kolmogorov Fokker Planck equation and the risk-neutral density constraints whose joint validity ensures the absence of static and dynamic arbitrage. A self-adaptive bilevel optimiser is developed to balance the PDE, data-fit, and density losses by rescaling them according to gradient magnitudes for stabilising learning. In synthetic and real foreign exchange datasets, PDC-PINNs match or exceed the accuracy of conventional calibrators while halving computational time through TPU vectorisation and producing reasonable surfaces that remain all constraints. The framework further enables consistent pricing of path-dependent options and generalises to other constrained financial PDE problems.\n\n[4] Title: Stochastic Volatility Model with Sticky Drawdown and Drawup Processes: A Deep Learning Approach\n    Year: 2025\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/336e2c34d046e6e746023b9c98dd9aaedba8e0ac\n    Abstract: We propose a new financial model, the stochastic volatility model with sticky drawdown and drawup processes (SVSDU model), which enables us to capture the features of winning and losing streaks that are common across financial markets but can not be captured simultaneously by the existing financial models. Moreover, the SVSDU model retains the advantages of the stochastic volatility models. Since there are not closed-form option pricing formulas under the SVSDU model and the existing simulation methods for the sticky diffusion processes are really time-consuming, we develop a deep neural network to solve the corresponding high-dimensional parametric partial differential equation (PDE), where the solution to the PDE is the pricing function of a European option according to the Feynman-Kac Theorem, and validate the accuracy and efficiency of our deep learning approach. We also propose a novel calibration framework for our model, and demonstrate the calibration performances of our models on both simulated data and historical data. The calibration results on SPX option data show that the SVSDU model is a good representation of the asset value dynamic, and both winning and losing streak...\n\n[5] Title: An artificial neural network representation of the SABR stochastic volatility model\n    Year: 2018\n    Citations: 39\n    URL: https://www.semanticscholar.org/paper/0e024eac4c1fd01ceb95bab8eedd05e0dc4b1e36\n    Abstract: In this article, the Universal Approximation Theorem of Artificial Neural Networks (ANNs) is applied to the SABR stochastic volatility model in order to construct highly efficient representations. Initially, the SABR approximation of Hagan et al. [2002] is considered, then a more accurate integration scheme of McGhee [2011] as well as a two factor finite difference scheme. The resulting ANN calculates 10,000 times faster than the finite difference scheme whilst maintaining a high degree of accuracy. As a result, the ANN dispenses with the need for the commonly used SABR Approximation.\n\n[6] Title: Deep neural networks for the valuation of equity and real-estate index American options under models with stochastic volatility\n    Year: 2025\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/febc585b7a5ac18e6df66c7bea689fa12ed8ab07\n    Abstract: The primary objective of this research is to develop new algorithms in the framework of deep neural networks for the valuation of options under dynamics driven by stochastic volatility models. We aim to use the Heston model for equity options to demonstrate the accuracy of our approach.\n \n \n \n Physics-informed neural networks (PINNs) are trained to minimize a loss function that includes terms from the partial differential equation residuals, initial condition and boundary conditions evaluated at selected points in the space-time domain. Speed and accuracy comparisons are carried out against single hidden-layer neural networks, called physics-informed extreme learning machines (PIELMs). American options are formulated as linear complementarity problems, and PINNs are applied in conjunction with penalty methods for the computation of the option prices.\n \n \n \n For American options under the Heston model, PINNs yield accurate prices. Computed Greeks sensitivities are in close agreement with those reported for mesh-based methods. In contrast to mesh-based penalty methods for American options, PINNs work with smaller values of the penalty term. For the real estate index American option p...\n\n[7] Title: Optimal calculations for the space-time fractional derivative option pricing models with stochastic liquidity risk and volatility using a combination neural network.\n    Year: 2025\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/2749a1e46b1c2fe868900e519f76ed2b2add97b8\n    Abstract: This work incorporates a stochastic liquidity risk, stochastic volatility, and Caputo-type fractional derivatives into European option pricing and establishes two novel space-time fractional hybrid models to capture the nonlinearity and non-stationarity of price evolution processes. The combination neural network algorithm with the defined nonlinear test solutions is designed to solve the fractional derivative models with the initial condition, Dirichlet and Robin boundary conditions. When the influence of a liquidity risk is removed, the studied models are reduced to the space-time fractional Heston models, and the pricing results are compared with the analytical formula of the classical Heston model. In the presence of a liquidity risk, the pricing models under the Caputo and Caputo-Fabrizio fractional derivatives are tested based on the market data. The applications and comparison results prove that the dynamical models demonstrated in the work have small prediction errors and can highly fit market data. The designed combination neural network can effectively handle the mixed problems of the high-dimensional fractional derivative equations and derive the optimal approximations u...\n\n[8] Title: Pricing Multi-Asset Bermudan Commodity Options with Stochastic Volatility Using Neural Networks\n    Year: 2023\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/560e5743df23ce7c9cb94087e3f4e6789d593cfe\n    Abstract: It has been recognized that volatility in commodity markets fluctuates significantly depending on the demand–supply relationship and geopolitical risk, and that risk and financial management using multivariate derivatives are becoming more important. This study illustrates an application of multi-layered neural networks for multi-dimensional Bermudan option pricing problems assuming a multi-asset stochastic volatility model in commodity markets. In addition, we aim to identify continuation value functions for these option pricing problems by implementing smooth activation functions in the neural networks and evaluating their accuracy compared with other activation functions or regression techniques. First, we express the underlying asset dynamics using the multi-asset stochastic volatility model with mean reversion properties in the commodity market and formulate the multivariate Bermudan commodity option pricing problem. Subsequently, we apply multi-layer perceptrons in the neural network to represent the continuation value functions of Bermudan commodity options, wherein the entire neural network is trained using the least-squares Monte Carlo simulation method. Finally, we perfor...\n\n[9] Title: Stochastic Policy Gradient Methods in the Uncertain Volatility Model\n    Year: 2026\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/14888befb27ca282841dd3264c3118fd42dc5dbd\n    Abstract: The multidimensional Uncertain Volatility Model leads to robust option pricing problems under joint volatility and correlation uncertainty. Their numerical resolution quickly becomes challenging because the associated stochastic control problem is high-dimensional. We propose a backward actor-critic stochastic policy gradient scheme tailored to this setting. The method combines a discrete dynamic programming principle with Proximal Policy Optimization and shallow neural-network approximations of both the value function and the control policy. A key ingredient is the policy parameterization: continuous controls are represented through a squashed Gaussian policy built on a C-vine representation of correlation matrices, which enforces positive semidefiniteness by construction. Numerical experiments on a range of multidimensional derivatives show that the method yields accurate prices, remains computationally efficient, and compares favorably with existing Monte Carlo and machine-learning-based benchmarks for robust pricing in the Uncertain Volatility Model.\n\n[10] Title: A Statistical Recurrent Stochastic Volatility Model for Stock Markets\n    Year: 2019\n    Citations: 16\n    URL: https://www.semanticscholar.org/paper/2ef2ebbdd6aba026d7db5dce1d7bb34a7a7e0667\n    Abstract: Abstract The stochastic volatility (SV) model and its variants are widely used in the financial sector, while recurrent neural network (RNN) models are successfully used in many large-scale industrial applications of deep learning. We combine these two methods in a nontrivial way and propose a model, which we call the statistical recurrent stochastic volatility (SR-SV) model, to capture the dynamics of stochastic volatility. The proposed model is able to capture complex volatility effects, for example, nonlinearity and long-memory auto-dependence, overlooked by the conventional SV models, is statistically interpretable and has an impressive out-of-sample forecast performance. These properties are carefully discussed and illustrated through extensive simulation studies and applications to five international stock index datasets: the German stock index DAX30, the Hong Kong stock index HSI50, the France market index CAC40, the U.S. stock market index SP500 and the Canada market index TSX250. An user-friendly software package together with the examples reported in the article are available at https://github.com/vbayeslab.\n\n[11] Title: Option Pricing Based on Neural Stochastic Differential Equations\n    Year: 2024\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/3facfa30a6f8b173d79e6f7e2d6a39584a381775\n    Abstract: Firstly, based on the Black-Scholes stock price model, the neural stochastic differential equation (NSDE) model was established by parameterizing the asset return rate and volatility as a drift network and a diffusion network, respectively. Secondly, in the empirical analysis, the underlying asset as a single stock option was used as the research object, and real stock data was used for the network training and testing. The experimental results show that the NSDE model can overcome the defects of the constant assumption of the Black-Scholes model. Finally, for the case where the price of the underlying asset of the option was unobservable, we proposed that the price of any target option and the price of a known option could be constrained within the Wasserstein distance of their risk-neutral equivalent martingale measure, and theoretically proved the method.\n\n[12] Title: Stochastic Volatility Modelling with LSTM Networks: A Hybrid Approach for S&P 500 Index Volatility Forecasting\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/ed5c2c4a12430f43864734b580416f44730bc147\n    Abstract: Accurate volatility forecasting is essential in banking, investment, and risk management, because expectations about future market movements directly influence current decisions. This study proposes a hybrid modelling framework that integrates a Stochastic Volatility model with a Long Short Term Memory neural network. The SV model improves statistical precision and captures latent volatility dynamics, especially in response to unforeseen events, while the LSTM network enhances the model's ability to detect complex nonlinear patterns in financial time series. The forecasting is conducted using daily data from the S and P 500 index, covering the period from January 1 1998 to December 31 2024. A rolling window approach is employed to train the model and generate one step ahead volatility forecasts. The performance of the hybrid SV-LSTM model is evaluated through both statistical testing and investment simulations. The results show that the hybrid approach outperforms both the standalone SV and LSTM models and contributes to the development of volatility modelling techniques, providing a foundation for improving risk assessment and strategic investment planning in the context of the S ...\n\n[13] Title: European call price modelling using neural networks in considering volatility as stochastic with comparison to the Heston model\n    Year: 2020\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/c761be049d87598f64c75c7b3b975d05d27ca9a0\n    Abstract: ABSTRACT The aim of this paper is to model the European call price using neural networks (NNs). Many existing works have treated the problem as Hutchinson et al. [(1994). A nonparametric approach to pricing and hedging derivative securities via learning networks. J Finance. 49(3):851–889] Compared to these previous studies, the originality of our work consists in considering the volatility as stochastic and then to compare the NN’s results to those of Heston (1993) model rather than to those of Black and Scholes [(1973 May–Jun). The pricing of options and corporate liabilities. J Polit Econ. 81(3):637–654)] as Hutchinson et al. did. We base our empirical work on real data (12 contracts on CAC40 index from the period January 2005 to January 2007). We found that the NNs approach gives better performances than the Heston’s, in terms of accuracy and convergence speed.\n\n[14] Title: Deep Generative Calibration on Stochastic Volatility Models with Applications in FX Barrier Options\n    Year: 2025\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/f30647956431f914eedba8828a71aa46f611da56\n    Abstract: This paper proposes a two-step approach to efficiently calibrate the stochastic models for the foreign exchange (FX) barrier options by utilising the predictive and generative power of machine learning. To tackle the limited availability of market prices from brokers, we propose a framework to first augment the model parameters via a generative model, the Variational Autoencoder Generative Adversarial Network (VAE-GAN) model, and then calibrate the model parameters with neural networks to approximate the mapping between synthetic market data and model parameters. In this work, we examine the performance of our two-step calibration approach by comparing it with the traditional calibration process in terms of robustness and efficiency. We evaluate our calibration using two performance metrics employed by major financial institutions. The results indicate that our method not only speeds up the calibration process from hours to seconds but also increases the variety of the dataset, covering a broader range of market conditions. Finally, we use the values output by our calibration method as initial values in the traditional calibrator. This approach helps the traditional calibrator achi...\n\n[15] Title: Bayesian Inference for Statistics Recurrent Stochastic Volatility\n    Year: 2024\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/3975f7acf3d6ef30570ff3ca58f383a04e89f395\n    Abstract: . Stochastic volatility model is an important model for studying financial time series. Due to the very complex volatility of financial markets, it is particularly important to analyze the characteristics of non-linearity and long memory. Moreover, the traditional stochastic volatility model does not explain the self-dependence in statistical sense, which will affect the model's capture of volatility effect.In this paper, a statistical recurrence volatility model is established. The cyclic neural network is used to model the time series so as to draw the long dependence at the moment, thus overcoming the limitation that the traditional random model can only explain the short dependence, and the nonlinear transformation is used to replace the logarithmic transformation of the traditional random model. We combine in-depth learning with stock volatility to simulate five international stock index data sets: Swiss stock index SWX, French market index CAC, and Singapore stock market index STI. In addition, SMC and particle MCMC are used to perform Bayesian inference on this parameter state space model. Compared with the other three traditional models, the Statistics Recurrence Stock Vola...\n\n[16] Title: From GARCH to Neural Network for Volatility Forecast\n    Year: 2024\n    Citations: 14\n    URL: https://www.semanticscholar.org/paper/a59005f87349ec27ad1072b241c4df2cdf1d1a54\n    Abstract: Volatility, as a measure of uncertainty, plays a crucial role in numerous financial activities such as risk management. The Econometrics and Machine Learning communities have developed two distinct approaches for financial volatility forecasting: the stochastic approach and the neural network (NN) approach. Despite their individual strengths, these methodologies have conventionally evolved in separate research trajectories with little interaction between them. This study endeavors to bridge this gap by establishing an equivalence relationship between models of the GARCH family and their corresponding NN counterparts. With the equivalence relationship established, we introduce an innovative approach, named GARCH-NN, for constructing NN-based volatility models. It obtains the NN counterparts of GARCH models and integrates them as components into an established NN architecture, thereby seamlessly infusing volatility stylized facts (SFs) inherent in the GARCH models into the neural network. We develop the GARCH-LSTM model to showcase the power of GARCH-NN approach. Experiment results validate that amalgamating the NN counterparts of the GARCH family models into established NN models le...\n\n[17] Title: FuNVol: multi-asset implied volatility market simulator using functional principal components and neural SDEs\n    Year: 2024\n    Citations: 4\n    URL: https://www.semanticscholar.org/paper/5dcdf1548b7859153f62bdd09f56e0cb8ac55c93\n    Abstract: We introduce a new approach for generating sequences of implied volatility (IV) surfaces across multiple assets that are faithful to historical prices. We do so using a combination of functional data analysis and neural stochastic differential equations (SDEs) combined with a probability integral transform penalty to reduce model misspecification. We demonstrate that learning the joint dynamics of IV surfaces and prices produces market scenarios that are consistent with historical features and lie within the sub-manifold of surfaces that are essentially free of static arbitrage. Finally, we demonstrate that delta hedging using the simulated surfaces generates profit and loss (P&L) distributions that are consistent with realized P&Ls.\n\n[18] Title: Multivariate stochastic volatility modeling of neural data\n    Year: 2018\n    Citations: 10\n    URL: https://www.semanticscholar.org/paper/fae9eb29accec055e2d5eb8d4e570de8414b632a\n    Abstract: Because multivariate autoregressive models have failed to adequately account for the complexity of neural signals, researchers have predominantly relied on non-parametric methods when studying the relations between brain and behavior. Using medial temporal lobe (MTL) recordings from 96 neurosurgical patients, we show that time series models with volatility described by a multivariate stochastic latent-variable process and lagged interactions between signals in different brain regions provide new insights into the dynamics of brain function. The implied volatility inferred from our process positively correlates with high-frequency spectral activity, a signal that correlates with neuronal activity. We show that volatility features derived from our model can reliably decode memory states, and that this classifier performs as well as those using spectral features. Using the directional connections between brain regions during complex cognitive process provided by the model, we uncovered perirhinal-hippocampal desynchronization in the MTL regions that is associated with successful memory encoding.\n\n[19] Title: Grey — Artificial and neural network stochastic volatility model: Intraday return realized volatility forecasting\n    Year: 2011\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/ae522b2ed7bba09097023dea92f07f950d450b65\n",
+  "sample_id": "ICLR2017_B1IzH7cxl",
+  "paper_dir": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1IzH7cxl",
+  "review_model_name": "gpt-5.4-nano",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG"
+  ]
+}

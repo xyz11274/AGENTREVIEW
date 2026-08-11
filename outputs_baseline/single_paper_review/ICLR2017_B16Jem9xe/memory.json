@@ -1,0 +1,1111 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B16Jem9xe/md_content_no_appendix.md",
+  "paper_title": "LEARNING IN IMPLICIT GENERATIVE MODELS",
+  "semantic_scholar_query": "LEARNING IN IMPLICIT GENERATIVE MODELS",
+  "keyword_model_name": "gpt-5",
+  "retrieved_papers": [
+    {
+      "paperId": "e5683e29365b3742c39422eb1faa2684a39bade8",
+      "externalIds": {
+        "CorpusId": 48585536
+      },
+      "url": "https://www.semanticscholar.org/paper/e5683e29365b3742c39422eb1faa2684a39bade8",
+      "title": "Under Review as a Conference Paper at Iclr 2017 Learning in Implicit Generative Models",
+      "year": 2017,
+      "citationCount": 6,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://arxiv.org/pdf/1610.03483v3.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "40627523",
+          "name": "Balaji Lakshminarayanan"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "329f14d68f8e4cbc3ee5109e70c76c6f3b63a19a",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1709-02023",
+        "ArXiv": "1709.02023",
+        "MAG": "2964133637",
+        "CorpusId": 7451980
+      },
+      "url": "https://www.semanticscholar.org/paper/329f14d68f8e4cbc3ee5109e70c76c6f3b63a19a",
+      "title": "CausalGAN: Learning Causal Implicit Generative Models with Adversarial Training",
+      "year": 2017,
+      "citationCount": 308,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1709.02023, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "3124214",
+          "name": "Murat Kocaoglu"
+        },
+        {
+          "authorId": "144191117",
+          "name": "Christopher Snyder"
+        },
+        {
+          "authorId": "1718469",
+          "name": "A. Dimakis"
+        },
+        {
+          "authorId": "144367713",
+          "name": "S. Vishwanath"
+        }
+      ],
+      "abstract": "We propose an adversarial training procedure for learning a causal implicit generative model for a given causal graph. We show that adversarial training can be used to learn a generative model with true observational and interventional distributions if the generator architecture is consistent with the given causal graph. We consider the application of generating faces based on given binary labels where the dependency structure between the labels is preserved with a causal graph. This problem can be seen as learning a causal implicit generative model for the image and labels. We devise a two-stage procedure for this problem. First we train a causal implicit generative model over binary labels using a neural network consistent with a causal graph as the generator. We empirically show that WassersteinGAN can be used to output discrete labels. Later, we propose two new conditional GAN architectures, which we call CausalGAN and CausalBEGAN. We show that the optimal generator of the CausalGAN, given the labels, samples from the image distributions conditioned on these labels. The conditional GAN combined with a trained causal implicit generative model for the labels is then a causal implicit generative model over the labels and the generated image. We show that the proposed architectures can be used to sample from observational and interventional image distributions, even for interventions which do not naturally occur in the dataset.",
+      "title_query": true
+    },
+    {
+      "paperId": "5e12238b871da006eea9acbb14d89c299317aea2",
+      "externalIds": {
+        "MAG": "2926763010",
+        "ArXiv": "1904.02762",
+        "DBLP": "conf/iccv/SantosMPD19",
+        "DOI": "10.1109/ICCV.2019.00456",
+        "CorpusId": 102352402
+      },
+      "url": "https://www.semanticscholar.org/paper/5e12238b871da006eea9acbb14d89c299317aea2",
+      "title": "Learning Implicit Generative Models by Matching Perceptual Features",
+      "year": 2019,
+      "citationCount": 32,
+      "openAccessPdf": {
+        "url": "https://arxiv.org/pdf/1904.02762",
+        "status": "GREEN",
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1904.02762, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1790831",
+          "name": "C. D. Santos"
+        },
+        {
+          "authorId": "2211263",
+          "name": "Youssef Mroueh"
+        },
+        {
+          "authorId": "8350409",
+          "name": "Inkit Padhi"
+        },
+        {
+          "authorId": "1839363",
+          "name": "Pierre L. Dognin"
+        }
+      ],
+      "abstract": "Perceptual features (PFs) have been used with great success in tasks such as transfer learning, style transfer, and super-resolution. However, the efficacy of PFs as key source of information for learning generative models is not well studied. We investigate here the use of PFs in the context of learning implicit generative models through moment matching (MM). More specifically, we propose a new effective MM approach that learns implicit generative models by performing mean and covariance matching of features extracted from pretrained ConvNets. Our proposed approach improves upon existing MM methods by: (1) breaking away from the problematic min/max game of adversarial learning; (2) avoiding online learning of kernel functions; and (3) being efficient with respect to both number of used moments and required minibatch size. Our experimental results demonstrate that, due to the expressiveness of PFs from pretrained deep ConvNets, our method achieves state-of-the-art results for challenging benchmarks.",
+      "title_query": true
+    },
+    {
+      "paperId": "37183d900bbae565c768ff853501a0f7fcac04b3",
+      "externalIds": {
+        "DBLP": "conf/pkdd/0004DLZZ20",
+        "DOI": "10.1007/978-3-030-67661-2_15",
+        "CorpusId": 232060516
+      },
+      "url": "https://www.semanticscholar.org/paper/37183d900bbae565c768ff853501a0f7fcac04b3",
+      "title": "Learning Implicit Generative Models by Teaching Density Estimators",
+      "year": 2020,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://api.unpaywall.org/v2/10.1007/978-3-030-67661-2_15?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1007/978-3-030-67661-2_15, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "49343487",
+          "name": "Kun Xu"
+        },
+        {
+          "authorId": "144369497",
+          "name": "Chao Du"
+        },
+        {
+          "authorId": "2399563",
+          "name": "Chongxuan Li"
+        },
+        {
+          "authorId": "145254043",
+          "name": "Jun Zhu"
+        },
+        {
+          "authorId": "2154715180",
+          "name": "Bo Zhang"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "59f8eea55b6e3a48d838c19282a9e8820f98ac70",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-2410-22381",
+        "ArXiv": "2410.22381",
+        "DOI": "10.48550/arXiv.2410.22381",
+        "CorpusId": 273695841
+      },
+      "url": "https://www.semanticscholar.org/paper/59f8eea55b6e3a48d838c19282a9e8820f98ac70",
+      "title": "Robust training of implicit generative models for multivariate and heavy-tailed distributions with an invariant statistical loss",
+      "year": 2024,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2410.22381, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2287830114",
+          "name": "Jos'e Manuel de Frutos"
+        },
+        {
+          "authorId": "2070301333",
+          "name": "M. V'azquez"
+        },
+        {
+          "authorId": "2328308252",
+          "name": "Pablo M. Olmos"
+        },
+        {
+          "authorId": "2287825535",
+          "name": "Joaqu'in M'iguez"
+        }
+      ],
+      "abstract": "Traditional implicit generative models are capable of learning highly complex data distributions. However, their training involves distinguishing real data from synthetically generated data using adversarial discriminators, which can lead to unstable training dynamics and mode dropping issues. In this work, we build on the \\textit{invariant statistical loss} (ISL) method introduced in \\cite{de2024training}, and extend it to handle heavy-tailed and multivariate data distributions. The data generated by many real-world phenomena can only be properly characterised using heavy-tailed probability distributions, and traditional implicit methods struggle to effectively capture their asymptotic behavior. To address this problem, we introduce a generator trained with ISL, that uses input noise from a generalised Pareto distribution (GPD). We refer to this generative scheme as Pareto-ISL for conciseness. Our experiments demonstrate that Pareto-ISL accurately models the tails of the distributions while still effectively capturing their central characteristics. The original ISL function was conceived for 1D data sets. When the actual data is $n$-dimensional, a straightforward extension of the method was obtained by targeting the $n$ marginal distributions of the data. This approach is computationally infeasible and ineffective in high-dimensional spaces. To overcome this, we extend the 1D approach using random projections and define a new loss function suited for multivariate data, keeping problems tractable by adjusting the number of projections. We assess its performance in multidimensional generative modeling and explore its potential as a pretraining technique for generative adversarial networks (GANs) to prevent mode collapse, reporting promising results and highlighting its robustness across various hyperparameter settings.",
+      "title_query": true
+    },
+    {
+      "paperId": "94f312e10af37179d149b50e786da98d46756111",
+      "externalIds": {
+        "MAG": "3005466804",
+        "DBLP": "journals/corr/abs-2002-02862",
+        "ArXiv": "2002.02862",
+        "CorpusId": 211066414
+      },
+      "url": "https://www.semanticscholar.org/paper/94f312e10af37179d149b50e786da98d46756111",
+      "title": "Learning Implicit Generative Models with Theoretical Guarantees",
+      "year": 2020,
+      "citationCount": 7,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/2002.02862, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2118636087",
+          "name": "Yuan Gao"
+        },
+        {
+          "authorId": "2144452595",
+          "name": "Jian Huang"
+        },
+        {
+          "authorId": "48913600",
+          "name": "Yuling Jiao"
+        },
+        {
+          "authorId": "2108457478",
+          "name": "Jin Liu"
+        }
+      ],
+      "abstract": "We propose a \\textbf{uni}fied \\textbf{f}ramework for \\textbf{i}mplicit \\textbf{ge}nerative \\textbf{m}odeling (UnifiGem) with theoretical guarantees by integrating approaches from optimal transport, numerical ODE, density-ratio (density-difference) estimation and deep neural networks. First, the problem of implicit generative learning is formulated as that of finding the optimal transport map between the reference distribution and the target distribution, which is characterized by a totally nonlinear Monge-Ampere equation. Interpreting the infinitesimal linearization of the Monge-Ampere equation from the perspective of gradient flows in measure spaces leads to the continuity equation or the McKean-Vlasov equation. We then solve the McKean-Vlasov equation numerically using the forward Euler iteration, where the forward Euler map depends on the density ratio (density difference) between the distribution at current iteration and the underlying target distribution. We further estimate the density ratio (density difference) via deep density-ratio (density-difference) fitting and derive explicit upper bounds on the estimation error. Experimental results on both synthetic datasets and real benchmark datasets support our theoretical findings and demonstrate the effectiveness of UnifiGem.",
+      "title_query": true
+    },
+    {
+      "paperId": "6503c617db449861b96043b2bc892a1b4cb40a95",
+      "externalIds": {
+        "ArXiv": "1803.04357",
+        "MAG": "2789649201",
+        "DBLP": "journals/corr/abs-1803-04357",
+        "CorpusId": 3835316
+      },
+      "url": "https://www.semanticscholar.org/paper/6503c617db449861b96043b2bc892a1b4cb40a95",
+      "title": "Learning the Base Distribution in Implicit Generative Models",
+      "year": 2018,
+      "citationCount": 8,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1803.04357, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "1389581270",
+          "name": "Cem Subakan"
+        },
+        {
+          "authorId": "143812875",
+          "name": "Oluwasanmi Koyejo"
+        },
+        {
+          "authorId": "1718742",
+          "name": "P. Smaragdis"
+        }
+      ],
+      "abstract": "Popular generative model learning methods such as Generative Adversarial Networks (GANs), and Variational Autoencoders (VAE) enforce the latent representation to follow simple distributions such as isotropic Gaussian. In this paper, we argue that learning a complicated distribution over the latent space of an auto-encoder enables more accurate modeling of complicated data distributions. Based on this observation, we propose a two stage optimization procedure which maximizes an approximate implicit density model. We experimentally verify that our method outperforms GANs and VAEs on two image datasets (MNIST, CELEB-A). We also show that our approach is amenable to learning generative model for sequential data, by learning to generate speech and music.",
+      "title_query": true
+    },
+    {
+      "paperId": "22d51400424c93eebc136213d51c1aebc9c1f715",
+      "externalIds": {
+        "DBLP": "journals/corr/abs-1807-03870",
+        "MAG": "2874809900",
+        "ArXiv": "1807.03870",
+        "CorpusId": 49665900
+      },
+      "url": "https://www.semanticscholar.org/paper/22d51400424c93eebc136213d51c1aebc9c1f715",
+      "title": "Learning Implicit Generative Models by Teaching Explicit Ones",
+      "year": 2018,
+      "citationCount": 9,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1807.03870, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "144369497",
+          "name": "Chao Du"
+        },
+        {
+          "authorId": "144968846",
+          "name": "Kun Xu"
+        },
+        {
+          "authorId": "2399563",
+          "name": "Chongxuan Li"
+        },
+        {
+          "authorId": "145254043",
+          "name": "Jun Zhu"
+        },
+        {
+          "authorId": null,
+          "name": "Bo Zhang"
+        }
+      ],
+      "abstract": "Implicit generative models are difficult to train as no explicit density functions are defined. Generative adversarial nets (GANs) present a minimax framework to train such models, which however can suffer from mode collapse due to the nature of the JS-divergence. This paper presents a learning by teaching (LBT) approach to learning implicit models, which intrinsically avoids the mode collapse problem by optimizing a KL-divergence rather than the JS-divergence in GANs. In LBT, an auxiliary explicit model is introduced to fit the distribution defined by the implicit model while the later one teaches the explicit model to match the data distribution. LBT is formulated as a bilevel optimization problem, whose optimal generator matches the true data distribution. LBT can be naturally integrated with GANs to derive a hybrid LBT-GAN that enjoys complimentary benefits. %implies that we obtain the maximum likelihood estimation of the implicit model. Finally, we present a stochastic gradient ascent algorithm with unrolling to solve the challenging learning problems. Experimental results demonstrate the effectiveness of our method.",
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Under Review as a Conference Paper at Iclr 2017 Learning in Implicit Generative Models\n    Year: 2017\n    Citations: 6\n    URL: https://www.semanticscholar.org/paper/e5683e29365b3742c39422eb1faa2684a39bade8\n\n[1] Title: CausalGAN: Learning Causal Implicit Generative Models with Adversarial Training\n    Year: 2017\n    Citations: 308\n    URL: https://www.semanticscholar.org/paper/329f14d68f8e4cbc3ee5109e70c76c6f3b63a19a\n    Abstract: We propose an adversarial training procedure for learning a causal implicit generative model for a given causal graph. We show that adversarial training can be used to learn a generative model with true observational and interventional distributions if the generator architecture is consistent with the given causal graph. We consider the application of generating faces based on given binary labels where the dependency structure between the labels is preserved with a causal graph. This problem can be seen as learning a causal implicit generative model for the image and labels. We devise a two-stage procedure for this problem. First we train a causal implicit generative model over binary labels using a neural network consistent with a causal graph as the generator. We empirically show that WassersteinGAN can be used to output discrete labels. Later, we propose two new conditional GAN architectures, which we call CausalGAN and CausalBEGAN. We show that the optimal generator of the CausalGAN, given the labels, samples from the image distributions conditioned on these labels. The conditional GAN combined with a trained causal implicit generative model for the labels is then a causal impl...\n\n[2] Title: Learning Implicit Generative Models by Matching Perceptual Features\n    Year: 2019\n    Citations: 32\n    URL: https://www.semanticscholar.org/paper/5e12238b871da006eea9acbb14d89c299317aea2\n    Abstract: Perceptual features (PFs) have been used with great success in tasks such as transfer learning, style transfer, and super-resolution. However, the efficacy of PFs as key source of information for learning generative models is not well studied. We investigate here the use of PFs in the context of learning implicit generative models through moment matching (MM). More specifically, we propose a new effective MM approach that learns implicit generative models by performing mean and covariance matching of features extracted from pretrained ConvNets. Our proposed approach improves upon existing MM methods by: (1) breaking away from the problematic min/max game of adversarial learning; (2) avoiding online learning of kernel functions; and (3) being efficient with respect to both number of used moments and required minibatch size. Our experimental results demonstrate that, due to the expressiveness of PFs from pretrained deep ConvNets, our method achieves state-of-the-art results for challenging benchmarks.\n\n[3] Title: Learning Implicit Generative Models by Teaching Density Estimators\n    Year: 2020\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/37183d900bbae565c768ff853501a0f7fcac04b3\n\n[4] Title: Robust training of implicit generative models for multivariate and heavy-tailed distributions with an invariant statistical loss\n    Year: 2024\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/59f8eea55b6e3a48d838c19282a9e8820f98ac70\n    Abstract: Traditional implicit generative models are capable of learning highly complex data distributions. However, their training involves distinguishing real data from synthetically generated data using adversarial discriminators, which can lead to unstable training dynamics and mode dropping issues. In this work, we build on the \\textit{invariant statistical loss} (ISL) method introduced in \\cite{de2024training}, and extend it to handle heavy-tailed and multivariate data distributions. The data generated by many real-world phenomena can only be properly characterised using heavy-tailed probability distributions, and traditional implicit methods struggle to effectively capture their asymptotic behavior. To address this problem, we introduce a generator trained with ISL, that uses input noise from a generalised Pareto distribution (GPD). We refer to this generative scheme as Pareto-ISL for conciseness. Our experiments demonstrate that Pareto-ISL accurately models the tails of the distributions while still effectively capturing their central characteristics. The original ISL function was conceived for 1D data sets. When the actual data is $n$-dimensional, a straightforward extension of the ...\n\n[5] Title: Learning Implicit Generative Models with Theoretical Guarantees\n    Year: 2020\n    Citations: 7\n    URL: https://www.semanticscholar.org/paper/94f312e10af37179d149b50e786da98d46756111\n    Abstract: We propose a \\textbf{uni}fied \\textbf{f}ramework for \\textbf{i}mplicit \\textbf{ge}nerative \\textbf{m}odeling (UnifiGem) with theoretical guarantees by integrating approaches from optimal transport, numerical ODE, density-ratio (density-difference) estimation and deep neural networks. First, the problem of implicit generative learning is formulated as that of finding the optimal transport map between the reference distribution and the target distribution, which is characterized by a totally nonlinear Monge-Ampere equation. Interpreting the infinitesimal linearization of the Monge-Ampere equation from the perspective of gradient flows in measure spaces leads to the continuity equation or the McKean-Vlasov equation. We then solve the McKean-Vlasov equation numerically using the forward Euler iteration, where the forward Euler map depends on the density ratio (density difference) between the distribution at current iteration and the underlying target distribution. We further estimate the density ratio (density difference) via deep density-ratio (density-difference) fitting and derive explicit upper bounds on the estimation error. Experimental results on both synthetic datasets and real...\n\n[6] Title: Learning the Base Distribution in Implicit Generative Models\n    Year: 2018\n    Citations: 8\n    URL: https://www.semanticscholar.org/paper/6503c617db449861b96043b2bc892a1b4cb40a95\n    Abstract: Popular generative model learning methods such as Generative Adversarial Networks (GANs), and Variational Autoencoders (VAE) enforce the latent representation to follow simple distributions such as isotropic Gaussian. In this paper, we argue that learning a complicated distribution over the latent space of an auto-encoder enables more accurate modeling of complicated data distributions. Based on this observation, we propose a two stage optimization procedure which maximizes an approximate implicit density model. We experimentally verify that our method outperforms GANs and VAEs on two image datasets (MNIST, CELEB-A). We also show that our approach is amenable to learning generative model for sequential data, by learning to generate speech and music.\n\n[7] Title: Learning Implicit Generative Models by Teaching Explicit Ones\n    Year: 2018\n    Citations: 9\n    URL: https://www.semanticscholar.org/paper/22d51400424c93eebc136213d51c1aebc9c1f715\n    Abstract: Implicit generative models are difficult to train as no explicit density functions are defined. Generative adversarial nets (GANs) present a minimax framework to train such models, which however can suffer from mode collapse due to the nature of the JS-divergence. This paper presents a learning by teaching (LBT) approach to learning implicit models, which intrinsically avoids the mode collapse problem by optimizing a KL-divergence rather than the JS-divergence in GANs. In LBT, an auxiliary explicit model is introduced to fit the distribution defined by the implicit model while the later one teaches the explicit model to match the data distribution. LBT is formulated as a bilevel optimization problem, whose optimal generator matches the true data distribution. LBT can be naturally integrated with GANs to derive a hybrid LBT-GAN that enjoys complimentary benefits. %implies that we obtain the maximum likelihood estimation of the implicit model. Finally, we present a stochastic gradient ascent algorithm with unrolling to solve the challenging learning problems. Experimental results demonstrate the effectiveness of our method.\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        99,
+        736,
+        122
+      ],
+      "text_level": 1,
+      "text": "LEARNING IN IMPLICIT GENERATIVE MODELS"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        179,
+        143,
+        524,
+        157
+      ],
+      "text_level": null,
+      "text": "Shakir Mohamed and Balaji Lakshminarayanan"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        183,
+        159,
+        315,
+        172
+      ],
+      "text_level": null,
+      "text": "DeepMind, London"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        184,
+        174,
+        460,
+        186
+      ],
+      "text_level": null,
+      "text": "{shakir,balajiln}@google.com"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        205,
+        547,
+        220
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        226,
+        767,
+        532
+      ],
+      "text_level": null,
+      "text": "Generative adversarial networks (GANs) provide an algorithmic framework for constructing generative models with several appealing properties: they do not require a likelihood function to be specified, only a generating procedure; they provide samples that are sharp and compelling; and they allow us to harness our knowledge of building highly accurate neural network classifiers. Here, we develop our understanding of GANs with the aim of forming a rich view of this growing area of machine learning"
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        553,
+        477,
+        568
+      ],
+      "text_level": 1,
+      "text": "1 IMPLICIT GENERATIVE MODELS"
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        573,
+        826,
+        728
+      ],
+      "text_level": null,
+      "text": "It is useful to make a distinction between two types of probabilistic models: prescribed and implicit models (Diggle and Gratton, 1984). Prescribed probabilistic models are those that provide an explicit parametric specification of the distribution of an observed random variable  $\\mathbf{x}$ , specifying a log-likelihood function  $\\log q_{\\theta}(\\mathbf{x})$  with parameters  $\\theta$ . Most models in machine learning and statistics are of this form, whether they be state-of-the-art classifie"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        733,
+        826,
+        805
+      ],
+      "text_level": null,
+      "text": "Implicit generative models use a latent variable  $\\mathbf{z}$  and transform it using a deterministic function  $\\mathcal{G}_{\\theta}$  that maps from  $\\mathbb{R}^m\\to \\mathbb{R}^d$  using parameters  $\\pmb{\\theta}$ . Such models are amongst the most fundamental of models, e.g., many of the basic methods for generating non-uniform random variates are based on simple implicit models and one-line transformations (Devroye, 2006). In general, implicit generative models specify a valid density on t"
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        867,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "where  $q(\\mathbf{z})$  is a latent variable that provides the external source of randomness and equation (2) is the definition of the transformed density as the derivative of the cumulative distribution function. When the function  $\\mathcal{G}$  is well-defined, such as when the function is invertible, or has dimensions  $m = d$  with easily characterised roots, we recover the familiar rule for transformations of probability distributions."
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        103,
+        826,
+        214
+      ],
+      "text_level": null,
+      "text": "We are interested in developing more general and flexible implicit generative models where the function  $\\mathcal{G}$  is a non-linear function with  $d > m$ , specified by deep networks. The integral (2) is intractable in this case: we will be unable to determine the set  $\\{\\mathcal{G}_{\\theta}(\\mathbf{z}) \\leq \\mathbf{x}\\}$ , the integral will often be unknown even when the integration regions are known and, the derivative is high-dimensional and difficult to compute. Intractability is also "
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        220,
+        823,
+        320
+      ],
+      "text_level": null,
+      "text": "Generative adversarial networks (GANs) (Goodfellow et al., 2014) provide a solution for exactly this type of problem. This connection makes it possible to export GAN-type solutions to other areas, and to import new approaches from areas addressing the same research problem. GANs specify an algorithmic framework for learning in implicit generative models, the models referred to as generator networks or generative neural samplers. The framework relies on a learning principle based on discriminatin"
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        325,
+        823,
+        369
+      ],
+      "text_level": null,
+      "text": "Note on notation. We denote data by the random variable  $\\mathbf{x}$ , the (unknown) true data density by  $p^*(\\mathbf{x})$ , our (intractable) model density by  $q_{\\theta}(\\mathbf{x})$ .  $q(\\mathbf{z})$  is a density over latent variables  $\\mathbf{z}$ . Parameters of the model are  $\\theta$ , and parameters of the ratio and discriminator functions are  $\\phi$ ."
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        388,
+        584,
+        402
+      ],
+      "text_level": 1,
+      "text": "2 HYPOTHESIS TESTING AND DENSITY RATIOS"
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        417,
+        429,
+        431
+      ],
+      "text_level": 1,
+      "text": "2.1 LIKELIHOOD-FREE INFERENCE"
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        444,
+        826,
+        638
+      ],
+      "text_level": null,
+      "text": "Without a likelihood function, many of the widely-used tools for inference and parameter learning become unavailable. But there are tools that remain, including the method-of-moments (Hall, 2005), the empirical likelihood (Owen, 1988), Monte Carlo sampling (Marin et al., 2012), and mean-shift estimation (Fukunaga and Hostetler, 1975). Since we can easily draw samples from the model, we can use any method that compares two sets of samples—one from the true data distribution and one from the model"
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        645,
+        826,
+        771
+      ],
+      "text_level": null,
+      "text": "The direct approach of computing the density ratio by first computing the individual marginals is not possible with implicit models. By directly estimating the ratio and exploiting knowledge of the probabilities involved, it will turn out that computing the ratio can be a much easier problem than computing the marginal likelihoods, and is what will make this approach appealing. There are four general approaches to consider (Sugiyama et al., 2012a): 1) class-probability estimation, 2) divergence "
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        786,
+        454,
+        800
+      ],
+      "text_level": 1,
+      "text": "2.2 CLASS PROBABILITY ESTIMATION"
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        811,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "The density ratio can be computed by building a classifier to distinguish observed data from that generated by the model. This is the most popular approach for density ratio estimation and the first port of call for learning in implicit models. Hastie et al. (2013) call this approach unsupervised-assupervised learning, Qin (1998) explore this for analysis of case-control in observational studies, both Neal (2008) and Cranmer et al. (2015) explore this approach for high-energy physics application"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        103,
+        826,
+        191
+      ],
+      "text_level": null,
+      "text": "We denote the domain of our data by  $\\mathcal{X} \\subset \\mathbb{R}^d$ . The true data distribution has a density  $p^*(\\mathbf{x})$  and our model has density  $q_{\\theta}(\\mathbf{x})$ , both defined on  $\\mathcal{X}$ . We also have access to a set of  $n$  samples  $\\mathcal{X}_p = \\{\\mathbf{x}_1^{(p)}, \\ldots, \\mathbf{x}_n^{(p)}\\}$  from the true data distribution, and a set of  $n'$  samples  $\\mathcal{X}_q = \\{\\mathbf{x}_1^{(q)}, \\ldots, \\mathbf{x}_{n'}^{(q)}\\}$  from our model. We introdu"
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        234,
+        823,
+        306
+      ],
+      "text_level": null,
+      "text": "which indicates that the problem of density ratio estimation is equivalent to that of class probability estimation, since the problem is reduced to computing the probability  $p(y = +1|\\mathbf{x})$ . We assume that the marginal probability over classes is  $p(y = +1) = \\pi$ , which allows the relative proportion of data from the two classes to be adjusted if they are imbalanced; in most formulations  $\\pi = 1/2$  for the balanced case, and in imbalanced cases  $\\frac{1 - \\pi}{\\pi} \\approx n'/n$ "
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        311,
+        825,
+        409
+      ],
+      "text_level": null,
+      "text": "Our task is now to specify a scoring function, or discriminator,  $\\mathcal{D}(\\mathbf{x};\\phi) = p(\\mathbf{y} = +1|\\mathbf{x})$ : a function bounded in  $[0,1]$  with parameters  $\\phi$  that computes the probability of data belonging to the positive (real data) class. This discriminator is related to the density ratio through the mapping  $\\mathcal{D} = r / (r + 1)$ ;  $r = \\mathcal{D} / (1 - \\mathcal{D})$ . Conveniently, we can use our knowledge of building classifiers and specify these funct"
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        455,
+        826,
+        484
+      ],
+      "text_level": null,
+      "text": "Since we know the underlying generative process for  $q_{\\theta}(\\mathbf{x})$ , using a change of variables, we can express the loss in term of an expectation over the latent variable  $\\mathbf{z}$  and the generative model  $\\mathcal{G}(\\mathbf{z};\\pmb{\\theta})$ :"
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        517,
+        826,
+        630
+      ],
+      "text_level": null,
+      "text": "The final form of this objective (6) is exactly that used in generative adversarial networks (GANs) (Goodfellow et al., 2014). In practice, the expectations are computed by Monte Carlo integration using samples from  $p^*$  and  $q$ . Equation (6) allows us to specify a bi-level optimisation (Colson et al., 2007) by forming a ratio loss and a generative loss, using which we perform an alternating optimisation. Our convention throughout the paper will be to always form the ratio loss by extractin"
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        686,
+        825,
+        779
+      ],
+      "text_level": null,
+      "text": "The ratio loss is minimised since it acts as a surrogate negative log-likelihood; the generative loss is minimised since we wish to minimise the probability of the negative (generated-data) class. We explicitly write out these two stages to emphasise that the objectives used are separable. While we can derive the generative loss from the ratio loss as we have done, any generative loss that drives  $q_{\\theta}$  to  $p^{*}$ , such as minimising the widely-used  $\\mathbb{E}_{q(\\mathbf{z})}[-\\log \\"
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        784,
+        826,
+        924
+      ],
+      "text_level": null,
+      "text": "Any scoring rule from Table 1 can be used to give a loss function for optimisation. These rules are amenable to stochastic approximation and alternating optimisation, as described by Goodfellow et al. (2014), along with many of the insights for optimisation that have been developed since (Salimans et al., 2016; Radford et al., 2015; Zhao et al., 2016; Sønderby et al., 2016). The Bernoulli loss can be criticised in a number of ways and makes other scoring rules interesting to explore. The Brier l"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        297,
+        826,
+        450
+      ],
+      "text_level": null,
+      "text": "The advantage of using a proper scoring rule is that the global optimum is achieved iff  $q_{\\theta} = p^{*}$  (cf. the proof in (Goodfellow et al., 2014) for the Bernoulli loss); however there are no convergence guarantees since the optimisation is non-convex. Goodfellow et al. (2014) discuss the relationship to maximum likelihood estimation, which minimises the divergence  $\\mathrm{KL}[p^{*}||q]$ , and show that the GAN objective with Bernoulli loss is instead related to the Jensen Shannon div"
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        465,
+        418,
+        481
+      ],
+      "text_level": 1,
+      "text": "2.3 DIVERGENCE MINIMISATION"
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        492,
+        826,
+        590
+      ],
+      "text_level": null,
+      "text": "A second approach to testing is to use the divergence between the true density  $p^*$  and our model  $q$ , and use this as an objective to drive learning of the generative model. A natural class of divergences to use are the  $f$ -divergences (or Ali-Silvey (Ali and Silvey, 1966) or Csizar's  $\\phi$ -divergence (Csiszár, 1967)) since they are fundamentally linked to the problem of two-sample hypothesis testing (Liese and Vajda, 2008):  $f$ -divergences represent an integrated Bayes risk since t"
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        633,
+        825,
+        719
+      ],
+      "text_level": null,
+      "text": "where  $f$  is a convex function with derivative  $f'$  and Fenchel conjugate  $f^{\\dagger}$ ; this divergence class instantiates many familiar divergences, such as the KL and Jensen-Shannon divergence. The variational formulation introduces the functions  $t(\\mathbf{x})$  whose optimum is related to the density ratio since  $t^{*}(\\mathbf{x}) = f'(r(\\mathbf{x}))$ . Substituting  $t^{*}$  in (9), we transform the objective (10) into supremum over  $r_{\\phi}$  (which is attained when  $r_{\\phi} ="
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        811,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "where we derived equation (12) by extracting all the terms involving  $q_{\\theta}(\\mathbf{x})$  in equation (10), used the change of variables to express it in terms of the underlying generative model and flipping the sign to obtain a minimisation. There is no discriminator in this formulation, and this role is taken by the ratio function. We minimise the ratio loss, since we wish to minimise the negative of the variational lower bound; we minimise the generative loss since we wish to drive the "
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        103,
+        826,
+        148
+      ],
+      "text_level": null,
+      "text": "The density ratio implies that  $p^*(\\mathbf{x}) \\approx \\tilde{p} = r_{\\phi}(\\mathbf{x}) q_{\\theta}(\\mathbf{x})$ , since it is the amount by which we must correct our model  $q_{\\theta}(\\mathbf{x})$  to match the true distribution. This led us to a divergence formulation that evaluates the divergence between the distributions  $p^*$  and  $\\tilde{p}$ , using the KL divergence:"
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        210,
+        826,
+        352
+      ],
+      "text_level": null,
+      "text": "where the first equation is the KL for un-normalised densities (Minka, 2005). This leads to a convenient and valid ratio loss since all terms independent of  $r$  can be ignored. But we are unable to derive a useful generative loss from this expression (14), since the third term with  $\\log q$  cannot be ignored, and is unavailable. Since the generative loss and ratio losses need not be coupled, any other generative loss can be used, e.g., equation (8). But this is not ideal, since we would pref"
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        357,
+        823,
+        429
+      ],
+      "text_level": null,
+      "text": "The equivalence between divergence minimisation and class probability estimation is also widely discussed, and most notably developed by Reid and Williamson (2011) using the tools of weighted integral measures, and more recently by Menon and Ong (2016). This divergence minimisation viewpoint (9) was used in  $f$ -GANs and explored in depth by Nowozin et al. (2016) who provide a detailed description, and explore many of the objectives that become available and practical guidance."
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        444,
+        341,
+        458
+      ],
+      "text_level": 1,
+      "text": "2.4 RATIO MATCHING"
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        470,
+        826,
+        513
+      ],
+      "text_level": null,
+      "text": "A third approach is to directly minimise the error between the true density ratio and an estimate of it. If we denote the true density ratio as  $r^*(\\mathbf{x}) = p^*(\\mathbf{x}) / q_\\theta(\\mathbf{x})$  and its approximation as  $r_\\phi(\\mathbf{x})$ , we can define a loss using the squared error:"
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        578,
+        823,
+        650
+      ],
+      "text_level": null,
+      "text": "where the final objective is obtained by ignoring terms independent of  $r_{\\phi}(\\mathbf{x})$  and is used to derive ratio and generative losses. Concurrently with this work, Uehara et al. (2016) recognised the centrality of the density ratio, the approach for learning by ratio matching, and its connections to GANs (Goodfellow et al., 2014) and  $f$ -GANs (Nowozin et al., 2016), and provide useful guidance on practical use of ratio matching."
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        655,
+        826,
+        724
+      ],
+      "text_level": null,
+      "text": "We can generalise (16) to loss functions beyond the squared error using the Bregman divergence for density ratio estimation (Sugiyama et al., 2012a; Uehara et al., 2016), and is the unifying tool exploited in previous work (Reid and Williamson, 2011; Striperumbudur et al., 2009; Sugiyama et al., 2012a; Menon and Ong, 2016). This leads to a minimisation of the Bregman divergence  $B_{f}$  between ratios:"
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        806,
+        823,
+        878
+      ],
+      "text_level": null,
+      "text": "where we have used  $p^* = r^* q_\\theta$ , and  $D_f$  is the  $f$ -divergence defined in equation (9). We can derive a ratio loss from (19) by extracting all the terms in  $r_\\phi$ , leading to the minimisation of  $\\mathcal{L}_B(r_\\phi)$ . The role of the discriminator in GANs is again taken by the ratio  $r$  that provides information about the relationship between the two distributions. This ratio loss, as pointed out by Uehara et al. (2016), is equivalent to the ratio loss we derived using "
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        103,
+        823,
+        148
+      ],
+      "text_level": null,
+      "text": "The equivalence of the second terms in (20) and (21) can be derived by using the definition of the dual function:  $f^{\\dagger}(f'(x)) = \\max_{r} r f'(x) - f(r)$ . The maximum is attained at  $x = r$ , leading to the identity  $f^{\\dagger}(f'(r_{\\phi}(\\mathbf{x}))) = r_{\\phi}(\\mathbf{x}) f'(r_{\\phi}(\\mathbf{x})) - f(r_{\\phi}(\\mathbf{x}))$ ."
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        152,
+        823,
+        181
+      ],
+      "text_level": null,
+      "text": "If we follow the strategy we used in previous sections to obtain a generative loss, by collecting the terms in equation (19) dependent on  $q_{\\theta}$ , we obtain:"
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        200,
+        826,
+        272
+      ],
+      "text_level": null,
+      "text": "But this does not lead to a useful generative loss since there are terms involving  $q_{\\theta}$  whose density is always unknown, similar to the difficulty we encountered with divergence minimisation in equation (14). Since we can use any generative loss that drives the ratio to one, we can employ other losses, like the alternatives described in section 2.2. One approximation suggested by Uehara et al. (2016) is to assume  $p^{*} \\approx r_{\\phi}q_{\\theta}$ , i.e. assume a near-optimal ratio, w"
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        309,
+        825,
+        337
+      ],
+      "text_level": null,
+      "text": "As a result, the last two terms in equation (22) cancel, leaving a generative loss that can be used for learning. Using ratio matching under the Bregman divergence we obtain the bi-level optimisation:"
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        401,
+        364,
+        415
+      ],
+      "text_level": 1,
+      "text": "2.5 MOMENT MATCHING"
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        428,
+        823,
+        469
+      ],
+      "text_level": null,
+      "text": "A final approach for testing is to evaluate whether the moments of the distributions  $p^*$  and  $q$  are the same, i.e. by moment matching. We compare the moments of the two distributions by minimising their distance, using test statistics  $s(\\mathbf{x})$  that provides the moments of interest:"
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        492,
+        826,
+        660
+      ],
+      "text_level": null,
+      "text": "The choice of test statistics  $s(\\mathbf{x})$  is critical, since ideally, we wish to match all moments of the two distributions. When the functions  $s(\\mathbf{x})$  are defined within a reproducing kernel Hilbert space, we obtain kernel-based forms of these objectives, which are highly flexible and allow easy handling of data such as images, strings and graphs. The objective (26) can then be re-expressed in closed-form in terms of kernel functions, leading to the maximum mean discrepancy crit"
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        666,
+        826,
+        820
+      ],
+      "text_level": null,
+      "text": "The other significant body of research that focuses on learning in implicit generative models using the lens of moment matching is approximate Bayesian computation (ABC) (Marin et al., 2012). The models in ABC are often related to problems in population genetics and ecology, where knowledge of these systems leads to ABC being easily exploited to learn simulator parameters. The ABC literature has widely-explored the use of test statistics, including fixed functions and kernels, and Markov chain M"
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        825,
+        828,
+        925
+      ],
+      "text_level": null,
+      "text": "The moment matching approach can be generalised by representing them as an integral probability metric (Sriperumbudur et al., 2009), which is what makes it possible to describe the relationships and ways of transforming from density ratio estimation using moment-matching,  $f$ -divergences, and class-probability estimation. As we described previously, by cleverly formulating our problem as a Bregman divergence minimisation, we show that all the methods we described for density ratio estimation a"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        102,
+        312,
+        118
+      ],
+      "text_level": 1,
+      "text": "3 DISCUSSION"
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        151,
+        826,
+        277
+      ],
+      "text_level": null,
+      "text": "By using an inferential principle driven by hypothesis testing, we have been able to develop a number of indirect methods for learning the parameters of generative models. These methods do not compute the probability of the data or posterior distributions over latent variables, but instead only involve relative statements of probability by comparing populations of data from the generative model to observed data. This view allows us to better understand how algorithms such as generative adversari"
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        284,
+        826,
+        465
+      ],
+      "text_level": null,
+      "text": "Distinction between implicit and prescribed models. The distinction between implicit and prescribed models is useful to keep in mind for at least two reasons: the choice of model has direct implications on the types of learning and inferential principles that can be called upon; and it makes explicit that there are many different ways in which to specify a model that captures our beliefs about data generating processes. Any implicit model can be easily turned into a prescribed model by adding a "
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        470,
+        826,
+        611
+      ],
+      "text_level": null,
+      "text": "Model misspecification and non-maximum likelihood methods. Once we have made the choice of an implicit generative model, we cannot use likelihood-based techniques, which then makes testing and estimation-by-comparison appealing. What is striking, is that this leads us to principles for parameter learning that do not require inference of any underlying latent variables, side-stepping one of the major challenges in statistical practice. This piques our interest in more general approaches for non-m"
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        617,
+        823,
+        688
+      ],
+      "text_level": null,
+      "text": "Choice of loss function. This density ratio viewpoint has led us to derive multiple different objective functions and an understanding of how they are related. But it has left us unsatisfied since we have not gained the insight needed to choose between them. Sugiyama et al. (2012a) make statements on this choice in the simpler setting where only the density ratio is to be estimated. But when we wish to learn implicit generative models, this choice, at present, remains unclear."
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        694,
+        826,
+        792
+      ],
+      "text_level": null,
+      "text": "Perceptual losses. Several authors have also proposed using pre-trained discriminative networks to define the test functions since the difference in activations (of say a pre-trained VGG classifier) can better capture perceptual similarity than the reconstruction error in pixel space. This provides a strong motivation for further research into joint models of images and labels. However, it is not completely unsupervised as the pre-trained discriminative network contains information about labels "
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        799,
+        828,
+        925
+      ],
+      "text_level": null,
+      "text": "Bayesian inference. We have mainly discussed point estimation methods for parameter learning. It is also desirable to perform Bayesian inference in implicit models, where we learn the posterior distribution over the model parameters  $p(\\pmb{\\theta}|\\mathbf{x})$ , allowing knowledge of parameter uncertainty to be used in risk minimisation and other decision-making tasks. This is the aim of approximate Bayesian computation (ABC) (Marin et al., 2012). The most common approach for thinking about AB"
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        103,
+        826,
+        217
+      ],
+      "text_level": null,
+      "text": "Evaluation. Our view suggests that value of the density ratio, a quantity we can always compute using the approaches described, can be a useful metric to report. But density ratio estimation has not yet illuminated a method for consistent evaluation of the generative model that is learnt. Without such a measure, it is hard to make fair comparisons; but this is a problem faced by all related fields, and establishing such measures is an important contribution to be made. Furthermore, we have also "
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        220,
+        826,
+        421
+      ],
+      "text_level": null,
+      "text": "Non-differentiable models. We have restricted our development to implicit models that are differentiable. In many practical applications, the implicit model will be non-differentiable, discrete or defined in other ways, such as through a stochastic differential equation. The stochastic optimisation problem we are generally faced with (for differentiable and non-differentiable models), is to compute  $\\Delta = \\nabla_{\\theta}\\mathbb{E}_{q_{\\theta}(\\mathbf{x})}[f(\\mathbf{x})]$ , the gradient of th"
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        168,
+        425,
+        826,
+        511
+      ],
+      "text_level": null,
+      "text": "The two other approaches are: moment matching and ABC-MCMC (Marjoram et al., 2003), which has been successful for many problems with moderate dimension; and the natural choice of gradient-free optimisation methods, which include familiar tools such as Bayesian optimisation (Gutmann and Corander, 2016), evolutionary search like CMA-ES, and the Nelder-Mead method, amongst others (Conn et al., 2009). For all three approaches, new insights will be needed to help scale to high-dimensional data with c"
+    },
+    {
+      "source_id": "SRC-059",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        516,
+        826,
+        546
+      ],
+      "text_level": null,
+      "text": "Ultimately, these concerns serve to highlight the many opportunities that remain for advancing our understanding of inference and parameter learning in implicit generative models."
+    },
+    {
+      "source_id": "SRC-060",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        171,
+        565,
+        287,
+        579
+      ],
+      "text_level": 1,
+      "text": "REFERENCES"
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B16Jem9xe",
+  "paper_dir": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B16Jem9xe",
+  "review_model_name": "gpt-5",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ],
+  "reviewer_memory_contexts": {},
+  "memory_retrieval_enabled": false,
+  "memory_mode": "none"
+}

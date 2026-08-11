@@ -1,0 +1,1677 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1-q5Pqxl/md_content_no_appendix.md",
+  "paper_title": "MACHINE COMPREHENSION USING MATCH-LSTM AND ANSWER POINTER",
+  "semantic_scholar_query": "MACHINE COMPREHENSION USING MATCH-LSTM AND ANSWER POINTER",
+  "keyword_model_name": "gpt-5.4-nano",
+  "retrieved_papers": [
+    {
+      "paperId": "ff1861b71eaedba46cb679bbe2c585dbe18f9b19",
+      "externalIds": {
+        "DBLP": "journals/corr/WangJ16a",
+        "MAG": "2952776606",
+        "ArXiv": "1608.07905",
+        "CorpusId": 5592690
+      },
+      "url": "https://www.semanticscholar.org/paper/ff1861b71eaedba46cb679bbe2c585dbe18f9b19",
+      "title": "Machine Comprehension Using Match-LSTM and Answer Pointer",
+      "year": 2016,
+      "citationCount": 599,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1608.07905, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2992833",
+          "name": "Shuohang Wang"
+        },
+        {
+          "authorId": "144924150",
+          "name": "Jing Jiang"
+        }
+      ],
+      "abstract": "Machine comprehension of text is an important problem in natural language processing. A recently released dataset, the Stanford Question Answering Dataset (SQuAD), offers a large number of real questions and their answers created by humans through crowdsourcing. SQuAD provides a challenging testbed for evaluating machine comprehension algorithms, partly because compared with previous datasets, in SQuAD the answers do not come from a small set of candidate answers and they have variable lengths. We propose an end-to-end neural architecture for the task. The architecture is based on match-LSTM, a model we proposed previously for textual entailment, and Pointer Net, a sequence-to-sequence model proposed by Vinyals et al.(2015) to constrain the output tokens to be from the input sequences. We propose two ways of using Pointer Net for our task. Our experiments show that both of our two models substantially outperform the best results obtained by Rajpurkar et al.(2016) using logistic regression and manually crafted features.",
+      "title_query": true
+    },
+    {
+      "paperId": "c022200710e62003ef324ad6771269e5ea4b5247",
+      "externalIds": {
+        "CorpusId": 218527195
+      },
+      "url": "https://www.semanticscholar.org/paper/c022200710e62003ef324ad6771269e5ea4b5247",
+      "title": "Machine Comprehension using match-LSTM and Answer-Pointer",
+      "year": 2017,
+      "citationCount": 37,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://www.ccs.neu.edu/home/luwang/courses/reports_cs6120_fa17/12.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "133636654",
+          "name": "Akhil M. Nair"
+        },
+        {
+          "authorId": "2105023605",
+          "name": "Ramkishan Panthena"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "f9f08511f77c29ff948e146434dfb23608d3deb5",
+      "externalIds": {
+        "CorpusId": 38787617
+      },
+      "url": "https://www.semanticscholar.org/paper/f9f08511f77c29ff948e146434dfb23608d3deb5",
+      "title": "Question Answering Using Match-LSTM and Answer Pointer",
+      "year": 2017,
+      "citationCount": 2,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2761063.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "15149004",
+          "name": "Annie Hu"
+        },
+        {
+          "authorId": "2108725400",
+          "name": "Cindy Wang"
+        },
+        {
+          "authorId": "145951921",
+          "name": "Brandon Yang"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "e1af3f2133c7443771fd81a7991095b13378293a",
+      "externalIds": {
+        "CorpusId": 235342923
+      },
+      "url": "https://www.semanticscholar.org/paper/e1af3f2133c7443771fd81a7991095b13378293a",
+      "title": "Answer Pointer Inspired BiDAF And QANet For Machine Comprehension",
+      "year": 2021,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/cs224n/reports/final_reports/report245.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2286510555",
+          "name": "Stanford CS224N Default Iid"
+        },
+        {
+          "authorId": "93666168",
+          "name": "Prerna Khullar"
+        },
+        {
+          "authorId": "2152123974",
+          "name": "Weiyun Jiang"
+        },
+        {
+          "authorId": "2407876",
+          "name": "Fangyun Qin"
+        },
+        {
+          "authorId": "2375814816",
+          "name": "Bin Chen"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "663bdada41ca93ad6439f0abde3fe992494d2b86",
+      "externalIds": {
+        "CorpusId": 31259939
+      },
+      "url": "https://www.semanticscholar.org/paper/663bdada41ca93ad6439f0abde3fe992494d2b86",
+      "title": "Improving Match-LSTM for Machine Comprehension",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2760713.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2060149758",
+          "name": "Kevin Moody"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "f3643226a551c8c5390a2f197de87c9bd71c3c1f",
+      "externalIds": {
+        "CorpusId": 23135555
+      },
+      "url": "https://www.semanticscholar.org/paper/f3643226a551c8c5390a2f197de87c9bd71c3c1f",
+      "title": "Co-Attention with Answer-Pointer for SQuAD Reading Comprehension Task",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2761004.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "12003369",
+          "name": "T. Fan"
+        },
+        {
+          "authorId": "2398595288",
+          "name": "Mindy M. Yang"
+        },
+        {
+          "authorId": "46756325",
+          "name": "Chenyao Yu"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "b376034782c149f1d84de43ea3879e443d27cfee",
+      "externalIds": {
+        "CorpusId": 160017719
+      },
+      "url": "https://www.semanticscholar.org/paper/b376034782c149f1d84de43ea3879e443d27cfee",
+      "title": "Machine Comprehension",
+      "year": 2018,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://cse.iitk.ac.in/users/guggu/includes/files/k-match-lstm.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2282093007",
+          "name": "Dushyant Kumar"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "8a2b78ef8dd8f779226c1fe378ef3494fad12c97",
+      "externalIds": {
+        "CorpusId": 43023990
+      },
+      "url": "https://www.semanticscholar.org/paper/8a2b78ef8dd8f779226c1fe378ef3494fad12c97",
+      "title": "Question Answering Using Regularized Match-LSTM and Answer Pointer",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2760960.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "39871528",
+          "name": "Ellen Blaine"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "e7a5a0fe25235cea2f7ca0918be371e4552a89f2",
+      "externalIds": {
+        "CorpusId": 12025714
+      },
+      "url": "https://www.semanticscholar.org/paper/e7a5a0fe25235cea2f7ca0918be371e4552a89f2",
+      "title": "Extractive Question Answering Using Match-LSTM and Answer Pointer",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://web.stanford.edu/class/cs224n/reports/2748634.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "40005316",
+          "name": "Alexander Haigh"
+        },
+        {
+          "authorId": "2074874152",
+          "name": "Cameron van de Graaf"
+        },
+        {
+          "authorId": "2096128602",
+          "name": "Jake Rachleff"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "b7dfca7fa11734bfe9f789b1b750e8be0690d99d",
+      "externalIds": {
+        "CorpusId": 247997390
+      },
+      "url": "https://www.semanticscholar.org/paper/b7dfca7fa11734bfe9f789b1b750e8be0690d99d",
+      "title": "Optimizing Match-LSTM for SQuAD v2.0",
+      "year": 2022,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/cs224n/reports/default_116641407.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2285963843",
+          "name": "Peter Nsaka"
+        },
+        {
+          "authorId": "2110844384",
+          "name": "James Dong"
+        },
+        {
+          "authorId": "2404409604",
+          "name": "Alex Lee"
+        },
+        {
+          "authorId": "2285038915",
+          "name": "•. Mentor"
+        },
+        {
+          "authorId": "19168196",
+          "name": "Michihiro Yasunaga"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "472bd8a0e6fee25a8d30d96678a8a35fdc2042cd",
+      "externalIds": {
+        "CorpusId": 1770031
+      },
+      "url": "https://www.semanticscholar.org/paper/472bd8a0e6fee25a8d30d96678a8a35fdc2042cd",
+      "title": "Match LSTM based Question Answering",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2748340.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "48417536",
+          "name": "H. Tilak"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "90d00e27ece897cd308ff87243d939c2c109b1f3",
+      "externalIds": {
+        "MAG": "2892245213",
+        "CorpusId": 70036837
+      },
+      "url": "https://www.semanticscholar.org/paper/90d00e27ece897cd308ff87243d939c2c109b1f3",
+      "title": "An LSTM model for cloze-style machine comprehension",
+      "year": 2018,
+      "citationCount": 5,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.archive.org/web/20200606012736/https://ink.library.smu.edu.sg/cgi/viewcontent.cgi?article=5087&amp;context=sis_research, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2992833",
+          "name": "Shuohang Wang"
+        },
+        {
+          "authorId": "144924150",
+          "name": "Jing Jiang"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "fdfb3c8a3f6f4541b731fb29be27d415813aa2e8",
+      "externalIds": {
+        "CorpusId": 28361246
+      },
+      "url": "https://www.semanticscholar.org/paper/fdfb3c8a3f6f4541b731fb29be27d415813aa2e8",
+      "title": "Machine Comprehension using SQuAD and Deep Learning",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2761187.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2116961846",
+          "name": "J. King"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "83384844f49bf0fc567a6c4697ddb405e6493eeb",
+      "externalIds": {
+        "CorpusId": 867094
+      },
+      "url": "https://www.semanticscholar.org/paper/83384844f49bf0fc567a6c4697ddb405e6493eeb",
+      "title": "Coattention Answer-Pointer Networks for Question Answering",
+      "year": 2017,
+      "citationCount": 1,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2761042.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "117702379",
+          "name": "Yanshu Hong"
+        },
+        {
+          "authorId": "15443862",
+          "name": "Yiju Hou"
+        },
+        {
+          "authorId": "2114774297",
+          "name": "Tian Zhao"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "3b2f968282f295f212d82b901b67bcbe4802921f",
+      "externalIds": {
+        "CorpusId": 28248921
+      },
+      "url": "https://www.semanticscholar.org/paper/3b2f968282f295f212d82b901b67bcbe4802921f",
+      "title": "Machine Comprehension with MMLSTM and Clustering",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2761209.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "36895295",
+          "name": "Tyler Romero"
+        },
+        {
+          "authorId": "2092678737",
+          "name": "Zachary A Barnes"
+        },
+        {
+          "authorId": "115791601",
+          "name": "F. Cipollone"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "e0eec4a491a173e75ee8a458106a26bf8e3412d2",
+      "externalIds": {
+        "MAG": "2890170470",
+        "DBLP": "conf/ccir/LiXLGFC18",
+        "DOI": "10.1007/978-3-030-01012-6_8",
+        "CorpusId": 52299363
+      },
+      "url": "https://www.semanticscholar.org/paper/e0eec4a491a173e75ee8a458106a26bf8e3412d2",
+      "title": "Hierarchical Answer Selection Framework for Multi-passage Machine Reading Comprehension",
+      "year": 2018,
+      "citationCount": 3,
+      "openAccessPdf": {
+        "url": "",
+        "status": "CLOSED",
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://api.unpaywall.org/v2/10.1007/978-3-030-01012-6_8?email=<INSERT_YOUR_EMAIL> or https://doi.org/10.1007/978-3-030-01012-6_8, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "38747511",
+          "name": "Zhaohui Li"
+        },
+        {
+          "authorId": "39474114",
+          "name": "Jun Xu"
+        },
+        {
+          "authorId": "37510256",
+          "name": "Yanyan Lan"
+        },
+        {
+          "authorId": "1777025",
+          "name": "J. Guo"
+        },
+        {
+          "authorId": "2047904135",
+          "name": "Yue Feng"
+        },
+        {
+          "authorId": "1717004",
+          "name": "Xueqi Cheng"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "e94697b98b707f557436e025bdc8498fa261d3bc",
+      "externalIds": {
+        "MAG": "2566011400",
+        "ArXiv": "1612.04211",
+        "DBLP": "journals/corr/WangMHF16",
+        "CorpusId": 6980296
+      },
+      "url": "https://www.semanticscholar.org/paper/e94697b98b707f557436e025bdc8498fa261d3bc",
+      "title": "Multi-Perspective Context Matching for Machine Comprehension",
+      "year": 2016,
+      "citationCount": 158,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1612.04211, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "40296541",
+          "name": "Zhiguo Wang"
+        },
+        {
+          "authorId": "2013337",
+          "name": "Haitao Mi"
+        },
+        {
+          "authorId": "1836135",
+          "name": "Wael Hamza"
+        },
+        {
+          "authorId": "1707117",
+          "name": "Radu Florian"
+        }
+      ],
+      "abstract": "Previous machine comprehension (MC) datasets are either too small to train end-to-end deep learning models, or not difficult enough to evaluate the ability of current MC techniques. The newly released SQuAD dataset alleviates these limitations, and gives us a chance to develop more realistic MC models. Based on this dataset, we propose a Multi-Perspective Context Matching (MPCM) model, which is an end-to-end system that directly predicts the answer beginning and ending points in a passage. Our model first adjusts each word-embedding vector in the passage by multiplying a relevancy weight computed against the question. Then, we encode the question and weighted passage by using bi-directional LSTMs. For each point in the passage, our model matches the context of this point against the encoded question from multiple perspectives and produces a matching vector. Given those matched vectors, we employ another bi-directional LSTM to aggregate all the information and predict the beginning and ending points. Experimental result on the test set of SQuAD shows that our model achieves a competitive result on the leaderboard.",
+      "title_query": true
+    },
+    {
+      "paperId": "518387877ef8fdc1831a245cd84e74cde0dfc23c",
+      "externalIds": {
+        "CorpusId": 29384130
+      },
+      "url": "https://www.semanticscholar.org/paper/518387877ef8fdc1831a245cd84e74cde0dfc23c",
+      "title": "Exploring Deep Learning Models for Machine Comprehension on SQuAD",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2760761.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2146280437",
+          "name": "Junjie Zhu"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "7032bb537ee5009d8bf359b29ef37c002b9f89a1",
+      "externalIds": {
+        "CorpusId": 34620843
+      },
+      "url": "https://www.semanticscholar.org/paper/7032bb537ee5009d8bf359b29ef37c002b9f89a1",
+      "title": "Implementation and Improvement of Match-LSTM in Question-Answering System",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at http://web.stanford.edu/class/cs224n/reports/2748656.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "49890233",
+          "name": "Yundong Zhang"
+        },
+        {
+          "authorId": null,
+          "name": "Haomin Peng"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    },
+    {
+      "paperId": "a73b34301e03d28aa3c19cce3357b740784f53fd",
+      "externalIds": {
+        "CorpusId": 38072452
+      },
+      "url": "https://www.semanticscholar.org/paper/a73b34301e03d28aa3c19cce3357b740784f53fd",
+      "title": "Incorporating Part-of-Speech Tags and Named Entities into Match-LSTM",
+      "year": 2017,
+      "citationCount": 0,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: The following paper fields have been elided by the publisher: {'abstract'}. Paper or abstract available at https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2762037.pdf, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2060732470",
+          "name": "Dilsher Ahmed"
+        }
+      ],
+      "abstract": null,
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Machine Comprehension Using Match-LSTM and Answer Pointer\n    Year: 2016\n    Citations: 599\n    URL: https://www.semanticscholar.org/paper/ff1861b71eaedba46cb679bbe2c585dbe18f9b19\n    Abstract: Machine comprehension of text is an important problem in natural language processing. A recently released dataset, the Stanford Question Answering Dataset (SQuAD), offers a large number of real questions and their answers created by humans through crowdsourcing. SQuAD provides a challenging testbed for evaluating machine comprehension algorithms, partly because compared with previous datasets, in SQuAD the answers do not come from a small set of candidate answers and they have variable lengths. We propose an end-to-end neural architecture for the task. The architecture is based on match-LSTM, a model we proposed previously for textual entailment, and Pointer Net, a sequence-to-sequence model proposed by Vinyals et al.(2015) to constrain the output tokens to be from the input sequences. We propose two ways of using Pointer Net for our task. Our experiments show that both of our two models substantially outperform the best results obtained by Rajpurkar et al.(2016) using logistic regression and manually crafted features.\n\n[1] Title: Machine Comprehension using match-LSTM and Answer-Pointer\n    Year: 2017\n    Citations: 37\n    URL: https://www.semanticscholar.org/paper/c022200710e62003ef324ad6771269e5ea4b5247\n\n[2] Title: Question Answering Using Match-LSTM and Answer Pointer\n    Year: 2017\n    Citations: 2\n    URL: https://www.semanticscholar.org/paper/f9f08511f77c29ff948e146434dfb23608d3deb5\n\n[3] Title: Answer Pointer Inspired BiDAF And QANet For Machine Comprehension\n    Year: 2021\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/e1af3f2133c7443771fd81a7991095b13378293a\n\n[4] Title: Improving Match-LSTM for Machine Comprehension\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/663bdada41ca93ad6439f0abde3fe992494d2b86\n\n[5] Title: Co-Attention with Answer-Pointer for SQuAD Reading Comprehension Task\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/f3643226a551c8c5390a2f197de87c9bd71c3c1f\n\n[6] Title: Machine Comprehension\n    Year: 2018\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/b376034782c149f1d84de43ea3879e443d27cfee\n\n[7] Title: Question Answering Using Regularized Match-LSTM and Answer Pointer\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/8a2b78ef8dd8f779226c1fe378ef3494fad12c97\n\n[8] Title: Extractive Question Answering Using Match-LSTM and Answer Pointer\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/e7a5a0fe25235cea2f7ca0918be371e4552a89f2\n\n[9] Title: Optimizing Match-LSTM for SQuAD v2.0\n    Year: 2022\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/b7dfca7fa11734bfe9f789b1b750e8be0690d99d\n\n[10] Title: Match LSTM based Question Answering\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/472bd8a0e6fee25a8d30d96678a8a35fdc2042cd\n\n[11] Title: An LSTM model for cloze-style machine comprehension\n    Year: 2018\n    Citations: 5\n    URL: https://www.semanticscholar.org/paper/90d00e27ece897cd308ff87243d939c2c109b1f3\n\n[12] Title: Machine Comprehension using SQuAD and Deep Learning\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/fdfb3c8a3f6f4541b731fb29be27d415813aa2e8\n\n[13] Title: Coattention Answer-Pointer Networks for Question Answering\n    Year: 2017\n    Citations: 1\n    URL: https://www.semanticscholar.org/paper/83384844f49bf0fc567a6c4697ddb405e6493eeb\n\n[14] Title: Machine Comprehension with MMLSTM and Clustering\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/3b2f968282f295f212d82b901b67bcbe4802921f\n\n[15] Title: Hierarchical Answer Selection Framework for Multi-passage Machine Reading Comprehension\n    Year: 2018\n    Citations: 3\n    URL: https://www.semanticscholar.org/paper/e0eec4a491a173e75ee8a458106a26bf8e3412d2\n\n[16] Title: Multi-Perspective Context Matching for Machine Comprehension\n    Year: 2016\n    Citations: 158\n    URL: https://www.semanticscholar.org/paper/e94697b98b707f557436e025bdc8498fa261d3bc\n    Abstract: Previous machine comprehension (MC) datasets are either too small to train end-to-end deep learning models, or not difficult enough to evaluate the ability of current MC techniques. The newly released SQuAD dataset alleviates these limitations, and gives us a chance to develop more realistic MC models. Based on this dataset, we propose a Multi-Perspective Context Matching (MPCM) model, which is an end-to-end system that directly predicts the answer beginning and ending points in a passage. Our model first adjusts each word-embedding vector in the passage by multiplying a relevancy weight computed against the question. Then, we encode the question and weighted passage by using bi-directional LSTMs. For each point in the passage, our model matches the context of this point against the encoded question from multiple perspectives and produces a matching vector. Given those matched vectors, we employ another bi-directional LSTM to aggregate all the information and predict the beginning and ending points. Experimental result on the test set of SQuAD shows that our model achieves a competitive result on the leaderboard.\n\n[17] Title: Exploring Deep Learning Models for Machine Comprehension on SQuAD\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/518387877ef8fdc1831a245cd84e74cde0dfc23c\n\n[18] Title: Implementation and Improvement of Match-LSTM in Question-Answering System\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/7032bb537ee5009d8bf359b29ef37c002b9f89a1\n\n[19] Title: Incorporating Part-of-Speech Tags and Named Entities into Match-LSTM\n    Year: 2017\n    Citations: 0\n    URL: https://www.semanticscholar.org/paper/a73b34301e03d28aa3c19cce3357b740784f53fd\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        98,
+        823,
+        148
+      ],
+      "text_level": 1,
+      "text": "MACHINE COMPREHENSION USING MATCH-LSTM AND ANSWER POINTER"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        170,
+        302,
+        185
+      ],
+      "text_level": null,
+      "text": "Shuohang Wang"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        185,
+        388,
+        198
+      ],
+      "text_level": null,
+      "text": "School of Information Systems"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        198,
+        413,
+        213
+      ],
+      "text_level": null,
+      "text": "Singapore Management University"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        181,
+        213,
+        459,
+        227
+      ],
+      "text_level": null,
+      "text": "shwang.2014@phdis.smu.edu.sg"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        527,
+        170,
+        606,
+        185
+      ],
+      "text_level": null,
+      "text": "Jing Jiang"
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        527,
+        185,
+        736,
+        198
+      ],
+      "text_level": null,
+      "text": "School of Information Systems"
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        527,
+        198,
+        759,
+        213
+      ],
+      "text_level": null,
+      "text": "Singapore Management University"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        529,
+        213,
+        728,
+        227
+      ],
+      "text_level": null,
+      "text": "jingjiang@smu.edu.sg"
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        262,
+        545,
+        277
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        294,
+        767,
+        489
+      ],
+      "text_level": null,
+      "text": "Machine comprehension of text is an important problem in natural language processing. A recently released dataset, the Stanford Question Answering Dataset (SQuAD), offers a large number of real questions and their answers created by humans through crowdsourcing. SQuAD provides a challenging testbed for evaluating machine comprehension algorithms, partly because compared with previous datasets, in SQuAD the answers do not come from a small set of candidate answers and they have variable lengths. "
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        517,
+        336,
+        531
+      ],
+      "text_level": 1,
+      "text": "1 INTRODUCTION"
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        547,
+        826,
+        646
+      ],
+      "text_level": null,
+      "text": "Machine comprehension of text is one of the ultimate goals of natural language processing. While the ability of a machine to understand text can be assessed in many different ways, in recent years, several benchmark datasets have been created to focus on answering questions as a way to evaluate machine comprehension (Richardson et al., 2013; Hermann et al., 2015; Hill et al., 2016; Weston et al., 2016; Rajpurkar et al., 2016). In this setup, typically the machine is first presented with a piece "
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        652,
+        826,
+        805
+      ],
+      "text_level": null,
+      "text": "In most of the benchmark datasets, a question can be treated as a multiple choice question, whose correct answer is to be chosen from a set of provided candidate answers (Richardson et al., 2013; Hill et al., 2016). Presumably, questions with more given candidate answers are more challenging. The Stanford Question Answering Dataset (SQuAD) introduced recently by Rajpurkar et al. (2016) contains such more challenging questions whose correct answers can be any sequence of tokens from the given tex"
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        811,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "Traditional solutions to this kind of question answering tasks rely on NLP pipelines that involve multiple steps of linguistic analyses and feature engineering, including syntactic parsing, named entity recognition, question classification, semantic parsing, etc. Recently, with the advances of applying neural network models in NLP, there has been much interest in building end-to-end neural architectures for various NLP tasks, including several pieces of work on machine comprehension (Hermann et "
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        187,
+        103,
+        807,
+        170
+      ],
+      "text_level": null,
+      "text": "In 1870, Tesla moved to Karlovac, to attend school at the Higher Real Gymnasium, where he was profoundly influenced by a math teacher Martin Sekulic. The classes were held in German, as it was a school within the Austro-Hungarian Military Frontier. Tesla was able to perform integral calculus in his head, which prompted his teachers to believe that he was cheating. He finished a four-year term in three years, graduating in 1873."
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        196,
+        174,
+        455,
+        188
+      ],
+      "text_level": null,
+      "text": "1. In what language were the classes given?"
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        498,
+        174,
+        547,
+        186
+      ],
+      "text_level": null,
+      "text": "German"
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        196,
+        188,
+        482,
+        199
+      ],
+      "text_level": null,
+      "text": "2. Who was Tesla's main influence in Karlovac?"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        498,
+        188,
+        589,
+        199
+      ],
+      "text_level": null,
+      "text": "Martin Sekulic"
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        196,
+        199,
+        395,
+        213
+      ],
+      "text_level": null,
+      "text": "3. Why did Tesla go to Karlovac?"
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        498,
+        200,
+        764,
+        213
+      ],
+      "text_level": null,
+      "text": "attend school at the Higher Real Gymnasium"
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        228,
+        823,
+        271
+      ],
+      "text_level": null,
+      "text": "Table 1: A paragraph from Wikipedia and three associated questions together with their answers, taken from the SQuAD dataset. The tokens in bold in the paragraph are our predicted answers while the texts next to the questions are the ground truth answers."
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        301,
+        823,
+        345
+      ],
+      "text_level": null,
+      "text": "answer is a single token (Hermann et al., 2015; Kadlec et al., 2016; Cui et al., 2016), which make these methods unsuitable for the SQuAD dataset. In this paper, we propose a new end-to-end neural architecture to address the machine comprehension problem as defined in the SQuAD dataset."
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        349,
+        826,
+        491
+      ],
+      "text_level": null,
+      "text": "Specifically, observing that in the SQuAD dataset many questions are paraphrases of sentences from the original text, we adopt a match-LSTM model that we developed earlier for textual entailment (Wang & Jiang, 2016). We further adopt the Pointer Net (Ptr-Net) model developed by Vinyals et al. (2015), which enables the predictions of tokens from the input sequence only rather than from a larger fixed vocabulary and thus allows us to generate answers that consist of multiple tokens from the origin"
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        496,
+        823,
+        609
+      ],
+      "text_level": null,
+      "text": "Our contributions<sup>1</sup> can be summarized as follows: (1) We propose two new end-to-end neural network models for machine comprehension, which combine match-LSTM and Ptr-Net to handle the special properties of the SQuAD dataset. (2) We have achieved the performance of an exact match score of  $67.9\\%$  and an F1 score of  $77.0\\%$  on the unseen test dataset, which is much better than the feature-engineered solution (Rajpurkar et al., 2016). Our performance is also close to the state of th"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        633,
+        282,
+        648
+      ],
+      "text_level": 1,
+      "text": "2 METHOD"
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        670,
+        823,
+        712
+      ],
+      "text_level": null,
+      "text": "In this section, we first briefly review match-LSTM and Pointer Net. These two pieces of existing work lay the foundation of our method. We then present our end-to-end neural architecture for machine comprehension."
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        734,
+        320,
+        750
+      ],
+      "text_level": 1,
+      "text": "2.1 MATCH-LSTM"
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        763,
+        823,
+        888
+      ],
+      "text_level": null,
+      "text": "In a recent work on learning natural language inference, we proposed a match-LSTM model for predicting textual entailment (Wang & Jiang, 2016). In textual entailment, two sentences are given where one is a premise and the other is a hypothesis. To predict whether the premise entails the hypothesis, the match-LSTM model goes through the tokens of the hypothesis sequentially. At each position of the hypothesis, attention mechanism is used to obtain a weighted vector representation of the premise. "
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "image",
+      "page_idx": 2,
+      "bbox": [
+        176,
+        99,
+        544,
+        383
+      ],
+      "text_level": null,
+      "text": "Figure 1: An overview of our two models. Both models consist of an LSTM preprocessing layer, a match-LSTM layer and an Answer Pointer layer. For each match-LSTM in a particular direction,  $\\bar{h}_i^{\\mathrm{q}}$ , which is defined as  $\\mathbf{H}^{\\mathrm{q}}\\alpha_{i}^{\\top}$ , is computed using the  $\\alpha$  in the corresponding direction, as described in either Eqn. (2) or Eqn. (5)."
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        489,
+        313,
+        503
+      ],
+      "text_level": 1,
+      "text": "2.2 POINTER NET"
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        518,
+        823,
+        604
+      ],
+      "text_level": null,
+      "text": "Vinyals et al. (2015) proposed a Pointer Network (Ptr-Net) model to solve a special kind of problems where we want to generate an output sequence whose tokens must come from the input sequence. Instead of picking an output token from a fixed vocabulary, Ptr-Net uses attention mechanism as a pointer to select a position from the input sequence as an output symbol. The pointer mechanism has inspired some recent work on language processing (Gu et al., 2016; Kadlec et al., 2016). Here we adopt Ptr-N"
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        628,
+        316,
+        643
+      ],
+      "text_level": 1,
+      "text": "2.3 OUR METHOD"
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        659,
+        823,
+        743
+      ],
+      "text_level": null,
+      "text": "Formally, the problem we are trying to solve can be formulated as follows. We are given a piece of text, which we refer to as a passage, and a question related to the passage. The passage is represented by matrix  $\\mathbf{P} \\in \\mathbb{R}^{d \\times P}$ , where  $P$  is the length (number of tokens) of the passage and  $d$  is the dimensionality of word embeddings. Similarly, the question is represented by matrix  $\\mathbf{Q} \\in \\mathbb{R}^{d \\times Q}$  where  $Q$  is the length of the questi"
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        750,
+        823,
+        834
+      ],
+      "text_level": null,
+      "text": "As pointed out earlier, since the output tokens are from the input, we would like to adopt the Pointer Net for this problem. A straightforward way of applying Ptr-Net here is to treat an answer as a sequence of tokens from the input passage but ignore the fact that these tokens are consecutive in the original passage, because Ptr-Net does not make the consecutivity assumption. Specifically, we represent the answer as a sequence of integers  $\\mathbf{a} = (a_{1},a_{2},\\ldots)$ , where each  $a_{i"
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        840,
+        823,
+        922
+      ],
+      "text_level": null,
+      "text": "Alternatively, if we want to ensure consecutivity, that is, if we want to ensure that we indeed select a subsequence from the passage as an answer, we can use the  $\\mathrm{Ptr - Net}$  to predict only the start and the end of an answer. In this case, the  $\\mathrm{Ptr - Net}$  only needs to select two tokens from the input passage, and all the tokens between these two tokens in the passage are treated as the answer. Specifically, we can represent the answer to be predicted as two integers  $\\ma"
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        103,
+        823,
+        148
+      ],
+      "text_level": null,
+      "text": "We refer to the first setting above as a sequence model and the second setting above as a boundary model. For either model, we assume that a set of training examples in the form of triplets  $\\{(\\mathbf{P}_n,\\mathbf{Q}_n,\\mathbf{a}_n)\\}_{n = 1}^N$  are given."
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        152,
+        826,
+        223
+      ],
+      "text_level": null,
+      "text": "An overview of the two neural network models are shown in Figure 1. Both models consist of three layers: (1) An LSTM preprocessing layer that preprocesses the passage and the question using LSTMs. (2) A match-LSTM layer that tries to match the passage against the question. (3) An Answer Pointer (Ans-Ptr) layer that uses Prr-Net to select a set of tokens from the passage as the answer. The difference between the two models only lies in the third layer."
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        229,
+        372,
+        244
+      ],
+      "text_level": 1,
+      "text": "LSTM Preprocessing Layer"
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        251,
+        823,
+        304
+      ],
+      "text_level": null,
+      "text": "The purpose for the LSTM preprocessing layer is to incorporate contextual information into the representation of each token in the passage and the question. We use a standard one-directional LSTM (Hochreiter & Schmidhuber, 1997)  ${}^{2}$  to process the passage and the question separately, as shown below:"
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        327,
+        823,
+        383
+      ],
+      "text_level": null,
+      "text": "The resulting matrices  $\\mathbf{H}^{\\mathrm{p}}\\in \\mathbb{R}^{l\\times P}$  and  $\\mathbf{H}^{\\mathrm{q}}\\in \\mathbb{R}^{l\\times Q}$  are hidden representations of the passage and the question, where  $l$  is the dimensionality of the hidden vectors. In other words, the  $i^{\\mathrm{th}}$  column vector  $\\mathbf{h}_i^{\\mathrm{p}}$  (or  $\\mathbf{h}_i^{\\mathrm{q}}$ ) in  $\\mathbf{H}^{\\mathrm{p}}$  (or  $\\mathbf{H}^{\\mathrm{q}}$ ) represents the  $i^{\\mathrm{th}}$  token in the passage (or the q"
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        390,
+        318,
+        405
+      ],
+      "text_level": 1,
+      "text": "Match-LSTM Layer"
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        411,
+        823,
+        479
+      ],
+      "text_level": null,
+      "text": "We apply the match-LSTM model (Wang & Jiang, 2016) proposed for textual entailment to our machine comprehension problem by treating the question as a premise and the passage as a hypothesis. The match-LSTM sequentially goes through the passage. At position  $i$  of the passage, it first uses the standard word-by-word attention mechanism to obtain attention weight vector  $\\vec{\\alpha}_i \\in \\mathbb{R}^Q$  as follows:"
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        532,
+        823,
+        592
+      ],
+      "text_level": null,
+      "text": "where  $\\mathbf{W}^{\\mathrm{q}},\\mathbf{W}^{\\mathrm{p}},\\mathbf{W}^{\\mathrm{r}}\\in \\mathbb{R}^{l\\times l},\\mathbf{b}^{\\mathrm{p}},\\mathbf{w}\\in \\mathbb{R}^{l}$  and  $b\\in \\mathbb{R}$  are parameters to be learned,  $\\vec{\\mathbf{h}}_{i - 1}^{\\mathrm{r}}\\in \\mathbb{R}^{l}$  is the hidden vector of the one-directional match-LSTM (to be explained below) at position  $i - 1$  , and the outer product  $(\\cdot \\otimes \\mathbf{e}_Q)$  produces a matrix or row vector by repeating the vector or scalar o"
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        598,
+        823,
+        657
+      ],
+      "text_level": null,
+      "text": "Essentially, the resulting attention weight  $\\overrightarrow{\\alpha}_{i,j}$  above indicates the degree of matching between the  $i^{\\text{th}}$  token in the passage with the  $j^{\\text{th}}$  token in the question. Next, we use the attention weight vector  $\\overrightarrow{\\alpha}_i$  to obtain a weighted version of the question and combine it with the current token of the passage to form a vector  $\\overrightarrow{\\mathbf{z}}_i$ :"
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        727,
+        803,
+        742
+      ],
+      "text_level": null,
+      "text": "This vector  $\\vec{\\mathbf{z}}_i$  is fed into a standard one-directional LSTM to form our so-called match-LSTM:"
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        773,
+        282,
+        794
+      ],
+      "text_level": null,
+      "text": "where  $\\overrightarrow{\\mathbf{h}}_i^{\\mathrm{r}}\\in \\mathbb{R}^l$"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        799,
+        823,
+        840
+      ],
+      "text_level": null,
+      "text": "We further build a similar match-LSTM in the reverse direction. The purpose is to obtain a representation that encodes the contexts from both directions for each token in the passage. To build this reverse match-LSTM, we first define"
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        103,
+        823,
+        151
+      ],
+      "text_level": null,
+      "text": "Note that the parameters here  $(\\mathbf{W}^{\\mathrm{q}},\\mathbf{W}^{\\mathrm{p}},\\mathbf{W}^{\\mathrm{r}},\\mathbf{b}^{\\mathrm{p}},\\mathbf{w}$  and  $b)$  are the same as used in Eqn. (2). We then define  $\\overleftarrow{\\mathbf{z}}_i$  in a similar way and finally define  $\\overleftarrow{\\mathbf{h}}_i^{\\mathrm{r}}$  to be the hidden representation at position  $i$  produced by the match-LSTM in the reverse direction."
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        154,
+        823,
+        193
+      ],
+      "text_level": null,
+      "text": "Let  $\\vec{\\mathbf{H}}^{\\mathrm{r}}\\in \\mathbb{R}^{l\\times P}$  represent the hidden states  $[\\vec{\\mathbf{h}}_1^{\\mathrm{r}},\\vec{\\mathbf{h}}_2^{\\mathrm{r}},\\dots ,\\vec{\\mathbf{h}}_P^{\\mathrm{r}}]$  and  $\\overleftarrow{\\mathbf{H}}^{\\mathrm{r}}\\in \\mathbb{R}^{l\\times P}$  represent  $[\\overleftarrow{\\mathbf{h}}_{1}^{\\mathrm{r}},\\overleftarrow{\\mathbf{h}}_{2}^{\\mathrm{r}},\\dots ,\\overleftarrow{\\mathbf{h}}_{P}^{\\mathrm{r}}]$ . We define  $\\mathbf{H}^{\\mathrm{r}}\\in \\mathbb{R}^{2l\\times P}$  as t"
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        250,
+        331,
+        265
+      ],
+      "text_level": 1,
+      "text": "Answer Pointer Layer"
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        271,
+        823,
+        356
+      ],
+      "text_level": null,
+      "text": "The top layer, the Answer Pointer (Ans-Ptr) layer, is motivated by the Pointer Net introduced by Vinyals et al. (2015). This layer uses the sequence  $\\mathbf{H}^{\\mathrm{r}}$  as input. Recall that we have two different models: The sequence model produces a sequence of answer tokens but these tokens may not be consecutive in the original passage. The boundary model produces only the start token and the end token of the answer, and then all the tokens between these two in the original passage ar"
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        363,
+        823,
+        446
+      ],
+      "text_level": null,
+      "text": "The Sequence Model: Recall that in the sequence model, the answer is represented by a sequence of integers  $\\mathbf{a} = (a_{1},a_{2},\\ldots)$  indicating the positions of the selected tokens in the original passage. The Ans-Ptr layer models the generation of these integers in a sequential manner. Because the length of an answer is not fixed, in order to stop generating answer tokens at certain point, we allow each  $a_{k}$  to take up an integer value between 1 and  $P + 1$ , where  $P + 1$  i"
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        453,
+        823,
+        513
+      ],
+      "text_level": null,
+      "text": "In order to generate the  $k^{\\mathrm{th}}$  answer token indicated by  $a_{k}$ , first, the attention mechanism is used again to obtain an attention weight vector  $\\beta_{k} \\in \\mathbb{R}^{(P + 1)}$ , where  $\\beta_{k,j}$  ( $1 \\leq j \\leq P + 1$ ) is the probability of selecting the  $j^{\\mathrm{th}}$  token from the passage as the  $k^{\\mathrm{th}}$  token in the answer, and  $\\beta_{k,(P + 1)}$  is the probability of stopping the answer generation at position  $k$ .  $\\beta_{k}$  is modele"
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        561,
+        823,
+        619
+      ],
+      "text_level": null,
+      "text": "where  $\\widetilde{\\mathbf{H}}^{\\mathrm{r}}\\in \\mathbb{R}^{2l\\times (P + 1)}$  is the concatenation of  $\\mathbf{H}^{\\mathrm{r}}$  with a zero vector, defined as  $\\widetilde{\\mathbf{H}}^{\\mathrm{r}} = [\\mathbf{H}^{\\mathrm{r}};\\mathbf{0}]$ ,  $\\mathbf{V}\\in \\mathbb{R}^{l\\times 2l}$ ,  $\\mathbf{W}^{\\mathrm{a}}\\in \\mathbb{R}^{l\\times l}$ ,  $\\mathbf{b}^{\\mathrm{a}}$ ,  $\\mathbf{v}\\in \\mathbb{R}^{l}$  and  $c\\in \\mathbb{R}$  are parameters to be learned,  $(\\cdot \\otimes \\mathbf{e}_{(P + 1)})$  fol"
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        656,
+        647,
+        671
+      ],
+      "text_level": null,
+      "text": "We can then model the probability of generating the answer sequence as"
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        712,
+        200,
+        724
+      ],
+      "text_level": null,
+      "text": "and"
+    },
+    {
+      "source_id": "SRC-059",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        760,
+        777,
+        776
+      ],
+      "text_level": null,
+      "text": "To train the model, we minimize the following loss function based on the training examples:"
+    },
+    {
+      "source_id": "SRC-060",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        833,
+        823,
+        904
+      ],
+      "text_level": null,
+      "text": "The Boundary Model: The boundary model works in a way very similar to the sequence model above, except that instead of predicting a sequence of indices  $a_1, a_2, \\ldots$ , we only need to predict two indices  $a_{\\mathrm{s}}$  and  $a_{\\mathrm{e}}$ . So the main difference from the sequence model above is that in the boundary model we do not need to add the zero padding to  $\\mathbf{H}^{\\mathrm{r}}$ , and the probability of generating an answer is simply modeled as"
+    },
+    {
+      "source_id": "SRC-061",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        290,
+        823,
+        333
+      ],
+      "text_level": null,
+      "text": "Table 2: Experiment Results. Here \"Search\" refers to globally searching the spans with no more than 15 tokens, \"b\" refers to using bi-directional pre-processing LSTM, and \"en\" refers to ensemble method."
+    },
+    {
+      "source_id": "SRC-062",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        357,
+        823,
+        414
+      ],
+      "text_level": null,
+      "text": "We further extend the boundary model by incorporating a search mechanism. Specifically, during prediction, we try to limit the length of the span and globally search the span with the highest probability computed by  $p(\\mathbf{a}_s) \\times p(\\mathbf{a}_e)$ . Besides, as the boundary has a sequence of fixed number of values, bi-directional Ans-Ptr can be simply combined to fine-tune the correct span."
+    },
+    {
+      "source_id": "SRC-063",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        435,
+        328,
+        450
+      ],
+      "text_level": 1,
+      "text": "3 EXPERIMENTS"
+    },
+    {
+      "source_id": "SRC-064",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        467,
+        823,
+        496
+      ],
+      "text_level": null,
+      "text": "In this section, we present our experiment results and perform some analyses to better understand how our models work."
+    },
+    {
+      "source_id": "SRC-065",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        513,
+        254,
+        527
+      ],
+      "text_level": 1,
+      "text": "3.1 DATA"
+    },
+    {
+      "source_id": "SRC-066",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        540,
+        823,
+        625
+      ],
+      "text_level": null,
+      "text": "We use the Stanford Question Answering Dataset (SQuAD) v1.1 to conduct our experiments. Passages in SQuAD come from 536 articles from Wikipedia covering a wide range of topics. Each passage is a single paragraph from a Wikipedia article, and each passage has around 5 questions associated with it. In total, there are 23,215 passages and 107,785 questions. The data has been split into a training set (with 87,599 question-answer pairs), a development set (with 10,570 question-answer pairs) and a hi"
+    },
+    {
+      "source_id": "SRC-067",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        642,
+        382,
+        656
+      ],
+      "text_level": 1,
+      "text": "3.2 EXPERIMENT SETTINGS"
+    },
+    {
+      "source_id": "SRC-068",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        669,
+        823,
+        726
+      ],
+      "text_level": null,
+      "text": "We first tokenize all the passages, questions and answers. The resulting vocabulary contains 117K unique words. We use word embeddings from GloVe (Pennington et al., 2014) to initialize the model. Words not found in GloVe are initialized as zero vectors. The word embeddings are not updated during the training of the model."
+    },
+    {
+      "source_id": "SRC-069",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        731,
+        823,
+        773
+      ],
+      "text_level": null,
+      "text": "The dimensionality  $l$  of the hidden layers is set to be 150 or 300. We use ADAMAX (Kingma & Ba, 2015) with the coefficients  $\\beta_{1} = 0.9$  and  $\\beta_{2} = 0.999$  to optimize the model. Each update is computed through a minibatch of 30 instances. We do not use L2-regularization."
+    },
+    {
+      "source_id": "SRC-070",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        781,
+        823,
+        851
+      ],
+      "text_level": null,
+      "text": "The performance is measured by two metrics: percentage of exact match with the ground truth answers, and word-level F1 score when comparing the tokens in the predicted answers with the tokens in the ground truth answers. Note that in the development set and the test set each question has around three ground truth answers. F1 scores with the best matching answers are used to compute the average F1 score."
+    },
+    {
+      "source_id": "SRC-071",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        869,
+        277,
+        882
+      ],
+      "text_level": 1,
+      "text": "3.3 RESULTS"
+    },
+    {
+      "source_id": "SRC-072",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        895,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "The results of our models as well as the results of the baselines given by Rajpurkar et al. (2016) and Yu et al. (2016) are shown in Table 2. We can see that both of our two models have clearly outper"
+    },
+    {
+      "source_id": "SRC-073",
+      "type": "image",
+      "page_idx": 6,
+      "bbox": [
+        184,
+        285,
+        816,
+        435
+      ],
+      "text_level": null,
+      "text": "Figure 2: Visualization of the attention weights  $\\alpha$  for three questions associated with the same passage."
+    },
+    {
+      "source_id": "SRC-074",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        517,
+        826,
+        753
+      ],
+      "text_level": null,
+      "text": "formed the logistic regression model by Rajpurkar et al. (2016), which relies on carefully designed features. Furthermore, our boundary model has outperformed the sequence model, achieving an exact match score of  $61.1\\%$  and an F1 score of  $71.2\\%$ . In particular, in terms of the exact match score, the boundary model has a clear advantage over the sequence model. The improvement of our models over the logistic regression model shows that our end-to-end neural network models without much fea"
+    },
+    {
+      "source_id": "SRC-075",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        776,
+        361,
+        789
+      ],
+      "text_level": 1,
+      "text": "3.4 FURTHER ANALYSES"
+    },
+    {
+      "source_id": "SRC-076",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        805,
+        823,
+        832
+      ],
+      "text_level": null,
+      "text": "To better understand the strengths and weaknesses of our models, we perform some further analyses of the results below."
+    },
+    {
+      "source_id": "SRC-077",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        839,
+        826,
+        925
+      ],
+      "text_level": null,
+      "text": "First, we suspect that longer answers are harder to predict. To verify this hypothesis, we analysed the performance in terms of both exact match and F1 score with respect to the answer length on the development set. For example, for questions whose answers contain more than 9 tokens, the F1 score of the boundary model drops to around  $55\\%$  and the exact match score drops to only around  $30\\%$ , compared to the F1 score and exact match score of close to  $72\\%$  and  $67\\%$ , respectively, fo"
+    },
+    {
+      "source_id": "SRC-078",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        103,
+        826,
+        257
+      ],
+      "text_level": null,
+      "text": "Next, we analyze the performance of our models on different groups of questions. We use a crude way to split the questions into different groups based on a set of question words we have defined, including \"what,\" \"how,\" \"who,\" \"when,\" \"which,\" \"where,\" and \"why.\" These different question words roughly refer to questions with different types of answers. For example, \"when\" questions look for temporal expressions as answers, whereas \"where\" questions look for locations as answers. According to the"
+    },
+    {
+      "source_id": "SRC-079",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        169,
+        263,
+        826,
+        404
+      ],
+      "text_level": null,
+      "text": "Finally, we would like to check whether the attention mechanism used in the match-LSTM layer is effective in helping the model locate the answer. We show the attention weights  $\\alpha$  in Figure 2. In the figure the darker the color is the higher the weight is. We can see that some words have been well aligned based on the attention weights. For example, the word \"German\" in the passage is aligned well to the word \"language\" in the first question, and the model successfully predicts \"German\" a"
+    },
+    {
+      "source_id": "SRC-080",
+      "type": "text",
+      "page_idx": 7,
+      "bbox": [
+        171,
+        424,
+        346,
+        439
+      ],
+      "text_level": 1,
+      "text": "4 RELATED WORK"
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B1-q5Pqxl",
+  "paper_dir": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark/train/MD/ICLR2017_B1-q5Pqxl",
+  "review_model_name": "gpt-5.4-nano",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ]
+}

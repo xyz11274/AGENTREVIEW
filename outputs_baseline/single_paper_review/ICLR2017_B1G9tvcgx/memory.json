@@ -1,0 +1,1113 @@
+{
+  "paper_md_path": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B1G9tvcgx/md_content_no_appendix.md",
+  "paper_title": "NEURAL MACHINE TRANSLATION WITH LATENT SEMANTIC OF IMAGE AND TEXT",
+  "semantic_scholar_query": "NEURAL MACHINE TRANSLATION WITH LATENT SEMANTIC OF IMAGE AND TEXT",
+  "keyword_model_name": "gpt-5",
+  "retrieved_papers": [
+    {
+      "paperId": "1d57d445cce5982bb32d9424f3115ff8d6381a7d",
+      "externalIds": {
+        "ArXiv": "1611.08459",
+        "DBLP": "journals/corr/ToyamaMSNM16",
+        "MAG": "2559703163",
+        "CorpusId": 2018454
+      },
+      "url": "https://www.semanticscholar.org/paper/1d57d445cce5982bb32d9424f3115ff8d6381a7d",
+      "title": "Neural Machine Translation with Latent Semantic of Image and Text",
+      "year": 2016,
+      "citationCount": 14,
+      "openAccessPdf": {
+        "url": "",
+        "status": null,
+        "license": null,
+        "disclaimer": "Notice: Paper or abstract available at https://arxiv.org/abs/1611.08459, which is subject to the license by the author or copyright owner provided with this content. Please go to the source to verify the license and copyright information for your use."
+      },
+      "authors": [
+        {
+          "authorId": "2058194205",
+          "name": "Joji Toyama"
+        },
+        {
+          "authorId": "2065542247",
+          "name": "Masanori Misono"
+        },
+        {
+          "authorId": "2111453022",
+          "name": "Masahiro Suzuki"
+        },
+        {
+          "authorId": "1943224",
+          "name": "Kotaro Nakayama"
+        },
+        {
+          "authorId": "49484314",
+          "name": "Y. Matsuo"
+        }
+      ],
+      "abstract": "Although attention-based Neural Machine Translation have achieved great success, attention-mechanism cannot capture the entire meaning of the source sentence because the attention mechanism generates a target word depending heavily on the relevant parts of the source sentence. The report of earlier studies has introduced a latent variable to capture the entire meaning of sentence and achieved improvement on attention-based Neural Machine Translation. We follow this approach and we believe that the capturing meaning of sentence benefits from image information because human beings understand the meaning of language not only from textual information but also from perceptual information such as that gained from vision. As described herein, we propose a neural machine translation model that introduces a continuous latent variable containing an underlying semantic extracted from texts and images. Our model, which can be trained end-to-end, requires image information only when training. Experiments conducted with an English–German translation task show that our model outperforms over the baseline.",
+      "title_query": true
+    }
+  ],
+  "references_text": "References:\n[0] Title: Neural Machine Translation with Latent Semantic of Image and Text\n    Year: 2016\n    Citations: 14\n    URL: https://www.semanticscholar.org/paper/1d57d445cce5982bb32d9424f3115ff8d6381a7d\n    Abstract: Although attention-based Neural Machine Translation have achieved great success, attention-mechanism cannot capture the entire meaning of the source sentence because the attention mechanism generates a target word depending heavily on the relevant parts of the source sentence. The report of earlier studies has introduced a latent variable to capture the entire meaning of sentence and achieved improvement on attention-based Neural Machine Translation. We follow this approach and we believe that the capturing meaning of sentence benefits from image information because human beings understand the meaning of language not only from textual information but also from perceptual information such as that gained from vision. As described herein, we propose a neural machine translation model that introduces a continuous latent variable containing an underlying semantic extracted from texts and images. Our model, which can be trained end-to-end, requires image information only when training. Experiments conducted with an English–German translation task show that our model outperforms over the baseline.\n",
+  "source_anchors": [
+    {
+      "source_id": "SRC-001",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        171,
+        99,
+        823,
+        146
+      ],
+      "text_level": 1,
+      "text": "NEURAL MACHINE TRANSLATION WITH LATENT SEMANTIC OF IMAGE AND TEXT"
+    },
+    {
+      "source_id": "SRC-002",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        179,
+        169,
+        816,
+        243
+      ],
+      "text_level": null,
+      "text": "Joji Toyama*, Masanori Misono\\*†, Masahiro Suzuki, Kotaro Nakayama & Yutaka Matsuo Graduate School of Engineering, †Graduate School of Information Science and Technology The University of Tokyo Hongo, Tokyo, Japan {toyama, misono, masa, k-nakayama, matsuo}@weblab.t.u-tokyo.ac.jp"
+    },
+    {
+      "source_id": "SRC-003",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        450,
+        277,
+        545,
+        292
+      ],
+      "text_level": 1,
+      "text": "ABSTRACT"
+    },
+    {
+      "source_id": "SRC-004",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        228,
+        310,
+        767,
+        518
+      ],
+      "text_level": null,
+      "text": "Although attention-based Neural Machine Translation have achieved great success, attention-mechanism cannot capture the entire meaning of the source sentence because the attention mechanism generates a target word depending heavily on the relevant parts of the source sentence. The report of earlier studies has introduced a latent variable to capture the entire meaning of sentence and achieved improvement on attention-based Neural Machine Translation. We follow this approach and we believe that t"
+    },
+    {
+      "source_id": "SRC-005",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        173,
+        549,
+        336,
+        564
+      ],
+      "text_level": 1,
+      "text": "1 INTRODUCTION"
+    },
+    {
+      "source_id": "SRC-006",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        580,
+        826,
+        707
+      ],
+      "text_level": null,
+      "text": "Neural machine translation (NMT) has achieved great success in recent years (Sutskever et al., 2014; Bahdanau et al., 2015). In contrast to statistical machine translation, which requires huge phrase and rule tables, NMT requires much less memory. However, the most standard model, NMT with attention (Bahdanau et al., 2015) entails the shortcoming that the attention mechanism cannot capture the entire meaning of a sentence because it generates a target word while depending heavily on the relevant"
+    },
+    {
+      "source_id": "SRC-007",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        712,
+        826,
+        839
+      ],
+      "text_level": null,
+      "text": "Image information is related to language. For example, we human beings understand the meaning of language by linking perceptual information given by the surrounding environment and language (Barsalou, 1999). Although it is natural and easy for humans, it is difficult for computers to understand different domain's information integrally. Solving this difficult task might, however, bring great improvements in natural language processing. Several researchers have attempted to link language and imag"
+    },
+    {
+      "source_id": "SRC-008",
+      "type": "text",
+      "page_idx": 0,
+      "bbox": [
+        169,
+        844,
+        823,
+        902
+      ],
+      "text_level": null,
+      "text": "As described herein, we propose the neural machine translation model which introduces a latent variable containing an underlying semantic extracted from texts and images. Our model includes an explicit latent variable  $\\mathbf{z}$ , which has underlying semantics extracted from text and images by introducing a Variational Autoencoder (VAE) (Kingma et al., 2014; Rezende et al., 2014). Our model,"
+    },
+    {
+      "source_id": "SRC-009",
+      "type": "image",
+      "page_idx": 1,
+      "bbox": [
+        263,
+        106,
+        733,
+        308
+      ],
+      "text_level": null,
+      "text": "Figure 1: Architecture of Proposed Model. Green dotted lines denote that  $\\pi$  and encoded  $\\mathbf{y}$  are used only when training."
+    },
+    {
+      "source_id": "SRC-010",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        385,
+        823,
+        484
+      ],
+      "text_level": null,
+      "text": "which can be trained end-to-end, requires image information only when training. As described herein, we tackle the task with which one uses a parallel corpus and images in training, while using a source corpus in translating. It is important to define the task in this manner because we rarely have a corresponding image when we want to translate a sentence. During translation, our model generates a semantic variable  $\\mathbf{z}$  from a source, integrates variable  $\\mathbf{z}$  into a decoder o"
+    },
+    {
+      "source_id": "SRC-011",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        489,
+        823,
+        559
+      ],
+      "text_level": null,
+      "text": "For experiments, we used Multi30k (Elliott et al., 2016), which includes images and the corresponding parallel corpora of English and German. Our model outperforms the baseline with two evaluation metrics: METEOR (Denkowski & Lavie, 2014) and BLEU (Papineni et al., 2002). Moreover, we obtain some knowledge related to our model and Multi30k. Finally, we present some examples in which our model either improved, or worsened, the result."
+    },
+    {
+      "source_id": "SRC-012",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        566,
+        767,
+        583
+      ],
+      "text_level": null,
+      "text": "Our paper contributes to the neural machine translation research community in three ways."
+    },
+    {
+      "source_id": "SRC-013",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        744,
+        328,
+        760
+      ],
+      "text_level": 1,
+      "text": "2 BACKGROUND"
+    },
+    {
+      "source_id": "SRC-014",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        777,
+        823,
+        821
+      ],
+      "text_level": null,
+      "text": "Our model is the extension of Variational Neural Machine Translation (VNMT) (Zhang et al., 2016). Our model is also viewed as one of the multimodal translation models. In our model, VAE is used to introduce a latent variable. We describe the background of our model in this section."
+    },
+    {
+      "source_id": "SRC-015",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        171,
+        840,
+        555,
+        854
+      ],
+      "text_level": 1,
+      "text": "2.1 VARIATIONAL NEURAL MACHINE TRANSLATION"
+    },
+    {
+      "source_id": "SRC-016",
+      "type": "text",
+      "page_idx": 1,
+      "bbox": [
+        169,
+        867,
+        823,
+        925
+      ],
+      "text_level": null,
+      "text": "The VNMT translation model introduces a latent variable. This model's architecture shown in Figure 1 excludes the arrow from  $\\pi$ . This model involves three parts: encoder, inferrer, and decoder. In the encoder, both the source and target are encoded by bidirectional-Recurrent Neural Networks (bidirectional-RNN) and a semantic representation is generated. In the inferrer, a latent variable  $\\mathbf{z}$  is"
+    },
+    {
+      "source_id": "SRC-017",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        103,
+        823,
+        133
+      ],
+      "text_level": null,
+      "text": "modeled from a semantic representation by introducing VAE. In the decoder, a latent variable  $\\mathbf{z}$  is integrated in the Gated Recurrent Unit (GRU) decoder; also, a translation is generated."
+    },
+    {
+      "source_id": "SRC-018",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        138,
+        825,
+        167
+      ],
+      "text_level": null,
+      "text": "Our model is followed by architecture, except that the image is also encoded to obtain a latent variable  $\\mathbf{z}$ ."
+    },
+    {
+      "source_id": "SRC-019",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        185,
+        419,
+        200
+      ],
+      "text_level": 1,
+      "text": "2.2 MULTIMODAL TRANSLATION"
+    },
+    {
+      "source_id": "SRC-020",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        210,
+        823,
+        309
+      ],
+      "text_level": null,
+      "text": "Multimodal Translation is the task with which one might one can use a parallel corpus and images. The first papers to study multimodal translation are Elliott et al. (2015) and Hitschler & Riezler (2016). It was selected as a shared task in Workshop of Machine Translation 2016 (WMT16<sup>1</sup>). Although several studies have been conducted (Caglayan et al., 2016; Huang et al., 2016; Calixto et al., 2016; Libovický et al., 2016; Rodríguez Guasch & Costa-jussà, 2016; Shah et al., 2016), they do "
+    },
+    {
+      "source_id": "SRC-021",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        316,
+        825,
+        372
+      ],
+      "text_level": null,
+      "text": "Caglayan et al. (2016) integrate an image into an NMT decoder. They simply put source context vectors and image feature vectors extracted from ResNet-50's 'res4f_relu' layer (He et al., 2016) into the decoder called multimodal conditional GRU. They demonstrate that their method does not surpass the text-only baseline: NMT with attention."
+    },
+    {
+      "source_id": "SRC-022",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        378,
+        823,
+        476
+      ],
+      "text_level": null,
+      "text": "Huang et al. (2016) integrate an image into a head of source words sequence. They extract prominent objects from the image by Region-based Convolutional Neural Networks (R-CNN) (Girshick, 2015). Objects are then converted to feature vectors by VGG-19 (Simonyan & Zisserman, 2014) and are put into a head of source words sequence. They demonstrate that object extraction by R-CNN contributes greatly to the improvement. This model achieved the highest METEOR score in NMT-based models in WMT16, which "
+    },
+    {
+      "source_id": "SRC-023",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        483,
+        825,
+        569
+      ],
+      "text_level": null,
+      "text": "Caglayan et al. (2016) argue that their proposed model did not achieve improvement because they failed to benefit from both text and images. We assume that they failed to integrate text and images because they simply put images and text into neural machine translation despite huge gap exists between image information and text information. Our model, however, presents the possibility of benefitting from images and text because text and images are projected to their common semantic space so that t"
+    },
+    {
+      "source_id": "SRC-024",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        585,
+        431,
+        599
+      ],
+      "text_level": 1,
+      "text": "2.3 VARIATIONAL AUTO ENCODER"
+    },
+    {
+      "source_id": "SRC-025",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        611,
+        823,
+        667
+      ],
+      "text_level": null,
+      "text": "VAE was proposed in an earlier report of the literature Kingma et al. (2014); Rezende et al. (2014). Given an observed variable  $\\mathbf{x}$ , VAE introduces a continuous latent variable  $\\mathbf{z}$ , with the assumption that  $\\mathbf{x}$  is generated from  $\\mathbf{z}$ . VAE incorporates  $p_{\\theta}(\\mathbf{x}|\\mathbf{z})$  and  $q_{\\phi}(\\mathbf{z}|\\mathbf{x})$  into an end-to-end neural network. The lower bound is shown below."
+    },
+    {
+      "source_id": "SRC-026",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        171,
+        712,
+        803,
+        747
+      ],
+      "text_level": 1,
+      "text": "3 NEURAL MACHINE TRANSLATION WITH LATENT SEMANTIC OF IMAGE AND TEXT"
+    },
+    {
+      "source_id": "SRC-027",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        762,
+        825,
+        806
+      ],
+      "text_level": null,
+      "text": "We propose a neural machine translation model which explicitly has a latent variable containing an underlying semantic extracted from both text and image. This model can be seen as an extension of VNMT by adding image information."
+    },
+    {
+      "source_id": "SRC-028",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        811,
+        679,
+        827
+      ],
+      "text_level": null,
+      "text": "Our model can be drawn as a graphical model in Figure 3. Its lower bound is"
+    },
+    {
+      "source_id": "SRC-029",
+      "type": "text",
+      "page_idx": 2,
+      "bbox": [
+        169,
+        859,
+        825,
+        902
+      ],
+      "text_level": null,
+      "text": "where  $\\mathbf{x},\\mathbf{y},\\pi ,\\mathbf{z}$  respectively denote the source, target, image and latent variable, and  $p_{\\theta}$  and  $q_{\\phi}$  respectively denote the prior distribution and the approximate posterior distribution. It is noteworthy in Eq. (2) that we want to model  $p(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pi)$ , which is intractable. Therefore we model  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pi)$"
+    },
+    {
+      "source_id": "SRC-030",
+      "type": "image",
+      "page_idx": 3,
+      "bbox": [
+        205,
+        99,
+        830,
+        258
+      ],
+      "text_level": null,
+      "text": "Figure 2: VNMT Figure 3: Our model"
+    },
+    {
+      "source_id": "SRC-031",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        314,
+        823,
+        344
+      ],
+      "text_level": null,
+      "text": "instead, and also model prior  $p_{\\theta}(\\mathbf{z}|\\mathbf{x})$  so that we can generate a translation from the source in testing. Derivation of the formula is presented in the appendix."
+    },
+    {
+      "source_id": "SRC-032",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        349,
+        825,
+        378
+      ],
+      "text_level": null,
+      "text": "We model all distributions in Eq. (2) by neural networks. Our model architecture is divisible into three parts: 1) encoder, 2) inferrer, and 3) decoder."
+    },
+    {
+      "source_id": "SRC-033",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        396,
+        285,
+        409
+      ],
+      "text_level": 1,
+      "text": "3.1 ENCODER"
+    },
+    {
+      "source_id": "SRC-034",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        421,
+        823,
+        479
+      ],
+      "text_level": null,
+      "text": "In the encoder, the semantic representation  $\\mathbf{h}_{\\mathrm{e}}$  is obtained from the image, source, and target. We propose several methods to encode an image. We show how these methods affect the translation result in the Experiment section. This representation is used in the inferrer. This section links to the green part of Figure 1."
+    },
+    {
+      "source_id": "SRC-035",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        493,
+        344,
+        507
+      ],
+      "text_level": 1,
+      "text": "3.1.1 TEXTENCODING"
+    },
+    {
+      "source_id": "SRC-036",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        518,
+        826,
+        657
+      ],
+      "text_level": null,
+      "text": "The source and target are encoded in the same way as Bahdanau et al. (2015). The source is converted to a sequence of 1-of-k vector and is embedded to  $d_{emb}$  dimensions. We designate it as the source sequence. Then, a source sequence is put into bidirectional RNN. Representation  $\\mathbf{h}_i$  is obtained by concatenating  $\\vec{\\mathbf{h}}_i$  and  $\\vec{\\mathbf{h}}_i: \\vec{\\mathbf{h}}_i = \\mathrm{RNN}(\\vec{\\mathbf{h}}_{i-1}, E_{w_i})$ ,  $\\vec{\\mathbf{h}}_i = \\mathrm{RNN}(\\vec{\\mathbf{h"
+    },
+    {
+      "source_id": "SRC-037",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        672,
+        591,
+        686
+      ],
+      "text_level": 1,
+      "text": "3.1.2 IMAGE ENCODING AND SEMANTIC REPRESENTATION"
+    },
+    {
+      "source_id": "SRC-038",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        169,
+        696,
+        823,
+        724
+      ],
+      "text_level": null,
+      "text": "We use Convolutional Neural Networks (CNN) to extract feature vectors from images. We propose several ways of extracting image features."
+    },
+    {
+      "source_id": "SRC-039",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        738,
+        823,
+        781
+      ],
+      "text_level": null,
+      "text": "Global (G) The image feature vector is extracted from the image using a CNN. With this method, we use a feature vector in the certain layer as  $\\pi$ . Then  $\\pi$  is encoded to the image representation vector  $\\mathbf{h}_{\\pi}$  simply by affine transformation as"
+    },
+    {
+      "source_id": "SRC-040",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        171,
+        816,
+        823,
+        872
+      ],
+      "text_level": null,
+      "text": "Global and Objects (G+O) First we extract some prominent objects from images in some way. Then, we obtain fc7 image feature vectors  $\\pi$  from the original image and extracted objects using a CNN. Therefore  $\\pi$  takes a variable length. We handle  $\\pi$  in two ways: average and RNN encoder."
+    },
+    {
+      "source_id": "SRC-041",
+      "type": "text",
+      "page_idx": 3,
+      "bbox": [
+        228,
+        875,
+        825,
+        926
+      ],
+      "text_level": null,
+      "text": "In average  $(\\mathbf{G} + \\mathbf{O} - \\mathbf{AVG})$ , we first obtain intermediate image representation vector  $\\mathbf{h}_{\\pi}'$  by affine transformation in Eq. (3). Then, the average of  $\\mathbf{h}_{\\pi}'$  becomes the image representation vector:  $\\mathbf{h}_{\\pi} = \\frac{\\sum_{i}^{l}\\mathbf{h}_{\\pi_{i}}^{\\prime}}{l}$ , where  $l$  is the length of  $\\mathbf{h}_{\\pi}'$ ."
+    },
+    {
+      "source_id": "SRC-042",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        228,
+        103,
+        823,
+        133
+      ],
+      "text_level": null,
+      "text": "In RNN encoder  $(\\mathbf{G} + \\mathbf{O}$  -RNN), we first obtain  $\\mathbf{h}_{\\pi}^{\\prime}$  by affine transformation in Eq. (3). Then, we encode  $\\mathbf{h}_{\\pi}^{\\prime}$  in the same way as we encode text in Section 3.1.1 to obtain  $\\mathbf{h}_{\\pi}$"
+    },
+    {
+      "source_id": "SRC-043",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        138,
+        826,
+        239
+      ],
+      "text_level": null,
+      "text": "Global and Objects into source and target (G+O-TXT) Thereby, we first obtain  $\\mathbf{h}_{\\pi}^{\\prime}$  by affine transformation in Eq. (3). Then, we put sequential vector  $\\mathbf{h}_{\\pi}^{\\prime}$  into the head of the source sequence and target sequence. In this case, we set  $d_{\\pi}$  to be the same dimension as  $d_{emb}$ . In fact, the source sequence including  $\\mathbf{h}_{\\pi}^{\\prime}$  is only used to model  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\boldsymbol{\\pi})$ . Context"
+    },
+    {
+      "source_id": "SRC-044",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        252,
+        823,
+        299
+      ],
+      "text_level": null,
+      "text": "All representation vectors  $\\mathbf{h}_f$ ,  $\\mathbf{h}_g$  and  $\\mathbf{h}_{\\pi}$  are concatenated to obtain a semantic representation vector as  $\\mathbf{h}_e = [\\mathbf{h}_f;\\mathbf{h}_g;\\mathbf{h}_{\\pi}]$ , where  $\\mathbf{h}_e \\in \\mathbb{R}^{d_e = 2\\times d_h + d_\\pi}$  (in G+O-TXT:  $\\mathbf{h}_e = [\\mathbf{h}_f;\\mathbf{h}_g]$ , where  $\\mathbf{h}_e \\in \\mathbb{R}^{d_e = 2\\times d_h}$ ). It is an input of the multimodal variational neural inferrer."
+    },
+    {
+      "source_id": "SRC-045",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        318,
+        285,
+        332
+      ],
+      "text_level": 1,
+      "text": "3.2 INFERRER"
+    },
+    {
+      "source_id": "SRC-046",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        345,
+        823,
+        376
+      ],
+      "text_level": null,
+      "text": "We model the posterior  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\boldsymbol{\\pi})$  using a neural network and also the prior  $p_{\\theta}(\\mathbf{z}|\\mathbf{x})$  by neural network. This section links to the black and grey part of Figure 1."
+    },
+    {
+      "source_id": "SRC-047",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        393,
+        488,
+        407
+      ],
+      "text_level": 1,
+      "text": "3.2.1 NEURAL POSTERIOR APPROXIMATOR"
+    },
+    {
+      "source_id": "SRC-048",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        417,
+        823,
+        462
+      ],
+      "text_level": null,
+      "text": "Modeling the true posterior  $p_{\\theta}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pmb{\\pi})$  is usually intractable. Therefore, we consider modeling of an approximate posterior  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pmb{\\pi})$  by introducing VAE. We assume that the posterior  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pmb{\\pi})$  has the following form:"
+    },
+    {
+      "source_id": "SRC-049",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        500,
+        823,
+        527
+      ],
+      "text_level": null,
+      "text": "The mean  $\\mu$  and standard deviation  $\\sigma$  of the approximate posterior are the outputs of neural networks."
+    },
+    {
+      "source_id": "SRC-050",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        535,
+        823,
+        564
+      ],
+      "text_level": null,
+      "text": "Starting from the variational neural encoder, a semantic representation vector  $\\mathbf{h}_e$  is projected to latent semantic space as"
+    },
+    {
+      "source_id": "SRC-051",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        594,
+        823,
+        626
+      ],
+      "text_level": null,
+      "text": "where  $W_{z}^{(1)} \\in \\mathbb{R}^{d_{z} \\times (d_{e})}$ $\\mathbf{b}_{z}^{(1)} \\in \\mathbb{R}^{d_{z}}$ .  $g(\\cdot)$  is an element-wise activation function, which we set as  $\\tanh(\\cdot)$ . Gaussian parameters of Eq. (4) are obtained through linear regression as"
+    },
+    {
+      "source_id": "SRC-052",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        664,
+        336,
+        680
+      ],
+      "text_level": null,
+      "text": "where  $\\pmb{\\mu},\\log \\pmb{\\sigma}^2\\in \\mathbb{R}^{d_z}$"
+    },
+    {
+      "source_id": "SRC-053",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        698,
+        395,
+        712
+      ],
+      "text_level": 1,
+      "text": "3.2.2 NEURAL PRIOR MODEL"
+    },
+    {
+      "source_id": "SRC-054",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        723,
+        511,
+        739
+      ],
+      "text_level": null,
+      "text": "We model the prior distribution  $p_{\\theta}(\\mathbf{z}|\\mathbf{x})$  as follows:"
+    },
+    {
+      "source_id": "SRC-055",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        169,
+        795,
+        823,
+        872
+      ],
+      "text_level": null,
+      "text": "$\\pmb{\\mu}^{\\prime}$  and  $\\sigma^\\prime$  are generated in the same way as that presented in Section 3.2.1, except for the absence of  $\\mathbf{y}$  and  $\\pi$  as inputs. Because of the absence of representation vectors, the dimensions of weight in equation (5) for prior model are  $W_{z}^{\\prime(1)} \\in \\mathbb{R}^{d_{z} \\times d_{h}}$ ,  $\\mathbf{b}_{z}^{\\prime(1)} \\in \\mathbb{R}^{d_{z}}$ . We use a reparameterization trick to obtain a representation of latent variable  $\\mathbf{z}$ :  $\\ma"
+    },
+    {
+      "source_id": "SRC-056",
+      "type": "text",
+      "page_idx": 4,
+      "bbox": [
+        171,
+        907,
+        609,
+        925
+      ],
+      "text_level": null,
+      "text": "$\\mathbf{h}_e^{\\prime}$  is then integrated into the neural machine translation's decoder."
+    },
+    {
+      "source_id": "SRC-057",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        103,
+        285,
+        116
+      ],
+      "text_level": 1,
+      "text": "3.3 DECODER"
+    },
+    {
+      "source_id": "SRC-058",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        128,
+        823,
+        159
+      ],
+      "text_level": null,
+      "text": "This section links to the orange part of Figure 1. Given the source sentence  $\\mathbf{x}$  and the latent variable  $\\mathbf{z}$ , decoder defines the probability over translation  $\\mathbf{y}$  as"
+    },
+    {
+      "source_id": "SRC-059",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        215,
+        825,
+        260
+      ],
+      "text_level": null,
+      "text": "How we define the probability over translation  $\\mathbf{y}$  is fundamentally the same as VNMT, except for using conditional GRU instead of GRU. Conditional GRU involves two GRUs and an attention mechanism. We integrate a latent variable  $\\mathbf{z}$  into the second GRU. We describe it in the appendix."
+    },
+    {
+      "source_id": "SRC-060",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        276,
+        346,
+        291
+      ],
+      "text_level": 1,
+      "text": "3.4 MODEL TRAINING"
+    },
+    {
+      "source_id": "SRC-061",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        301,
+        823,
+        348
+      ],
+      "text_level": null,
+      "text": "Monte Carlo sampling method is used to approximate the expectation over the posterior Eq. (2),  $\\mathbb{E}_{q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pi)}\\approx \\frac{1}{L}\\sum_{l = 1}^{L}\\log p_{\\theta}(\\mathbf{y}|\\mathbf{x},\\mathbf{h}_z^{(l)})$  , where  $L$  is the number of samplings. The training objective is defined as"
+    },
+    {
+      "source_id": "SRC-062",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        405,
+        823,
+        463
+      ],
+      "text_level": null,
+      "text": "where  $\\mathbf{h}_z = \\boldsymbol{\\mu} + \\boldsymbol{\\sigma} \\cdot \\boldsymbol{\\epsilon}, \\boldsymbol{\\epsilon} \\sim \\mathcal{N}(0, I)$ . The first term, KL divergence, can be computed analytically and is differentiable because both distributions are Gaussian. The second term is also differentiable. We set  $L$  as 1. Overall, the objective  $\\mathcal{L}$  is differentiable. Therefore, we can optimize the parameter  $\\theta$  and variational parameter  $\\phi$  using gradient ascent techniques."
+    },
+    {
+      "source_id": "SRC-063",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        482,
+        328,
+        497
+      ],
+      "text_level": 1,
+      "text": "4 EXPERIMENTS"
+    },
+    {
+      "source_id": "SRC-064",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        171,
+        513,
+        375,
+        527
+      ],
+      "text_level": 1,
+      "text": "4.1 EXPERIMENTAL SETUP"
+    },
+    {
+      "source_id": "SRC-065",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        539,
+        823,
+        583
+      ],
+      "text_level": null,
+      "text": "We used Multi30k (Elliott et al., 2016) as the dataset. Multi30k have an English description and a German description for each corresponding image. We handle 29,000 pairs as training data, 1,014 pairs as validation data, and 1,000 pairs as test data."
+    },
+    {
+      "source_id": "SRC-066",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        589,
+        823,
+        660
+      ],
+      "text_level": null,
+      "text": "Before training, punctuation normalization and lowercase are applied to both English and German sentences by Moses (Koehn et al., 2007) scripts<sup>2</sup>. Compound-word splitting is conducted only to German sentences using Sennrich et al. (2016)<sup>3</sup>. Then we tokenize sentences<sup>2</sup> and use them as training data. We produce vocabulary dictionaries from training data. The vocabulary becomes 10,211 words for English and 13,180 words for German after compound-word splitting."
+    },
+    {
+      "source_id": "SRC-067",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        665,
+        823,
+        709
+      ],
+      "text_level": null,
+      "text": "Image features are extracted using VGG-19 CNN (Simonyan & Zisserman, 2014). We use 4096-dimensional fc7 features. To extract the object's region, we use Fast R-CNN (Girshick, 2015). Fast R-CNN is trained on ImageNet and MSCOCO dataset<sup>4</sup>."
+    },
+    {
+      "source_id": "SRC-068",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        714,
+        823,
+        786
+      ],
+      "text_level": null,
+      "text": "All weights are initialized by  $\\mathcal{N}(0,0.01\\mathbf{I})$ . We use the adadelta algorithm as an optimization method. The hyperparameters used in the experiment are presented in the Appendix. All models are trained with early stopping. When training, VNMT is fine-tuned by NMT model and our models are fine-tuned using VNMT. When translating, we use beam-search. The beam-size is set as 12. Before evaluation, we restore split words to the original state and de-tokenize<sup>2</sup> generated se"
+    },
+    {
+      "source_id": "SRC-069",
+      "type": "text",
+      "page_idx": 5,
+      "bbox": [
+        169,
+        791,
+        823,
+        835
+      ],
+      "text_level": null,
+      "text": "We implemented proposed models based on  $dl4mt^5$ . Actually,  $dl4mt$  is fundamentally the same model as Bahdanau et al. (2015), except that its decoder employs conditional GRU<sup>6</sup>. We implemented VNMT also with conditional GRU so small difference exists between our implementation"
+    },
+    {
+      "source_id": "SRC-070",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        103,
+        823,
+        132
+      ],
+      "text_level": null,
+      "text": "and originally proposed VNMT which employs normal GRU as a decoder. We evaluated results based on METEOR and BLUE using MultEval<sup>7</sup>."
+    },
+    {
+      "source_id": "SRC-071",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        148,
+        272,
+        162
+      ],
+      "text_level": 1,
+      "text": "4.2 RESULT"
+    },
+    {
+      "source_id": "SRC-072",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        175,
+        823,
+        219
+      ],
+      "text_level": null,
+      "text": "Table 1 presents experiment results. It shows that our models outperforms the baseline in both METEOR and BLEU. Figure 4 shows the plot of METEOR score of baselines and our models models in validation. Figure 5 shows the plot of METEOR score and the source sentence length."
+    },
+    {
+      "source_id": "SRC-073",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        450,
+        397,
+        465
+      ],
+      "text_level": 1,
+      "text": "4.3 QUANTITATIVE ANALYSIS"
+    },
+    {
+      "source_id": "SRC-074",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        476,
+        823,
+        532
+      ],
+      "text_level": null,
+      "text": "Table 1 shows that G scores the best in proposed models. In G, we simply put the feature of the original image. Actually, proposed model does not benefit from R-CNN, presumably because we can not handle sequences of image features very well. For example,  $\\mathrm{G + O - AVG}$  uses the average of multiple image features, but it only makes the original image information unnecessarily confusing."
+    },
+    {
+      "source_id": "SRC-075",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        539,
+        823,
+        637
+      ],
+      "text_level": null,
+      "text": "Figure 4 shows that G and  $\\mathrm{G + O - AVG}$  outperforms VNMT almost every time, but all model scores increase suddenly in the 17,000 iteration validation. We have no explanation for this behavior. Figure 4 also shows that G and  $\\mathrm{G + O - AVG}$  scores fluctuate more moderately than others. We state that G and  $\\mathrm{G + O - AVG}$  gain stability by adding image information. When one observes the difference between the test score and the validation score for each model, baseline"
+    },
+    {
+      "source_id": "SRC-076",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        643,
+        823,
+        728
+      ],
+      "text_level": null,
+      "text": "Figure 5 shows that G and  $\\mathrm{G + O - AVG}$  make more improvements on baselines in short sentences than in long sentences, presumably because  $q_{\\phi}(\\mathbf{z}|\\mathbf{x},\\mathbf{y},\\pi)$  can model  $\\mathbf{z}$  well when a sentence is short. Image features always have the same dimension, but underlying semantics of the image and text differ. We infer that when the sentence is short, image feature representation can afford to approximate the underlying semantic, but when a sentence "
+    },
+    {
+      "source_id": "SRC-077",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        734,
+        823,
+        818
+      ],
+      "text_level": null,
+      "text": "Multi30k easily becomes overfitted, as shown in Figure 8 and 9 in the appendix. This is presumably because 1) Multi30k is the descriptions of image, making the sentences short and simple, and 2) Multi30k has 29,000 sentences, which could be insufficient. In the appendix, we show how the parameter setting affects the score. One can see that decay-c has a strong effect. Huang et al. (2016) states that their proposed model outperforms the baseline (NMT), but we do not have that observation. It can "
+    },
+    {
+      "source_id": "SRC-078",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        171,
+        835,
+        385,
+        849
+      ],
+      "text_level": 1,
+      "text": "4.4 QUALITATIVE ANALYSIS"
+    },
+    {
+      "source_id": "SRC-079",
+      "type": "text",
+      "page_idx": 6,
+      "bbox": [
+        169,
+        861,
+        826,
+        890
+      ],
+      "text_level": null,
+      "text": "We presented the top 30 sentences, which make the largest METEOR score difference between G and VNMT, to native speakers of German and get the overall comments. They were not informed of"
+    },
+    {
+      "source_id": "SRC-080",
+      "type": "image",
+      "page_idx": 7,
+      "bbox": [
+        202,
+        112,
+        472,
+        281
+      ],
+      "text_level": null,
+      "text": "Figure 4: METEOR score to the validation data which are calculated for each 1000 iterations."
+    }
+  ],
+  "memory_usage": {
+    "local_paper_memory": "Stored in this memory.json for reruns and audit.",
+    "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
+    "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer."
+  },
+  "sample_id": "ICLR2017_B1G9tvcgx",
+  "paper_dir": "/data0/xyj/shengao/AgentReview_0611/AgentReview/test_data/ICLR2017_B1G9tvcgx",
+  "review_model_name": "gpt-5",
+  "reviewer_names": [
+    "Reviewer QUAL",
+    "Reviewer CLAR",
+    "Reviewer SIGN",
+    "Reviewer ORIG",
+    "Reviewer POL",
+    "Final Meta-Reviewer"
+  ],
+  "reviewer_memory_contexts": {},
+  "memory_retrieval_enabled": false,
+  "memory_mode": "none"
+}
