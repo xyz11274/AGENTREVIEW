@@ -212,8 +212,105 @@ class CapabilityToolkit:
     def create_vector_collection(self, name):
         return self.chroma.get_or_create_collection(name)
 
+    def retrieve_s2(self, paper_id, limit=10):
+        return _tool_call("retrieve_s2", str(paper_id), int(limit))
+
     def log(self, event, payload=None):
         _tool_call("log", str(event), payload)
+
+
+def _snapshot_value(value, toolkit):
+    if value is toolkit:
+        return {"__mstar_type__": "toolkit"}
+    if value is toolkit.db:
+        return {"__mstar_type__": "sqlite_connection"}
+    if isinstance(value, VectorCollection):
+        return {"__mstar_type__": "collection", "name": value.name}
+    if isinstance(value, set):
+        return {
+            "__mstar_type__": "set",
+            "items": [_snapshot_value(item, toolkit) for item in sorted(value, key=repr)],
+        }
+    if isinstance(value, tuple):
+        return {
+            "__mstar_type__": "tuple",
+            "items": [_snapshot_value(item, toolkit) for item in value],
+        }
+    if isinstance(value, list):
+        return [_snapshot_value(item, toolkit) for item in value]
+    if isinstance(value, dict):
+        return {
+            str(key): _snapshot_value(item, toolkit) for key, item in value.items()
+        }
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise TypeError(
+        "MemoryProgram state is not checkpoint-serializable: "
+        + type(value).__name__
+    )
+
+
+def _restore_value(value, toolkit):
+    if isinstance(value, list):
+        return [_restore_value(item, toolkit) for item in value]
+    if not isinstance(value, dict):
+        return value
+    marker = value.get("__mstar_type__")
+    if marker == "toolkit":
+        return toolkit
+    if marker == "sqlite_connection":
+        return toolkit.db
+    if marker == "collection":
+        return toolkit.chroma.get_or_create_collection(value["name"])
+    if marker == "set":
+        return {_restore_value(item, toolkit) for item in value.get("items", [])}
+    if marker == "tuple":
+        return tuple(_restore_value(item, toolkit) for item in value.get("items", []))
+    return {key: _restore_value(item, toolkit) for key, item in value.items()}
+
+
+def _snapshot_memory(knowledge_base, toolkit):
+    return {
+        "snapshot_version": "mstar-memory-snapshot-v1",
+        "knowledge_base_state": {
+            key: _snapshot_value(value, toolkit)
+            for key, value in knowledge_base.__dict__.items()
+        },
+        "sqlite_dump": list(toolkit.db.iterdump()),
+        "collections": {
+            name: {
+                "records": collection.records,
+                "ids": sorted(collection.ids),
+            }
+            for name, collection in toolkit.chroma.collections.items()
+        },
+    }
+
+
+def _restore_memory(knowledge_base, toolkit, snapshot):
+    if snapshot.get("snapshot_version") != "mstar-memory-snapshot-v1":
+        raise ValueError("Unsupported or legacy Memory snapshot")
+    old_db = toolkit.db
+    new_db = sqlite3.connect(":memory:")
+    script = "\n".join(str(line) for line in snapshot.get("sqlite_dump") or [])
+    if script.strip():
+        new_db.executescript(script)
+    toolkit.db = new_db
+    toolkit.chroma = ChromaClient()
+    for name, payload in dict(snapshot.get("collections") or {}).items():
+        collection = toolkit.chroma.get_or_create_collection(name)
+        collection.records = list(payload.get("records") or [])
+        collection.ids = set(payload.get("ids") or [])
+    state = {
+        key: _restore_value(value, toolkit)
+        for key, value in dict(snapshot.get("knowledge_base_state") or {}).items()
+    }
+    knowledge_base.__dict__.clear()
+    knowledge_base.__dict__.update(state)
+    try:
+        old_db.close()
+    except Exception:
+        pass
 
 
 class _SafeSQLite:
@@ -337,6 +434,15 @@ def _run(program_path):
                         "always_on": program.ALWAYS_ON_KNOWLEDGE,
                     },
                 }
+            elif name == "snapshot":
+                value = _snapshot_memory(knowledge_base, toolkit)
+            elif name == "restore":
+                _restore_memory(
+                    knowledge_base,
+                    toolkit,
+                    dict(command.get("snapshot") or {}),
+                )
+                value = None
             else:
                 raise ValueError(f"unknown sandbox command: {name}")
             _send({"type": "result", "id": command_id, "ok": True, "value": value})

@@ -8,13 +8,12 @@ from agentreview.agent import Player
 from agentreview.message import Message
 
 # 🔹 新增：引入我们写的 OpenScholar wrapper
-from agentreview.source_map import (
-    build_source_anchors,
-    extract_title_from_content_list,
-    format_source_anchors,
-    load_content_list,
+from agentreview.paper_context import (
+    CANONICAL_PAPER_CONTEXT_VERSION,
+    DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    build_canonical_paper_context,
 )
-from agentreview.utility.s2_retrieval import retrieve_with_openscholar
+from agentreview.source_map import extract_title_from_content_list, load_content_list
 
 
 def extract_title_from_md(text: str) -> str:
@@ -77,7 +76,8 @@ def format_refs(papers, max_abs_chars: int = 1200) -> str:
 class MarkdownPaperExtractorPlayer(Player):
     """
     A lightweight paper extractor for single-paper review that reads a Markdown file
-    and augments it with Semantic Scholar retrieval (via OpenScholar).
+    through the shared canonical rich-paper builder.  Frozen Semantic Scholar
+    data is retained as a separate capability and is never injected by default.
     """
 
     def __init__(self, paper_md_path: str, **kwargs):
@@ -113,62 +113,73 @@ class MarkdownPaperExtractorPlayer(Player):
             self.last_memory["paper_context_bundle_sha256"] = hashlib.sha256(
                 bundle_path.read_bytes()
             ).hexdigest()
-            return str(bundle["extractor_content"])
+            visible = dict(bundle.get("candidate_visible_metadata") or {})
+            canonical = build_canonical_paper_context(
+                str(p),
+                paper_id=str(bundle.get("paper_id") or visible.get("paper_id") or p.stem),
+                title=str(visible.get("title") or self.last_memory.get("paper_title") or ""),
+                venue=str(visible.get("venue") or ""),
+                year=visible.get("year") or "",
+                reviewer_role="SPECIALIST",
+                max_chars=getattr(
+                    self.args,
+                    "paper_context_max_chars",
+                    DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+                ),
+                internal_provenance={
+                    "split": bundle.get("split"),
+                    "bundle_path": str(bundle_path),
+                },
+            )
+            self.last_memory["source_anchors"] = canonical.source_anchors
+            self.last_memory["candidate_visible_metadata"] = canonical.candidate_metadata
+            self.last_memory["paper_context_version"] = canonical.version
+            return canonical.text
 
         text = p.read_text(encoding="utf-8", errors="ignore")
         content_list = load_content_list(str(p))
 
         # ① 提取一个 query（标题）
         title = extract_title_from_content_list(content_list) or extract_title_from_md(text)
-        source_anchors = build_source_anchors(content_list)
-        source_anchor_text = format_source_anchors(source_anchors)
-
-        # ② 调用 OpenScholar 的 Semantic Scholar 流程（黑盒）
-        retrieval_queries = [title]
-        if getattr(self.args, "disable_s2_retrieval", False):
-            papers = []
-            refs_text = "References:\n(S2 retrieval disabled by --disable_s2_retrieval.)"
-        else:
-            try:
-                papers = retrieve_with_openscholar(
-                    query=title,
-                    title_query=title,
-                    use_llm_keywords=False,
-                    client=None,
-                    model_name=None,
-                    max_papers=getattr(self.args, "max_retrieved_refs", 20)
-                )
-
-            except Exception as e:
-                papers = []
-                refs_text = f"References:\n(Failed to retrieve related papers: {e})"
-            else:
-                refs_text = format_refs(papers)
+        paper_id = str(getattr(self.args, "paper_id", "") or p.parent.name or p.stem)
+        canonical = build_canonical_paper_context(
+            str(p),
+            paper_id=paper_id,
+            title=title,
+            venue=str(getattr(self.args, "conference", "") or ""),
+            year=str(getattr(self.args, "paper_year", "") or ""),
+            reviewer_role="SPECIALIST",
+            max_chars=getattr(
+                self.args,
+                "paper_context_max_chars",
+                DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+            ),
+            internal_provenance={"paper_md_path": str(p.resolve())},
+        )
 
         self.last_memory = {
             "paper_md_path": str(p),
             "paper_title": title,
-            "semantic_scholar_query": title,
-            "semantic_scholar_queries": retrieval_queries,
+            "paper_id": paper_id,
+            "semantic_scholar_query": None,
+            "semantic_scholar_queries": [],
             "keyword_model_name": getattr(self.args, "keyword_model_name", None),
-            "retrieved_papers": papers,
-            "references_text": refs_text,
-            "source_anchors": source_anchors,
+            "retrieved_papers": [],
+            "references_text": "",
+            "source_anchors": canonical.source_anchors,
+            "candidate_visible_metadata": canonical.candidate_metadata,
+            "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+            "s2_usage": {
+                "available_as_frozen_capability": bool(
+                    getattr(self.args, "s2_retrieval_pool", None)
+                ),
+                "used": False,
+                "default_injection": False,
+            },
             "memory_usage": {
                 "local_paper_memory": "Stored in this memory.json for reruns and audit.",
                 "global_memory_library": "Aggregated into memory_library.jsonl and memory_index.json for retrieval by sample_id/title/reviewer.",
-                "review_runtime_use": "The extractor message provides both references and source anchors to all specialist reviewers and the meta-reviewer.",
+                "review_runtime_use": "The extractor message provides canonical paper content and source anchors; S2 is optional and separate.",
             },
         }
-
-        # ③ 原文 + References 一起吐给 Reviewer
-        return (
-            f"Here is the paper content in Markdown:\n\n"
-            f"=== BEGIN PAPER (MD) ===\n{text}\n=== END PAPER (MD) ===\n\n"
-            f"=== SOURCE ANCHORS ===\n"
-            f"{source_anchor_text}\n"
-            f"=== END SOURCE ANCHORS ===\n\n"
-            f"=== SEMANTIC SCHOLAR REFERENCES ===\n"
-            f"{refs_text}\n"
-            f"=== END REFERENCES ==="
-        )
+        return canonical.text

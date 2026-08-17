@@ -246,6 +246,8 @@ class SandboxSession:
                 value = self.toolkit.llm_completion(*args, **kwargs)
             elif name == "embed":
                 value = self.toolkit.embed(*args, **kwargs)
+            elif name == "retrieve_s2":
+                value = self.toolkit.retrieve_s2(*args, **kwargs)
             elif name == "log":
                 self.logs.append({"event": args[0], "payload": args[1] if len(args) > 1 else None})
                 value = None
@@ -288,6 +290,17 @@ class SandboxSession:
 
     def schemas(self):
         return self._command("schemas")
+
+    def snapshot(self) -> Dict[str, Any]:
+        value = self._command("snapshot")
+        if not isinstance(value, dict):
+            raise SandboxError("MemoryProgram snapshot must be a JSON object")
+        return value
+
+    def restore(self, snapshot: Dict[str, Any]) -> None:
+        if not isinstance(snapshot, dict):
+            raise TypeError("MemoryProgram snapshot must be a dict")
+        self._command("restore", snapshot=snapshot)
 
     def program_interface(self):
         schema = self.schemas()

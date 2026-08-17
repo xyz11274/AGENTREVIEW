@@ -13,7 +13,7 @@ core is:
 - one rotating feedback subset sampled from the remaining validation pool;
 - facility-location selection of training episodes with a 5:1
   train-to-validation budget;
-- 20 mutation iterations;
+- 21 mutation iterations (7 per independent lineage);
 - at most one Toolkit LLM call per write/read operation;
 - at most three compile-repair attempts;
 - Reflector access to rotating failures/successes, traces, write examples,
@@ -147,6 +147,10 @@ runs/<suite>/suite_manifest.json
 
 Static case text is not written into iteration traces. `best_eval_report.json`
 contains aggregate static results only.
+Rotating evaluator full traces live under a directory whose manifest marks them
+`evaluator_only=true` and `candidate_forbidden=true`; promotion copies programs,
+never traces. Candidate mutation receives only the fail-closed numeric/category
+projection.
 `final-evaluate-suite` is the sealed test path: it runs QUAL/CLAR/SIGN/ORIG/POL
 once, builds the sixth task from those outputs, then runs META once. The report
 stores per-case scores but hides paper, reference, retrieval and answer content;

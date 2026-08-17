@@ -36,7 +36,7 @@ class _Requests:
 
 class EffectivenessPrepareTest(unittest.TestCase):
     def test_design_version_is_frozen(self):
-        self.assertEqual(DESIGN_VERSION, "effectiveness-screening-v1")
+        self.assertEqual(DESIGN_VERSION, "effectiveness-screening-v2-temporal")
 
     def test_decision_stratum(self):
         self.assertEqual(

@@ -1,6 +1,6 @@
 # Proxy 测量与官方评测分离，内部 fitness 与外部 benchmark 分开报告
 
-当前最小闭环 demo 在 20 篇 proxy holdout（`effectiveness_validation.jsonl`）上运行，报告与进化 fitness 同构的指标（judge 五维、类别覆盖率、调和平均），用于闭环、调试和观察 evolved program 是否沿进化目标产生真实效果。正式结论必须在CoCoReviewBench 官方 benchmark pool（当前共 3900 篇；最终 evaluated N 由官方 pipeline / selection manifest 决定） 上、按官方 evaluation pipeline 和官方指标重新跑出。proxy 结果不得表述为官方 CoCoReviewBench 成绩；进化时优化的 fitness 不得等同于最终 benchmark 指标。
+当前最小闭环可在 C 区预注册子集上运行，报告与进化 fitness 同构的指标（judge 五维、类别覆盖率、调和平均），用于闭环、调试和观察 evolved program 是否沿进化目标产生真实效果。正式结论必须在 frozen D manifest（当前 900 篇；CoCo source pool 共 3900 篇）上、按官方 evaluation pipeline 和官方指标重新跑出。C 结果不得表述为官方 CoCoReviewBench 成绩；进化时优化的 fitness 不得等同于最终 benchmark 指标。
 
 ## Considered Options
 

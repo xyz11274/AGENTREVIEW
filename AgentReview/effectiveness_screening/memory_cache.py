@@ -23,17 +23,26 @@ from .prepare import DESIGN_VERSION, iter_jsonl, load_config, sha256_file, write
 
 
 def _program_source(config: Mapping[str, Any], arm: str, task_id: str) -> Path:
-    evolved_root = Path(config["evolved_program_root"]).expanduser().resolve()
-    if arm == "evolved":
-        return evolved_root / task_id / "best_program.py"
-    if arm == "seed_experience":
-        return (
-            evolved_root
-            / task_id
-            / "seed_0"
-            / "pool"
-            / "program_002_seed_experience.py"
+    project_root = Path(__file__).resolve().parent.parent
+    if arm.startswith("seed_"):
+        lineage = arm[len("seed_") :]
+        source = project_root / "memory_evolution" / "seeds" / f"{lineage}.py"
+        if source.is_file():
+            return source
+    if arm.startswith("evolved_from_"):
+        lineage = arm
+        evolved_root = Path(config["evolved_program_root"]).expanduser().resolve()
+        manifest_path = evolved_root / "suite_manifest.json"
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"Authoritative suite manifest missing: {manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entry = (
+            (manifest.get("promoted_by_lineage") or {})
+            .get(task_id, {})
+            .get(lineage, {})
         )
+        if entry.get("program"):
+            return Path(entry["program"]).expanduser().resolve()
     raise ValueError(f"Unsupported program arm: {arm}")
 
 
@@ -47,7 +56,13 @@ def freeze_programs(config: Mapping[str, Any]) -> Dict[str, Any]:
         ),
         "arms": {},
     }
-    for arm in ("seed_experience", "evolved"):
+    lineages = list(config.get("experiment", {}).get("lineages") or [])
+    arms = [f"seed_{lineage}" for lineage in lineages] + [
+        f"evolved_from_{lineage}" for lineage in lineages
+    ]
+    if not arms:
+        raise ValueError("No lineages configured for program freezing")
+    for arm in arms:
         task_entries = {}
         for task_id in ALL_TASKS:
             source = _program_source(config, arm, task_id)
@@ -62,11 +77,8 @@ def freeze_programs(config: Mapping[str, Any]) -> Dict[str, Any]:
                 "program_sha256": sha256_file(destination),
             }
         result["arms"][arm] = task_entries
-    seed_pol = result["arms"]["seed_experience"]["POL"]["program_sha256"]
-    evolved_pol = result["arms"]["evolved"]["POL"]["program_sha256"]
-    if seed_pol != evolved_pol:
-        raise RuntimeError("Frozen design requires POL evolved=seed")
-    result["POL_evolved_equals_seed"] = True
+    result["lineages"] = lineages
+    result["legacy_iter5_used"] = False
     manifest_path = program_root / "program_manifest.json"
     manifest_path.write_text(
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True),
@@ -78,6 +90,7 @@ def freeze_programs(config: Mapping[str, Any]) -> Dict[str, Any]:
 def freeze_memory_library(
     config: Mapping[str, Any], source_output_dir: Path
 ) -> Dict[str, Any]:
+    """Legacy Frozen Library Route; never use for reportable experiments."""
     output_root = Path(config["output_root"]).expanduser().resolve()
     source = source_output_dir / "single_paper_review" / "memory_library.jsonl"
     if not source.is_file():
@@ -164,6 +177,7 @@ def _load_partial(path: Path, task_id: str, program_sha256: str):
 
 
 def compile_cache(config: Mapping[str, Any], arm: str) -> Dict[str, Any]:
+    """Legacy shared-library compiler retained only for artifact analysis."""
     if arm not in {"seed_experience", "evolved"}:
         raise ValueError("Cache arm must be seed_experience or evolved")
     output_root = Path(config["output_root"]).expanduser().resolve()
@@ -269,17 +283,26 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--source-output-dir")
     parser.add_argument("--arm", choices=("seed_experience", "evolved"))
+    parser.add_argument("--allow-legacy-nonreportable", action="store_true")
     args = parser.parse_args()
     config = load_config(Path(args.config).expanduser().resolve())
     if args.command == "freeze-programs":
         result = freeze_programs(config)
     elif args.command == "freeze-memory-library":
+        if not args.allow_legacy_nonreportable:
+            parser.error(
+                "Frozen Library Route is deprecated; pass --allow-legacy-nonreportable only for historical analysis"
+            )
         if not args.source_output_dir:
             parser.error("freeze-memory-library requires --source-output-dir")
         result = freeze_memory_library(
             config, Path(args.source_output_dir).expanduser().resolve()
         )
     else:
+        if not args.allow_legacy_nonreportable:
+            parser.error(
+                "Shared KnowledgeItem caches are deprecated; use Program-specific historical replay"
+            )
         if not args.arm:
             parser.error("compile-cache requires --arm")
         result = compile_cache(config, args.arm)
@@ -288,4 +311,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

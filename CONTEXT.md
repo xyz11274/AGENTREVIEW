@@ -106,24 +106,17 @@ Reviewer 合理需要知道的论文描述信息：`paper_id`、`title`、`venue
 **Source Pool**:
 系统可使用的原始数据来源，当前包括 `/data0/xyj/shengao/OpenReview` 与 `/data0/xyj/shengao/CoCoReviewBench`。
 
-Source Pool 不等于实验 split。数据源一旦被指定为 Official Benchmark Corpus，其整体即进入 benchmark isolation boundary，不再用于 Historical / Experience、Evolution Validation 或 Effectiveness Holdout。
-
-当前协议中：
-
-- OpenReview 非 benchmark 语料用于构建 A/B/C 三个 development 数据区；
-- CoCoReviewBench 整体保留为 D 区 Official Benchmark Corpus。
-
-不得仅通过 paper-level 去重后从 CoCoReviewBench 中抽取 evolution / development 数据。
+Source Pool 不等于实验 split。CoCoReviewBench 的 3900 篇是 benchmark source pool，经 `configs/coco_temporal_split_v1/manifest.json` 按 paper family 和时间冻结为 A/B/C/D；3900 不等于正式 D 的规模。旧“整个 CoCo/其 venue-year 全量 benchmark_reserved”规则已 superseded，禁止进入新 formal run。
 
 **Historical / Experience Set**:
-数据区 A：让各 Program 真正「做过历史任务并积累自己的经验」。Candidate 可见：论文全文、Candidate-Visible Metadata、source anchors、可选 S2 Capability；不可见：human review、gold opinions、benchmark labels / taxonomy、judge score。所有 Program 使用完全相同的 paper IDs、paper order、preprocessing / canonical paper builder、context budget、candidate-visible metadata；产出的 review / trajectory / evidence / KnowledgeItem / Memory 允许且应当不同。冻结：paper IDs、order、source、SHA256、preprocessing version。当前候选资产：`memory_corpus.jsonl` 选定的 20 篇（bundles 齐备，隔离已验证）。
+数据区 A：让各 Program 真正「做过历史任务并积累自己的经验」。Candidate 可见论文全文、Candidate-Visible Metadata、source anchors、可选且 time-safe 的 S2 Capability；不可见 human review / gold / taxonomy / judge。当前 frozen source zone 为 2400 篇（≤2022）；具体 run 可冻结其子集，但必须保持 manifest 顺序与 SHA。每篇成功后原子 checkpoint；同一 run 可恢复自身 verified prefix，不得跨 Candidate/replicate 继承 Memory。
 _Avoid_: memory_corpus.jsonl（那只是论文选择清单）、frozen_memory_library（废弃路线）、训练集
 
 **Evolution Validation Set**:
-数据区 B：Evolution 判断 Candidate 优劣（selection / mutation / promotion）的论文集。流程：`Candidate 在 Historical Set 自产经验 → 对 Evolution Validation 论文生成 Review → 外部 evaluator 评分（human reference 仅在 evaluator 侧）→ fitness`。三个 Seed lineage 共用同一套；一次正式 evolution run 内冻结，不得因某 Seed 表现差而换题。**当前尚未正式建立**——`pilot_full` validation 因 Human Reference Boundary 违反作废；不允许拿 proxy 20 篇顶替。QUAL 最小实现约 20–50 篇，数量为工程配置，但必须与其他三区隔离（见 docs/TODO.md）。
+数据区 B：Evolution 判断 Candidate 优劣（selection / mutation / promotion）的论文集。当前 frozen source zone 为 300 篇（2023）；task materialization 可按任务引用可用性取其冻结子集。每篇 B review 只进入 evaluator/fitness；评估前恢复相同 A snapshot，B 不写 Historical Memory，顺序不改变后续 B 状态。
 
 **Four-Zone Isolation**:
-硬约束：`Historical ≠ Evolution Validation ≠ Effectiveness Holdout ≠ Official Benchmark`，两两 paper ID 零重叠，并同时做 normalized title / paper family 零重叠校验；每个 split 有独立 manifest / SHA256；不得靠目录名判断 split 身份。
+硬约束：`Historical ≠ Evolution Validation ≠ Effectiveness Holdout ≠ Held-out Benchmark Test`，两两 paper ID、normalized title、paper family 零重叠；同时要求 `max(A/B/C cutoff) <= min(D cutoff)`。每区独立 manifest / SHA256，formal 入口强制审计，不靠目录名。
 
 ### 进化与部署
 
@@ -169,12 +162,14 @@ _Avoid_: 评估指标（泛指时）、benchmark（不特指时）
 正式 CoCoReviewBench 结果只在 Program 完全冻结后，通过最外层 Official Benchmark pipeline 获得。
 
 **Effectiveness Holdout (proxy)**:
-数据区 C：Evolution 完成、Program 冻结后的**第一次独立 effectiveness measurement**。当前资产：`data/effectiveness_screening_v1/effectiveness_validation.jsonl` 的 20 篇（隔离已验证，2026-08-17）。严格顺序 `Evolution 完成 → best/evolved Program frozen → proxy`；禁止「跑 proxy → 看结果 → 改 Program → 再跑 proxy」（一旦如此 proxy 即退化为 validation）。不参与 candidate selection / mutation / promotion，结果不反馈回本轮 Evolution；两臂同模型、同生成参数、同预算 + Blind Judging + 2 replicates；结果只称 `development / effectiveness measurement`，不叫官方 CoCoReviewBench 成绩（见 docs/adr/0004、0006）。
+数据区 C：Evolution 完成、Program 冻结后的**第一次独立 effectiveness measurement**。当前 frozen source zone 为 300 篇（2023），screening 可在其中预注册子集；不参与 selection / mutation / promotion / Memory 构建，结果不反馈当前 Program。2 replicates 各自有 run identity/seed provenance；当前后端记录 `seed_control_available=false`。
 
 **Official Benchmark**:
 数据区 D：系统最外层的独立裁判。当前第一个为 CoCoReviewBench。
 
-当前官方 benchmark corpus / pool 共 3900 篇论文；**3900 表示 benchmark pool 大小，不预先等同于最终实际 evaluated N**。最终实际进入正式评分的论文数量由 CoCoReviewBench 官方 reviewer selection manifest 与官方 evaluation pipeline 决定，并必须在最终实验报告中记录实际 evaluated N。
+CoCoReviewBench source pool 共 3900 篇；当前 frozen D manifest 为 900 篇（2024–2025），且从未进入 A/B/C。D 只在 Program fully frozen 后经 Benchmark Adapter 运行；看过 D 后回改 Program 会使该 D 结果失去 untouched-test 身份。
+
+**Temporal Leakage Boundary**：每篇论文都携带 `paper_review_cutoff`。当前源记录缺精确日期，因此 v1 明确采用保守 year-level cutoff（venue year 前一年 12-31）。S2 每个 target 缓存必须记录 cutoff、method/version、top_k/config、result SHA；publication date 缺失或晚于 cutoff 的结果拒绝。formal mode 无 provenance 或 future-leak audit 不通过即停止。
 
 `Program fully frozen → Reviewer 生成 Review → Benchmark Adapter → 官方 pipeline`
 

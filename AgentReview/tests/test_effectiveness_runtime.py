@@ -64,7 +64,7 @@ class EffectivenessRuntimeTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "checksum"):
                 discover_markdown_papers(args)
 
-    def test_matrix_enforces_cache_and_no_writeback(self):
+    def test_matrix_enforces_fresh_replay_and_no_writeback(self):
         config = {
             "output_root": "/tmp/effectiveness",
             "generation": {
@@ -80,6 +80,7 @@ class EffectivenessRuntimeTest(unittest.TestCase):
             "experiment": {
                 "arms": ["no_memory", "seed_experience", "evolved"],
                 "replicates": [1, 2],
+                "replicate_run_seeds": {"1": 101, "2": 202},
             },
         }
         commands = matrix_commands(config)
@@ -90,7 +91,8 @@ class EffectivenessRuntimeTest(unittest.TestCase):
             if cell["arm"] == "no_memory":
                 self.assertNotIn("--memory_knowledge_cache_dir", command)
             else:
-                self.assertIn("--memory_knowledge_cache_dir", command)
+                self.assertNotIn("--memory_knowledge_cache_dir", command)
+                self.assertIn("--memory_source_output_dir", command)
                 self.assertIn("deterministic_hash", command)
         history = historical_library_command(config)
         self.assertNotIn("--disable_memory_writeback", history)

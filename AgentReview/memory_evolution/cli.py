@@ -17,6 +17,7 @@ from .metrics import get_metric
 from .meta_cache import build_meta_input_cache
 from .models import Episode, EvalItem
 from .quality import check_program_path
+from .formal_protocol import run_formal_protocol_gate
 from .search import EvolutionConfig, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
@@ -28,7 +29,9 @@ from .tasks import (
     verify_promoted_program,
 )
 from agentreview.single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
-from .toolkit import MemoryToolkit
+from .toolkit import MemoryToolkit, load_frozen_s2_pool
+from .benchmark_adapter import CoCoMetricBenchmarkAdapter
+from .assets import FOUR_ZONES, audit_four_zone_isolation, load_temporal_split_manifest, validate_asset_manifest
 
 
 TASK_MODEL_DEFAULT = "gpt-5-mini"
@@ -75,7 +78,10 @@ def _backend(args, model_name: str):
 
 
 def _classifier_adapter(
-    spec: str, split_revision: str = "", classify_revision: str = ""
+    spec: str,
+    split_revision: str = "",
+    classify_revision: str = "",
+    coco_root: str = "",
 ):
     """Load a frozen `(splitter, classifier)` factory without coupling repos."""
     if not spec:
@@ -88,6 +94,7 @@ def _classifier_adapter(
         splitter, classifier = factory(
             split_revision=split_revision,
             classify_revision=classify_revision,
+            coco_root=coco_root,
         )
     except TypeError:
         splitter, classifier = factory()
@@ -132,6 +139,10 @@ def _task_toolkit(args):
         args.classifier_adapter,
         args.review_split_revision,
         args.review_classify_revision,
+        getattr(args, "coco_root", ""),
+    )
+    s2_pool, s2_pool_sha256 = load_frozen_s2_pool(
+        getattr(args, "s2_retrieval_pool", "")
     )
     return MemoryToolkit(
         llm_client=_backend(args, args.task_model_name),
@@ -145,6 +156,8 @@ def _task_toolkit(args):
         review_splitter=splitter,
         review_classifier=classifier,
         max_llm_calls_per_operation=1,
+        s2_retrieval_pool=s2_pool,
+        s2_retrieval_pool_sha256=s2_pool_sha256,
     )
 
 
@@ -179,7 +192,7 @@ def _experiment_kind(args) -> str:
         return "pilot_non_reportable"
     deviations = []
     canonical = {
-        "iterations": 20,
+        "iterations": 21,
         "static_size": 25,
         "rotating_size": 5,
         "temperature": 0.15,
@@ -252,6 +265,34 @@ def _add_runtime_args(parser):
     )
     parser.add_argument("--embedding-model-name", default="BAAI/bge-m3")
     parser.add_argument(
+        "--s2-retrieval-pool",
+        default="",
+        help="Frozen paper-specific S2 JSON/JSONL pool; never queried live or injected by default.",
+    )
+    parser.add_argument(
+        "--asset-manifest",
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "configs"
+            / "asset_manifest_v2.json"
+        ),
+        help="Versioned formal Asset Manifest; fail-closed in formal mode.",
+    )
+    parser.add_argument(
+        "--temporal-split-manifest",
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "configs"
+            / "coco_temporal_split_v1"
+            / "manifest.json"
+        ),
+    )
+    parser.add_argument(
+        "--coco-root",
+        default="",
+        help="Configured external CoCoReviewBench checkout.",
+    )
+    parser.add_argument(
         "--embedding-revision",
         default="",
         help="Immutable model revision/commit recorded for formal BGE-M3 runs.",
@@ -275,7 +316,7 @@ def _add_runtime_args(parser):
 
 
 def _add_search_args(parser):
-    parser.add_argument("--iterations", type=int, default=20)
+    parser.add_argument("--iterations", type=int, default=21)
     parser.add_argument("--static-size", type=int, default=25)
     parser.add_argument("--rotating-size", type=int, default=5)
     parser.add_argument("--temperature", type=float, default=0.15)
@@ -308,8 +349,10 @@ def build_parser():
     prepare = subparsers.add_parser("prepare-specialists")
     prepare.add_argument("--openreview-root", required=True)
     prepare.add_argument("--output-dir", required=True)
-    prepare.add_argument("--validation-families", type=int, default=250)
-    prepare.add_argument("--meta-validation-families", type=int, default=250)
+    prepare.add_argument("--temporal-split-manifest", required=True)
+    prepare.add_argument("--coco-root", required=True)
+    prepare.add_argument("--validation-families", type=int, default=150)
+    prepare.add_argument("--meta-validation-families", type=int, default=150)
     prepare.add_argument("--max-train-families", type=int, default=2000)
     prepare.add_argument("--max-paper-chars", type=int, default=60000)
     prepare.add_argument("--seed", type=int, default=0)
@@ -323,9 +366,10 @@ def build_parser():
     )
 
     prepare_test = subparsers.add_parser("prepare-test")
-    prepare_test.add_argument("--openreview-root", required=True)
+    prepare_test.add_argument("--coco-root", required=True)
     prepare_test.add_argument("--output-dir", required=True)
     prepare_test.add_argument("--s2-cache", required=True)
+    prepare_test.add_argument("--temporal-split-manifest", required=True)
     prepare_test.add_argument("--max-paper-chars", type=int, default=60000)
 
     meta = subparsers.add_parser("prepare-meta")
@@ -410,7 +454,6 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     validation = [
         EvalItem.from_value(item) for item in _load_jsonl(str(validation_path))
     ]
-    task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
     data_root = Path(args.data_root).expanduser().resolve()
     manifest_path = (
         data_root / META_TASK / "manifest.json"
@@ -422,7 +465,46 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         if manifest_path.is_file()
         else {}
     )
+    if not getattr(args, "s2_retrieval_pool", ""):
+        args.s2_retrieval_pool = str(
+            manifest.get("semantic_scholar_cache") or ""
+        )
     formal = not _is_nonformal(args)
+    if formal and args.iterations % len(_seed_paths()) != 0:
+        raise SystemExit(
+            "Formal evolution requires equal lineage budgets: --iterations "
+            f"must be divisible by {len(_seed_paths())}."
+        )
+    if formal and not getattr(args, "coco_root", ""):
+        raise SystemExit("Formal execution requires configured --coco-root")
+    formal_gate = None
+    if formal:
+        formal_gate = run_formal_protocol_gate(
+            asset_manifest_path=args.asset_manifest,
+            temporal_split_manifest_path=args.temporal_split_manifest,
+            data_root=args.data_root,
+            task_id=task_id,
+            s2_pool_path=args.s2_retrieval_pool,
+            program_paths=_seed_paths(),
+            config_identity={
+                "task_id": task_id,
+                "experiment_seed": seed,
+                "iterations": args.iterations,
+                "static_size": args.static_size,
+                "rotating_size": args.rotating_size,
+                "temperature": args.temperature,
+                "episode_budget": args.episode_budget,
+                "task_model_name": args.task_model_name,
+                "reflector_model_name": args.reflector_model_name,
+                "judge_model_name": args.judge_model_name,
+                "generation": {
+                    "max_tokens": args.max_tokens,
+                    "retry_max_tokens": args.retry_max_tokens,
+                    "reasoning_effort": args.reasoning_effort,
+                },
+            },
+        )
+    task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
     if formal and task_id != META_TASK and not args.classifier_adapter:
         raise SystemExit(
             "Formal specialist evolution requires --classifier-adapter. "
@@ -449,6 +531,13 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             "Formal specialist evolution requires a complete, checksummed S2 "
             "cache covering every selected paper."
         )
+    if formal and task_id != META_TASK:
+        actual_s2_sha = task_toolkit.s2_retrieval_pool_sha256
+        expected_s2_sha = str(manifest.get("semantic_scholar_cache_sha256") or "")
+        if not actual_s2_sha or actual_s2_sha != expected_s2_sha:
+            raise SystemExit(
+                "Formal evolution requires the manifest-pinned frozen S2 pool."
+            )
     if formal and (
         not args.embedding_adapter or not args.embedding_revision
     ):
@@ -504,7 +593,22 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             Path(path).name: _sha256(Path(path)) for path in _seed_paths()
         },
         experiment_kind=_experiment_kind(args),
+        historical_manifest_sha256=(
+            formal_gate["historical_manifest_sha256"] if formal_gate else ""
+        ),
+        experiment_config_sha256=(
+            formal_gate["experiment_config_sha256"] if formal_gate else ""
+        ),
+        s2_asset_version="frozen-s2-temporal-v1" if formal_gate else "",
+        run_seed=seed,
+        seed_control_available=False,
     )
+    if formal_gate:
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "formal_gate.json").write_text(
+            json.dumps(formal_gate, ensure_ascii=False, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
     return run_evolution(
         _seed_paths(),
         episodes,
@@ -570,9 +674,78 @@ def _final_evaluate_suite(args):
         suite_manifest_path.read_text(encoding="utf-8")
     )
     meta_manifest = json.loads(meta_manifest_path.read_text(encoding="utf-8"))
+    test_manifest = json.loads(test_manifest_path.read_text(encoding="utf-8"))
+    args.s2_retrieval_pool = str(test_manifest.get("semantic_scholar_cache") or "")
+    asset_gate = validate_asset_manifest(
+        args.asset_manifest,
+        required_assets=(
+            "temporal_split_manifest",
+            "frozen_s2_pool",
+            "frozen_reviewer_identity",
+        ),
+    )
+    if not asset_gate["formal_ready"]:
+        raise RuntimeError(
+            f"D Asset Manifest is not formal-ready: {asset_gate['formal_blockers']}"
+        )
+    if asset_gate["verified_assets"]["frozen_s2_pool"]["resolved_path"] != str(
+        Path(args.s2_retrieval_pool).expanduser().resolve()
+    ):
+        raise RuntimeError("D S2 pool differs from the Asset Manifest")
+    _, temporal_zones = load_temporal_split_manifest(args.temporal_split_manifest)
+    temporal_audit = audit_four_zone_isolation(temporal_zones)
+    if not temporal_audit["passed"]:
+        raise RuntimeError("D gate failed four-zone temporal audit")
+    if int(test_manifest.get("paper_count", -1)) != len(
+        temporal_zones[FOUR_ZONES[3]]
+    ):
+        raise RuntimeError("D materialization does not match held-out manifest")
+    expected_d_ids_sha = hashlib.sha256(
+        "\n".join(
+            str(value["paper_id"]) for value in temporal_zones[FOUR_ZONES[3]]
+        ).encode("utf-8")
+    ).hexdigest()
+    if test_manifest.get("paper_ids_sha256") != expected_d_ids_sha:
+        raise RuntimeError("D paper identities differ from held-out manifest")
+    if not (test_manifest.get("semantic_scholar_temporal_audit") or {}).get("passed"):
+        raise RuntimeError("D frozen S2 asset lacks a passing future-leak audit")
     task_toolkit, _, judge_toolkit = _toolkits(args)
     specialist_results = {}
     specialist_answers = {}
+
+    def final_identity(task_id, program, selection_path, lineage):
+        config_identity = {
+            "suite_manifest_sha256": _sha256(suite_manifest_path),
+            "meta_manifest_sha256": _sha256(meta_manifest_path),
+            "test_manifest_sha256": _sha256(test_manifest_path),
+            "task_model_name": args.task_model_name,
+            "judge_model_name": args.judge_model_name,
+            "generation": {
+                "max_tokens": args.max_tokens,
+                "retry_max_tokens": args.retry_max_tokens,
+                "reasoning_effort": args.reasoning_effort,
+            },
+        }
+        return {
+            "candidate_id": f"frozen-{task_id}",
+            "lineage": str(lineage or "frozen-promoted"),
+            "replicate_id": "held-out-D-once",
+            "program_sha256": _sha256(program),
+            "historical_manifest_sha256": _sha256(selection_path),
+            "experiment_config_sha256": hashlib.sha256(
+                json.dumps(
+                    config_identity,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode()
+            ).hexdigest(),
+            "s2_asset_sha256": task_toolkit.s2_retrieval_pool_sha256,
+            "s2_asset_version": "frozen-s2-temporal-v1",
+            "run_seed": None,
+            "seed_control_available": False,
+            "generation_config": config_identity["generation"],
+        }
 
     def compact(evaluation):
         return {
@@ -631,6 +804,17 @@ def _final_evaluate_suite(args):
                 task_id=task_id,
                 judge_toolkit=judge_toolkit,
                 formal=True,
+            ),
+            benchmark_adapter_factory=CoCoMetricBenchmarkAdapter,
+            formal=True,
+            checkpoint_path=str(
+                output.with_suffix(output.suffix + f".{task_id}.checkpoint.json")
+            ),
+            run_identity=final_identity(
+                task_id,
+                program,
+                selection_path,
+                promoted.get("lineage"),
             ),
             write_timeout=args.write_timeout,
             read_timeout=args.read_timeout,
@@ -699,6 +883,17 @@ def _final_evaluate_suite(args):
             judge_toolkit=judge_toolkit,
             formal=True,
         ),
+        benchmark_adapter_factory=CoCoMetricBenchmarkAdapter,
+        formal=True,
+        checkpoint_path=str(
+            output.with_suffix(output.suffix + ".META.checkpoint.json")
+        ),
+        run_identity=final_identity(
+            META_TASK,
+            meta_program,
+            meta_selection_path,
+            meta_promoted.get("lineage"),
+        ),
         write_timeout=args.write_timeout,
         read_timeout=args.read_timeout,
     )
@@ -707,6 +902,10 @@ def _final_evaluate_suite(args):
     report = {
         "provenance": experiment_provenance(),
         "final_test": True,
+        "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
+        "benchmark_adapter_bypassed": False,
+        "asset_gate": asset_gate,
+        "four_zone_temporal_audit": temporal_audit,
         "test_feedback_used_for_evolution": False,
         "test_manifest": str(test_manifest_path),
         "test_manifest_sha256": _sha256(test_manifest_path),
@@ -751,6 +950,8 @@ def main():
         result = prepare_openreview_data(
             args.openreview_root,
             args.output_dir,
+            args.temporal_split_manifest,
+            args.coco_root,
             validation_families=args.validation_families,
             meta_validation_families=args.meta_validation_families,
             max_train_families=args.max_train_families,
@@ -760,9 +961,10 @@ def main():
         )
     elif args.command == "prepare-test":
         result = prepare_held_out_test_data(
-            args.openreview_root,
+            args.coco_root,
             args.output_dir,
             args.s2_cache,
+            args.temporal_split_manifest,
             max_paper_chars=args.max_paper_chars,
         )
     elif args.command == "prepare-meta":
@@ -802,6 +1004,7 @@ def main():
             raise SystemExit("--primary-seed must be included in --experiment-seeds")
         results = {}
         promoted = {}
+        promoted_by_lineage = {}
         for task_id in SPECIALIST_TASKS:
             results[task_id] = []
             for seed in seeds:
@@ -824,12 +1027,35 @@ def main():
                 "selection_mean": winner["best_score"],
                 "primary_seed": args.primary_seed,
             }
+            source_champions_path = Path(winner["output_dir"]) / "lineage_champions.json"
+            source_champions = json.loads(
+                source_champions_path.read_text(encoding="utf-8")
+            )
+            promoted_by_lineage[task_id] = {}
+            for lineage, entry in sorted(source_champions.items()):
+                lineage_program = (
+                    Path(args.output).expanduser().resolve()
+                    / "lineages"
+                    / lineage
+                    / task_id
+                    / "best_program.py"
+                )
+                lineage_program.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(entry["program"], lineage_program)
+                promoted_by_lineage[task_id][lineage] = {
+                    **entry,
+                    "program": str(lineage_program),
+                    "program_sha256": _sha256(lineage_program),
+                    "source_run": winner["output_dir"],
+                    "experiment_seed": args.primary_seed,
+                }
         result = {
             "provenance": experiment_provenance(),
             "experiment_seeds": seeds,
             "primary_seed": args.primary_seed,
             "results": results,
             "promoted": promoted,
+            "promoted_by_lineage": promoted_by_lineage,
             "meta_status": "run prepare-meta after freezing specialist winners",
         }
         manifest_path = Path(args.output).expanduser().resolve() / "suite_manifest.json"

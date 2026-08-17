@@ -8,9 +8,9 @@ contain CoCoReviewBench's released `opinion_groups`, `conflicts_validation`, or
 
 The frozen design is:
 
-- 20 effectiveness papers;
-- 20 separate frozen-memory-corpus papers;
-- `no_memory`, `seed_experience`, and `evolved`;
+- 20 pre-registered papers sampled only from frozen C;
+- 20 Historical papers sampled only from frozen A;
+- `no_memory`, lineage-specific `seed`, and lineage-specific `evolved`;
 - two unconditional replicates;
 - 120 complete AgentReview outputs;
 - no target writeback;
@@ -20,28 +20,26 @@ The frozen design is:
   evolution gain.
 
 The single source of configuration is
-`configs/effectiveness_screening_v1.json`.
+`configs/effectiveness_screening_v2.json`.
 
 At any point, inspect readiness without printing credential values:
 
 ```bash
 /data0/xyj/miniconda3/envs/env_shengao/bin/python \
   -m effectiveness_screening.preflight \
-  --config configs/effectiveness_screening_v1.json
+  --config configs/effectiveness_screening_v2.json
 ```
 
-## Current frozen data
+## Temporal data preparation
 
-`data/effectiveness_screening_v1/selection_audit.json` records the source
-checksums, sampling seeds, selected-set checksums, and leakage audit.
+After preparation, `data/effectiveness_screening_v2/selection_audit.json`
+records source checksums, sampling seeds, selected-set checksums, A/C membership
+and the four-zone temporal audit. The old v1 outputs are immutable legacy data
+and are not inputs to this design.
 
-The five required family overlaps are all zero:
-
-- effectiveness versus official test;
-- memory corpus versus official test;
-- effectiveness versus MSTAR-seen papers;
-- memory corpus versus MSTAR-seen papers;
-- effectiveness versus memory corpus.
+The frozen source manifest already proves A/B/C/D paper ID, normalized title and
+paper-family overlap are zero. Sampling additionally verifies the chosen A and C
+subsets retain that isolation.
 
 ## Preparation and execution order
 
@@ -49,7 +47,7 @@ Run commands from the AgentReview repository root with:
 
 ```bash
 PY=/data0/xyj/miniconda3/envs/env_shengao/bin/python
-CFG=configs/effectiveness_screening_v1.json
+CFG=configs/effectiveness_screening_v2.json
 ```
 
 The paper IDs have already been sampled. Do not rerun `select` after the
@@ -89,7 +87,7 @@ After all 20 historical reviews complete, freeze the shared raw library:
 ```bash
 $PY -m effectiveness_screening.memory_cache freeze-memory-library \
   --config "$CFG" \
-  --source-output-dir data/effectiveness_screening_v1/history_generation_no_memory
+  --source-output-dir data/effectiveness_screening_v2/history_generation_no_memory
 ```
 
 Compile the two program-specific KnowledgeItem caches offline:
@@ -130,11 +128,11 @@ ports. Do not use `main` without the pinned revision:
 ```bash
 hf download hexuandeng/ReviewSplit \
   --revision e405b49e472d1c4ddbf226eae7aded032a2d5c8a \
-  --local-dir /data0/xyj/shengao/CoCoReviewBench/model/split_model
+  --local-dir "$COCOREVIEWBENCH_ROOT/model/split_model"
 
 hf download hexuandeng/ReviewClassify \
   --revision 8607b97b893bf64be0de848609863093c7ecc095 \
-  --local-dir /data0/xyj/shengao/CoCoReviewBench/model/classify_model
+  --local-dir "$COCOREVIEWBENCH_ROOT/model/classify_model"
 ```
 
 Start the official vLLM services on ports 13099 and 13098, then run:
@@ -152,7 +150,7 @@ as proxy because the human correctness references are not official enriched
 CoCoReviewBench references.
 
 Have an independent evaluator fill
-`data/effectiveness_screening_v1/evaluation/blind_judge_results.jsonl` with:
+`data/effectiveness_screening_v2/evaluation/blind_judge_results.jsonl` with:
 
 ```json
 {"pair_id": "...", "winner": "A"}
@@ -168,6 +166,6 @@ Finally:
 $PY -m effectiveness_screening.summarize --config "$CFG"
 ```
 
-The screening gate determines only whether to consider a separately frozen
-official 3,900-paper CoCoReviewBench test. A failed gate requires component
+The screening gate determines only whether to consider the separately frozen
+900-paper D manifest drawn from the 3,900-paper CoCo source pool. A failed gate requires component
 diagnosis and is not a conclusion that evolution is ineffective.

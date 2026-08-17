@@ -34,14 +34,16 @@ Run all commands from this directory. The tested project interpreter is:
 
 ## Prepare specialist evolution data
 
-`train_clean.jsonl` supplies training and validation episodes. Work versions are
-grouped by `paperhash`/normalized title before splitting. Every work family found
-in `test.jsonl` is removed before sampling.
+The frozen CoCo temporal manifest supplies paper membership and work-family
+identity. A comes from <=2022 and B from 2023; the CLI does not randomly invent
+a new split.
 
 ```bash
 python -m memory_evolution.cli prepare-specialists \
   --openreview-root /data0/xyj/shengao/OpenReview \
+  --coco-root "$COCOREVIEWBENCH_ROOT" \
   --output-dir data/evolution \
+  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
   --s2-cache /path/to/frozen_semantic_scholar_cache.jsonl
 ```
 
@@ -50,12 +52,13 @@ No test records are written into the evolution directory. Formal evolution
 rejects datasets prepared without a frozen, checksummed S2 cache.
 It also reserves a third, family-disjoint `meta_validation` partition that the
 specialist evolution never evaluates; only this partition validates META.
-The cache must contain every selected paper ID, using an empty list when a
-completed retrieval found no related work; partial caches are rejected.
+The cache must contain every selected paper ID plus target cutoff,
+retrieval method/version/config and result SHA. Unknown-date or post-cutoff
+results, legacy cache records and partial caches are rejected.
 
 ## Evolve the five specialists
 
-A formal run uses the paper defaults: three seed programs, 20 mutations, static
+A formal run uses three seed programs and 21 mutations (7 per lineage), static
 validation size 25, rotating feedback size 5, train-to-validation budget 5:1,
 parent softmax temperature 0.15, three compile repairs, and five independent
 evolution seeds.
@@ -64,6 +67,9 @@ evolution seeds.
 python -m memory_evolution.cli evolve-specialists \
   --data-root data/evolution \
   --output runs/formal \
+  --asset-manifest configs/asset_manifest_v2.json \
+  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
+  --coco-root "$COCOREVIEWBENCH_ROOT" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <immutable-ReviewSplit-commit> \
   --review-classify-revision <immutable-ReviewClassify-commit> \
@@ -173,12 +179,13 @@ Candidate-supplied category labels are ignored. Formal labels come from the
 frozen classifier adapter. Meta fitness is the harmonic mean of adjudication,
 human-reference agreement, and decision/calibration groups.
 
-Prepare the sealed test inputs without modifying `OpenReview/test.jsonl`:
+Materialize only the frozen D manifest from the CoCo source pool:
 
 ```bash
 python -m memory_evolution.cli prepare-test \
-  --openreview-root /data0/xyj/shengao/OpenReview \
+  --coco-root "$COCOREVIEWBENCH_ROOT" \
   --output-dir data/sealed_test \
+  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
   --s2-cache /path/to/frozen_semantic_scholar_cache.jsonl
 ```
 
@@ -192,6 +199,9 @@ python -m memory_evolution.cli final-evaluate-suite \
   --test-data-root data/sealed_test \
   --program-root runs/formal \
   --output runs/formal/final_suite_test.json \
+  --asset-manifest configs/asset_manifest_v2.json \
+  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
+  --coco-root "$COCOREVIEWBENCH_ROOT" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <same-ReviewSplit-commit> \
   --review-classify-revision <same-ReviewClassify-commit> \
@@ -226,12 +236,12 @@ claim official CoCoReviewBench Correctness.
 
 /data0/xyj/miniconda3/envs/env_shengao/bin/python
   viewer.py
-  --output_dir /data0/xyj/shengao/AgentReview_0722/AgentReview/outputs
+  --output_dir outputs
   --host 0.0.0.0
   --port 7861
 
 /data0/xyj/miniconda3/envs/env_shengao/bin/python
   -m evolution_viewer.app
-  --runs-dir /data0/xyj/shengao/AgentReview_0722/AgentReview/runs/pilot_full_iter5_202607300117
+  --runs-dir runs/pilot_full_iter5_202607300117
   --host 0.0.0.0
   --port 7862

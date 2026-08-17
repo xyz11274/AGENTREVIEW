@@ -10,8 +10,9 @@
 
 ## Fixed runtime topology
 
-1. `agentreview/paper_review_player_md.py` reads the paper and retrieves related
-   work.
+1. `agentreview/paper_review_player_md.py` builds the canonical rich-paper
+   context. Frozen S2 data is a separate optional capability and is never
+   injected by default.
 2. `run_single_paper_review_cli.py` loads six independent promoted
    MemoryPrograms.
 3. QUAL, CLAR, SIGN, ORIG and POL review independently.
@@ -38,8 +39,9 @@ targets.
 
 - Exactly three M★ population seeds: vector search, LLM summarizer and
   experience learner.
-- Six independent pools and lineages.
-- Formal defaults: 20 iterations, static 25, rotating 5, ratio 5:1,
+- Six role pools; inside each specialist pool the three Seed code lineages stay
+  independent and runtime Memory State is never inherited across Candidates.
+- Formal defaults: 21 iterations (7 per lineage), static 25, rotating 5, ratio 5:1,
   temperature 0.15, three compile repairs, five experiment seeds.
 - Static cases never enter Reflector feedback. Rotating feedback may expose at
   most two weighted failures and two successes.

@@ -30,6 +30,8 @@ Historical Set 中产生的经验可以写入 Memory；Evolution Validation 产�
 这些数据用于后续进行 performance–cost 分析，不作为强迫所有 Program 使用完全相同资源量的要求。
 
 1. **反馈通道收窄**：reflector / mutation 只能获得 scalar fitness、不泄漏答案的 structured metrics、不含 gold 内容的错误类型；judge rationale 若复述 gold 不得回灌（ADR-0005 的 Human Reference Boundary 旁路规则）。
+2. **安全续跑**：同一 Candidate × lineage × replicate × Program SHA × Historical manifest × config 可从自身 checkpoint 恢复；每篇 A 完成后原子保存 Memory snapshot。completed IDs 必须是 frozen order 的严格 prefix；中断论文整篇重跑；目录中存在 prefix 之外的有效 experience record 时 formal fail fast。
+3. **lineage 公平预算**：正式搜索的 mutation iterations 必须能被三条 lineage 整除；当前默认由 20 改为 21，即每条 lineage 7 次机会。replicate 记录显式 ID、run seed、generation config、Program SHA 和 Memory state identity；当前模型后端不承诺 deterministic seed，必须记录 `seed_control_available=false`。
 
 ## Considered Options
 

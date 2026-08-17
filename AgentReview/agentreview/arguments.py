@@ -155,8 +155,13 @@ def parse_args():
     )
 
     parser.add_argument(
-    "--disable_s2_retrieval", action="store_true",
-    help="Skip Semantic Scholar related-work retrieval entirely (references section will be empty)."
+        "--disable_s2_retrieval", action="store_true",
+        help="Deprecated compatibility flag; S2 is never injected by default."
+    )
+
+    parser.add_argument(
+        "--s2_retrieval_pool", type=str, default=None,
+        help="Frozen paper-specific Semantic Scholar pool exposed as an optional harness capability."
     )
 
     parser.add_argument(
@@ -170,7 +175,7 @@ def parse_args():
     )
 
     parser.add_argument(
-    "--memory_mode", type=str, default="existing",
+        "--memory_mode", type=str, default="none",
     choices=["none", "existing", "mstar_program"],
     help="Select no memory, the existing AgentReview retriever, or an evolved MSTAR memory program."
     )
@@ -259,8 +264,28 @@ def parse_args():
     )
 
     parser.add_argument(
-    "--reviewer_paper_max_chars", type=int, default=35000,
-    help="Maximum paper-context characters sent to each specialist reviewer."
+    "--paper_context_max_chars", type=int, default=60000,
+    help="Canonical paper-context budget shared by Evolution, historical replay, specialists, META, and deployment."
+    )
+
+    parser.add_argument(
+    "--replicate_id", type=str, default="",
+    help="Explicit replicate/run identity recorded in every output artifact."
+    )
+
+    parser.add_argument(
+    "--run_seed", type=int, default=None,
+    help="Requested generation seed provenance; current backend records but does not enforce it."
+    )
+
+    parser.add_argument(
+    "--strict_history_resume", action="store_true",
+    help="Enable identity-bound prefix checkpoint/resume for A-zone replay."
+    )
+
+    parser.add_argument(
+    "--reviewer_paper_max_chars", type=int, default=None,
+    help="Deprecated alias for --paper_context_max_chars."
     )
 
     parser.add_argument(
@@ -269,8 +294,8 @@ def parse_args():
     )
 
     parser.add_argument(
-    "--meta_paper_max_chars", type=int, default=30000,
-    help="Maximum paper-context characters sent to the final meta-reviewer; specialist reviews are always included in full."
+    "--meta_paper_max_chars", type=int, default=None,
+    help="Deprecated alias for --paper_context_max_chars."
     )
 
     parser.add_argument(
@@ -286,6 +311,26 @@ def parse_args():
 
     
     args = parser.parse_args()
+
+    aliases = [
+        value
+        for value in (args.reviewer_paper_max_chars, args.meta_paper_max_chars)
+        if value is not None
+    ]
+    if aliases:
+        if len(set(aliases + [args.paper_context_max_chars])) > 1 and (
+            args.paper_context_max_chars != 60000
+        ):
+            parser.error(
+                "paper context aliases disagree; use one --paper_context_max_chars value"
+            )
+        if len(set(aliases)) > 1:
+            parser.error(
+                "reviewer/meta paper context budgets must be identical"
+            )
+        args.paper_context_max_chars = aliases[0]
+    args.reviewer_paper_max_chars = args.paper_context_max_chars
+    args.meta_paper_max_chars = args.paper_context_max_chars
 
     # Ensure necessary directories exist
     os.makedirs(args.visual_dir, exist_ok=True)

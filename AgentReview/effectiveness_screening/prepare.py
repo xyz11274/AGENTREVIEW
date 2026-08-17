@@ -7,12 +7,19 @@ import hashlib
 import json
 import os
 import random
+import re
 import shutil
 import time
+from datetime import date
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
+from agentreview.paper_context import (
+    CANONICAL_PAPER_CONTEXT_VERSION,
+    DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    build_canonical_paper_context,
+)
 from agentreview.paper_review_player_md import format_refs
 from agentreview.source_map import (
     build_source_anchors,
@@ -25,11 +32,13 @@ from memory_evolution.agentreview_data import (
     _category_reference,
     _meta_reference,
 )
+from memory_evolution.assets import FOUR_ZONES, load_temporal_split_manifest
 from memory_evolution.tasks import SPECIALIST_TASKS
 
 
-DESIGN_VERSION = "effectiveness-screening-v1"
+DESIGN_VERSION = "effectiveness-screening-v2-temporal"
 STRATA = ("ICLR-accept", "ICLR-reject", "NeurIPS-accept", "NeurIPS-reject")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def sha256_file(path: Path) -> str:
@@ -205,6 +214,35 @@ def load_config(path: Path) -> Dict[str, Any]:
         raise ValueError("The screening config must explicitly declare proxy status")
     value["_config_path"] = str(source)
     value["_config_sha256"] = sha256_file(source)
+    value["_recorded_paths"] = {}
+    external_roots = {}
+    for name, recorded in dict(value.get("external_roots") or {}).items():
+        candidate = Path(str(recorded)).expanduser()
+        if not candidate.is_absolute():
+            candidate = PROJECT_ROOT / candidate
+        external_roots[str(name)] = str(candidate.resolve())
+    value["external_roots"] = external_roots
+    for name in (
+        "openreview_root",
+        "evolution_data_root",
+        "evolved_program_root",
+        "output_root",
+        "temporal_split_manifest",
+    ):
+        if not value.get(name):
+            continue
+        recorded = str(value.get(name) or "")
+        value["_recorded_paths"][name] = recorded
+        if recorded.startswith("external://"):
+            root_name = recorded[len("external://") :].strip("/")
+            if root_name not in external_roots:
+                raise KeyError(f"External root is not configured: {root_name}")
+            value[name] = external_roots[root_name]
+            continue
+        candidate = Path(recorded).expanduser()
+        if not candidate.is_absolute():
+            candidate = PROJECT_ROOT / candidate
+        value[name] = str(candidate.resolve())
     lock_path = Path(value["output_root"]).expanduser().resolve() / "design_lock.json"
     if lock_path.is_file():
         lock = json.loads(lock_path.read_text(encoding="utf-8"))
@@ -306,15 +344,12 @@ def _eligible(
     record: Mapping[str, Any],
     family: str,
     *,
-    test_families: set[str],
-    evolution_families: set[str],
     markdown_by_id: Mapping[str, Path],
+    allowed_paper_ids: set[str] | None = None,
 ) -> tuple[bool, List[str]]:
     reasons: List[str] = []
-    if family in test_families:
-        reasons.append("official_test_family")
-    if family in evolution_families:
-        reasons.append("mstar_seen_family")
+    if str(record.get("id") or "") not in set(allowed_paper_ids or set()):
+        reasons.append("outside_frozen_temporal_development_zones")
     if decision_stratum(record) not in STRATA:
         reasons.append("unsupported_decision_or_venue")
     if str(record.get("id") or "") not in markdown_by_id:
@@ -388,6 +423,14 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
     test_path = openreview_root / "test.jsonl"
     train = list(iter_jsonl(train_path))
     test = list(iter_jsonl(test_path))
+    _, temporal_zones = load_temporal_split_manifest(
+        config["temporal_split_manifest"]
+    )
+    temporal_entries = {
+        str(value["paper_id"]): value
+        for zone in (FOUR_ZONES[0], FOUR_ZONES[2])
+        for value in temporal_zones[zone]
+    }
     families = _assign_work_families(train + test)
     train_families = families[: len(train)]
     test_families = set(families[len(train) :])
@@ -409,14 +452,14 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
         eligible, reasons = _eligible(
             record,
             family,
-            test_families=test_families,
-            evolution_families=evolution_families,
             markdown_by_id=md_index,
+            allowed_paper_ids=set(temporal_entries),
         )
         if not eligible:
             rejection_counts.update(reasons)
             continue
         paper_id = str(record.get("id") or "")
+        family = str(temporal_entries[paper_id]["paper_family"])
         scores = reviewer_overall_scores(record)
         gap = max(scores) - min(scores) if len(scores) >= 2 else None
         candidate = {
@@ -431,22 +474,22 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
             "score_gap_ge_4": gap is not None and gap >= 4.0,
             "markdown_source": str(md_index[paper_id]),
             "markdown_sha256": sha256_file(md_index[paper_id]),
+            "temporal_zone": temporal_entries[paper_id]["zone"],
+            "paper_review_cutoff": temporal_entries[paper_id]["paper_review_cutoff"],
         }
         candidates.append(candidate)
         records_by_id[paper_id] = record
 
     per_stratum = int(config["sampling"]["papers_per_stratum"])
     effectiveness = _sample_stratified(
-        candidates,
+        [value for value in candidates if value["temporal_zone"] == FOUR_ZONES[2]],
         seed=int(config["sampling"]["effectiveness_seed"]),
         per_stratum=per_stratum,
         controversial_total=int(config["sampling"]["controversial_total"]),
     )
     effectiveness_families = {value["work_family"] for value in effectiveness}
     memory_candidates = [
-        value
-        for value in candidates
-        if value["work_family"] not in effectiveness_families
+        value for value in candidates if value["temporal_zone"] == FOUR_ZONES[0]
     ]
     memory = _sample_stratified(
         memory_candidates,
@@ -495,14 +538,15 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
         "source": {
             "train_clean": str(train_path),
             "train_clean_sha256": sha256_file(train_path),
-            "sealed_test": str(test_path),
-            "sealed_test_sha256": sha256_file(test_path),
+            "temporal_split_manifest": config["temporal_split_manifest"],
+            "temporal_split_manifest_sha256": sha256_file(
+                Path(config["temporal_split_manifest"])
+            ),
             "evolution_data_root": str(evolution_data_root),
         },
         "counts": {
             "train_records": len(train),
             "test_records": len(test),
-            "test_families": len(test_families),
             "mstar_seen_paper_ids": len(evolution_ids),
             "mstar_seen_families": len(evolution_families),
             "eligible_records": len(candidates),
@@ -514,15 +558,11 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
         },
         "rejection_counts": dict(sorted(rejection_counts.items())),
         "invariants": {
-            "effectiveness_vs_test_family_overlap": len(
-                effectiveness_families & test_families
+            "effectiveness_outside_C": sum(
+                value["temporal_zone"] != FOUR_ZONES[2] for value in effectiveness
             ),
-            "memory_vs_test_family_overlap": len(memory_families & test_families),
-            "effectiveness_vs_mstar_family_overlap": len(
-                effectiveness_families & evolution_families
-            ),
-            "memory_vs_mstar_family_overlap": len(
-                memory_families & evolution_families
+            "memory_outside_A": sum(
+                value["temporal_zone"] != FOUR_ZONES[0] for value in memory
             ),
             "effectiveness_vs_memory_family_overlap": len(
                 effectiveness_families & memory_families
@@ -565,7 +605,15 @@ def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
     last_request_at = None
     for index, value in enumerate(selected, start=1):
         paper_id = str(value["paper_id"])
-        if paper_id in existing and existing[paper_id].get("status") == "ok":
+        cutoff_text = str(value.get("paper_review_cutoff") or "")
+        if not cutoff_text:
+            raise ValueError(f"Missing paper_review_cutoff for {paper_id}")
+        if (
+            paper_id in existing
+            and existing[paper_id].get("status") == "ok"
+            and existing[paper_id].get("paper_review_cutoff") == cutoff_text
+            and existing[paper_id].get("retrieval_version") == "s2-search-temporal-v1"
+        ):
             continue
         title = str(value["title"])
         queries = semantic_scholar_query_candidates(title)
@@ -584,8 +632,29 @@ def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
             if papers:
                 resolved_query = query
                 break
+        cutoff = date.fromisoformat(cutoff_text[:10])
+        accepted = []
+        rejected_future_or_unknown = []
+        for paper in papers:
+            year = paper.get("year")
+            if not year:
+                rejected_future_or_unknown.append(paper)
+                continue
+            publication = date(int(year), 12, 31)
+            if publication > cutoff:
+                rejected_future_or_unknown.append(paper)
+                continue
+            accepted.append(paper)
+        papers = accepted
+        retrieval_config = {
+            "limit": int(config["paper_context"]["max_retrieved_refs"]),
+            "fields": "title,year,abstract,authors.name,citationCount,url,externalIds",
+            "future_or_unknown_date_policy": "reject",
+        }
         existing[paper_id] = {
             "paper_id": paper_id,
+            "target_identity": paper_id,
+            "paper_review_cutoff": cutoff_text,
             "query": title,
             "queries_attempted": (
                 queries
@@ -595,7 +664,12 @@ def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
             "resolved_query": resolved_query,
             "retrieved_papers": papers,
             "empty_result_confirmed": not papers,
-            "retrieval_policy": "s2-search-paced-v2",
+            "retrieval_method": "Semantic Scholar Graph API title search",
+            "retrieval_version": "s2-search-temporal-v1",
+            "top_k": retrieval_config["limit"],
+            "retrieval_config": retrieval_config,
+            "result_sha256": canonical_json_sha256(papers),
+            "future_or_unknown_results_rejected": len(rejected_future_or_unknown),
             "status": "ok",
         }
         write_jsonl(destination, [existing[key] for key in sorted(existing)])
@@ -654,19 +728,36 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
                 "references_text": format_refs(retrieved_papers),
                 "source_anchors": anchors,
                 "frozen_context": True,
+                "s2_usage": {
+                    "available_as_frozen_capability": True,
+                    "used": False,
+                    "default_injection": False,
+                },
+                "paper_review_cutoff": selected["paper_review_cutoff"],
             }
-            extractor_content = (
-                "Here is the paper content in Markdown:\n\n"
-                "=== BEGIN PAPER (MD) ===\n"
-                + frozen_markdown.read_text(encoding="utf-8", errors="ignore")
-                + "\n=== END PAPER (MD) ===\n\n"
-                "=== SOURCE ANCHORS ===\n"
-                + format_source_anchors(anchors)
-                + "\n=== END SOURCE ANCHORS ===\n\n"
-                "=== SEMANTIC SCHOLAR REFERENCES ===\n"
-                + last_memory["references_text"]
-                + "\n=== END REFERENCES ==="
+            venue = str(selected.get("conference") or selected.get("venue") or "")
+            year_match = re.search(r"(?:19|20)\d{2}", venue)
+            canonical = build_canonical_paper_context(
+                str(frozen_markdown),
+                paper_id=paper_id,
+                title=title,
+                venue=venue,
+                year=str(selected.get("year") or (year_match.group(0) if year_match else "")),
+                reviewer_role="SPECIALIST",
+                max_chars=int(
+                    config.get("generation", {}).get(
+                        "paper_context_max_chars",
+                        DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+                    )
+                ),
+                internal_provenance={
+                    "split": split_name,
+                    "source_path": str(source),
+                },
             )
+            last_memory["source_anchors"] = canonical.source_anchors
+            last_memory["candidate_visible_metadata"] = canonical.candidate_metadata
+            last_memory["paper_context_version"] = canonical.version
             bundle = {
                 "design_version": DESIGN_VERSION,
                 "paper_id": paper_id,
@@ -675,7 +766,12 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
                 "paper_markdown_relative_path": "paper.md",
                 "paper_markdown_sha256": sha256_file(frozen_markdown),
                 "last_memory": last_memory,
-                "extractor_content": extractor_content,
+                "extractor_content": canonical.text,
+                "candidate_visible_metadata": canonical.candidate_metadata,
+                "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+                "paper_review_cutoff": selected["paper_review_cutoff"],
+                "temporal_zone": selected["temporal_zone"],
+                "s2_default_injection": False,
                 "contains_human_review_data": False,
             }
             bundle_path = paper_dir / "bundle.json"
@@ -697,6 +793,8 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
         "design_version": DESIGN_VERSION,
         "contains_human_review_data": False,
         "frozen_related_work_sha256": sha256_file(related_path),
+        "s2_default_injection": False,
+        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
         "paper_count": len(manifest_items),
         "items": manifest_items,
     }

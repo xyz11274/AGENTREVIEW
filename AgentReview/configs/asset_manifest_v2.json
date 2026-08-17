@@ -1,0 +1,76 @@
+{
+  "manifest_version": "mstar-assets-v2-temporal",
+  "external_roots": {
+    "openreview": "/data0/xyj/shengao/OpenReview",
+    "cocoreviewbench": "/data0/xyj/shengao/CoCoReviewBench"
+  },
+  "assets": {
+    "temporal_split_manifest": {
+      "path": "configs/coco_temporal_split_v1/manifest.json",
+      "sha256": "0b040aefcef39bb4aa89869f941233ff5025665da50351ca40faa65e6443dc26",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "A+B+C+D"
+    },
+    "zone_A_historical_experience": {
+      "path": "configs/coco_temporal_split_v1/historical_experience.jsonl",
+      "sha256": "8ed48ae171cdcac1e8af26495a7dbecd3edb28854d6e5ad795bcb19e245eced2",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "historical_experience"
+    },
+    "zone_B_evolution_validation": {
+      "path": "configs/coco_temporal_split_v1/evolution_validation.jsonl",
+      "sha256": "167f22a24952c1afd9e00bc88d7d1061a75d6436b60a109257ea94f1d7a1657f",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "evolution_validation"
+    },
+    "zone_C_effectiveness_holdout": {
+      "path": "configs/coco_temporal_split_v1/effectiveness_holdout.jsonl",
+      "sha256": "ef82409d6ecc0ba64aa0007ad3b34c0ab9aa4aafc231d3e1284bcabb5dae5a61",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "effectiveness_holdout"
+    },
+    "zone_D_held_out_benchmark_test": {
+      "path": "configs/coco_temporal_split_v1/held_out_benchmark_test.jsonl",
+      "sha256": "360e4e0ea6200594b8eff3dbe4fd5401387ac7df4050a6d5f7655ededd4be50f",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "held_out_benchmark_test"
+    },
+    "seed_vector_search": {
+      "path": "memory_evolution/seeds/vector_search.py",
+      "sha256": "45ed77aaef8ac54a2955192ee61a85b66b7f4667f9c34d1bb302ddd2a7353bda",
+      "version": "seed-vector-search-v1",
+      "split": "program"
+    },
+    "seed_llm_summarizer": {
+      "path": "memory_evolution/seeds/llm_summarizer.py",
+      "sha256": "0f120fcd98f0d99bcab6709b08f5165b9194646ea46352b2a5ddfaafb505652f",
+      "version": "seed-llm-summarizer-v1",
+      "split": "program"
+    },
+    "seed_experience_learner": {
+      "path": "memory_evolution/seeds/experience_learner.py",
+      "sha256": "2d8954a65c596721df3e832c5a23ee1d104920eb8a23e19b34783c01971eb5d8",
+      "version": "seed-experience-learner-v1",
+      "split": "program"
+    },
+    "frozen_reviewer_identity": {
+      "path": "REVIEW_Request.md",
+      "sha256": "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
+      "version": "frozen-reviewer-identity-v1",
+      "split": "program"
+    },
+    "temporal_split_generator": {
+      "path": "scripts/build_coco_temporal_split.py",
+      "sha256": "b70bda74f32a7f7903f13fded7b87bd60900232eb8105dec28b7126b87879105",
+      "version": "coco-temporal-paper-split-v1",
+      "split": "infrastructure"
+    }
+  },
+  "formal_ready": false,
+  "formal_blockers": [
+    "frozen_s2_pool is not yet generated with frozen-s2-temporal-v1 provenance",
+    "A/B task bundles must be regenerated from the temporal split manifest",
+    "post-protocol promoted programs do not exist"
+  ],
+  "supersedes": "configs/asset_manifest_v1.json"
+}

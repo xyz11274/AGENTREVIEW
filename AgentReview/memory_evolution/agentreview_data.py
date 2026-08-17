@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from agentreview.memory_library import infer_reviewer_dimension
+from agentreview.paper_context import (
+    CANONICAL_PAPER_CONTEXT_VERSION,
+    DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    candidate_visible_metadata,
+    format_canonical_paper_context,
+)
 from agentreview.source_map import (
     build_source_anchors,
     format_source_anchors,
@@ -15,6 +21,9 @@ from agentreview.source_map import (
 )
 
 from .tasks import META_TASK, SPECIALIST_TASKS
+from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
+from .assets import FOUR_ZONES, load_temporal_split_manifest, sha256_file
+from .toolkit import validate_frozen_s2_pool
 
 
 def normalize_title(value: str) -> str:
@@ -158,23 +167,42 @@ def _format_related_work(papers: Sequence[Dict[str, Any]]) -> str:
 def build_reviewer_memory_episode_text(
     record: Dict[str, Any], reviewer_name: str, review: str
 ) -> str:
-    """Format an online write episode without changing the frozen reviewer role."""
-    reference_titles = [
-        paper.get("title", "")
-        for paper in record.get("retrieved_papers", [])
-        if paper.get("title")
-    ]
-    return "\n".join(
-        [
-            f"Paper title: {record.get('paper_title', '')}",
-            f"Reviewer role: {reviewer_name}",
-            f"Review dimension: {infer_reviewer_dimension(reviewer_name) or 'META'}",
-            "Related references:",
-            *[f"- {title}" for title in reference_titles[:10]],
-            "",
-            "Completed review:",
-            str(review),
-        ]
+    """Format one self-generated experience through the canonical paper input."""
+    dimension = infer_reviewer_dimension(reviewer_name) or "META"
+    paper_path = Path(str(record.get("paper_md_path") or "")).expanduser()
+    visible = dict(record.get("candidate_visible_metadata") or {})
+    paper_id = str(record.get("sample_id") or record.get("paper_id") or "")
+    title = str(record.get("paper_title") or visible.get("title") or paper_id)
+    if paper_path.is_file():
+        from agentreview.paper_context import build_canonical_paper_context
+
+        canonical = build_canonical_paper_context(
+            str(paper_path),
+            paper_id=paper_id,
+            title=title,
+            venue=str(visible.get("venue") or ""),
+            year=visible.get("year") or "",
+            reviewer_role=dimension,
+            max_chars=int(
+                record.get("paper_context_max_chars")
+                or DEFAULT_PAPER_CONTEXT_MAX_CHARS
+            ),
+            internal_provenance={"paper_md_path": str(paper_path.resolve())},
+        ).text
+    else:
+        # Legacy review records may no longer have a resolvable Markdown file.
+        # They remain readable for historical analysis, but formal preflight
+        # requires canonical bundles and therefore never takes this branch.
+        canonical = (
+            f"paper_id: {paper_id}\n"
+            f"title: {title}\n"
+            f"reviewer_role: {dimension}"
+        )
+    return (
+        f"{canonical}\n\n"
+        "SELF-GENERATED REVIEW EXPERIENCE\n"
+        f"Reviewer name: {reviewer_name}\n"
+        f"{review}"
     ).strip()
 
 
@@ -272,30 +300,65 @@ def _paper_question(
     title: str,
     paper_text: str,
     source_anchor_text: str,
-    related_work_text: str,
+    related_work_text: str = "",
+    *,
+    paper_id: str = "",
+    venue: str = "",
+    year: Any = "",
+    max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
 ) -> str:
+    # ``related_work_text`` remains in the signature for callers of historical
+    # snapshots, but is deliberately not injected.  Frozen S2 data is exposed
+    # through a separate optional capability.
+    del related_work_text
+    anchors = []
+    for line in str(source_anchor_text or "").splitlines():
+        match = re.match(
+            r"^(SRC-\d+)\s*\|\s*page=([^|]+)\s*\|\s*type=([^|]+)\s*\|\s*text=(.*)$",
+            line,
+        )
+        if not match:
+            continue
+        page_value = match.group(2).strip()
+        try:
+            page_value = int(page_value)
+        except ValueError:
+            pass
+        anchors.append(
+            {
+                "source_id": match.group(1),
+                "page_idx": page_value,
+                "type": match.group(3).strip(),
+                "text": match.group(4).strip(),
+            }
+        )
+    visible = candidate_visible_metadata(
+        paper_id=paper_id,
+        title=title,
+        venue=venue,
+        year=year,
+        reviewer_role=task_id,
+    )
+    context = format_canonical_paper_context(
+        paper_text,
+        visible,
+        anchors,
+        max_chars=max_paper_chars,
+    )
     return (
-        f"Review task: {task_id}\n"
-        f"Paper title: {title}\n\n"
-        "Paper Markdown:\n"
-        f"{paper_text}\n\n"
-        "=== SOURCE ANCHORS ===\n"
-        f"{source_anchor_text}\n"
-        "=== END SOURCE ANCHORS ===\n\n"
-        "=== FROZEN RELATED-WORK CACHE ===\n"
-        f"{related_work_text}\n"
-        "=== END FROZEN RELATED-WORK CACHE ===\n\n"
+        f"Review task: {task_id}\n\n{context}\n\n"
         f"Return the complete {task_id} specialist review using the frozen output protocol."
     )
 
 
-def _training_episode(question: str, reference: str) -> str:
-    return (
-        "TRAINING INPUT\n"
-        f"{question}\n\n"
-        "VERIFIED HUMAN REFERENCE OPINIONS\n"
-        f"{reference}"
-    )
+def _training_episode(question: str, reference: str = "") -> str:
+    """Return a candidate-visible historical task with no evaluator reference.
+
+    ``reference`` is accepted only for source compatibility with old callers;
+    using it in the returned episode would violate the Human Reference Boundary.
+    """
+    del reference
+    return "HISTORICAL REVIEW TASK\n" + str(question)
 
 
 def _select_families(
@@ -331,15 +394,20 @@ def _select_families(
 def prepare_openreview_data(
     openreview_root: str,
     output_dir: str,
-    validation_families: int = 250,
-    meta_validation_families: int = 250,
+    temporal_split_manifest: str,
+    coco_root: Optional[str] = None,
+    validation_families: int = 150,
+    meta_validation_families: int = 150,
     max_train_families: Optional[int] = 2000,
-    max_paper_chars: int = 60000,
+    max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     seed: int = 0,
     s2_cache_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create five specialist datasets; the official test file remains untouched."""
+    """Create A/B specialist data from the frozen temporal paper manifest."""
     source_root = Path(openreview_root).expanduser().resolve()
+    markdown_root = (
+        Path(coco_root).expanduser().resolve() if coco_root else source_root
+    )
     train_path = source_root / "train_clean.jsonl"
     test_path = source_root / "test.jsonl"
     if not train_path.is_file() or not test_path.is_file():
@@ -349,24 +417,72 @@ def prepare_openreview_data(
 
     train_records = list(_iter_jsonl(train_path))
     test_records = list(_iter_jsonl(test_path))
-    combined = train_records + test_records
-    family_keys = _assign_work_families(combined)
-    test_families = set(family_keys[len(train_records) :])
+    split_summary, zones = load_temporal_split_manifest(temporal_split_manifest)
+    a_entries = zones[FOUR_ZONES[0]]
+    b_entries = zones[FOUR_ZONES[1]]
+    allowed_entries = {
+        str(value["paper_id"]): value for value in [*a_entries, *b_entries]
+    }
+    # CoCo's 3,900-paper source pool is mirrored by OpenReview/test.jsonl in
+    # this checkout. Combining by explicit paper identity also supports small
+    # fixtures and avoids inferring membership from a directory/split name.
+    by_id = {
+        str(record.get("id") or ""): record
+        for record in [*train_records, *test_records]
+    }
+    if coco_root:
+        source_files = {
+            str(value.get("source_asset") or "").rsplit("/", 1)[-1]
+            for value in [*a_entries, *b_entries]
+        }
+        for filename in sorted(source_files):
+            path = markdown_root / "benchmark" / filename
+            if not path.is_file():
+                raise FileNotFoundError(f"Frozen CoCo source file missing: {path}")
+            for record in _iter_jsonl(path):
+                paper_id = str(record.get("id") or "")
+                if paper_id in allowed_entries:
+                    by_id[paper_id] = record
+    missing_source = sorted(set(allowed_entries) - set(by_id))
+    if missing_source:
+        raise ValueError(
+            f"OpenReview source is missing {len(missing_source)} temporal A/B papers"
+        )
+    a_families_ordered = list(
+        dict.fromkeys(str(value["paper_family"]) for value in a_entries)
+    )
+    if max_train_families is not None:
+        a_families_ordered = a_families_ordered[: max(1, int(max_train_families))]
+    train_families = set(a_families_ordered)
+    b_families = sorted(
+        {str(value["paper_family"]) for value in b_entries},
+        key=lambda value: hashlib.sha256(
+            f"{split_summary['version']}:B-internal:{seed}:{value}".encode()
+        ).hexdigest(),
+    )
+    requested_b = max(0, validation_families) + max(0, meta_validation_families)
+    if requested_b > len(b_families):
+        raise ValueError(
+            f"B internal allocation requests {requested_b} families, "
+            f"but frozen B contains {len(b_families)}"
+        )
+    validation_family_set = set(b_families[:validation_families])
+    meta_validation_family_set = set(
+        b_families[validation_families:requested_b]
+    )
     source_records = []
-    for record, family in zip(train_records, family_keys[: len(train_records)]):
-        if family in test_families:
+    for entry in [*a_entries, *b_entries]:
+        family = str(entry["paper_family"])
+        if family not in (
+            train_families | validation_family_set | meta_validation_family_set
+        ):
             continue
-        copied = dict(record)
+        copied = dict(by_id[str(entry["paper_id"])])
         copied["_mstar_work_family"] = family
+        copied["_paper_review_cutoff"] = entry["paper_review_cutoff"]
+        copied["_temporal_zone"] = entry["zone"]
         source_records.append(copied)
     s2_cache, s2_cache_sha256 = _load_s2_cache(s2_cache_path)
-    train_families, validation_family_set, meta_validation_family_set = _select_families(
-        source_records,
-        validation_families=validation_families,
-        meta_validation_families=meta_validation_families,
-        max_train_families=max_train_families,
-        seed=seed,
-    )
     allowed_families = (
         train_families | validation_family_set | meta_validation_family_set
     )
@@ -375,6 +491,25 @@ def prepare_openreview_data(
     ]
     required_s2_ids = {str(record.get("id") or "") for record in records}
     missing_s2_ids = sorted(required_s2_ids - set(s2_cache))
+    cutoff_by_id = {
+        str(record.get("id") or ""): str(record.get("_paper_review_cutoff") or "")
+        for record in records
+    }
+    s2_temporal_audit = (
+        validate_frozen_s2_pool(
+            str(s2_cache_path),
+            expected_cutoffs=cutoff_by_id,
+            required_ids=required_s2_ids,
+        )
+        if s2_cache_path
+        else {
+            "protocol": "frozen-s2-temporal-v1",
+            "passed": False,
+            "missing_target_ids": sorted(required_s2_ids),
+            "future_results": [],
+            "provenance_errors": ["frozen S2 asset not provided"],
+        }
+    )
 
     per_task: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
         task_id: {"episodes": [], "validation": [], "queries": []}
@@ -382,12 +517,11 @@ def prepare_openreview_data(
     }
     missing_markdown = 0
     for record in records:
-        markdown_path = _resolve_markdown(source_root, record)
+        markdown_path = _resolve_markdown(markdown_root, record)
         if markdown_path is None:
             missing_markdown += 1
             continue
         paper_text = markdown_path.read_text(encoding="utf-8", errors="ignore")
-        paper_text = paper_text[: max(1, int(max_paper_chars))]
         anchors = build_source_anchors(load_content_list(str(markdown_path)))
         if not anchors:
             anchors = [
@@ -403,6 +537,10 @@ def prepare_openreview_data(
         source_anchor_text = format_source_anchors(anchors)
         content = record.get("content") or {}
         title = str(content.get("title") or record.get("id") or "")
+        paper_id = str(record.get("id") or "")
+        venue = str(record.get("conference") or record.get("venue") or "")
+        year_match = re.search(r"(?:19|20)\d{2}", venue)
+        year = str(record.get("year") or (year_match.group(0) if year_match else ""))
         family = work_family_key(record)
         if family in validation_family_set:
             split = "specialist_validation"
@@ -420,10 +558,26 @@ def prepare_openreview_data(
                 title,
                 paper_text,
                 source_anchor_text,
-                _format_related_work(s2_cache.get(str(record.get("id") or ""), [])),
+                paper_id=paper_id,
+                venue=venue,
+                year=year,
+                max_paper_chars=max_paper_chars,
             )
+            visible_metadata = candidate_visible_metadata(
+                paper_id=paper_id,
+                title=title,
+                venue=venue,
+                year=year,
+                reviewer_role=task_id,
+            )
+            provenance_metadata = {
+                "work_family": family,
+                "categories": categories,
+                "paper_md_path": str(markdown_path),
+                "split": split,
+            }
             common_metadata = {
-                "paper_id": str(record.get("id") or ""),
+                "paper_id": paper_id,
                 "paper_title": title,
                 "work_family": family,
                 "task_id": task_id,
@@ -431,6 +585,11 @@ def prepare_openreview_data(
                 "conference": record.get("conference"),
                 "markdown_path": str(markdown_path),
                 "split": split,
+                "candidate_visible": visible_metadata,
+                "internal_provenance": provenance_metadata,
+                "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+                "paper_review_cutoff": str(record.get("_paper_review_cutoff") or ""),
+                "temporal_zone": str(record.get("_temporal_zone") or ""),
             }
             item_id = f"{record.get('id')}::{task_id}"
             if split == "train":
@@ -438,7 +597,12 @@ def prepare_openreview_data(
                     {
                         "id": item_id,
                         "text": _training_episode(question, reference),
-                        "metadata": common_metadata,
+                        "metadata": {
+                            **common_metadata,
+                            "experience_protocol": EXPERIENCE_PROTOCOL,
+                            "experience_protocol_version": EXPERIENCE_PROTOCOL_VERSION,
+                            "contains_human_reference": False,
+                        },
                     }
                 )
             elif split == "specialist_validation":
@@ -478,10 +642,13 @@ def prepare_openreview_data(
         }
 
     manifest = {
-        "source": str(train_path),
-        "held_out_test": str(test_path),
+        "source": [str(train_path), str(test_path)],
+        "held_out_test": "defined only by frozen CoCo D manifest",
         "seed": seed,
-        "test_family_count": len(test_families),
+        "temporal_split_manifest": str(Path(temporal_split_manifest).resolve()),
+        "temporal_split_manifest_sha256": sha256_file(
+            Path(temporal_split_manifest).expanduser().resolve()
+        ),
         "train_family_count": len(train_families),
         "validation_family_count": len(validation_family_set),
         "meta_validation_family_count": len(meta_validation_family_set),
@@ -499,7 +666,13 @@ def prepare_openreview_data(
         "semantic_scholar_required_count": len(required_s2_ids),
         "semantic_scholar_cached_count": len(required_s2_ids) - len(missing_s2_ids),
         "semantic_scholar_missing_ids": missing_s2_ids,
-        "formal_ready": bool(s2_cache_sha256) and not missing_s2_ids,
+        "semantic_scholar_temporal_audit": s2_temporal_audit,
+        "formal_ready": bool(s2_cache_sha256) and s2_temporal_audit["passed"],
+        "semantic_scholar_default_injection": False,
+        "semantic_scholar_usage": "optional frozen capability",
+        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+        "paper_context_max_chars": int(max_paper_chars),
+        "human_reference_boundary": "candidate-visible episodes exclude references",
         "missing_markdown": missing_markdown,
         "tasks": task_manifest,
         "meta_status": "prepared only after five specialist winners are frozen",
@@ -556,13 +729,34 @@ def prepare_meta_data(
             "work_family": family,
             "task_id": META_TASK,
             "split": split,
+            "candidate_visible": {
+                "paper_id": paper_id,
+                "title": str((record.get("content") or {}).get("title", "")),
+                "venue": str(record.get("conference") or ""),
+                "year": str(record.get("year") or ""),
+                "reviewer_role": META_TASK,
+            },
+            "internal_provenance": {
+                "work_family": family,
+                "split": split,
+            },
+            "paper_review_cutoff": str(cached.get("paper_review_cutoff") or ""),
+            "paper_context_version": str(
+                cached.get("paper_context_version") or CANONICAL_PAPER_CONTEXT_VERSION
+            ),
+            "temporal_zone": str(cached.get("temporal_zone") or ""),
         }
         if split == "train":
             episodes.append(
                 {
                     "id": f"{paper_id}::{META_TASK}",
                     "text": _training_episode(question, reference),
-                    "metadata": metadata,
+                    "metadata": {
+                        **metadata,
+                        "experience_protocol": EXPERIENCE_PROTOCOL,
+                        "experience_protocol_version": EXPERIENCE_PROTOCOL_VERSION,
+                        "contains_human_reference": False,
+                    },
                 }
             )
         else:
@@ -600,25 +794,49 @@ def prepare_meta_data(
 
 
 def prepare_held_out_test_data(
-    openreview_root: str,
+    coco_root: str,
     output_dir: str,
     s2_cache_path: str,
-    max_paper_chars: int = 60000,
+    temporal_split_manifest: str,
+    max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
 ) -> Dict[str, Any]:
-    """Materialize sealed specialist targets and META references from test.jsonl."""
-    source_root = Path(openreview_root).expanduser().resolve()
-    test_path = source_root / "test.jsonl"
-    if not test_path.is_file():
-        raise FileNotFoundError(f"Expected test.jsonl under {source_root}")
-    records = list(_iter_jsonl(test_path))
-    family_keys = _assign_work_families(records)
+    """Materialize only D from the frozen held-out CoCo paper manifest."""
+    source_root = Path(coco_root).expanduser().resolve()
+    split_summary, zones = load_temporal_split_manifest(temporal_split_manifest)
+    d_entries = zones[FOUR_ZONES[3]]
+    by_source = {}
+    for entry in d_entries:
+        filename = str(entry["source_asset"]).rsplit("/", 1)[-1]
+        by_source.setdefault(filename, set()).add(str(entry["paper_id"]))
+    raw_by_id = {}
+    for filename, paper_ids in by_source.items():
+        source_path = source_root / "benchmark" / filename
+        for value in _iter_jsonl(source_path):
+            paper_id = str(value.get("id") or "")
+            if paper_id in paper_ids:
+                raw_by_id[paper_id] = value
+    missing = sorted({str(value["paper_id"]) for value in d_entries} - set(raw_by_id))
+    if missing:
+        raise ValueError(f"Frozen CoCo source is missing {len(missing)} D papers")
+    records = []
+    family_keys = []
+    for entry in d_entries:
+        copied = dict(raw_by_id[str(entry["paper_id"])])
+        copied["_paper_review_cutoff"] = entry["paper_review_cutoff"]
+        records.append(copied)
+        family_keys.append(str(entry["paper_family"]))
     s2_cache, s2_sha256 = _load_s2_cache(s2_cache_path)
     required_ids = {str(record.get("id") or "") for record in records}
-    missing_ids = sorted(required_ids - set(s2_cache))
-    if missing_ids:
-        raise ValueError(
-            f"Frozen S2 cache is missing {len(missing_ids)} held-out paper IDs"
-        )
+    s2_temporal_audit = validate_frozen_s2_pool(
+        s2_cache_path,
+        expected_cutoffs={
+            str(value["paper_id"]): str(value["paper_review_cutoff"])
+            for value in d_entries
+        },
+        required_ids=required_ids,
+    )
+    if not s2_temporal_audit["passed"]:
+        raise ValueError("Frozen S2 cache failed D temporal-leak audit")
 
     per_task = {task_id: [] for task_id in SPECIALIST_TASKS}
     meta_references = []
@@ -628,9 +846,7 @@ def prepare_held_out_test_data(
         if markdown_path is None:
             missing_markdown += 1
             continue
-        paper_text = markdown_path.read_text(
-            encoding="utf-8", errors="ignore"
-        )[: max(1, int(max_paper_chars))]
+        paper_text = markdown_path.read_text(encoding="utf-8", errors="ignore")
         anchors = build_source_anchors(load_content_list(str(markdown_path)))
         if not anchors:
             anchors = [
@@ -652,6 +868,9 @@ def prepare_held_out_test_data(
         )
         source_anchor_text = format_source_anchors(anchors)
         paper_id = str(record.get("id") or "")
+        venue = str(record.get("conference") or record.get("venue") or "")
+        year_match = re.search(r"(?:19|20)\d{2}", venue)
+        year = str(record.get("year") or (year_match.group(0) if year_match else ""))
         for task_id in SPECIALIST_TASKS:
             reference, categories = _category_reference(record, task_id)
             if not reference:
@@ -664,7 +883,10 @@ def prepare_held_out_test_data(
                         title,
                         paper_text,
                         source_anchor_text,
-                        _format_related_work(s2_cache[paper_id]),
+                        paper_id=paper_id,
+                        venue=venue,
+                        year=year,
+                        max_paper_chars=max_paper_chars,
                     ),
                     "answer": reference,
                     "metadata": {
@@ -674,6 +896,9 @@ def prepare_held_out_test_data(
                         "task_id": task_id,
                         "categories": categories,
                         "split": "test",
+                        "paper_review_cutoff": str(record.get("_paper_review_cutoff") or ""),
+                        "temporal_zone": FOUR_ZONES[3],
+                        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
                     },
                 }
             )
@@ -689,6 +914,9 @@ def prepare_held_out_test_data(
                         "work_family": family,
                         "task_id": META_TASK,
                         "split": "test",
+                        "paper_review_cutoff": str(record.get("_paper_review_cutoff") or ""),
+                        "temporal_zone": FOUR_ZONES[3],
+                        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
                     },
                 }
             )
@@ -711,12 +939,24 @@ def prepare_held_out_test_data(
         "count": len(meta_references),
     }
     manifest = {
-        "source": str(test_path),
-        "source_sha256": _sha256_file(test_path),
+        "source": "external://cocoreviewbench/benchmark",
+        "temporal_split_manifest": str(Path(temporal_split_manifest).resolve()),
+        "temporal_split_manifest_sha256": sha256_file(
+            Path(temporal_split_manifest).expanduser().resolve()
+        ),
         "semantic_scholar_cache": str(Path(s2_cache_path).resolve()),
         "semantic_scholar_cache_sha256": s2_sha256,
+        "semantic_scholar_temporal_audit": s2_temporal_audit,
+        "semantic_scholar_default_injection": False,
+        "semantic_scholar_usage": "optional frozen capability",
+        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+        "paper_context_max_chars": int(max_paper_chars),
         "work_family_identity": "transitive union by paperhash OR normalized title",
         "paper_count": len(records),
+        "paper_ids_sha256": hashlib.sha256(
+            "\n".join(str(value["paper_id"]) for value in d_entries).encode("utf-8")
+        ).hexdigest(),
+        "benchmark_source_pool_count": int(split_summary["source_pool_count"]),
         "missing_markdown": missing_markdown,
         "sealed_test_feedback": False,
         "tasks": tasks,

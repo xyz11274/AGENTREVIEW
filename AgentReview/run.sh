@@ -15,8 +15,9 @@ export HF_ENDPOINT=https://hf-mirror.com
 export AGENTREVIEW_API_MIN_INTERVAL_SECONDS=0
 
 : "${PYTHON_BIN:=/data0/xyj/miniconda3/envs/env_shengao/bin/python}"
-: "${PAPER_MD_DIR:=/data0/xyj/shengao/AgentReview_0722/AgentReview/test_data}"
-: "${REVIEW_OUTPUT_DIR:=/data0/xyj/shengao/AgentReview_0722/AgentReview/outputs}"
+PROJECT_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+: "${PAPER_MD_DIR:=$PROJECT_ROOT/test_data}"
+: "${REVIEW_OUTPUT_DIR:=$PROJECT_ROOT/outputs}"
 : "${MSTAR_PROGRAM_DIR:?Set MSTAR_PROGRAM_DIR to the promoted six-program suite.}"
 : "${MSTAR_EMBEDDING_ADAPTER:=memory_evolution.embedding_adapter:create_bge_m3}"
 : "${MSTAR_EMBEDDING_REVISION:?Set the immutable BGE-M3 model revision.}"

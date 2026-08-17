@@ -1,4 +1,4 @@
-cd /data0/xyj/shengao/AgentReview_0722/AgentReview
+cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PY=/data0/xyj/miniconda3/envs/env_shengao/bin/python
 
 export OPENAI_API_KEY="sk-B0bnEYxbAt1egxDdEweM6WP8DgJxtYmStTuS0KMsUXKWbQTe"

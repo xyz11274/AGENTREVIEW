@@ -1,0 +1,76 @@
+{
+  "manifest_version": "mstar-assets-v1",
+  "status": "superseded; forbidden for new formal runs",
+  "superseded_by": "configs/asset_manifest_v2.json",
+  "project_paths_are_relative": true,
+  "external_roots": {
+    "openreview": "/data0/xyj/shengao/OpenReview",
+    "cocoreviewbench": "/data0/xyj/shengao/CoCoReviewBench"
+  },
+  "assets": {
+    "historical_experience_selection": {
+      "path": "data/effectiveness_screening_v1/memory_corpus.jsonl",
+      "sha256": "866b12868b481db977d3ac3d31d400dd8a6a32f0f126828dc6098bfb604c6114",
+      "version": "effectiveness-screening-v1-selection",
+      "split": "historical_experience",
+      "status": "selection-only; replay must be regenerated per Program; invalid for formal use because all 20 papers are benchmark-reserved venue-years"
+    },
+    "effectiveness_holdout_selection": {
+      "path": "data/effectiveness_screening_v1/effectiveness_validation.jsonl",
+      "sha256": "47354662bd961cb9b0ef8f6ca02b945b47e37887d2ca19e4eed773d093db7ec9",
+      "version": "effectiveness-screening-v1-selection",
+      "split": "effectiveness_holdout",
+      "status": "non-authoritative; all 20 papers are benchmark-reserved venue-years"
+    },
+    "legacy_paper_context_manifest": {
+      "path": "data/effectiveness_screening_v1/paper_context_manifest.json",
+      "sha256": "e986ad25332b4110b53dd17f827085adc7477820f72ffb9750dde0f8ad650a70",
+      "version": "legacy-pre-canonical-context",
+      "split": "historical_experience+effectiveness_holdout",
+      "status": "non-authoritative; rebuild with canonical-rich-paper-v1"
+    },
+    "seed_vector_search": {
+      "path": "memory_evolution/seeds/vector_search.py",
+      "sha256": "45ed77aaef8ac54a2955192ee61a85b66b7f4667f9c34d1bb302ddd2a7353bda",
+      "version": "seed_vector_search",
+      "split": "program"
+    },
+    "seed_llm_summarizer": {
+      "path": "memory_evolution/seeds/llm_summarizer.py",
+      "sha256": "0f120fcd98f0d99bcab6709b08f5165b9194646ea46352b2a5ddfaafb505652f",
+      "version": "seed_llm_summarizer",
+      "split": "program"
+    },
+    "seed_experience_learner": {
+      "path": "memory_evolution/seeds/experience_learner.py",
+      "sha256": "2d8954a65c596721df3e832c5a23ee1d104920eb8a23e19b34783c01971eb5d8",
+      "version": "seed_experience_learner",
+      "split": "program"
+    },
+    "frozen_reviewer_identity": {
+      "path": "REVIEW_Request.md",
+      "sha256": "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
+      "version": "frozen-reviewer-identity-v1",
+      "split": "program"
+    },
+    "benchmark_reserved_venue_year": {
+      "path": "configs/benchmark_reserved_venue_year_v1.json",
+      "sha256": "ec68e7e29f93c990e3f21216b851e698fc90b87229dd878c13412dfb4ef69430",
+      "version": "benchmark-reserved-venue-year-v1",
+      "split": "official_benchmark_reservation",
+      "status": "frozen; covers all 34848 current OpenReview source records"
+    }
+  },
+  "missing_blocking_assets": [
+    "evolution_validation_manifest",
+    "non-reserved source corpus for Historical / Evolution Validation / Effectiveness Holdout",
+    "post-boundary-fix promoted programs",
+    "canonical frozen S2 retrieval pool for all four zones"
+  ],
+  "legacy_resolution": {
+    "recorded_prefix": "/data0/xyj/shengao/AgentReview_0722/AgentReview",
+    "current_project_root": ".",
+    "relation": "legacy_recorded_path_resolved_to_current_snapshot",
+    "historical_run_artifacts_modified": false
+  }
+}

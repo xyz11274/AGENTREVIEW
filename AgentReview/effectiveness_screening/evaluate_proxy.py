@@ -98,7 +98,7 @@ def classify_outputs(config: Mapping[str, Any]) -> Dict[str, Any]:
     output_root = Path(config["output_root"]).expanduser().resolve()
     metrics = config["metrics"]
     adapter = FrozenCoCoAdapter(
-        Path("/data0/xyj/shengao/CoCoReviewBench"),
+        Path(config["external_roots"]["cocoreviewbench"]),
         str(metrics["review_split_revision"]),
         str(metrics["review_classify_revision"]),
     )
@@ -168,9 +168,9 @@ def _judge_backend(config: Mapping[str, Any]) -> MemoryToolkit:
     )
 
 
-def _official_judge_prompt() -> tuple[str, str]:
+def _official_judge_prompt(config: Mapping[str, Any]) -> tuple[str, str]:
     path = (
-        Path("/data0/xyj/shengao/CoCoReviewBench")
+        Path(config["external_roots"]["cocoreviewbench"])
         / "src"
         / "evaluation"
         / "prompt"
@@ -237,7 +237,7 @@ def judge_outputs(config: Mapping[str, Any]) -> Dict[str, Any]:
         )
     }
     judge = _judge_backend(config)
-    official_prompt, prompt_sha = _official_judge_prompt()
+    official_prompt, prompt_sha = _official_judge_prompt(config)
     completed = 0
     for cell in matrix_commands(config):
         classified_path = (

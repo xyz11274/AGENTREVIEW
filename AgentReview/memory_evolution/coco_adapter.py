@@ -15,7 +15,6 @@ from openai import OpenAI
 from .tasks import COCOREVIEWBENCH_COMMIT
 
 
-DEFAULT_COCO_ROOT = Path("/data0/xyj/shengao/CoCoReviewBench")
 SPLIT_BASE_URL = "http://localhost:13099/v1"
 CLASSIFY_BASE_URL = "http://localhost:13098/v1"
 SPLIT_MODEL = "Qwen3-8B-Split"
@@ -188,14 +187,18 @@ _INSTANCES = {}
 
 
 def create_frozen_coco_adapter(
-    split_revision: str = "", classify_revision: str = ""
+    split_revision: str = "", classify_revision: str = "", coco_root: str = ""
 ):
     """Factory consumed by `--classifier-adapter module:factory`."""
-    key = (split_revision, classify_revision)
+    configured_root = str(coco_root or os.environ.get("COCOREVIEWBENCH_ROOT") or "")
+    if not configured_root:
+        raise ValueError(
+            "CoCoReviewBench root must be provided by config/CLI or "
+            "COCOREVIEWBENCH_ROOT"
+        )
+    root = Path(configured_root).expanduser().resolve()
+    key = (split_revision, classify_revision, str(root))
     if key not in _INSTANCES:
-        root = Path(
-            os.environ.get("COCOREVIEWBENCH_ROOT", str(DEFAULT_COCO_ROOT))
-        ).expanduser().resolve()
         _INSTANCES[key] = FrozenCoCoAdapter(
             root, split_revision, classify_revision
         )

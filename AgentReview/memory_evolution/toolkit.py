@@ -1,9 +1,166 @@
 import hashlib
+import json
 import math
 import re
 import threading
+import time
 from contextlib import contextmanager
+from datetime import date
 from typing import Any, Dict, Iterable, List, Optional
+from pathlib import Path
+
+
+def _load_s2_entries(path: Optional[str]):
+    """Load a JSON/JSONL paper-id keyed S2 pool and return it with its hash."""
+    if not path:
+        return [], ""
+    source = Path(path).expanduser().resolve()
+    if not source.is_file():
+        raise FileNotFoundError(f"Frozen S2 retrieval pool not found: {source}")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    values = []
+    if source.suffix.lower() == ".jsonl":
+        values = [
+            json.loads(line)
+            for line in source.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    else:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            values = [
+                {"paper_id": key, "retrieved_papers": value}
+                if isinstance(value, list)
+                else {"paper_id": key, **value}
+                for key, value in payload.items()
+                if isinstance(value, (list, dict))
+            ]
+        elif isinstance(payload, list):
+            values = payload
+    return [value for value in values if isinstance(value, dict)], digest
+
+
+def load_frozen_s2_pool(path: Optional[str]):
+    """Load a frozen pool after preserving per-target provenance for audits."""
+    values, digest = _load_s2_entries(path)
+    pool = {}
+    for value in values:
+        if not isinstance(value, dict):
+            continue
+        paper_id = str(
+            value.get("paper_id") or value.get("id") or value.get("query_id") or ""
+        )
+        papers = value.get("retrieved_papers") or value.get("papers") or value.get("results") or []
+        if paper_id and isinstance(papers, list):
+            cutoff_text = str(value.get("paper_review_cutoff") or "")
+            safe = []
+            if cutoff_text:
+                try:
+                    cutoff = date.fromisoformat(cutoff_text[:10])
+                except ValueError:
+                    cutoff = None
+                if cutoff is not None:
+                    for item in papers:
+                        if not isinstance(item, dict):
+                            continue
+                        try:
+                            if _publication_cutoff(item) <= cutoff:
+                                safe.append(item)
+                        except (TypeError, ValueError):
+                            continue
+            pool[paper_id] = safe
+    return pool, digest
+
+
+def _publication_cutoff(value: Dict[str, Any]) -> date:
+    raw = value.get("publication_date") or value.get("publicationDate")
+    if raw:
+        return date.fromisoformat(str(raw)[:10])
+    year = value.get("year") or value.get("publication_year")
+    if year:
+        return date(int(year), 12, 31)
+    raise ValueError("retrieved paper lacks publication_date/year")
+
+
+def validate_frozen_s2_pool(
+    path: str,
+    *,
+    expected_cutoffs: Dict[str, str],
+    required_ids: Iterable[str],
+) -> Dict[str, Any]:
+    """Prove that every frozen result existed no later than target review time."""
+    entries, digest = _load_s2_entries(path)
+    by_id = {}
+    future = []
+    provenance_errors = []
+    for entry in entries:
+        paper_id = str(
+            entry.get("paper_id") or entry.get("id") or entry.get("query_id") or ""
+        )
+        if not paper_id or paper_id in by_id:
+            provenance_errors.append(f"missing/duplicate target identity: {paper_id!r}")
+            continue
+        by_id[paper_id] = entry
+        cutoff_text = str(entry.get("paper_review_cutoff") or "")
+        required = (
+            "retrieval_method",
+            "retrieval_version",
+            "top_k",
+            "retrieval_config",
+            "result_sha256",
+        )
+        missing = [name for name in required if entry.get(name) in (None, "")]
+        if not cutoff_text:
+            missing.append("paper_review_cutoff")
+        expected = str(expected_cutoffs.get(paper_id) or "")
+        if expected and cutoff_text != expected:
+            provenance_errors.append(
+                f"{paper_id}: cutoff mismatch expected={expected} actual={cutoff_text}"
+            )
+        if missing:
+            provenance_errors.append(f"{paper_id}: missing provenance {sorted(set(missing))}")
+            continue
+        papers = (
+            entry.get("retrieved_papers")
+            or entry.get("papers")
+            or entry.get("results")
+            or []
+        )
+        result_sha = hashlib.sha256(
+            json.dumps(
+                papers, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")
+        ).hexdigest()
+        if result_sha != str(entry.get("result_sha256")):
+            provenance_errors.append(f"{paper_id}: result SHA256 mismatch")
+            continue
+        cutoff = date.fromisoformat(cutoff_text[:10])
+        for result in papers:
+            try:
+                published = _publication_cutoff(result)
+            except Exception as exc:
+                provenance_errors.append(f"{paper_id}: {exc}")
+                continue
+            if published > cutoff:
+                future.append(
+                    {
+                        "paper_id": paper_id,
+                        "retrieved_id": str(result.get("paperId") or result.get("id") or ""),
+                        "publication_date": published.isoformat(),
+                        "paper_review_cutoff": cutoff.isoformat(),
+                    }
+                )
+    missing_ids = sorted({str(value) for value in required_ids} - set(by_id))
+    return {
+        "protocol": "frozen-s2-temporal-v1",
+        "asset_sha256": digest,
+        "required_count": len(set(map(str, required_ids))),
+        "cached_count": len(by_id),
+        "missing_target_ids": missing_ids,
+        "future_results": future,
+        "provenance_errors": provenance_errors,
+        "passed": not (missing_ids or future or provenance_errors),
+    }
 
 
 def _cosine(left: List[float], right: List[float]) -> float:
@@ -78,6 +235,8 @@ class MemoryToolkit:
         review_classifier=None,
         max_llm_calls_per_operation: int = 1,
         fallback_embedding_dimensions: int = 256,
+        s2_retrieval_pool: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        s2_retrieval_pool_sha256: str = "",
     ):
         self.llm_client = llm_client
         self.embedding_client = embedding_client
@@ -88,8 +247,25 @@ class MemoryToolkit:
         self.review_classifier = review_classifier
         self.max_llm_calls_per_operation = max(0, int(max_llm_calls_per_operation))
         self.fallback_embedding_dimensions = max(8, int(fallback_embedding_dimensions))
+        self.s2_retrieval_pool = {
+            str(key): [dict(item) for item in values if isinstance(item, dict)]
+            for key, values in dict(s2_retrieval_pool or {}).items()
+            if isinstance(values, list)
+        }
+        self.s2_retrieval_pool_sha256 = str(s2_retrieval_pool_sha256 or "")
         self._collections: Dict[str, Any] = {}
         self._operation_state = threading.local()
+        self._resource_lock = threading.Lock()
+        self._resources = {
+            "llm_call_count": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "prompt_chars": 0,
+            "completion_chars": 0,
+            "llm_latency_seconds": 0.0,
+            "s2_call_count": 0,
+            "s2_result_count": 0,
+        }
 
     @contextmanager
     def operation(self, name: str, max_llm_calls: Optional[int] = None):
@@ -106,6 +282,15 @@ class MemoryToolkit:
         finally:
             self._operation_state.budget = previous
 
+    @contextmanager
+    def paper_scope(self, paper_id: str):
+        previous = getattr(self._operation_state, "paper_id", None)
+        self._operation_state.paper_id = str(paper_id or "").split("::", 1)[0]
+        try:
+            yield
+        finally:
+            self._operation_state.paper_id = previous
+
     def _consume_llm_budget(self) -> None:
         budget = getattr(self._operation_state, "budget", None)
         if budget is None:
@@ -121,21 +306,27 @@ class MemoryToolkit:
             raise RuntimeError("No LLM client is configured")
         self._consume_llm_budget()
         client = self.llm_client
+        prompt_chars = sum(
+            len(str(item.get("content", "")))
+            for item in messages
+            if isinstance(item, dict)
+        )
+        started = time.monotonic()
 
         if hasattr(client, "llm_completion"):
-            return str(client.llm_completion(messages, **kwargs))
-        if hasattr(client, "complete"):
-            return str(client.complete(messages=messages, **kwargs))
-        if hasattr(client, "_get_response_for_agent"):
-            return str(
+            result = str(client.llm_completion(messages, **kwargs))
+        elif hasattr(client, "complete"):
+            result = str(client.complete(messages=messages, **kwargs))
+        elif hasattr(client, "_get_response_for_agent"):
+            result = str(
                 client._get_response_for_agent(
                     kwargs.pop("agent_name", "Memory Harness"),
                     messages,
                 )
             )
-        if hasattr(client, "_get_response"):
-            return str(client._get_response(messages))
-        if hasattr(client, "query"):
+        elif hasattr(client, "_get_response"):
+            result = str(client._get_response(messages))
+        elif hasattr(client, "query"):
             try:
                 from agentreview.message import Message
 
@@ -153,7 +344,7 @@ class MemoryToolkit:
                     for index, item in enumerate(messages)
                     if item.get("role") != "system"
                 ]
-                return str(
+                result = str(
                     client.query(
                         agent_name="Memory Harness",
                         role_desc="\n".join(system_parts)
@@ -162,21 +353,62 @@ class MemoryToolkit:
                     )
                 )
             except ImportError:
-                pass
-        if callable(client):
-            return str(client(messages, **kwargs))
-
-        chat = getattr(client, "chat", None)
-        completions = getattr(chat, "completions", None)
-        create = getattr(completions, "create", None)
-        if create is not None:
+                result = None
+        elif callable(client):
+            result = str(client(messages, **kwargs))
+        else:
+            chat = getattr(client, "chat", None)
+            completions = getattr(chat, "completions", None)
+            create = getattr(completions, "create", None)
+            if create is None:
+                raise TypeError(f"Unsupported LLM client: {type(client).__name__}")
             request = dict(kwargs)
             if self.llm_model and "model" not in request:
                 request["model"] = self.llm_model
             response = create(messages=messages, **request)
-            return str(response.choices[0].message.content).strip()
+            result = str(response.choices[0].message.content).strip()
+        if result is None:
+            raise TypeError(f"Unsupported LLM client: {type(client).__name__}")
+        info = getattr(client, "last_response_info", {}) or {}
+        with self._resource_lock:
+            self._resources["llm_call_count"] += 1
+            self._resources["prompt_chars"] += prompt_chars
+            self._resources["completion_chars"] += len(result)
+            self._resources["prompt_tokens"] += int(info.get("prompt_tokens") or 0)
+            self._resources["completion_tokens"] += int(
+                info.get("completion_tokens") or 0
+            )
+            self._resources["llm_latency_seconds"] += time.monotonic() - started
+        return result
 
-        raise TypeError(f"Unsupported LLM client: {type(client).__name__}")
+    def retrieve_s2(self, paper_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Read only from the experiment-frozen, paper-specific S2 pool."""
+        key = str(paper_id or "")
+        active = getattr(self._operation_state, "paper_id", None)
+        if active is not None and key != active:
+            raise PermissionError(
+                "S2 retrieval is restricted to the currently reviewed paper"
+            )
+        selected = [
+            dict(value)
+            for value in self.s2_retrieval_pool.get(key, [])[: max(0, int(limit))]
+        ]
+        with self._resource_lock:
+            self._resources["s2_call_count"] += 1
+            self._resources["s2_result_count"] += len(selected)
+        return selected
+
+    def resource_snapshot(self) -> Dict[str, Any]:
+        with self._resource_lock:
+            return dict(self._resources)
+
+    def resource_delta(self, before: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        current = self.resource_snapshot()
+        baseline = dict(before or {})
+        return {
+            key: current.get(key, 0) - baseline.get(key, 0)
+            for key in current
+        }
 
     def embed(self, texts: List[str]) -> List[List[float]]:
         normalized = [str(text) for text in texts]

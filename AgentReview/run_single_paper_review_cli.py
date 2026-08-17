@@ -10,7 +10,7 @@ from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 if CURRENT_DIR not in sys.path:
@@ -32,6 +32,10 @@ try:
     from agentreview.message import Message
     from agentreview.paper_review_player import Reviewer
     from agentreview.paper_review_player_md import MarkdownPaperExtractorPlayer
+    from agentreview.paper_context import (
+        DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+        clip_text as canonical_clip_text,
+    )
     from agentreview.role_descriptions import get_paper_extractor_config
     from agentreview.single_paper_review_roles import (
         META_REVIEWER_NAME,
@@ -45,7 +49,12 @@ try:
     from memory_evolution.models import Episode
     from memory_evolution.task_agent import build_task_agent
     from memory_evolution.tasks import resolve_program_path, verify_promoted_program
-    from memory_evolution.toolkit import MemoryToolkit
+    from memory_evolution.toolkit import MemoryToolkit, load_frozen_s2_pool
+    from memory_evolution.checkpoint import (
+        canonical_sha256,
+        load_checkpoint as load_history_checkpoint,
+        save_checkpoint as save_history_checkpoint,
+    )
 except ModuleNotFoundError as exc:
     missing_name = getattr(exc, "name", "unknown dependency")
     raise SystemExit(
@@ -311,6 +320,16 @@ def save_structured_outputs(
         "paper_md_path": paper_info["paper_md_path"],
         "review_model_name": args.model_name,
         "review_temperature": getattr(args, "review_temperature", 0.3),
+        "replicate_id": getattr(args, "replicate_id", ""),
+        "run_seed": getattr(args, "run_seed", None),
+        "seed_control_available": False,
+        "generation_config": {
+            "model": args.model_name,
+            "temperature": getattr(args, "review_temperature", 0.3),
+            "reasoning_effort": getattr(args, "reviewer_reasoning_effort", None),
+            "review_max_tokens": getattr(args, "review_max_tokens", None),
+            "retry_max_tokens": getattr(args, "review_retry_max_tokens", None),
+        },
         "reviewer_names": list(reviews.keys()),
         "reviewer_memory_contexts": reviewer_memory_contexts or {},
         "memory_retrieval_enabled": (
@@ -377,10 +396,8 @@ def validate_generated_outputs(result: Dict[str, str]):
 
     if not memory.get("source_anchors"):
         raise ValueError(f"Missing source anchors in memory for {result['sample_id']}")
-    if not memory.get("retrieved_papers"):
-        raise ValueError(f"Missing retrieved papers in memory for {result['sample_id']}")
-    if memory.get("paper_title") != memory.get("semantic_scholar_query"):
-        raise ValueError(f"Title/query mismatch for {result['sample_id']}")
+    if (memory.get("s2_usage") or {}).get("default_injection") is True:
+        raise ValueError(f"S2 was injected by default for {result['sample_id']}")
     if not timing.get("duration_text"):
         raise ValueError(f"Missing timing duration for {result['sample_id']}")
     if "timing" not in history or not history["timing"].get("duration_text"):
@@ -613,12 +630,8 @@ def validate_review_payload(
             reviewer_name,
         )
 
-    if not extraction_memory.get("retrieved_papers"):
-        raise ValueError(f"Missing retrieved papers in memory for {sample_id}")
-    if extraction_memory.get("paper_title") != extraction_memory.get(
-        "semantic_scholar_query"
-    ):
-        raise ValueError(f"Title/query mismatch for {sample_id}")
+    if (extraction_memory.get("s2_usage") or {}).get("default_injection") is True:
+        raise ValueError(f"S2 was injected by default for {sample_id}")
     if not duration_text:
         raise ValueError(f"Missing timing duration for {sample_id}")
 
@@ -797,6 +810,9 @@ def _load_precompiled_memory(args: Namespace, task_id: str, program_path: Path):
 
 
 def _mstar_toolkit(args: Namespace, backend, embedding_factory) -> MemoryToolkit:
+    s2_pool, s2_sha256 = load_frozen_s2_pool(
+        getattr(args, "s2_retrieval_pool", None)
+    )
     return MemoryToolkit(
         llm_client=backend,
         llm_model=getattr(args, "model_name", None),
@@ -804,6 +820,8 @@ def _mstar_toolkit(args: Namespace, backend, embedding_factory) -> MemoryToolkit
         embedding_model=getattr(
             args, "memory_embedding_model_name", "BAAI/bge-m3"
         ),
+        s2_retrieval_pool=s2_pool,
+        s2_retrieval_pool_sha256=s2_sha256,
     )
 
 
@@ -911,6 +929,7 @@ def _mstar_memory_contexts(
             ),
             "program_path": str(program_path),
             "cache_provenance": cache_provenance,
+            "resource_usage": toolkit.resource_snapshot(),
         }
 
     extraction_memory = getattr(extractor, "last_memory", {}) or {}
@@ -921,6 +940,7 @@ def _mstar_memory_contexts(
     ]
     for reviewer_name, dimension in reviewer_targets:
         question = (
+            f"Paper id: {paper_info['sample_id']}\n"
             f"What prior review experience is useful for reviewing '{paper_title}' "
             f"as {reviewer_name} in the {dimension} dimension?"
         )
@@ -951,6 +971,7 @@ def _mstar_memory_contexts(
             "memory_episode_granularity": "reviewer_level",
             "memory_scope": "per_reviewer_independent_kb",
             "knowledge_cache": memory_result["cache_provenance"],
+            "resource_usage": memory_result["resource_usage"],
         }
     return contexts
 
@@ -1066,6 +1087,7 @@ def _mstar_meta_memory_context(
         "memory_episode_granularity": "meta_review_level",
         "memory_scope": "post_specialist_meta_kb",
         "knowledge_cache": cache_provenance,
+        "resource_usage": toolkit.resource_snapshot(),
     }
 
 
@@ -1213,7 +1235,7 @@ def run_parallel_reviews(
     existing_messages: List[Message] = None,
     checkpoint_path: Path = None,
     checkpoint_metadata: Dict[str, str] = None,
-    paper_max_chars: int = 35000,
+    paper_max_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     resume_command: str = None,
     source_anchors: List[Dict] = None,
 ) -> List[Message]:
@@ -1243,8 +1265,13 @@ def run_parallel_reviews(
     started = time.monotonic()
 
     def call_reviewer(player: Player):
+        role_context = extractor_message.content.replace(
+            "reviewer_role: SPECIALIST",
+            f"reviewer_role: {infer_reviewer_dimension(player.name) or player.name}",
+            1,
+        )
         clipped_content = clip_context(
-            extractor_message.content,
+            role_context,
             paper_max_chars,
         )
         print(
@@ -1459,6 +1486,9 @@ def runtime_condition_fingerprint(args: Namespace, paper_info: Dict[str, str]) -
             args, "memory_knowledge_cache_dir", None
         ),
         "memory_embedding_mode": getattr(args, "memory_embedding_mode", None),
+        "replicate_id": getattr(args, "replicate_id", ""),
+        "run_seed": getattr(args, "run_seed", None),
+        "seed_control_available": False,
     }
     payload = json.dumps(
         condition, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -1471,6 +1501,10 @@ def load_specialist_checkpoint(
     paper_info: Dict[str, str],
     source_anchors: List[Dict] = None,
 ) -> List[Message]:
+    if getattr(args, "strict_history_resume", False):
+        # An interrupted Historical paper is rerun as a whole. Only the batch
+        # prefix checkpoint, never a per-paper partial, is authoritative.
+        return []
     if not getattr(args, "reuse_completed_specialists", False):
         return []
     path = specialist_checkpoint_path(args, paper_info)
@@ -1528,17 +1562,7 @@ def load_specialist_checkpoint(
 
 
 def clip_context(text: str, max_chars: int) -> str:
-    text = text or ""
-    max_chars = max(0, int(max_chars))
-    if len(text) <= max_chars:
-        return text
-    if max_chars < 100:
-        return text[:max_chars]
-    marker = "\n\n[Paper context clipped for meta-review]\n\n"
-    available = max_chars - len(marker)
-    head = available // 2
-    tail = available - head
-    return text[:head] + marker + text[-tail:]
+    return canonical_clip_text(text, max_chars, marker="Paper context clipped")
 
 
 def build_specialist_resume_command(
@@ -1573,12 +1597,16 @@ def build_specialist_resume_command(
         str(getattr(args, "review_retry_max_tokens", 16384)),
         "--reviewer_reasoning_effort",
         str(getattr(args, "reviewer_reasoning_effort", "low")),
-        "--reviewer_paper_max_chars",
-        str(getattr(args, "reviewer_paper_max_chars", 35000)),
+        "--paper_context_max_chars",
+        str(
+            getattr(
+                args,
+                "paper_context_max_chars",
+                DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+            )
+        ),
         "--meta_review_max_tokens",
         str(getattr(args, "meta_review_max_tokens", 4096)),
-        "--meta_paper_max_chars",
-        str(getattr(args, "meta_paper_max_chars", 30000)),
         "--memory_mode",
         str(getattr(args, "memory_mode", "existing")),
         "--memory_top_k",
@@ -1592,6 +1620,8 @@ def build_specialist_resume_command(
         command.append("--disable_memory_retrieval")
     if getattr(args, "disable_memory_writeback", False):
         command.append("--disable_memory_writeback")
+    if getattr(args, "s2_retrieval_pool", None):
+        command.extend(["--s2_retrieval_pool", args.s2_retrieval_pool])
     if paper_info.get("frozen_context_bundle_path"):
         command.extend(
             [
@@ -1769,7 +1799,9 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
             checkpoint_path=checkpoint_path,
             checkpoint_metadata=checkpoint_metadata,
             paper_max_chars=getattr(
-                args, "reviewer_paper_max_chars", 35000
+                args,
+                "paper_context_max_chars",
+                DEFAULT_PAPER_CONTEXT_MAX_CHARS,
             ),
             resume_command=resume_command,
             source_anchors=source_anchors,
@@ -1795,8 +1827,14 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
     meta_paper_context = Message(
         agent_name=extractor_message.agent_name,
         content=clip_context(
-            extractor_message.content,
-            getattr(args, "meta_paper_max_chars", 30000),
+            extractor_message.content.replace(
+                "reviewer_role: SPECIALIST", "reviewer_role: META", 1
+            ),
+            getattr(
+                args,
+                "paper_context_max_chars",
+                DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+            ),
         ),
         turn=extractor_message.turn,
     )
@@ -1917,11 +1955,79 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
     return result
 
 
+def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
+    checkpoint_path = (
+        Path(args.output_dir)
+        / "single_paper_review"
+        / "history_replay_checkpoint.json"
+    )
+    manifest_path = Path(args.paper_context_manifest).expanduser().resolve()
+    program_root = Path(args.memory_program_dir).expanduser().resolve()
+    program_hashes = {
+        str(path.relative_to(program_root)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(program_root.rglob("*.py"))
+    }
+    s2_path = Path(args.s2_retrieval_pool).expanduser().resolve()
+    identity = {
+        "candidate_id": program_root.name,
+        "lineage": program_root.parent.name,
+        "replicate_id": str(args.replicate_id),
+        "program_sha256": canonical_sha256(program_hashes),
+        "historical_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "experiment_config_sha256": runtime_condition_fingerprint(args, papers[0]),
+        "s2_asset_sha256": hashlib.sha256(s2_path.read_bytes()).hexdigest(),
+        "s2_asset_version": "frozen-s2-temporal-v1",
+        "run_seed": args.run_seed,
+        "seed_control_available": False,
+        "generation_config": {
+            "model": args.model_name,
+            "temperature": args.review_temperature,
+            "reasoning_effort": args.reviewer_reasoning_effort,
+            "review_max_tokens": args.review_max_tokens,
+            "retry_max_tokens": args.review_retry_max_tokens,
+        },
+    }
+    frozen_ids = [paper["sample_id"] for paper in papers]
+    checkpoint = load_history_checkpoint(
+        str(checkpoint_path),
+        expected_identity=identity,
+        frozen_ids=frozen_ids,
+    )
+    completed = list(checkpoint.get("completed_paper_ids") or []) if checkpoint else []
+    library_path = Path(args.output_dir) / "single_paper_review" / "memory_library.jsonl"
+    if checkpoint:
+        snapshot = checkpoint["memory_snapshot"]
+        expected_text = str(snapshot.get("memory_library_jsonl") or "")
+        actual_text = library_path.read_text(encoding="utf-8") if library_path.is_file() else ""
+        if actual_text != expected_text:
+            library_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = library_path.with_suffix(".tmp")
+            temporary.write_text(expected_text, encoding="utf-8")
+            os.replace(temporary, library_path)
+    # The immediate next paper may contain partial crash artifacts and is
+    # deliberately rerun from scratch. Any still-later paper proves a
+    # non-prefix history directory and is a formal protocol error.
+    for paper_id in frozen_ids[len(completed) + 1 :]:
+        paper_root = Path(args.output_dir) / "single_paper_review" / paper_id
+        if paper_root.is_dir() and any(paper_root.iterdir()):
+            raise RuntimeError(
+                "History directory contains a record beyond the legal prefix: "
+                + paper_id
+            )
+    return checkpoint_path, identity, frozen_ids, completed, library_path
+
+
 def main(args: Namespace):
     print(AGENTREVIEW_LOGO)
 
     papers = discover_markdown_papers(args)
     print(f"Discovered {len(papers)} markdown paper(s) for review.")
+
+    strict_state = None
+    if getattr(args, "strict_history_resume", False):
+        if not papers:
+            raise RuntimeError("Strict Historical replay requires a non-empty manifest")
+        strict_state = _strict_history_state(args, papers)
 
     results = []
     for index, paper_info in enumerate(papers, start=1):
@@ -1932,7 +2038,19 @@ def main(args: Namespace):
             sample_id=paper_info["sample_id"],
             paper_md_path=paper_info["paper_md_path"],
         )
-        completed_result = load_completed_result_if_valid(args, paper_info)
+        completed_result = None
+        if strict_state and index <= len(strict_state[3]):
+            reuse_before = getattr(args, "reuse_completed_specialists", False)
+            args.reuse_completed_specialists = True
+            completed_result = load_completed_result_if_valid(args, paper_info)
+            args.reuse_completed_specialists = reuse_before
+            if completed_result is None:
+                raise RuntimeError(
+                    "Checkpoint prefix output is missing or invalid: "
+                    + paper_info["sample_id"]
+                )
+        elif not strict_state:
+            completed_result = load_completed_result_if_valid(args, paper_info)
         if completed_result:
             print(
                 f"[Resume] Skipping completed valid paper: {paper_info['sample_id']}",
@@ -1950,6 +2068,29 @@ def main(args: Namespace):
         result = run_one_paper(args, paper_info)
         validate_generated_outputs(result)
         results.append(result)
+        if strict_state:
+            checkpoint_path, identity, frozen_ids, completed, library_path = strict_state
+            completed.append(paper_info["sample_id"])
+            library_text = (
+                library_path.read_text(encoding="utf-8")
+                if library_path.is_file()
+                else ""
+            )
+            save_history_checkpoint(
+                str(checkpoint_path),
+                run_identity=identity,
+                frozen_ids=frozen_ids,
+                completed_ids=completed,
+                memory_snapshot={
+                    "snapshot_version": "review-library-snapshot-v1",
+                    "memory_library_jsonl": library_text,
+                },
+                paper_record={
+                    "paper_id": paper_info["sample_id"],
+                    "completed": True,
+                    "review_dir": result["review_dir"],
+                },
+            )
         print(f"Saved outputs to {result['review_dir']}")
         print_paper_banner(
             kind="end",

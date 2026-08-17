@@ -147,6 +147,9 @@ def build_meta_input_cache(
                         else query["metadata"]["split"]
                     ),
                     "work_family": query["metadata"]["work_family"],
+                    "paper_review_cutoff": query["metadata"].get("paper_review_cutoff"),
+                    "paper_context_version": query["metadata"].get("paper_context_version"),
+                    "temporal_zone": query["metadata"].get("temporal_zone"),
                     "specialists": {},
                 },
             )

@@ -10,7 +10,7 @@
 
 ## Consequences
 
-- 所有现存引用 `AgentReview_0722` 绝对路径的配置与 manifest 都属于待修复项（见 docs/DEPRECATED.md 之外的接口对齐工作）。
+- 活跃配置与 README 示例已移除 `AgentReview_0722` 绝对路径；旧 run artifact 内的 recorded path 保持 immutable，仅由 resolver 显式映射。
 - Manifest 是实验资产的唯一权威来源：跑实验前解析并记录，跑完后产物目录里必须能回答"用了哪个语料/哪个 program 的哪个哈希/哪个 split"。
 - 评审口径统一：同一资产换版本（如重跑进化后的新 best_program.py）= 新 manifest 条目，而不是原地覆盖。
 - **历史 run artifact 不原地修改**：如 `runs/pilot_full_iter5_202607300117` 内嵌 `_0722` 旧绝对路径的 config / manifest 保持原样（它们是历史 provenance）。正确方式：新 Asset Manifest / resolver 记录 legacy recorded path → 解析到当前真实 asset，同时记录 SHA256 与 provenance relation。

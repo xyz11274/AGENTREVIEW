@@ -320,6 +320,8 @@ class OpenAIChat(IntelligenceBackend):
             "response_chars": len(response),
             "finish_reason": getattr(choice, "finish_reason", None),
             "completion_tokens": getattr(usage, "completion_tokens", None),
+            "prompt_tokens": getattr(usage, "prompt_tokens", None),
+            "total_tokens": getattr(usage, "total_tokens", None),
             "reasoning_tokens": getattr(details, "reasoning_tokens", None),
             "request_id": getattr(completion, "_request_id", None),
             "response_id": getattr(completion, "id", None),

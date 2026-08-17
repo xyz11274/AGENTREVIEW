@@ -2,11 +2,12 @@ import json
 import math
 import random
 import shutil
+import hashlib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .evaluator import evaluate_program
+from .evaluator import candidate_safe_case, candidate_safe_trace, evaluate_program
 from .models import Episode, EvalItem
 from .quality import QualityResult, check_program_path
 from .reflector import (
@@ -59,6 +60,11 @@ class EvolutionConfig:
     review_request_sha256: str = ""
     data_manifest_sha256: str = ""
     semantic_scholar_cache_sha256: str = ""
+    historical_manifest_sha256: str = ""
+    experiment_config_sha256: str = ""
+    s2_asset_version: str = ""
+    run_seed: int = 0
+    seed_control_available: bool = False
     seed_program_sha256: Dict[str, str] = field(default_factory=dict)
     experiment_kind: str = "formal"
 
@@ -82,6 +88,9 @@ class ProgramCandidate:
     quality: QualityResult
     change_log: ChangeLog
     lineage: List[ChangeLog] = field(default_factory=list)
+    parent_seed: str = ""
+    lineage_name: str = ""
+    program_sha256: str = ""
 
 
 @dataclass
@@ -131,7 +140,14 @@ def _candidate_record(
         "quality_passed": candidate.quality.passed,
         "compile_errors": compile_errors or candidate.quality.errors,
         "change_summary": candidate.change_log.summary,
+        "parent_seed": candidate.parent_seed,
+        "lineage": candidate.lineage_name,
+        "program_sha256": candidate.program_sha256,
     }
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _softmax_parent(candidates, temperature: float, rng: random.Random):
@@ -145,7 +161,18 @@ def _softmax_parent(candidates, temperature: float, rng: random.Random):
     return rng.choices(eligible, weights=weights, k=1)[0]
 
 
-def _select_parent(candidates, config: EvolutionConfig, rng: random.Random):
+def _select_parent(
+    candidates,
+    config: EvolutionConfig,
+    rng: random.Random,
+    lineage_name: str = "",
+):
+    if lineage_name:
+        candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.lineage_name == lineage_name
+        ]
     if config.parent_policy == "best":
         eligible = [candidate for candidate in candidates if candidate.quality.passed]
         return max(eligible, key=lambda candidate: candidate.static_score)
@@ -160,12 +187,18 @@ def _item_id(item) -> str:
     return str(getattr(item, "id", ""))
 
 
-def _reference_programs(candidates: List[ProgramCandidate], parent_id: str) -> List[str]:
+def _reference_programs(
+    candidates: List[ProgramCandidate],
+    parent_id: str,
+    lineage_name: str = "",
+) -> List[str]:
     """Expose scored high/low population designs without validation case content."""
     eligible = [
         candidate
         for candidate in candidates
-        if candidate.quality.passed and candidate.program_id != parent_id
+        if candidate.quality.passed
+        and candidate.program_id != parent_id
+        and (not lineage_name or candidate.lineage_name == lineage_name)
     ]
     ordered = sorted(eligible, key=lambda candidate: candidate.static_score)
     selected = []
@@ -195,6 +228,10 @@ def run_evolution(
     reflector_client=None,
 ) -> EvolutionResult:
     cfg = EvolutionConfig.from_value(config)
+    if cfg.formal and cfg.iterations % 3 != 0:
+        raise ValueError(
+            "Formal lineage comparison requires iterations divisible by three"
+        )
     reflector = reflector_client or toolkit
     print(
         "[MSTAR] Starting evolution: "
@@ -208,6 +245,16 @@ def run_evolution(
     traces_dir = output_dir / "traces"
     pool_dir.mkdir(parents=True, exist_ok=True)
     traces_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(
+        traces_dir / "manifest.json",
+        {
+            "artifact_class": "evaluator_full_trace",
+            "evaluator_only": True,
+            "candidate_forbidden": True,
+            "included_in_promotion_bundle": False,
+            "candidate_mutation_may_reference": False,
+        },
+    )
     scores_path = output_dir / "scores.jsonl"
     lineage_path = output_dir / "lineage.jsonl"
     scores_path.write_text("", encoding="utf-8")
@@ -224,6 +271,60 @@ def run_evolution(
         f"validation={len(validation_values)}",
         flush=True,
     )
+
+    def evaluate_candidate(
+        program_path: str,
+        program_id: str,
+        lineage_name: str,
+        items,
+        *,
+        replicate_id: str,
+        collect_traces: bool = True,
+    ):
+        program_sha = _sha256_file(Path(program_path))
+        checkpoint = (
+            output_dir
+            / "checkpoints"
+            / program_id
+            / f"{replicate_id}.json"
+        )
+        evaluation = evaluate_program(
+            program_path,
+            selected_episodes,
+            items,
+            task_agent,
+            toolkit,
+            metric,
+            collect_traces=collect_traces,
+            write_timeout=cfg.write_timeout,
+            read_timeout=cfg.read_timeout,
+            formal=cfg.formal,
+            checkpoint_path=str(checkpoint) if cfg.formal else None,
+            run_identity=(
+                {
+                    "candidate_id": program_id,
+                    "lineage": lineage_name,
+                    "replicate_id": replicate_id,
+                    "program_sha256": program_sha,
+                    "historical_manifest_sha256": cfg.historical_manifest_sha256,
+                    "experiment_config_sha256": cfg.experiment_config_sha256,
+                    "s2_asset_sha256": cfg.semantic_scholar_cache_sha256,
+                    "s2_asset_version": cfg.s2_asset_version,
+                    "run_seed": cfg.run_seed,
+                    "seed_control_available": cfg.seed_control_available,
+                    "generation_config": {
+                        "task_model_name": cfg.task_model_name,
+                        "write_timeout": cfg.write_timeout,
+                        "read_timeout": cfg.read_timeout,
+                    },
+                }
+                if cfg.formal
+                else None
+            ),
+        )
+        if cfg.formal and evaluation.error:
+            raise RuntimeError(evaluation.error)
+        return evaluation
     if not seed_program_paths:
         raise ValueError("At least one seed program path is required")
     if not validation_values:
@@ -251,6 +352,11 @@ def run_evolution(
         budget=budget,
         allow_random_fallback=not cfg.formal,
     )
+    if cfg.formal:
+        selected_ids = {episode.id for episode in selected_episodes}
+        selected_episodes = [
+            episode for episode in episode_values if episode.id in selected_ids
+        ]
     _write_json(
         output_dir / "selection.json",
         {
@@ -272,7 +378,11 @@ def run_evolution(
         mutation_scope=cfg.mutation_scope,
     )
     candidates: List[ProgramCandidate] = []
-    seed_names = ["vector", "llm_summarizer", "experience"]
+    seed_names = [
+        "vector_search",
+        "llm_summarizer",
+        "experience_learner",
+    ]
     for index, source in enumerate(seed_program_paths):
         suffix = seed_names[index] if index < len(seed_names) else f"seed_{index}"
         program_id = f"program_{index:03d}_seed_{suffix}"
@@ -287,15 +397,12 @@ def run_evolution(
         )
         if quality.passed:
             print(f"[MSTAR] Seed {program_id}: static evaluation started", flush=True)
-            evaluation = evaluate_program(
+            evaluation = evaluate_candidate(
                 str(target),
-                selected_episodes,
+                program_id,
+                f"evolved_from_{suffix}",
                 static_items,
-                task_agent,
-                toolkit,
-                metric,
-                write_timeout=cfg.write_timeout,
-                read_timeout=cfg.read_timeout,
+                replicate_id=f"search-{cfg.seed}",
                 collect_traces=False,
             )
             score = evaluation.mean_score
@@ -321,6 +428,9 @@ def run_evolution(
             quality=quality,
             change_log=change_log,
             lineage=[change_log],
+            parent_seed=f"seed_{suffix}",
+            lineage_name=f"evolved_from_{suffix}",
+            program_sha256=_sha256_file(target),
         )
         candidates.append(candidate)
         _append_jsonl(scores_path, _candidate_record(candidate))
@@ -332,13 +442,17 @@ def run_evolution(
                 "iteration": 0,
                 "change_log": asdict(change_log),
                 "quality": quality.to_dict(),
+                "parent_seed": candidate.parent_seed,
+                "lineage": candidate.lineage_name,
+                "program_sha256": candidate.program_sha256,
             },
         )
 
     next_index = len(candidates)
     if not cfg.dry_run:
         for iteration in range(1, max(0, cfg.iterations) + 1):
-            parent = _select_parent(candidates, cfg, rng)
+            active_lineage = f"evolved_from_{seed_names[(iteration - 1) % len(seed_names)]}"
+            parent = _select_parent(candidates, cfg, rng, active_lineage)
             print(
                 f"[MSTAR] Iteration {iteration}: parent={parent.program_id}, "
                 f"parent_static_score={parent.static_score:.4f}",
@@ -349,15 +463,12 @@ def run_evolution(
                 n_rotating=cfg.rotating_size,
                 seed=cfg.seed + iteration,
             )
-            rotating_eval = evaluate_program(
+            rotating_eval = evaluate_candidate(
                 parent.path,
-                selected_episodes,
+                parent.program_id,
+                parent.lineage_name,
                 rotating_items,
-                task_agent,
-                toolkit,
-                metric,
-                write_timeout=cfg.write_timeout,
-                read_timeout=cfg.read_timeout,
+                replicate_id=f"search-{cfg.seed}",
             )
             print(
                 f"[MSTAR] Iteration {iteration}: rotating_score="
@@ -372,17 +483,22 @@ def run_evolution(
             feedback = EvalFeedback(
                 static_score=parent.static_score,
                 rotating_score=rotating_eval.mean_score,
-                failed_cases=rotating_eval.failed_cases,
-                success_cases=rotating_eval.success_cases,
-                traces=rotating_eval.traces,
-                task_description=cfg.task_description,
-                write_examples=[
-                    trace
+                failed_cases=[
+                    candidate_safe_case(case)
+                    for case in rotating_eval.failed_cases
+                ],
+                success_cases=[
+                    candidate_safe_case(case)
+                    for case in rotating_eval.success_cases
+                ],
+                traces=[
+                    candidate_safe_trace(trace)
                     for trace in rotating_eval.traces
-                    if trace.get("phase") == "write" and trace.get("success")
-                ][:2],
+                ],
+                task_description=cfg.task_description,
+                write_examples=[],
                 debug_logs=[
-                    trace
+                    candidate_safe_trace(trace)
                     for trace in rotating_eval.traces
                     if not trace.get("success", True)
                 ][:10],
@@ -402,7 +518,9 @@ def run_evolution(
                     reflector,
                     constraints,
                     reference_programs=_reference_programs(
-                        candidates, parent.program_id
+                        candidates,
+                        parent.program_id,
+                        parent.lineage_name,
                     ),
                 )
                 code = mutation.program_code
@@ -488,15 +606,12 @@ def run_evolution(
             static_eval = None
             if quality.passed:
                 print(f"[MSTAR] Iteration {iteration}: static evaluation started", flush=True)
-                static_eval = evaluate_program(
+                static_eval = evaluate_candidate(
                     str(target),
-                    selected_episodes,
+                    program_id,
+                    parent.lineage_name,
                     static_items,
-                    task_agent,
-                    toolkit,
-                    metric,
-                    write_timeout=cfg.write_timeout,
-                    read_timeout=cfg.read_timeout,
+                    replicate_id=f"search-{cfg.seed}",
                     collect_traces=False,
                 )
                 static_score = static_eval.mean_score
@@ -521,6 +636,9 @@ def run_evolution(
                 quality=quality,
                 change_log=change_log,
                 lineage=parent.lineage + [change_log],
+                parent_seed=parent.parent_seed,
+                lineage_name=parent.lineage_name,
+                program_sha256=_sha256_file(target),
             )
             candidates.append(candidate)
             compile_errors = list(quality.errors)
@@ -546,6 +664,9 @@ def run_evolution(
                     "change_log": asdict(change_log),
                     "quality": quality.to_dict(),
                     "compile_fix_attempts": fix_attempts,
+                    "parent_seed": candidate.parent_seed,
+                    "lineage": candidate.lineage_name,
+                    "program_sha256": candidate.program_sha256,
                 },
             )
 
@@ -561,17 +682,14 @@ def run_evolution(
     repeated_selection = []
     for candidate in ranked:
         repeated_scores = []
-        for _ in range(repeat_count):
-            repeated = evaluate_program(
+        for repeat_index in range(repeat_count):
+            repeated = evaluate_candidate(
                 candidate.path,
-                selected_episodes,
+                candidate.program_id,
+                candidate.lineage_name,
                 static_items,
-                task_agent,
-                toolkit,
-                metric,
+                replicate_id=f"selection-{cfg.seed}-{repeat_index}",
                 collect_traces=False,
-                write_timeout=cfg.write_timeout,
-                read_timeout=cfg.read_timeout,
             )
             repeated_scores.append(repeated.mean_score)
         mean = sum(repeated_scores) / len(repeated_scores)
@@ -582,6 +700,9 @@ def run_evolution(
             {
                 "candidate": candidate,
                 "scores": repeated_scores,
+                "replicate_ids": [
+                    f"selection-{cfg.seed}-{index}" for index in range(repeat_count)
+                ],
                 "mean": mean,
                 "variance": variance,
             }
@@ -591,22 +712,40 @@ def run_evolution(
         key=lambda value: (value["mean"], -value["variance"]),
     )
     best = selected["candidate"]
+    lineage_champions = {}
+    for lineage_name in sorted({candidate.lineage_name for candidate in eligible}):
+        lineage_candidates = [
+            candidate
+            for candidate in eligible
+            if candidate.lineage_name == lineage_name
+        ]
+        champion = max(lineage_candidates, key=lambda candidate: candidate.static_score)
+        lineage_dir = output_dir / "lineage_champions" / lineage_name
+        lineage_dir.mkdir(parents=True, exist_ok=True)
+        lineage_path = lineage_dir / "best_program.py"
+        shutil.copyfile(champion.path, lineage_path)
+        lineage_champions[lineage_name] = {
+            "parent_seed": champion.parent_seed,
+            "program_id": champion.program_id,
+            "fitness": champion.static_score,
+            "program": str(lineage_path),
+            "program_sha256": _sha256_file(lineage_path),
+            "promotion_provenance": "best static fitness within independent lineage",
+        }
+    _write_json(output_dir / "lineage_champions.json", lineage_champions)
     best_path = output_dir / "best_program.py"
     shutil.copyfile(best.path, best_path)
     print(
         f"[MSTAR] Best program={best.program_id}, score={selected['mean']:.4f}",
         flush=True,
     )
-    final_evaluation = evaluate_program(
+    final_evaluation = evaluate_candidate(
         str(best_path),
-        selected_episodes,
+        best.program_id,
+        best.lineage_name,
         static_items,
-        task_agent,
-        toolkit,
-        metric,
+        replicate_id=f"final-{cfg.seed}",
         collect_traces=False,
-        write_timeout=cfg.write_timeout,
-        read_timeout=cfg.read_timeout,
     )
     best_report = {
         "program_id": best.program_id,
@@ -617,12 +756,23 @@ def run_evolution(
             {
                 "program_id": value["candidate"].program_id,
                 "scores": value["scores"],
+                "replicate_ids": value["replicate_ids"],
                 "mean": value["mean"],
                 "variance": value["variance"],
             }
             for value in repeated_selection
         ],
         "source_path": best.path,
+        "parent_seed": best.parent_seed,
+        "lineage": best.lineage_name,
+        "candidate_program_sha256": best.program_sha256,
+        "promoted_program_sha256": _sha256_file(best_path),
+        "promotion_provenance": {
+            "selection_rule": "highest repeated-selection mean; variance tie-break",
+            "source_program_id": best.program_id,
+            "source_lineage": best.lineage_name,
+        },
+        "lineage_champions": lineage_champions,
         "quality": best.quality.to_dict(),
         "change_log": asdict(best.change_log),
         "static_validation_ids": sorted(static_ids),
@@ -633,6 +783,13 @@ def run_evolution(
             "case_content_hidden": True,
         },
         "test_set_used": False,
+        "run_seed": cfg.run_seed,
+        "seed_control_available": cfg.seed_control_available,
+        "generation_config": {
+            "task_model_name": cfg.task_model_name,
+            "reflector_model_name": cfg.reflector_model_name,
+            "judge_model_name": cfg.judge_model_name,
+        },
     }
     _write_json(output_dir / "best_eval_report.json", best_report)
     return EvolutionResult(

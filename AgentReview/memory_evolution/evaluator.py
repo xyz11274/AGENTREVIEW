@@ -1,8 +1,48 @@
 import time
-from typing import Callable, List
+from contextlib import nullcontext
+from typing import Any, Callable, Dict, List, Optional
 
+from .checkpoint import load_checkpoint, save_checkpoint
+from .benchmark_adapter import ReviewSubmission, evaluate_frozen_review
 from .models import Episode, EvalItem, EvalResult, to_serializable
 from .sandbox import SandboxSession
+
+
+EXPERIENCE_PROTOCOL = "self_generated_after_review"
+EXPERIENCE_PROTOCOL_VERSION = "self-generated-experience-v1"
+
+
+def candidate_safe_case(case: Dict[str, Any]) -> Dict[str, Any]:
+    """Reduce evaluator-side state to feedback that cannot reproduce gold."""
+    error = str(case.get("error") or "")
+    error_type = error.split(":", 1)[0] if error else ""
+    output = {
+        "score": float(case.get("score") or 0.0),
+        "success": bool(case.get("success")),
+    }
+    if error_type:
+        output["error_category"] = error_type
+    metrics = case.get("structured_metrics")
+    if isinstance(metrics, dict):
+        output["metrics"] = {
+            str(key): value
+            for key, value in metrics.items()
+            if isinstance(value, (int, float, bool)) or value is None
+        }
+    return output
+
+
+def candidate_safe_trace(trace: Dict[str, Any]) -> Dict[str, Any]:
+    """Strip questions, answers, references and free-text judge rationales."""
+    output = {
+        "phase": str(trace.get("phase") or ""),
+        "success": bool(trace.get("success")),
+    }
+    if "score" in trace:
+        output["score"] = float(trace.get("score") or 0.0)
+    if trace.get("error"):
+        output["error_category"] = str(trace["error"]).split(":", 1)[0]
+    return output
 
 
 def _score_metric(metric, prediction: str, gold: str, item: EvalItem) -> float:
@@ -25,8 +65,23 @@ def evaluate_program(
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
     require_bubblewrap: bool = True,
+    formal: bool = False,
+    checkpoint_path: Optional[str] = None,
+    run_identity: Optional[Dict[str, Any]] = None,
+    benchmark_adapter_factory: Optional[Callable] = None,
 ) -> EvalResult:
     started = time.monotonic()
+    resource_before = (
+        toolkit.resource_snapshot()
+        if hasattr(toolkit, "resource_snapshot")
+        else {}
+    )
+    judge_toolkit = getattr(metric, "judge_toolkit", None)
+    judge_resource_before = (
+        judge_toolkit.resource_snapshot()
+        if hasattr(judge_toolkit, "resource_snapshot")
+        else {}
+    )
     traces = []
     write_failures = 0
     session = None
@@ -52,7 +107,56 @@ def evaluate_program(
     episode_values = [Episode.from_value(value) for value in episodes]
     item_values = [EvalItem.from_value(value) for value in eval_items]
 
-    for episode in episode_values:
+    frozen_episode_ids = [episode.id for episode in episode_values]
+    completed_ids: List[str] = []
+    if formal:
+        if not checkpoint_path or not isinstance(run_identity, dict):
+            session.close(force=True)
+            return EvalResult(
+                mean_score=0.0,
+                error="FormalProtocolError: formal replay requires identity-bound checkpointing",
+            )
+        for episode in episode_values:
+            if episode.metadata.get("experience_protocol") != EXPERIENCE_PROTOCOL:
+                session.close(force=True)
+                return EvalResult(
+                    mean_score=0.0,
+                    error=(
+                        "FormalProtocolError: missing, mismatched, or legacy "
+                        f"experience protocol for {episode.id}"
+                    ),
+                )
+            if (
+                episode.metadata.get("experience_protocol_version")
+                != EXPERIENCE_PROTOCOL_VERSION
+            ):
+                session.close(force=True)
+                return EvalResult(
+                    mean_score=0.0,
+                    error=(
+                        "FormalProtocolError: experience protocol version "
+                        f"mismatch for {episode.id}"
+                    ),
+                )
+        try:
+            checkpoint = load_checkpoint(
+                checkpoint_path,
+                expected_identity=run_identity,
+                frozen_ids=frozen_episode_ids,
+            )
+            if checkpoint:
+                completed_ids = list(checkpoint["completed_paper_ids"])
+                session.restore(checkpoint["memory_snapshot"])
+        except Exception as exc:
+            session.close(force=True)
+            return EvalResult(
+                mean_score=0.0,
+                error=f"FormalCheckpointError: {type(exc).__name__}: {exc}",
+            )
+
+    for episode_index, episode in enumerate(episode_values):
+        if episode_index < len(completed_ids):
+            continue
         write_started = time.monotonic()
         trace = {
             "phase": "write",
@@ -60,9 +164,40 @@ def evaluate_program(
             "raw_text": episode.text,
         }
         try:
-            item = task_agent.extract_knowledge_item(program, episode.text)
-            with toolkit.operation("memory_write"):
-                session.write(item, episode.text)
+            raw_text = episode.text
+            paper_scope = (
+                toolkit.paper_scope(episode.id)
+                if hasattr(toolkit, "paper_scope")
+                else nullcontext()
+            )
+            with paper_scope:
+                if episode.metadata.get("experience_protocol") == EXPERIENCE_PROTOCOL:
+                    # Historical Paper_i is reviewed against only Memory built from
+                    # Paper_1..Paper_{i-1}.  Writeback happens strictly afterwards.
+                    historical_query = task_agent.generate_query(program, episode.text)
+                    with toolkit.operation("historical_memory_read"):
+                        historical_context = session.read(historical_query)
+                    generated_review = task_agent.generate_response(
+                        program,
+                        episode.text,
+                        historical_context,
+                    )
+                    raw_text = (
+                        "HISTORICAL PAPER TASK\n"
+                        f"{episode.text}\n\n"
+                        "SELF-GENERATED REVIEW EXPERIENCE\n"
+                        f"{generated_review}"
+                    )
+                    trace.update(
+                        {
+                            "experience_protocol": "review_then_write",
+                            "prior_memory_chars": len(historical_context),
+                            "generated_review_chars": len(generated_review),
+                        }
+                    )
+                item = task_agent.extract_knowledge_item(program, raw_text)
+                with toolkit.operation("memory_write"):
+                    session.write(item, raw_text)
             trace.update(
                 {
                     "knowledge_item": to_serializable(item),
@@ -70,6 +205,23 @@ def evaluate_program(
                     "success": True,
                 }
             )
+            if formal:
+                snapshot = session.snapshot()
+                completed_ids.append(episode.id)
+                save_checkpoint(
+                    checkpoint_path,
+                    run_identity=run_identity,
+                    frozen_ids=frozen_episode_ids,
+                    completed_ids=completed_ids,
+                    memory_snapshot=snapshot,
+                    paper_record={
+                        "paper_id": episode.id,
+                        "paper_index": episode_index,
+                        "experience_protocol": EXPERIENCE_PROTOCOL,
+                        "experience_protocol_version": EXPERIENCE_PROTOCOL_VERSION,
+                        "completed": True,
+                    },
+                )
         except Exception as exc:
             write_failures += 1
             trace.update(
@@ -79,13 +231,33 @@ def evaluate_program(
                     "error": f"{type(exc).__name__}: {exc}",
                 }
             )
+            if formal:
+                if collect_traces:
+                    traces.append(trace)
+                session.close(force=True)
+                return EvalResult(
+                    mean_score=0.0,
+                    traces=traces,
+                    runtime_stats={
+                        "total_seconds": time.monotonic() - started,
+                        "completed_historical_prefix": list(completed_ids),
+                        "interrupted_paper_id": episode.id,
+                        "interrupted_paper_reused": False,
+                    },
+                    error=f"HistoricalReplayError: {trace['error']}",
+                )
         if collect_traces:
             traces.append(trace)
 
+    historical_snapshot = session.snapshot() if formal else None
     evaluated_cases = []
     scores = []
     read_durations = []
     for eval_item in item_values:
+        if formal:
+            # B is read-only state: every Validation paper starts from exactly
+            # the same A-prefix snapshot, so B ordering cannot alter fitness.
+            session.restore(historical_snapshot)
         read_started = time.monotonic()
         case = {
             "id": eval_item.id,
@@ -93,17 +265,41 @@ def evaluate_program(
             "gold": eval_item.answer,
         }
         try:
-            query = task_agent.generate_query(program, eval_item.question)
-            with toolkit.operation("memory_read"):
-                context = session.read(query)
-            if not isinstance(context, str):
-                raise TypeError("KnowledgeBase.read() must return str")
-            if len(context) > 3000:
-                raise ValueError("KnowledgeBase.read() exceeded 3000 characters")
-            answer = task_agent.generate_response(
-                program, eval_item.question, context
+            paper_scope = (
+                toolkit.paper_scope(eval_item.id)
+                if hasattr(toolkit, "paper_scope")
+                else nullcontext()
             )
-            score = _score_metric(metric, answer, eval_item.answer, eval_item)
+            with paper_scope:
+                query = task_agent.generate_query(program, eval_item.question)
+                with toolkit.operation("memory_read"):
+                    context = session.read(query)
+                if not isinstance(context, str):
+                    raise TypeError("KnowledgeBase.read() must return str")
+                if len(context) > 3000:
+                    raise ValueError("KnowledgeBase.read() exceeded 3000 characters")
+                answer = task_agent.generate_response(
+                    program, eval_item.question, context
+                )
+            if benchmark_adapter_factory is not None:
+                adapter = benchmark_adapter_factory(
+                    metric, eval_item.answer, to_serializable(eval_item)
+                )
+                benchmark_result = evaluate_frozen_review(
+                    adapter,
+                    ReviewSubmission(
+                        paper_id=eval_item.id.split("::", 1)[0],
+                        review=answer,
+                        metadata=to_serializable(eval_item),
+                    ),
+                )
+                adapter_result = benchmark_result["result"]
+                score = float(adapter_result["score"])
+                metric_details = adapter_result.get("structured_metrics")
+                case["benchmark_adapter"] = benchmark_result["benchmark"]
+            else:
+                score = _score_metric(metric, answer, eval_item.answer, eval_item)
+                metric_details = getattr(metric, "last_details", None)
             case.update(
                 {
                     "query": to_serializable(query),
@@ -111,6 +307,11 @@ def evaluate_program(
                     "answer": answer,
                     "score": score,
                     "success": True,
+                    "structured_metrics": (
+                        dict(metric_details)
+                        if isinstance(metric_details, dict)
+                        else {}
+                    ),
                 }
             )
         except Exception as exc:
@@ -149,8 +350,29 @@ def evaluate_program(
             "episode_count": len(episode_values),
             "eval_item_count": len(item_values),
             "write_failures": write_failures,
+            "completed_historical_prefix": list(completed_ids),
+            "validation_state_reset_per_item": bool(formal),
             "mean_read_seconds": (
                 sum(read_durations) / len(read_durations) if read_durations else 0.0
+            ),
+            "actual_context_size": sum(
+                len(str(case.get("question") or ""))
+                + len(str(case.get("context") or ""))
+                for case in evaluated_cases
+            ),
+            "memory_context_size": sum(
+                len(str(case.get("context") or ""))
+                for case in evaluated_cases
+            ),
+            "resources": (
+                toolkit.resource_delta(resource_before)
+                if hasattr(toolkit, "resource_delta")
+                else {}
+            ),
+            "evaluator_resources": (
+                judge_toolkit.resource_delta(judge_resource_before)
+                if hasattr(judge_toolkit, "resource_delta")
+                else {}
             ),
         },
     )

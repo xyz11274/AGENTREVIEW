@@ -87,6 +87,7 @@ class SearchLoopTest(unittest.TestCase):
                     episode_budget=1,
                     write_timeout=2,
                     read_timeout=2,
+                    formal=False,
                 ),
             )
 
@@ -144,6 +145,7 @@ class SearchLoopTest(unittest.TestCase):
                     dry_run=True,
                     write_timeout=2,
                     read_timeout=2,
+                    formal=False,
                 ),
             )
         self.assertEqual(result.pool_size, 3)

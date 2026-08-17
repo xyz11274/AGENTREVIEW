@@ -1,93 +1,27 @@
-# 实验数据协议：一个 Source Pool + 四个隔离数据区
+# 实验数据协议：paper-level temporal split + 四区隔离
 
-## Official Benchmark Venue-Year Isolation
+状态：2026-08-18 修订。此前“CoCo 覆盖的 venue-year 全量 `benchmark_reserved`”规则已被本 ADR 明确取代，旧 manifest 只允许分析历史 run，禁止进入新的 formal pipeline。
 
-CoCoReviewBench 与 OpenReview Source Pool 存在来源重叠，因此 A/B/C 与 D 的隔离不只依赖 paper-level 去重。
+CoCoReviewBench 的 3900 篇论文是 benchmark source pool，不等于每次正式实验必须评测的 D。source pool 在正式 Evolution 前通过 frozen manifest 一次性划为四个 paper-level、work-family-atomic 的区域：
 
-当前协议采用 Venue × Year 作为主要 benchmark reservation 单元：
+- A. Historical / Experience：Candidate 按冻结顺序从 empty Memory 开始，自产 Review / trajectory / evidence，审完 Paper_i 后才写 Memory。
+- B. Evolution Validation：只用于 fitness、selection、mutation、promotion；human reference 仅 evaluator 可见；每篇 B 评估前恢复同一 A 状态，B 不写 Historical Memory。
+- C. Effectiveness Holdout：Program 冻结后的首次独立 development measurement，不反馈当前 Program。
+- D. Held-out CoCo Benchmark Test：从未进入 A/B/C，Program 与实验配置完全冻结后才通过 Benchmark Adapter 运行。
 
-1. 从 CoCoReviewBench 的 metadata / manifest 中取得其覆盖的全部 venue-year cells；
-2. 将这些 venue-year cells 标记为 `benchmark_reserved`；
-3. OpenReview 中属于任何 `benchmark_reserved` venue-year 的论文均不得进入 A. Historical / Experience、B. Evolution Validation、C. Effectiveness Holdout；
-4. 即使某篇论文本身未被 CoCo 最终 reviewer-selection 选中，只要属于 reserved venue-year，也仍然排除。
+当前 frozen split 位于 `AgentReview/configs/coco_temporal_split_v1/manifest.json`：A=2400（venue-year ≤2022），B=300（2023，按 venue 对 family 做确定性 50/50 B/C 分配），C=300（2023），D=900（2024–2025）。同一 work family 整体分配；不采用 paper random split。审计强制要求 paper ID、normalized title、paper family overlap 均为 0，且 `max(A/B/C paper_review_cutoff) <= min(D paper_review_cutoff)`。
 
-因此：
+源数据没有精确 submission/review dates，因此当前 cutoff 明确采用保守 year-level fallback：每篇论文的 `paper_review_cutoff = venue year 前一年的 12-31`。未来补齐精确日期时必须创建新的 versioned manifest，不得原地改写 v1。
 
-`Development Candidate Pool
-= OpenReview Source Pool
+Semantic Scholar 同样受 cutoff 约束。每个 target 的 frozen entry 必须记录 target identity、retrieval method/version、paper_review_cutoff、top_k/config、result SHA256；publication date 缺失或晚于 cutoff 的结果必须拒绝。formal mode 缺 provenance、缺 target、SHA 不符或发现未来论文时 fail fast。S2 不默认注入，Candidate 只能选择是否读取当前 paper 对应的同一 frozen pool，禁止 live query 和跨 paper 读取。
 
-- benchmark_reserved venue-year cells`
+Human Reference Boundary 对四区均不变：Candidate 只看论文和 candidate-visible metadata；human review、gold、taxonomy、judge rationale/full trace 永远留在 evaluator-only 边界。Reflector 只接收 scalar fitness、安全数值指标、预定义非 gold error category 与资源统计。
 
-A / B / C 均从 Development Candidate Pool 中建立。
-
-Venue-Year Isolation 是主要划分规则；建立各 split 后仍必须执行第二层审计：
-
-- paper ID overlap = 0
-- normalized title overlap = 0
-- paper family overlap = 0
-
-这些 overlap checks 用于验证隔离正确性，而不是替代 Venue-Year Isolation。
-
-reserved venue-year 列表必须由 Benchmark metadata / manifest 生成并版本化，不依赖人工目录判断。
-
-所有实验数据从 Source Pool（当前：`/data0/xyj/shengao/OpenReview`、`/data0/xyj/shengao/CoCoReviewBench`）经 manifest 划分为四个互相隔离的数据区，不再笼统使用 train/test：
-
-- **A. Historical / Experience Set** — 各 Program 做过历史任务、自产经验。Candidate 可见论文全文 + candidate-visible metadata + source anchors + 可选 S2；不可见 human review / gold / benchmark labels / judge score。所有 Program 面对完全相同的 paper IDs、顺序、builder、context budget。冻结 paper IDs / order / source / SHA256 / preprocessing version。当前候选资产：`memory_corpus.jsonl` 的 20 篇。
-- **B. Evolution Validation Set** — Evolution 的 selection / mutation / promotion 依据。Human reference 只在 evaluator 侧。三条 Seed lineage 共用同一套，一次正式 run 内冻结，不得换题。**当前不存在正式集合**（pilot_full validation 因 ADR-0005 边界违反作废；不允许拿 proxy 20 顶替）——建立它是实验前置（见 docs/TODO.md）。
-- **C. Effectiveness Holdout (proxy)** — Evolution 完成、Program 冻结后的第一次独立 measurement。严格顺序 `Evolution 完成 → Program frozen → proxy`；禁止「跑 proxy → 看结果 → 改 Program → 再跑 proxy」，否则 proxy 退化为 validation。当前资产：`effectiveness_validation.jsonl` 20 篇。
-- **D. Official Benchmark** — 系统最外层独立裁判。当前 CoCoReviewBench benchmark pool 共 3900 篇；其覆盖的 venue-year cells 整体进入 `benchmark_reserved`。最终实际 evaluated N 由官方 reviewer-selection manifest / evaluation pipeline 决定。
-
-## Memory 写回边界
-
-Memory 构建不是 Evolution 之前的独立预处理步骤，而是每个 Candidate fitness evaluation 的组成部分。
-
-对于每个 Candidate：
-
-`fresh empty Memory State → 在 A. Historical / Experience Set 上运行自己的审稿策略 → 自产 review / trajectory / evidence → 持续构建自己的 Program-specific Memory → 进入 B. Evolution Validation → 生成 validation reviews → external evaluator 计算 fitness`
-
-A 区生成的 review / trajectory / evidence 属于 Self-Generated Experience，可由当前 Program 决定如何写入自己的 Memory。
-
-B 区用于评价已经通过 A 区形成经验的 Candidate。B 区论文产生的 review 用于 fitness / evolution feedback，但不作为该 Candidate 的 Historical Memory 写回来源，以避免 Validation paper 之间因顺序产生额外学习效应。
-
-C. Effectiveness Holdout 与 D. Official Benchmark 同样不承担历史经验积累职责；其 review 仅用于独立 measurement / benchmark evaluation。
-
-**隔离硬约束**：四区两两 paper ID 零重叠，并同时验证 normalized title / paper family 零重叠；每区独立 manifest / SHA256；不得靠目录名判断 split 身份。
-
-**Human Reference 流向**：
-
-| 数据区                     | Candidate 看论文 | Candidate 看 Human Review    | 用于 Evolution selection |
-| -------------------------- | ---------------- | ---------------------------- | ------------------------ |
-| A. Historical / Experience | 是               | 否                           | 否（间接形成经验）       |
-| B. Evolution Validation    | 是               | 否，evaluator only           | 是                       |
-| C. Effectiveness Holdout   | 是               | 否，evaluator only           | 否                       |
-| D. Official Benchmark      | 是               | 否，benchmark evaluator only | 否                       |
-
-## Considered Options
-
-- **proxy 20 篇兼作 Evolution Validation**：被否决。一区两用会使 proxy 退化为训练信号，development measurement 失去独立性（适应性过拟合）。
-- **Evolution train/validation 从同一论文池随机切分**：被否决（iter5 的教训）。同池切分有 paper family 泄漏风险，且 pilot_full 的 validation 曾与 candidate-visible 的真人参照混用。
-- **一源四区 + manifest 划分 + 硬隔离**：被采纳。
+Formal 启动顺序固定为：Asset Manifest SHA 校验 → A/B/C/D paper/title/family + temporal audit → A/B 数据成员与 canonical preprocessing 校验 → S2 future-leak audit → PASS 后才允许 Evolution。D 的正式路径固定为 `Frozen Reviewer → Review → Benchmark Adapter → CoCo evaluator`。
 
 ## Consequences
 
-- 建立正式 Evolution Validation Set 是 QUAL 重新进化的阻塞项（QUAL 最小实现约 20–50 篇，数量为工程配置；采样规则见 TODO）。
-- 每区的建立都要产出独立 manifest（paper IDs、SHA256、来源、采样规则、与另三区的隔离校验记录）。
-- 任何「先看结果再调」的行为只允许发生在 B 区（经 fitness），发生在 C/D 区即污染。
-
-
-
-**Official Benchmark Venue-Year Isolation**
-
-当前 CoCoReviewBench 与 OpenReview Source Pool 存在论文来源重叠，因此 A/B/C 与 D 的隔离不只采用 paper-level 去重，而优先采用  **Venue × Year 标签级隔离** 。
-
-系统从 Official Benchmark metadata 中确定其覆盖的 venue-year cells，并将这些 cells 标记为 `benchmark_reserved`。任何属于 `benchmark_reserved` venue-year 的 OpenReview 论文均不得进入 Historical / Experience Set、Evolution Validation Set 或 Effectiveness Holdout，即使该论文自身并未被 CoCoReviewBench 最终 selection 使用。
-
-因此 development pool 定义为：
-
-`OpenReview Source Pool - benchmark_reserved venue-year cells`
-
-再从该 Development Pool 中划分 A / B / C。
-
-Venue-Year Isolation 是主要的数据划分规则；paper ID、normalized title、paper family overlap 检查作为第二层审计，要求最终仍全部为零。
-
-Benchmark 的 venue-year 标签应从 benchmark metadata / manifest 生成，不依赖人工目录判断；未来新增或更换 Benchmark 时，由对应 Benchmark Adapter 提供其 reserved metadata 范围。
+- 旧 `benchmark_reserved_venue_year_v1.json` 与 `asset_manifest_v1.json` 标记为 superseded，formal gate 不兼容。
+- CoCo 论文进入 A/B/C 后永久排除 D；看过 C/D 结果后不得回改当前 Program 并仍称其 untouched。
+- 3900 仅是 source pool；当前 D manifest 为 900 篇。
+- 当前 formal blocker 不再是 development pool 为 0，而是 time-safe frozen S2 pool 尚未生成、A/B canonical bundles 尚未重建、post-protocol Programs 尚未产生。

@@ -58,6 +58,68 @@ class CompileFixResult:
     errors: List[str] = field(default_factory=list)
 
 
+_FORBIDDEN_FEEDBACK_KEYS = {
+    "answer",
+    "gold",
+    "human_review",
+    "human review",
+    "reference",
+    "question",
+    "context",
+    "raw_question",
+    "raw_context",
+    "rationale",
+    "evaluator_trace",
+    "full_trace",
+}
+_SAFE_CASE_KEYS = {"score", "success", "error_category", "metrics", "resources"}
+_SAFE_TRACE_KEYS = {"phase", "score", "success", "error_category", "metrics", "resources"}
+
+
+def validate_candidate_feedback(feedback: EvalFeedback) -> None:
+    """Entry-level fail-closed guard independent of feedback construction sites."""
+    if feedback.write_examples:
+        raise ValueError("Candidate feedback write_examples are forbidden")
+    description = str(feedback.task_description or "").lower()
+    if any(
+        marker in description
+        for marker in ("gold", "human review", "raw question", "raw context", "reference answer")
+    ):
+        raise ValueError("Candidate task description contains evaluator-sensitive markers")
+    for collection_name, values, allowed in (
+        ("failed_cases", feedback.failed_cases, _SAFE_CASE_KEYS),
+        ("success_cases", feedback.success_cases, _SAFE_CASE_KEYS),
+        ("traces", feedback.traces, _SAFE_TRACE_KEYS),
+        ("debug_logs", feedback.debug_logs, _SAFE_TRACE_KEYS),
+    ):
+        for index, value in enumerate(values):
+            if not isinstance(value, dict):
+                raise ValueError(f"Candidate feedback {collection_name}[{index}] is not a dict")
+            lowered = {str(key).lower() for key in value}
+            forbidden = lowered & _FORBIDDEN_FEEDBACK_KEYS
+            unexpected = set(value) - allowed
+            if forbidden or unexpected:
+                raise ValueError(
+                    "Candidate feedback contains forbidden or non-whitelisted "
+                    f"fields in {collection_name}[{index}]: "
+                    f"{sorted(forbidden | unexpected)}"
+                )
+            for nested_name in ("metrics", "resources"):
+                nested = value.get(nested_name)
+                if nested is None:
+                    continue
+                if not isinstance(nested, dict) or any(
+                    not (isinstance(item, (int, float, bool)) or item is None)
+                    for item in nested.values()
+                ):
+                    raise ValueError(
+                        f"Candidate feedback {nested_name} must be numeric-only"
+                    )
+            category = value.get("error_category")
+            if category is not None and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", str(category)):
+                raise ValueError("Candidate feedback error_category is not predefined-safe")
+
+
 def _complete(client, messages) -> str:
     if client is None:
         raise RuntimeError("Reflector requires an LLM client")
@@ -185,6 +247,7 @@ def mutate_program(
     constraints: EvolutionConstraints,
     reference_programs: Optional[List[str]] = None,
 ) -> MutationResult:
+    validate_candidate_feedback(eval_feedback)
     rng = random.Random(eval_feedback.feedback_seed)
     failed_cases = list(eval_feedback.failed_cases)
     if len(failed_cases) > 2:
@@ -221,6 +284,8 @@ KnowledgeBase.__init__(toolkit) receives the paper-compatible toolkit:
 - toolkit.db: an in-memory sqlite3 connection.
 - toolkit.chroma: an ephemeral Chroma-compatible client.
 - toolkit.llm_completion(messages, **kwargs): at most one call per read/write.
+- toolkit.retrieve_s2(paper_id, limit=10): optional read-only access to the
+  paper-specific frozen S2 pool; it never performs a live query.
 - toolkit.logger.debug(message): captured memory debug logging.
 
 KnowledgeItem and Query fields must use only str, int, float, bool, list[str],

@@ -4,6 +4,8 @@ key.py
 
 *.pdf
 *.json
+!configs/
+!configs/*.json
 *.png
 *.jpg
 *.jpeg
