@@ -125,21 +125,25 @@ class MarkdownPaperExtractorPlayer(Player):
 
         # ② 调用 OpenScholar 的 Semantic Scholar 流程（黑盒）
         retrieval_queries = [title]
-        try:
-            papers = retrieve_with_openscholar(
-                query=title,
-                title_query=title,
-                use_llm_keywords=False,
-                client=None,
-                model_name=None,
-                max_papers=getattr(self.args, "max_retrieved_refs", 20)
-            )
-
-        except Exception as e:
+        if getattr(self.args, "disable_s2_retrieval", False):
             papers = []
-            refs_text = f"References:\n(Failed to retrieve related papers: {e})"
+            refs_text = "References:\n(S2 retrieval disabled by --disable_s2_retrieval.)"
         else:
-            refs_text = format_refs(papers)
+            try:
+                papers = retrieve_with_openscholar(
+                    query=title,
+                    title_query=title,
+                    use_llm_keywords=False,
+                    client=None,
+                    model_name=None,
+                    max_papers=getattr(self.args, "max_retrieved_refs", 20)
+                )
+
+            except Exception as e:
+                papers = []
+                refs_text = f"References:\n(Failed to retrieve related papers: {e})"
+            else:
+                refs_text = format_refs(papers)
 
         self.last_memory = {
             "paper_md_path": str(p),

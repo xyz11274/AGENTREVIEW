@@ -22,7 +22,7 @@ def get_openai_client(client_type: str):
         os.environ['OPENAI_API_VERSION'] = "2023-05-15"
 
     if client_type == "openai":
-        base_url = os.environ['OPENAI_API_BASE'].rstrip("/")
+        base_url = os.environ['OPENAI_BASE_URL'].rstrip("/")
         if not base_url.startswith(("http://", "https://")):
             raise ValueError(
                 f"OPENAI_API_BASE must be an HTTP(S) URL, got {base_url!r}"

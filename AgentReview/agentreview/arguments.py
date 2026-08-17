@@ -155,6 +155,11 @@ def parse_args():
     )
 
     parser.add_argument(
+    "--disable_s2_retrieval", action="store_true",
+    help="Skip Semantic Scholar related-work retrieval entirely (references section will be empty)."
+    )
+
+    parser.add_argument(
     "--disable_memory_retrieval", action="store_true",
     help="Disable retrieval from previous AgentReview memory records during review generation."
     )
