@@ -396,8 +396,12 @@ def build_parser():
     suite.add_argument("--output", required=True)
     suite.add_argument(
         "--experiment-seeds",
-        default="0,1,2,3,4",
-        help="Five comma-separated independent evolution seeds for formal runs.",
+        default="0",
+        help=(
+            "One or more comma-separated independent outer Evolution seeds. "
+            "The minimal formal feasibility run uses seed 0; additional seeds "
+            "are optional stability/robustness repeats."
+        ),
     )
     suite.add_argument("--primary-seed", type=int, default=0)
     _add_search_args(suite)
@@ -408,7 +412,11 @@ def build_parser():
     meta_suite.add_argument("--output", required=True)
     meta_suite.add_argument(
         "--experiment-seeds",
-        default="0,1,2,3,4",
+        default="0",
+        help=(
+            "One or more comma-separated independent outer Evolution seeds. "
+            "The minimal formal feasibility run uses seed 0."
+        ),
     )
     meta_suite.add_argument("--primary-seed", type=int, default=0)
     _add_search_args(meta_suite)
@@ -448,6 +456,20 @@ def build_parser():
 def _paths(data_root: str, task_id: str):
     root = Path(data_root).expanduser().resolve() / task_id
     return root / "episodes.jsonl", root / "validation.jsonl"
+
+
+def _parse_experiment_seeds(value: str):
+    try:
+        seeds = [int(item) for item in str(value).split(",") if item.strip()]
+    except ValueError as exc:
+        raise SystemExit(
+            "--experiment-seeds must be a comma-separated list of integers"
+        ) from exc
+    if not seeds:
+        raise SystemExit("Formal suite evolution requires at least one experiment seed")
+    if len(set(seeds)) != len(seeds):
+        raise SystemExit("--experiment-seeds must not contain duplicates")
+    return seeds
 
 
 def _run_task(args, task_id: str, output: Path, seed: int):
@@ -974,9 +996,7 @@ def main():
             args.seed,
         ).to_dict()
     elif args.command == "evolve-specialists":
-        seeds = [int(value) for value in args.experiment_seeds.split(",") if value.strip()]
-        if not _is_nonformal(args) and len(seeds) != 5:
-            raise SystemExit("Formal evolution requires exactly five experiment seeds")
+        seeds = _parse_experiment_seeds(args.experiment_seeds)
         if args.primary_seed not in seeds:
             raise SystemExit("--primary-seed must be included in --experiment-seeds")
         results = {}
@@ -1042,9 +1062,7 @@ def main():
             encoding="utf-8",
         )
     elif args.command == "evolve-meta":
-        seeds = [int(value) for value in args.experiment_seeds.split(",") if value.strip()]
-        if not _is_nonformal(args) and len(seeds) != 5:
-            raise SystemExit("Formal evolution requires exactly five experiment seeds")
+        seeds = _parse_experiment_seeds(args.experiment_seeds)
         if args.primary_seed not in seeds:
             raise SystemExit("--primary-seed must be included in --experiment-seeds")
         runs = []

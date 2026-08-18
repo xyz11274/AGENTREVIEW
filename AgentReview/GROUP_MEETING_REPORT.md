@@ -254,15 +254,17 @@ Semantic Scholar 缓存下比较：
 
 报告内容：
 
-- 每个任务五个 seeds 的 mean ± standard deviation；
+- 当前最小可行闭环报告 outer seed 0 的 paired improvement；未来可选的
+  stability/robustness 实验才报告多个 outer seeds 的 mean ± standard deviation；
 - 相对于无进化基线的 paired improvement；
 - work-family 级 paired bootstrap 95% confidence interval；
 - 改善和下降的论文比例；
 - 格式失败率、候选编译失败率、API 调用量和运行时间；
 - META 作为主要终点，五个 specialist 作为机制和分维度结果。
 
-seed 0 是预先确定的主运行。seed 1–4 只用于稳定性分析，不能根据验证分数
-挑选最好的 seed 再测试。
+outer seed 0 是当前最小可行闭环的预先确定运行。seed 1–4 仅是未来可选的
+稳定性分析配置，不能根据验证分数挑选最好的 seed 再测试。每个 outer seed
+内部仍包含三条独立 Seed Program lineage，不得混淆。
 
 ---
 
@@ -465,17 +467,18 @@ runs/pilot_v2_suite/
 | train candidate families | 2000 |
 | specialist validation families | 250 |
 | meta validation families | 250 |
-| experiment seeds | 0,1,2,3,4 |
+| experiment seeds | 0（当前 minimal feasibility；0,1,2,3,4 仅供未来 stability） |
 | mutations per seed/task | 20 |
 | specialist tasks | 5 |
 | META tasks | 1 |
 
 执行顺序：
 
-1. 五个 specialist 分别进行 5 seeds 正式进化；
+1. 当前 minimal feasibility 仅以 outer seed 0 运行；未来可选 stability 实验
+   才扩展到多个 outer seeds；
 2. 固定 seed 0 对应的五个 promoted programs；
 3. out-of-fold 生成 META 输入；
-4. META 进行 5 seeds 正式进化；
+4. META 若进入后续完整实验，outer seed 数同样参数化且至少为 1；
 5. 固定 seed 0 META program；
 6. 运行正式消融；
 7. 最后才准备并执行一次封存 test suite。
@@ -485,7 +488,8 @@ runs/pilot_v2_suite/
 主要判断标准：
 
 - 完整 M★ 相对于 `iterations=0` 的 META fitness 是否提高；
-- 提升是否在五个 seeds 上稳定，而不是单一 seed 偶然结果；
+- 未来 stability 实验再判断提升是否跨多个 outer seeds 稳定；该项不属于
+  当前 minimal feasibility 闭环的必要条件；
 - 95% paired bootstrap CI 是否支持正向增益；
 - 是否存在某个 specialist 明显退化；
 - 完整 M★ 是否优于 instructions-only、schema-logic-only 和 linear-best；

@@ -62,13 +62,17 @@ A formal run uses three seed programs and 21 successful child candidate
 evaluations (7 per lineage); failed mutation/guard/compile/evaluation attempts
 do not consume that completed budget. Static
 validation size 25, rotating feedback size 5, train-to-validation budget 5:1,
-parent softmax temperature 0.15, three compile repairs, and five independent
-evolution seeds.
+parent softmax temperature 0.15, three compile repairs, and one outer Evolution
+seed (`0`) for the current minimal feasibility experiment. The three Seed
+Program lineages remain independent and each receives seven successful child
+evaluations.
 
 ```bash
 python -m memory_evolution.cli evolve-specialists \
   --data-root data/evolution \
   --output runs/formal \
+  --experiment-seeds 0 \
+  --primary-seed 0 \
   --asset-manifest configs/asset_manifest_v2.json \
   --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
@@ -106,9 +110,12 @@ revision; the adapter source hash and revision are recorded in every run.
 
 Each specialist gets its own pool, scores, lineage, traces and promoted
 `best_program.py`. No program or feedback is shared between dimensions.
-Seed 0 is the preregistered primary run used for deployment; seeds 1–4 are
-independent stability replications and are never cherry-picked by validation
-score. `--primary-seed` may change that preregistered choice explicitly.
+Outer seed 0 is the current minimal feasibility run. One or more outer seeds are
+accepted in formal mode; for example `0,1,2,3,4` remains available as a future
+stability/robustness experiment, but those repeats are not required for the
+current QUAL feasibility question. Outer seeds are distinct from the three Seed
+Program lineages inside every Evolution run. `--primary-seed` must name one of
+the configured outer seeds.
 
 ## Evolve Meta after specialists are frozen
 

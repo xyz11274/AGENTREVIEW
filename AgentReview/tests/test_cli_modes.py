@@ -1,7 +1,13 @@
 import unittest
 from unittest.mock import patch
 
-from memory_evolution.cli import _experiment_kind, _is_nonformal, build_parser, main
+from memory_evolution.cli import (
+    _experiment_kind,
+    _is_nonformal,
+    _parse_experiment_seeds,
+    build_parser,
+    main,
+)
 
 
 class CliModeTest(unittest.TestCase):
@@ -48,6 +54,28 @@ class CliModeTest(unittest.TestCase):
         self.assertEqual(args.static_size, 3)
         self.assertEqual(args.rotating_size, 2)
         self.assertEqual(_experiment_kind(args), "pilot_non_reportable")
+
+    def test_formal_suite_defaults_to_one_outer_experiment_seed(self):
+        for command in ("evolve-specialists", "evolve-meta"):
+            args = build_parser().parse_args(
+                [
+                    command,
+                    "--data-root",
+                    "data/formal",
+                    "--output",
+                    "runs/formal",
+                ]
+            )
+            self.assertEqual(args.experiment_seeds, "0")
+            self.assertEqual(_parse_experiment_seeds(args.experiment_seeds), [0])
+
+    def test_outer_experiment_seed_count_is_parameterized_but_nonempty(self):
+        self.assertEqual(_parse_experiment_seeds("0"), [0])
+        self.assertEqual(_parse_experiment_seeds("0,1,2,3,4"), [0, 1, 2, 3, 4])
+        with self.assertRaisesRegex(SystemExit, "at least one experiment seed"):
+            _parse_experiment_seeds("")
+        with self.assertRaisesRegex(SystemExit, "must not contain duplicates"):
+            _parse_experiment_seeds("0,0")
 
     def test_smoke_and_pilot_are_mutually_exclusive(self):
         with self.assertRaises(SystemExit):

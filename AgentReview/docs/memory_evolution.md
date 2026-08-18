@@ -20,7 +20,9 @@ core is:
   lineage and up to three scored population reference programs;
 - no static case content or judge explanation in Reflector input;
 - three independent repeated evaluations of top candidates before promotion;
-- five independent evolution seeds for formal results;
+- one outer Evolution seed (`0`) for the current minimal formal feasibility
+  experiment; additional outer seeds are optional future stability/robustness
+  repeats;
 - one sealed post-selection D/Test entry through the Benchmark Adapter.
 
 The review-domain adaptation is deliberately outside the searched program:

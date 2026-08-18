@@ -81,6 +81,8 @@ def request_search(
         if response.status_code == 200:
             payload = response.json()
             if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+                print("HTTP status:", response.status_code)
+                print("Response body:", response.text[:1000])
                 raise RuntimeError("Semantic Scholar returned an invalid search payload")
             return payload
         if response.status_code not in retryable or attempt == max_attempts:
