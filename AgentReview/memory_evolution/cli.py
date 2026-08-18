@@ -350,9 +350,34 @@ def build_parser():
     prepare.add_argument("--output-dir", required=True)
     prepare.add_argument("--temporal-split-manifest", required=True)
     prepare.add_argument("--coco-root", required=True)
-    prepare.add_argument("--validation-families", type=int, default=150)
-    prepare.add_argument("--meta-validation-families", type=int, default=150)
-    prepare.add_argument("--max-train-families", type=int, default=2000)
+    prepare.add_argument(
+        "--validation-families",
+        type=int,
+        default=150,
+        help=(
+            "Frozen B families reserved for specialist validation; this split "
+            "keeps priority over the auxiliary META validation split."
+        ),
+    )
+    prepare.add_argument(
+        "--meta-validation-families",
+        type=int,
+        default=None,
+        help=(
+            "Frozen B families reserved for META validation. Defaults to every "
+            "remaining B family after specialist validation (B - "
+            "--validation-families), so the split is always family-disjoint."
+        ),
+    )
+    prepare.add_argument(
+        "--max-train-families",
+        type=int,
+        default=None,
+        help=(
+            "Cap on frozen A train families, taken in manifest order. "
+            "Defaults to all A families in the temporal split manifest."
+        ),
+    )
     prepare.add_argument("--max-paper-chars", type=int, default=60000)
     prepare.add_argument("--seed", type=int, default=0)
     prepare.add_argument(

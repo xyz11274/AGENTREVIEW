@@ -11,7 +11,7 @@ $PY -m unittest discover -s tests -v
 $PY -m memory_evolution.cli prepare-specialists \
   --openreview-root "$OPENREVIEW_ROOT" \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
-  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
+  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
   --output-dir data/pilot \
   --max-train-families 30 \
   --validation-families 6 \

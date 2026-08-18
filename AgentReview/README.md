@@ -51,8 +51,14 @@ python -m memory_evolution.cli prepare-specialists \
 This creates independent `QUAL`, `CLAR`, `SIGN`, `ORIG`, and `POL` datasets.
 No test records are written into the evolution directory. Formal evolution
 rejects datasets prepared without a frozen, checksummed S2 cache.
-It also reserves a third, family-disjoint `meta_validation` partition that the
-specialist evolution never evaluates; only this partition validates META.
+All counts are resolved from the split manifest at prepare time: train uses
+every A family (currently 2391), specialist validation keeps priority with
+`--validation-families 150` frozen B families, and META validation receives
+the remaining B families by default (currently 299 - 150 = 149). The two
+validation partitions are disjoint slices of the same deterministic B order,
+so they can never overlap. It also reserves a third, family-disjoint
+`meta_validation` partition that the specialist evolution never evaluates;
+only this partition validates META.
 The cache must contain every selected paper ID plus target cutoff,
 retrieval method/version/config and result SHA. Unknown-date or post-cutoff
 results, legacy cache records and partial caches are rejected.

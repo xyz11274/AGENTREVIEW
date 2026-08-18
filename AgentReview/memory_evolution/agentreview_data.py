@@ -402,8 +402,8 @@ def prepare_openreview_data(
     temporal_split_manifest: str,
     coco_root: Optional[str] = None,
     validation_families: int = 150,
-    meta_validation_families: int = 150,
-    max_train_families: Optional[int] = 2000,
+    meta_validation_families: Optional[int] = None,
+    max_train_families: Optional[int] = None,
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     seed: int = 0,
     s2_cache_path: Optional[str] = None,
@@ -465,6 +465,10 @@ def prepare_openreview_data(
             f"{split_summary['version']}:B-internal:{seed}:{value}".encode()
         ).hexdigest(),
     )
+    if meta_validation_families is None:
+        # Specialist validation keeps its requested size; META validation is
+        # auxiliary and receives every remaining frozen B family.
+        meta_validation_families = len(b_families) - max(0, validation_families)
     requested_b = max(0, validation_families) + max(0, meta_validation_families)
     if requested_b > len(b_families):
         raise ValueError(

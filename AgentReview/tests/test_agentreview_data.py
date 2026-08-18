@@ -196,6 +196,121 @@ class AgentReviewDataTest(unittest.TestCase):
             self.assertNotIn("Frozen Neighbor", payload)
             self.assertFalse(manifest["semantic_scholar_default_injection"])
 
+    def _write_source(self, root, records):
+        for record in records:
+            paper_dir = root / record["MD_path"]
+            paper_dir.mkdir(parents=True, exist_ok=True)
+            (paper_dir / "md_content.md").write_text(
+                f"# {record['content']['title']}\nMethod.",
+                encoding="utf-8",
+            )
+        (root / "train_clean.jsonl").write_text(
+            "\n".join(json.dumps(value) for value in records) + "\n",
+            encoding="utf-8",
+        )
+        (root / "test.jsonl").write_text(
+            json.dumps(self._record("held-out", "Held Out", "held-out")) + "\n",
+            encoding="utf-8",
+        )
+
+    def _splits_by_paper(self, manifest):
+        splits = {}
+        for task_id in SPECIALIST_TASKS:
+            for name in ("episodes", "validation", "queries"):
+                for line in Path(manifest["tasks"][task_id][name]).read_text(
+                    encoding="utf-8"
+                ).splitlines():
+                    item = json.loads(line)
+                    paper_id = item["metadata"]["paper_id"]
+                    splits.setdefault(paper_id, set()).add(
+                        item["metadata"]["split"]
+                    )
+        return splits
+
+    def test_meta_validation_defaults_to_remaining_b_families(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_b_alloc_test_") as directory:
+            root = Path(directory)
+            b_ids = [f"b{index}" for index in range(5)]
+            records = [self._record("a0", "Train Paper", "work-train")] + [
+                self._record(paper_id, f"B Paper {paper_id}", f"work-{paper_id}")
+                for paper_id in b_ids
+            ]
+            self._write_source(root, records)
+            manifest = prepare_openreview_data(
+                str(root),
+                str(root / "prepared"),
+                str(self._temporal_manifest(root, ["a0"], b_ids)),
+                validation_families=2,
+                seed=0,
+            )
+            self.assertEqual(manifest["train_family_count"], 1)
+            self.assertEqual(manifest["validation_family_count"], 2)
+            self.assertEqual(manifest["meta_validation_family_count"], 3)
+            self.assertEqual(manifest["family_overlap"], 0)
+            splits = self._splits_by_paper(manifest)
+            specialist = {
+                paper_id
+                for paper_id, values in splits.items()
+                if "specialist_validation" in values
+            }
+            meta = {
+                paper_id
+                for paper_id, values in splits.items()
+                if "meta_validation" in values
+            }
+            self.assertEqual(len(specialist), 2)
+            self.assertEqual(len(meta), 3)
+            self.assertFalse(specialist & meta)
+            self.assertEqual(specialist | meta, set(b_ids))
+
+    def test_b_allocation_fails_fast_when_b_is_smaller_than_requested(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_b_short_test_") as directory:
+            root = Path(directory)
+            b_ids = ["b0", "b1"]
+            records = [self._record("a0", "Train Paper", "work-train")] + [
+                self._record(paper_id, f"B Paper {paper_id}", f"work-{paper_id}")
+                for paper_id in b_ids
+            ]
+            self._write_source(root, records)
+            with self.assertRaisesRegex(ValueError, "frozen B contains 2"):
+                prepare_openreview_data(
+                    str(root),
+                    str(root / "prepared"),
+                    str(self._temporal_manifest(root, ["a0"], b_ids)),
+                    validation_families=2,
+                    meta_validation_families=1,
+                    seed=0,
+                )
+            with self.assertRaisesRegex(ValueError, "frozen B contains 2"):
+                prepare_openreview_data(
+                    str(root),
+                    str(root / "prepared"),
+                    str(self._temporal_manifest(root, ["a0"], b_ids)),
+                    validation_families=3,
+                    seed=0,
+                )
+
+    def test_train_defaults_to_all_manifest_a_families(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_a_default_test_") as directory:
+            root = Path(directory)
+            a_ids = ["a0", "a1", "a2"]
+            records = [
+                self._record(paper_id, f"A Paper {paper_id}", f"work-{paper_id}")
+                for paper_id in a_ids
+            ] + [self._record("b0", "B Paper", "work-b0")]
+            self._write_source(root, records)
+            manifest = prepare_openreview_data(
+                str(root),
+                str(root / "prepared"),
+                str(self._temporal_manifest(root, a_ids, ["b0"])),
+                validation_families=1,
+                meta_validation_families=0,
+                seed=0,
+            )
+            self.assertEqual(manifest["train_family_count"], 3)
+            for task_id in SPECIALIST_TASKS:
+                self.assertEqual(manifest["tasks"][task_id]["episode_count"], 3)
+
     def test_historical_episode_excludes_human_reference(self):
         with tempfile.TemporaryDirectory(prefix="mstar_boundary_test_") as directory:
             root = Path(directory)
