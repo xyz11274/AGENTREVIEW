@@ -430,7 +430,10 @@ def build_parser():
     evaluate.add_argument(
         "--final-test",
         action="store_true",
-        help="Acknowledge that this is the one post-selection formal test run.",
+        help=(
+            "Forbidden legacy flag. Formal D/Test is available only through "
+            "final-evaluate-suite."
+        ),
     )
     _add_runtime_args(evaluate)
 
@@ -1105,8 +1108,12 @@ def main():
         result = _final_evaluate_suite(args)
     else:
         formal = not _is_nonformal(args)
-        if formal and not args.final_test:
-            raise SystemExit("Formal evaluation requires --final-test")
+        if args.final_test:
+            raise SystemExit(
+                "evaluate --final-test is forbidden. The only formal D/Test "
+                "entry point is final-evaluate-suite, which enforces the formal "
+                "gate and CoCo Benchmark Adapter."
+            )
         if formal and (
             not args.embedding_adapter or not args.embedding_revision
         ):
@@ -1183,7 +1190,8 @@ def main():
         report = {
             "provenance": experiment_provenance(),
             "task_id": args.task_id,
-            "final_test": bool(args.final_test),
+            "final_test": False,
+            "report_class": "development_evaluation",
             "test_feedback_used_for_evolution": False,
             "program": str(Path(args.program).expanduser().resolve()),
             "program_sha256": _sha256(Path(args.program).expanduser().resolve()),
@@ -1220,7 +1228,7 @@ def main():
         result = {
             "output": str(output),
             "mean_score": evaluation.mean_score,
-            "final_test": bool(args.final_test),
+            "final_test": False,
             "test_feedback_used_for_evolution": False,
         }
     print(json.dumps(result, ensure_ascii=False, indent=2))

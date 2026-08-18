@@ -7,7 +7,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 
 CHECKPOINT_VERSION = "historical-replay-checkpoint-v1"
@@ -63,21 +63,73 @@ def audit_history_records(
     checkpoint_path: Path,
     completed_ids: Sequence[str],
     frozen_ids: Sequence[str],
-) -> None:
+    *,
+    allow_adjacent_uncommitted: bool = False,
+    clean_adjacent_uncommitted: bool = False,
+) -> List[str]:
+    """Audit committed sidecars and optionally discard one crash-window record.
+
+    A sidecar becomes committed only when the identity-bound checkpoint advances.
+    Therefore a checkpoint may safely discard exactly the sidecar for its own
+    ``next_paper_index``.  No checkpoint means there is no identity authority and
+    even the first sidecar is treated as stale state.
+    """
     validate_completed_prefix(completed_ids, frozen_ids)
     directory = _records_dir(checkpoint_path)
     if not directory.exists():
-        return
+        return []
     allowed = {
         _record_name(index, paper_id)
         for index, paper_id in enumerate(completed_ids)
     }
     actual = {path.name for path in directory.glob("*.json")}
-    unexpected = sorted(actual - allowed)
+    unexpected = actual - allowed
+    cleaned = []
+    next_index = len(completed_ids)
+    if allow_adjacent_uncommitted and next_index < len(frozen_ids):
+        adjacent_name = _record_name(next_index, frozen_ids[next_index])
+        if adjacent_name in unexpected:
+            adjacent_path = directory / adjacent_name
+            try:
+                payload = json.loads(adjacent_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ValueError(
+                    "Adjacent uncommitted History record is unreadable"
+                ) from exc
+            if (
+                str(payload.get("paper_id") or "") != str(frozen_ids[next_index])
+                or int(payload.get("paper_index", -1)) != next_index
+                or payload.get("completed") is not True
+            ):
+                raise ValueError(
+                    "Adjacent uncommitted History record has invalid identity"
+                )
+            if clean_adjacent_uncommitted:
+                adjacent_path.unlink()
+                cleaned.append(adjacent_name)
+            unexpected.remove(adjacent_name)
+    unexpected = sorted(unexpected)
     if unexpected:
         raise ValueError(
             "History directory contains records beyond the legal completed "
             f"prefix: {unexpected}"
+        )
+    return cleaned
+
+
+def _audit_no_checkpoint_residue(path: Path) -> None:
+    """Fail closed when a purported fresh run already has persistent Memory."""
+    residue = []
+    for name in ("memory_library.jsonl", "history_records.jsonl", "memory_library"):
+        candidate = path.parent / name
+        if candidate.is_file() and candidate.stat().st_size:
+            residue.append(str(candidate))
+        elif candidate.is_dir() and any(candidate.iterdir()):
+            residue.append(str(candidate))
+    if residue:
+        raise ValueError(
+            "Formal fresh run has residual Memory but no identity-bound checkpoint: "
+            + ", ".join(residue)
         )
 
 
@@ -91,6 +143,7 @@ def load_checkpoint(
     validate_run_identity(expected_identity)
     if not path.is_file():
         audit_history_records(path, [], frozen_ids)
+        _audit_no_checkpoint_residue(path)
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("checkpoint_version") != CHECKPOINT_VERSION:
@@ -107,7 +160,14 @@ def load_checkpoint(
         raise ValueError("Checkpoint is missing the Memory snapshot")
     if canonical_sha256(snapshot) != payload.get("memory_state_identity"):
         raise ValueError("Checkpoint Memory state identity mismatch")
-    audit_history_records(path, completed, frozen_ids)
+    cleaned = audit_history_records(
+        path,
+        completed,
+        frozen_ids,
+        allow_adjacent_uncommitted=True,
+        clean_adjacent_uncommitted=True,
+    )
+    payload["discarded_uncommitted_records"] = cleaned
     return payload
 
 

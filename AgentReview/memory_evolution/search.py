@@ -29,7 +29,7 @@ from .subset_selection import (
 class EvolutionConfig:
     output_dir: str = "runs/mstar"
     task_description: str = ""
-    iterations: int = 20
+    iterations: int = 21
     static_size: int = 25
     rotating_size: int = 5
     temperature: float = 0.15
@@ -91,6 +91,7 @@ class ProgramCandidate:
     parent_seed: str = ""
     lineage_name: str = ""
     program_sha256: str = ""
+    completed_evaluation: bool = False
 
 
 @dataclass
@@ -143,6 +144,7 @@ def _candidate_record(
         "parent_seed": candidate.parent_seed,
         "lineage": candidate.lineage_name,
         "program_sha256": candidate.program_sha256,
+        "completed_evaluation": candidate.completed_evaluation,
     }
 
 
@@ -151,7 +153,11 @@ def _sha256_file(path: Path) -> str:
 
 
 def _softmax_parent(candidates, temperature: float, rng: random.Random):
-    eligible = [candidate for candidate in candidates if candidate.quality.passed]
+    eligible = [
+        candidate
+        for candidate in candidates
+        if candidate.quality.passed and candidate.completed_evaluation
+    ]
     if not eligible:
         raise RuntimeError("No quality-passing program is available for mutation")
     temperature = max(float(temperature), 1e-6)
@@ -174,7 +180,11 @@ def _select_parent(
             if candidate.lineage_name == lineage_name
         ]
     if config.parent_policy == "best":
-        eligible = [candidate for candidate in candidates if candidate.quality.passed]
+        eligible = [
+            candidate
+            for candidate in candidates
+            if candidate.quality.passed and candidate.completed_evaluation
+        ]
         return max(eligible, key=lambda candidate: candidate.static_score)
     if config.parent_policy != "softmax":
         raise ValueError(f"Unknown parent policy: {config.parent_policy}")
@@ -197,6 +207,7 @@ def _reference_programs(
         candidate
         for candidate in candidates
         if candidate.quality.passed
+        and candidate.completed_evaluation
         and candidate.program_id != parent_id
         and (not lineage_name or candidate.lineage_name == lineage_name)
     ]
@@ -431,6 +442,7 @@ def run_evolution(
             parent_seed=f"seed_{suffix}",
             lineage_name=f"evolved_from_{suffix}",
             program_sha256=_sha256_file(target),
+            completed_evaluation=bool(quality.passed and evaluation is not None),
         )
         candidates.append(candidate)
         _append_jsonl(scores_path, _candidate_record(candidate))
@@ -449,9 +461,41 @@ def run_evolution(
         )
 
     next_index = len(candidates)
+    successful_by_lineage = {
+        f"evolved_from_{name}": 0 for name in seed_names
+    }
+    target_successes_per_lineage = (
+        cfg.iterations // len(seed_names) if cfg.formal else None
+    )
     if not cfg.dry_run:
-        for iteration in range(1, max(0, cfg.iterations) + 1):
-            active_lineage = f"evolved_from_{seed_names[(iteration - 1) % len(seed_names)]}"
+        attempt = 0
+        lineage_cursor = 0
+        while True:
+            if cfg.formal:
+                if all(
+                    count == target_successes_per_lineage
+                    for count in successful_by_lineage.values()
+                ):
+                    break
+                while (
+                    successful_by_lineage[
+                        f"evolved_from_{seed_names[lineage_cursor % len(seed_names)]}"
+                    ]
+                    >= target_successes_per_lineage
+                ):
+                    lineage_cursor += 1
+                active_lineage = (
+                    f"evolved_from_{seed_names[lineage_cursor % len(seed_names)]}"
+                )
+                lineage_cursor += 1
+            else:
+                if attempt >= max(0, cfg.iterations):
+                    break
+                active_lineage = (
+                    f"evolved_from_{seed_names[attempt % len(seed_names)]}"
+                )
+            attempt += 1
+            iteration = attempt
             parent = _select_parent(candidates, cfg, rng, active_lineage)
             print(
                 f"[MSTAR] Iteration {iteration}: parent={parent.program_id}, "
@@ -639,6 +683,7 @@ def run_evolution(
                 parent_seed=parent.parent_seed,
                 lineage_name=parent.lineage_name,
                 program_sha256=_sha256_file(target),
+                completed_evaluation=bool(quality.passed and static_eval is not None),
             )
             candidates.append(candidate)
             compile_errors = list(quality.errors)
@@ -667,10 +712,40 @@ def run_evolution(
                     "parent_seed": candidate.parent_seed,
                     "lineage": candidate.lineage_name,
                     "program_sha256": candidate.program_sha256,
+                    "completed_evaluation": candidate.completed_evaluation,
                 },
             )
+            if candidate.completed_evaluation:
+                successful_by_lineage[candidate.lineage_name] += 1
 
-    eligible = [candidate for candidate in candidates if candidate.quality.passed]
+    if cfg.formal:
+        counts = list(successful_by_lineage.values())
+        if len(set(counts)) != 1 or any(
+            count != target_successes_per_lineage for count in counts
+        ):
+            raise RuntimeError(
+                "Formal lineage comparison requires equal successful candidate "
+                f"evaluations; observed {successful_by_lineage}"
+            )
+    _write_json(
+        output_dir / "lineage_budget.json",
+        {
+            "budget_unit": "successful_child_candidate_evaluation",
+            "requested_total": cfg.iterations,
+            "target_per_lineage": target_successes_per_lineage,
+            "successful_completed_by_lineage": successful_by_lineage,
+            "equal_completed_budget_required": bool(cfg.formal),
+            "equal_completed_budget_passed": (
+                len(set(successful_by_lineage.values())) == 1 if cfg.formal else None
+            ),
+        },
+    )
+
+    eligible = [
+        candidate
+        for candidate in candidates
+        if candidate.quality.passed and candidate.completed_evaluation
+    ]
     if not eligible:
         raise RuntimeError("All seed and child programs failed quality gates")
     ranked = sorted(
@@ -773,6 +848,10 @@ def run_evolution(
             "source_lineage": best.lineage_name,
         },
         "lineage_champions": lineage_champions,
+        "lineage_successful_completed_counts": successful_by_lineage,
+        "lineage_completed_budget_equal": (
+            len(set(successful_by_lineage.values())) == 1 if cfg.formal else None
+        ),
         "quality": best.quality.to_dict(),
         "change_log": asdict(best.change_log),
         "static_validation_ids": sorted(static_ids),

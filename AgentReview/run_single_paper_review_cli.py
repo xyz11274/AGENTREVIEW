@@ -1995,6 +1995,22 @@ def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
     )
     completed = list(checkpoint.get("completed_paper_ids") or []) if checkpoint else []
     library_path = Path(args.output_dir) / "single_paper_review" / "memory_library.jsonl"
+    if not checkpoint:
+        stale_paper_dirs = [
+            paper_id
+            for paper_id in frozen_ids
+            if (
+                Path(args.output_dir) / "single_paper_review" / paper_id
+            ).is_dir()
+            and any(
+                (Path(args.output_dir) / "single_paper_review" / paper_id).iterdir()
+            )
+        ]
+        if stale_paper_dirs:
+            raise RuntimeError(
+                "Formal fresh run has Historical outputs but no identity-bound "
+                "checkpoint: " + ", ".join(stale_paper_dirs[:10])
+            )
     if checkpoint:
         snapshot = checkpoint["memory_snapshot"]
         expected_text = str(snapshot.get("memory_library_jsonl") or "")
