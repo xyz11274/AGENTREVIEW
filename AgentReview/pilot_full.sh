@@ -8,7 +8,8 @@ cd "$PROJECT_DIR"
 : "${OPENAI_API_BASE:?OPENAI_API_BASE is not set. Export it before running this script.}"
 
 PYTHON_BIN=${PYTHON_BIN:-/data0/xyj/miniconda3/envs/env_shengao/bin/python}
-OPENREVIEW_ROOT=${OPENREVIEW_ROOT:-/data0/xyj/shengao/OpenReview}
+: "${OPENREVIEW_ROOT:?Set OPENREVIEW_ROOT to the external OpenReview data root}"
+: "${COCOREVIEWBENCH_ROOT:?Set COCOREVIEWBENCH_ROOT to the external CoCo root}"
 PILOT_DATA_ROOT=${PILOT_DATA_ROOT:-"$PROJECT_DIR/data/pilot_full"}
 PILOT_RUN_ROOT=${PILOT_RUN_ROOT:-"$PROJECT_DIR/runs/pilot_full"}
 PILOT_ITERATIONS=${PILOT_ITERATIONS:-2}
@@ -36,6 +37,8 @@ if [ ! -f "$PILOT_DATA_ROOT/manifest.json" ]; then
     echo "[PILOT] Preparing small specialist datasets..."
     "$PYTHON_BIN" -m memory_evolution.cli prepare-specialists \
         --openreview-root "$OPENREVIEW_ROOT" \
+        --coco-root "$COCOREVIEWBENCH_ROOT" \
+        --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
         --output-dir "$PILOT_DATA_ROOT" \
         --max-train-families 30 \
         --validation-families 20 \

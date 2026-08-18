@@ -30,8 +30,8 @@ Historical Set 中产生的经验可以写入 Memory；Evolution Validation 产�
 这些数据用于后续进行 performance–cost 分析，不作为强迫所有 Program 使用完全相同资源量的要求。
 
 1. **反馈通道收窄**：reflector / mutation 只能获得 scalar fitness、不泄漏答案的 structured metrics、不含 gold 内容的错误类型；judge rationale 若复述 gold 不得回灌（ADR-0005 的 Human Reference Boundary 旁路规则）。
-2. **安全续跑**：同一 Candidate × lineage × replicate × Program SHA × Historical manifest × config 可从自身 checkpoint 恢复；每篇 A 完成后原子保存 Memory snapshot。completed IDs 必须是 frozen order 的严格 prefix；中断论文整篇重跑；目录中存在 prefix 之外的有效 experience record 时 formal fail fast。
-3. **lineage 公平预算**：正式搜索的 mutation iterations 必须能被三条 lineage 整除；当前默认由 20 改为 21，即每条 lineage 7 次机会。replicate 记录显式 ID、run seed、generation config、Program SHA 和 Memory state identity；当前模型后端不承诺 deterministic seed，必须记录 `seed_control_available=false`。
+2. **安全续跑**：同一 Candidate × lineage × replicate × Program SHA × Historical manifest × config 可从自身 identity-bound checkpoint 恢复；每篇 A 完成后原子保存 Memory snapshot。completed IDs 必须是 frozen order 的严格 prefix，中断论文不计 completed 并整篇重跑。若 checkpoint 已存在，允许清理唯一紧邻 `next_paper_index` 的未提交 sidecar；任何更远 future record 都 fail-fast。没有 checkpoint 时，任何旧 `memory_library`、history sidecar 或历史论文输出都视为无法认证的残留状态并直接拒绝，不从目录内容猜测 resume 身份。formal search controller 另行原子记录已提交 Seeds/Candidates、attempt/lineage cursor、successful completed counts、RNG state、selection repeats 与日志边界；重启同一命令恢复控制器状态并丢弃唯一未提交 Candidate，不能重算已提交搜索前缀。新 run identity 与旧 controller 不匹配时直接拒绝。
+3. **lineage 公平预算**：正式搜索的配置预算必须能被三条 lineage 整除；当前默认 21 个 **successful child candidate evaluations**，每条 lineage 各 7 个 completed。mutation/reflector 构造失败、protocol guard 拒绝、quality/compile 失败或未真正完成 static evaluation 均不消耗 completed budget；调度继续轮转并补跑未达标 lineage。只有三条 successful completed count 相等且达到目标后才允许比较 lineage champion。replicate 记录显式 ID、run seed、generation config、Program SHA 和 Memory state identity；当前模型后端不承诺 deterministic seed，必须记录 `seed_control_available=false`。
 
 ## Considered Options
 

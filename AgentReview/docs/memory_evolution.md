@@ -13,7 +13,7 @@ core is:
 - one rotating feedback subset sampled from the remaining validation pool;
 - facility-location selection of training episodes with a 5:1
   train-to-validation budget;
-- 21 mutation iterations (7 per independent lineage);
+- 21 successful child candidate evaluations (7 per independent lineage);
 - at most one Toolkit LLM call per write/read operation;
 - at most three compile-repair attempts;
 - Reflector access to rotating failures/successes, traces, write examples,
@@ -21,7 +21,7 @@ core is:
 - no static case content or judge explanation in Reflector input;
 - three independent repeated evaluations of top candidates before promotion;
 - five independent evolution seeds for formal results;
-- one post-selection held-out test.
+- one sealed post-selection D/Test entry through the Benchmark Adapter.
 
 The review-domain adaptation is deliberately outside the searched program:
 
@@ -76,27 +76,28 @@ send feedback into specialist pools.
 
 ## Data isolation
 
-`prepare-specialists`:
+CoCoReviewBench's 3900 papers are a benchmark source pool, not a requirement to
+run all 3900 as the official test. The frozen chronological manifest defines the
+only formal split: A Historical=2400, B Evolution Validation=300, C
+Effectiveness Holdout=300, and D Held-out CoCo Test=900. Paper ID, normalized
+title, and paper family overlap are all zero; A/B/C are permanently excluded
+from D and development cutoffs precede held-out-test cutoffs.
 
-1. loads `OpenReview/train_clean.jsonl`;
-2. forms transitive work families whenever records share either `paperhash` or
-   normalized title;
-3. builds the work-family set from `OpenReview/test.jsonl`;
-4. removes every overlapping training family;
-5. samples train and validation families;
-6. reserves separate specialist-validation and meta-validation families;
-7. writes one dataset per specialist dimension.
+`prepare-specialists` materializes A/B membership from that manifest and records
+canonical preprocessing and asset hashes. It does not sample a new OpenReview
+validation split. The old 20-paper `memory_corpus.jsonl` and OpenReview default-30
+validation rules are deprecated screening protocols, not formal inputs.
 
-The preparation command also embeds a frozen Semantic Scholar cache and records
-its SHA-256. Formal specialist evolution rejects a manifest without that hash,
-so live retrieval changes cannot silently alter an experiment.
+The preparation command references a separate frozen Semantic Scholar pool and
+records its SHA-256. Every target entry carries its review cutoff, target
+identity, pool/method version, retrieval config, result SHA, and dated results.
+Unknown-date and post-cutoff results are rejected. S2 is an optional capability,
+not default context, and candidate processes cannot perform live queries.
 
-Human category opinions appear only in training write episodes or evaluator
-targets. Validation questions contain the paper and source anchors, not the
-human answer. The candidate and Task Agent cannot read rebuttals, meta-review,
-decision, validation reference or test reference for the current paper.
-META validation uses work families that were absent from specialist evolution;
-its training specialist outputs are generated out of fold.
+The Human Reference Boundary is unchanged in every zone: human opinions, gold,
+taxonomy and judge rationale/full traces stay evaluator-only. Candidate-visible
+episodes and self-generated experience contain the paper, safe metadata and
+source anchors, never the human answer.
 
 ## Fitness
 
@@ -155,6 +156,15 @@ projection.
 once, builds the sixth task from those outputs, then runs META once. The report
 stores per-case scores but hides paper, reference, retrieval and answer content;
 an existing report is never overwritten.
+The legacy-looking `evaluate --final-test` route is rejected unconditionally;
+there is no second formal D/Test report path.
+
+Formal searches also write `search_controller_checkpoint.json`. It binds the
+exact config/data/Seed identity and atomically commits admitted Candidates,
+lineage completed budgets, RNG state, selection repeats and JSONL log lengths.
+Rerunning the identical command resumes this controller plus the current
+Candidate's Historical checkpoint; a different Candidate/config/replicate
+identity is rejected instead of inheriting state.
 
 ## Formal and ablation modes
 

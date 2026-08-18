@@ -87,7 +87,7 @@ _Avoid_: AC、Area Chair（本项目单论文管线中没有 AC 阶段）
 ### 经验与记忆
 
 **Shared Raw Material**:
-所有 Seed / Program 公平共享的同一批历史材料：**论文全文 + candidate-visible metadata + source anchors**。共享的是题目，不是答案，也不是提前加工好的经验。related work **不属于**默认共享材料（见 Semantic Scholar Capability）。当前历史论文集为 `memory_corpus.jsonl` 选定的 20 篇（paper bundles 齐备于 `paper_context/memory_corpus/`）。
+所有 Seed / Program 公平共享的同一批历史材料：**论文全文 + candidate-visible metadata + source anchors**。共享的是题目，不是答案，也不是提前加工好的经验。related work **不属于**默认共享材料（见 Semantic Scholar Capability）。当前正式 Historical source zone 是 frozen temporal manifest 的 A 区 2400 篇；具体 run 只能按 manifest 顺序冻结其可审计子集。旧 `memory_corpus.jsonl` 20 篇仅属 deprecated screening artifact，不是当前正式 Historical Set。
 
 **Candidate-Visible Metadata**:
 Reviewer 合理需要知道的论文描述信息：`paper_id`、`title`、`venue`、`year`、当前 Reviewer role / task（QUAL / CLAR / SIGN / ORIG / POL），以及其他确实影响审稿任务且不造成 benchmark 泄漏的论文属性。只有这类 metadata 可以进入 episode / prompt。
@@ -104,7 +104,7 @@ Reviewer 合理需要知道的论文描述信息：`paper_id`、`title`、`venue
 ### 数据协议（见 docs/adr/0006）
 
 **Source Pool**:
-系统可使用的原始数据来源，当前包括 `/data0/xyj/shengao/OpenReview` 与 `/data0/xyj/shengao/CoCoReviewBench`。
+系统可使用的原始数据来源通过 `OPENREVIEW_ROOT` / `COCOREVIEWBENCH_ROOT` 或 Asset Manifest 的 external-root resolver 显式配置，不在活跃脚本与文档示例中绑定机器绝对路径。
 
 Source Pool 不等于实验 split。CoCoReviewBench 的 3900 篇是 benchmark source pool，经 `configs/coco_temporal_split_v1/manifest.json` 按 paper family 和时间冻结为 A/B/C/D；3900 不等于正式 D 的规模。旧“整个 CoCo/其 venue-year 全量 benchmark_reserved”规则已 superseded，禁止进入新 formal run。
 
@@ -187,7 +187,7 @@ Official Benchmark 不参与 Memory 构建、经验生成、Evolution、selectio
 资产锚定机制：记录每项资产最终解析后的路径、SHA256、版本和数据 split，不依赖目录名推断资产。项目内部路径从 project root 相对解析；外部数据根经统一配置传入（见 docs/adr/0003）。
 
 **OpenReview (data root)**:
-论文与真人审稿的总数据库 `/data0/xyj/shengao/OpenReview`，所有数据 split 的溯源根。
+由 `OPENREVIEW_ROOT` / CLI external root 显式配置的论文与真人审稿数据库；路径本身不是数据 split 身份，正式 A/B/C/D 身份只由 frozen temporal manifest 决定。
 
 **Deprecated (marked, not yet deleted)**:
 已废弃代码注册在 `docs/DEPRECATED.md`，现阶段以标记和隔离为主，不删除源码。

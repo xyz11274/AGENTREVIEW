@@ -1,13 +1,17 @@
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PY=/data0/xyj/miniconda3/envs/env_shengao/bin/python
 
-export OPENAI_API_KEY="sk-B0bnEYxbAt1egxDdEweM6WP8DgJxtYmStTuS0KMsUXKWbQTe"
-export OPENAI_API_BASE="https://yunwu.ai/v1"
+: "${OPENAI_API_KEY:?Export OPENAI_API_KEY before running this script}"
+: "${OPENAI_API_BASE:?Export OPENAI_API_BASE before running this script}"
+: "${OPENREVIEW_ROOT:?Set OPENREVIEW_ROOT to the external OpenReview data root}"
+: "${COCOREVIEWBENCH_ROOT:?Set COCOREVIEWBENCH_ROOT to the external CoCo root}"
 
 $PY -m unittest discover -s tests -v
 
 $PY -m memory_evolution.cli prepare-specialists \
-  --openreview-root /data0/xyj/shengao/OpenReview \
+  --openreview-root "$OPENREVIEW_ROOT" \
+  --coco-root "$COCOREVIEWBENCH_ROOT" \
+  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
   --output-dir data/pilot \
   --max-train-families 30 \
   --validation-families 6 \

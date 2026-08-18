@@ -7,7 +7,7 @@
 - [x] ~~**修复 Human Reference Boundary**：candidate-visible episode 剥离 human reference；reference 仅保留在 evaluator 侧。~~（2026-08-17）
 - [x] ~~**Canonical Rich Paper Interface**：Evolution、Historical Experience Generation、Deployment 共用 `canonical-rich-paper-v1` builder、统一 60K 可配置预算；related work 不再默认拼接。~~（2026-08-17）
 - [x] ~~**Metadata visibility 二分落地**：candidate-visible metadata 与 internal provenance 分离，canonical builder 拒绝 provenance 字段。~~（2026-08-17）
-- [ ] **Frozen S2 Retrieval Pool + Optional Usage**：
+- [ ] **Frozen S2 Retrieval Pool + Optional Usage**（冻结器与 fail-closed 校验已完成；实际 3900-target 资产仍等待可用 S2 API 凭据）：
 
   - 对实验涉及的每篇论文按稳定 paper identity / paper ID 统一运行 Semantic Scholar retrieval；
   - 将结果冻结、版本化、缓存，形成 paper-specific S2 Retrieval Pool；
@@ -40,17 +40,7 @@
 - [x] ~~**Evaluator feedback 旁路审计**：Reflector 仅接收 scalar score、数值 structured metrics 与 error type；question / gold / answer / context / rationale 全部剥离。~~（2026-08-17）
 - [ ] **Promotion manifest 全链路自动化**（`verify_promoted_program()` 流程）。
 
-Evolution Validation 从 OpenReview 非 benchmark corpus 中独立构建，默认目标规模 30 篇（允许通过配置调整至约 20–50 篇）。
-
-采样优先满足：
-
-1. 与 Historical / Proxy / Official Benchmark 的 paper ID、normalized title、paper family 零重叠；
-2. 覆盖多个 venue/year；
-3. 尽量覆盖不同 review quality / decision strata，避免单一难度；
-4. 三条 Seed lineage 使用完全相同的 Validation Set；
-5. selection 前冻结 manifest，Evolution 过程中不得换题。
-
-具体 strata 根据 OpenReview 当前可用字段确定，不在设计层强制依赖某一个字段（例如 decision），以避免数据字段缺失时修改研究定义。
+当前正式数据口径只有一套：CoCoReviewBench 3900 篇是 benchmark source pool，由 frozen chronological manifest 划为 A/B/C/D=2400/300/300/900。B 是 300 篇 2023 Evolution Validation，不再从 OpenReview 另抽默认 30 篇。旧 20+20 screening 与 OpenReview 20–50/默认 30 规则只允许作为 historical/deprecated artifact 说明，不进入 formal gate。
 
 ## 4. 评价解耦
 
@@ -58,7 +48,7 @@ Evolution Validation 从 OpenReview 非 benchmark corpus 中独立构建，默�
 
 ## 5. 实验
 
-- [ ] **QUAL re-evolution**：time-safe S2 与 canonical A/B 重建后按 21 iterations 完整预算重跑（三条 lineage 各 7 次）。
+- [ ] **QUAL re-evolution**：time-safe S2 与 canonical A/B 重建后按 21 个 successful child candidate evaluations 完整预算重跑（三条 lineage 各 7 completed；失败尝试不占槽位）。
 - [ ] **Effectiveness Holdout / proxy 20**：frozen program 的独立 measurement——2 replicates、Blind Judging、两臂同模型同参数同预算；结果只称 development / effectiveness measurement。2 replicates 采用全链路独立重复：每个 replicate 从 fresh empty Memory State 开始，独立 replay Historical Set、自产 Experience、重建 Program-specific Memory，再运行 Effectiveness Holdout。不得跨 replicate 共享已构建的 Memory State。
 - [ ] **Official CoCo 终验**：Program fully frozen 后经 Benchmark Adapter 跑官方 pipeline。
 

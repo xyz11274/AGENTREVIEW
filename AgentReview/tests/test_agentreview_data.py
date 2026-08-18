@@ -155,6 +155,7 @@ class AgentReviewDataTest(unittest.TestCase):
                     [
                         {
                             "paper_id": paper_id,
+                            "target_identity": {"paper_id": paper_id},
                             "paper_review_cutoff": "2022-12-31",
                             "retrieval_method": "fixture",
                             "retrieval_version": "v1",
@@ -169,6 +170,7 @@ class AgentReviewDataTest(unittest.TestCase):
                                     separators=(",", ":"),
                                 ).encode()
                             ).hexdigest(),
+                            "pool_version": "frozen-s2-temporal-v1",
                         }
                         for paper_id in ("p1", "p2")
                     ]

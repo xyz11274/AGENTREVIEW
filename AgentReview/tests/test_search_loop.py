@@ -2,11 +2,15 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from memory_evolution.integration import MemoryHarnessAdapter
 from memory_evolution.metrics import exact_match
 from memory_evolution.models import Episode, EvalItem
 from memory_evolution.search import EvolutionConfig, run_evolution
+from memory_evolution.quality import QualityResult
+from memory_evolution.reflector import ChangeLog, MutationResult
+from memory_evolution.models import EvalResult
 from memory_evolution.task_agent import TaskAgent
 from memory_evolution.toolkit import MemoryToolkit
 
@@ -96,6 +100,13 @@ class SearchLoopTest(unittest.TestCase):
             self.assertTrue((output / "scores.jsonl").is_file())
             self.assertTrue((output / "lineage.jsonl").is_file())
             self.assertTrue((output / "best_program.py").is_file())
+            trace_manifest = json.loads(
+                (output / "traces" / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(trace_manifest["evaluator_only"])
+            self.assertTrue(trace_manifest["candidate_forbidden"])
+            self.assertFalse(trace_manifest["included_in_promotion_bundle"])
+            self.assertFalse(trace_manifest["candidate_mutation_may_reference"])
             score_lines = (
                 (output / "scores.jsonl").read_text(encoding="utf-8").splitlines()
             )
@@ -150,6 +161,198 @@ class SearchLoopTest(unittest.TestCase):
             )
         self.assertEqual(result.pool_size, 3)
         self.assertEqual(fake_llm.reflector_calls, 0)
+
+    def test_formal_budget_retries_failure_until_lineages_have_equal_successes(self):
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        seed_paths = [
+            str(seed_dir / "vector_search.py"),
+            str(seed_dir / "llm_summarizer.py"),
+            str(seed_dir / "experience_learner.py"),
+        ]
+        calls = {"mutation": 0}
+
+        def mutate(parent_code, *args, **kwargs):
+            calls["mutation"] += 1
+            if calls["mutation"] == 1:
+                raise ValueError("protocol guard rejected fixture")
+            return MutationResult(
+                analysis="fixture",
+                strategy="fixture",
+                program_code=parent_code,
+                change_log=ChangeLog(summary="successful fixture mutation"),
+            )
+
+        with tempfile.TemporaryDirectory(prefix="mstar_fair_budget_") as directory, patch(
+            "memory_evolution.search.check_program_path",
+            return_value=QualityResult(passed=True),
+        ), patch(
+            "memory_evolution.search.evaluate_program",
+            return_value=EvalResult(mean_score=0.5),
+        ), patch(
+            "memory_evolution.search.mutate_program", side_effect=mutate
+        ), patch(
+            "memory_evolution.search.build_static_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ), patch(
+            "memory_evolution.search.select_episode_subset",
+            side_effect=lambda values, *args, **kwargs: values,
+        ), patch(
+            "memory_evolution.search.sample_rotating_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ):
+            output = Path(directory) / "run"
+            run_evolution(
+                seed_paths,
+                [
+                    Episode(
+                        id="A1",
+                        text="historical",
+                        metadata={
+                            "experience_protocol": "self_generated_after_review",
+                            "experience_protocol_version": "self-generated-experience-v1",
+                        },
+                    )
+                ],
+                [
+                    EvalItem(id="B1", question="one", answer="x"),
+                    EvalItem(id="B2", question="two", answer="x"),
+                ],
+                object(),
+                MemoryToolkit(),
+                exact_match,
+                EvolutionConfig(
+                    output_dir=str(output),
+                    task_description="fixture",
+                    iterations=3,
+                    static_size=1,
+                    rotating_size=1,
+                    selection_repeats=1,
+                    selection_top_k=1,
+                    formal=True,
+                    historical_manifest_sha256="a" * 64,
+                    experiment_config_sha256="b" * 64,
+                    semantic_scholar_cache_sha256="c" * 64,
+                    s2_asset_version="frozen-s2-temporal-v1",
+                ),
+            )
+            budget = json.loads((output / "lineage_budget.json").read_text())
+            self.assertEqual(
+                set(budget["successful_completed_by_lineage"].values()), {1}
+            )
+            self.assertTrue(budget["equal_completed_budget_passed"])
+            self.assertEqual(calls["mutation"], 4)
+
+    def test_formal_controller_resume_keeps_committed_candidates(self):
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        seed_paths = [
+            str(seed_dir / "vector_search.py"),
+            str(seed_dir / "llm_summarizer.py"),
+            str(seed_dir / "experience_learner.py"),
+        ]
+        calls = {"mutation": 0, "static_interrupt": 0}
+        subset_builder = Mock(side_effect=lambda values, *args, **kwargs: values[:1])
+
+        def mutate(parent_code, *args, **kwargs):
+            calls["mutation"] += 1
+            return MutationResult(
+                analysis="fixture",
+                strategy="fixture",
+                program_code=parent_code,
+                change_log=ChangeLog(summary="resumable fixture mutation"),
+            )
+
+        def evaluate(program_path, *args, **kwargs):
+            if (
+                Path(program_path).stem == "program_004_child"
+                and calls["static_interrupt"] == 0
+            ):
+                calls["static_interrupt"] += 1
+                raise KeyboardInterrupt("simulated SSH disconnect")
+            return EvalResult(mean_score=0.5)
+
+        with tempfile.TemporaryDirectory(prefix="mstar_controller_resume_") as directory, patch(
+            "memory_evolution.search.check_program_path",
+            return_value=QualityResult(passed=True),
+        ), patch(
+            "memory_evolution.search.evaluate_program",
+            side_effect=evaluate,
+        ), patch(
+            "memory_evolution.search.mutate_program", side_effect=mutate
+        ), patch(
+            "memory_evolution.search.build_static_validation_set", subset_builder
+        ), patch(
+            "memory_evolution.search.select_episode_subset",
+            side_effect=lambda values, *args, **kwargs: values,
+        ), patch(
+            "memory_evolution.search.sample_rotating_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ):
+            output = Path(directory) / "run"
+            config = EvolutionConfig(
+                output_dir=str(output),
+                task_description="fixture",
+                iterations=3,
+                static_size=1,
+                rotating_size=1,
+                selection_repeats=1,
+                selection_top_k=1,
+                formal=True,
+                historical_manifest_sha256="a" * 64,
+                experiment_config_sha256="b" * 64,
+                semantic_scholar_cache_sha256="c" * 64,
+                s2_asset_version="frozen-s2-temporal-v1",
+            )
+            episodes = [
+                Episode(
+                    id="A1",
+                    text="historical",
+                    metadata={
+                        "experience_protocol": "self_generated_after_review",
+                        "experience_protocol_version": "self-generated-experience-v1",
+                    },
+                )
+            ]
+            validation = [
+                EvalItem(id="B1", question="one", answer="x"),
+                EvalItem(id="B2", question="two", answer="x"),
+            ]
+            with self.assertRaises(KeyboardInterrupt):
+                run_evolution(
+                    seed_paths,
+                    episodes,
+                    validation,
+                    object(),
+                    MemoryToolkit(),
+                    exact_match,
+                    config,
+                )
+            interrupted = json.loads(
+                (output / "search_controller_checkpoint.json").read_text()
+            )
+            self.assertEqual(interrupted["phase"], "search_inflight")
+            self.assertEqual(interrupted["attempt"], 2)
+            self.assertEqual(len(interrupted["candidates"]), 4)
+
+            result = run_evolution(
+                seed_paths,
+                episodes,
+                validation,
+                object(),
+                MemoryToolkit(),
+                exact_match,
+                config,
+            )
+            completed = json.loads(
+                (output / "search_controller_checkpoint.json").read_text()
+            )
+            self.assertEqual(completed["phase"], "complete")
+            self.assertEqual(completed["attempt"], 3)
+            self.assertEqual(result.pool_size, 6)
+            self.assertEqual(len((output / "scores.jsonl").read_text().splitlines()), 6)
+            self.assertEqual(subset_builder.call_count, 1)
+            self.assertEqual(calls["mutation"], 3)
 
 
 if __name__ == "__main__":

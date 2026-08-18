@@ -27,7 +27,7 @@
 | `AgentReview/agentreview/paper_review_settings.py` | 旧实验设置注册表，零引用 |
 | `AgentReview/agentreview/utility/experiment_utils.py` | 旧实验运行工具 |
 | `AgentReview/agentreview/utility/text_utils.py`、`metrics_utils.py`、`data_utils.py` | 零引用工具模块 |
-| `AgentReview/agentreview/dataset/process_submissions.py`、`download_openreview_paper.py` | 旧 OpenReview 下载/处理脚本（新协议从 `/data0/xyj/shengao/OpenReview` 生成） |
+| `AgentReview/agentreview/dataset/process_submissions.py`、`download_openreview_paper.py` | 旧 OpenReview 下载/处理脚本（新协议从显式配置的 `OPENREVIEW_ROOT` 读取 source records，并由 temporal manifest 决定 split） |
 
 ### openscholar_bridge 死亡部分
 

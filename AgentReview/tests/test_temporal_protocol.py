@@ -7,6 +7,7 @@ from pathlib import Path
 from memory_evolution.assets import (
     audit_four_zone_isolation,
     load_temporal_split_manifest,
+    validate_asset_manifest,
 )
 from memory_evolution.checkpoint import load_checkpoint, save_checkpoint
 from memory_evolution.reflector import EvalFeedback, validate_candidate_feedback
@@ -14,6 +15,7 @@ from memory_evolution.evaluator import evaluate_program
 from memory_evolution.models import Episode, EvalItem
 from memory_evolution.sandbox import SandboxSession
 from memory_evolution.toolkit import MemoryToolkit, validate_frozen_s2_pool
+from scripts.finalize_formal_readiness import build_candidate_manifest
 
 
 class TemporalProtocolTest(unittest.TestCase):
@@ -48,6 +50,12 @@ class TemporalProtocolTest(unittest.TestCase):
                 str(path), expected_identity=self._identity(), frozen_ids=frozen
             )
             self.assertEqual(loaded["next_paper_index"], 1)
+            new_candidate = dict(self._identity())
+            new_candidate["candidate_id"] = "candidate-2"
+            with self.assertRaisesRegex(ValueError, "identity does not match"):
+                load_checkpoint(
+                    str(path), expected_identity=new_candidate, frozen_ids=frozen
+                )
             with self.assertRaisesRegex(ValueError, "strict prefix"):
                 save_checkpoint(
                     str(path),
@@ -70,6 +78,7 @@ class TemporalProtocolTest(unittest.TestCase):
             results = [{"paperId": "future", "publication_date": "2021-01-01"}]
             entry = {
                 "paper_id": "target",
+                "target_identity": {"paper_id": "target", "title": "Target"},
                 "paper_review_cutoff": "2020-12-31",
                 "retrieval_method": "fixture",
                 "retrieval_version": "v1",
@@ -81,6 +90,7 @@ class TemporalProtocolTest(unittest.TestCase):
                         results, sort_keys=True, separators=(",", ":")
                     ).encode()
                 ).hexdigest(),
+                "pool_version": "frozen-s2-temporal-v1",
             }
             path.write_text(json.dumps(entry) + "\n", encoding="utf-8")
             report = validate_frozen_s2_pool(
@@ -90,6 +100,113 @@ class TemporalProtocolTest(unittest.TestCase):
             )
             self.assertFalse(report["passed"])
             self.assertEqual(len(report["future_results"]), 1)
+
+    def test_readiness_manifest_registration_is_explicit_and_versioned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pool = root / "pool.jsonl"
+            sidecar = root / "pool.jsonl.manifest.json"
+            pool.write_text("{}\n", encoding="utf-8")
+            sidecar.write_text("{}\n", encoding="utf-8")
+            candidate = build_candidate_manifest(
+                {
+                    "manifest_version": "mstar-assets-v2-temporal",
+                    "assets": {},
+                    "formal_ready": False,
+                    "formal_blockers": ["fixture"],
+                },
+                s2_pool=pool,
+                s2_manifest=sidecar,
+            )
+            self.assertTrue(candidate["formal_ready"])
+            self.assertEqual(candidate["formal_blockers"], [])
+            self.assertEqual(
+                candidate["assets"]["frozen_s2_pool"]["version"],
+                "frozen-s2-temporal-v1",
+            )
+            self.assertEqual(
+                len(candidate["assets"]["frozen_s2_pool"]["sha256"]), 64
+            )
+
+    def test_asset_manifest_rejects_wrong_required_s2_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pool = root / "pool.jsonl"
+            pool.write_text("{}\n", encoding="utf-8")
+            manifest = root / "assets.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "manifest_version": "mstar-assets-v2-temporal",
+                        "assets": {
+                            "frozen_s2_pool": {
+                                "path": str(pool),
+                                "sha256": hashlib.sha256(pool.read_bytes()).hexdigest(),
+                                "version": "wrong-version",
+                                "split": "A+B+C+D",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Asset version mismatch"):
+                validate_asset_manifest(
+                    str(manifest),
+                    required_assets=("frozen_s2_pool",),
+                    required_versions={
+                        "frozen_s2_pool": "frozen-s2-temporal-v1"
+                    },
+                )
+
+    def test_adjacent_uncommitted_record_is_cleaned_but_future_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "checkpoint.json"
+            frozen = ["P1", "P2", "P3"]
+            save_checkpoint(
+                str(path),
+                run_identity=self._identity(),
+                frozen_ids=frozen,
+                completed_ids=["P1"],
+                memory_snapshot={"state": [1]},
+                paper_record={"paper_id": "P1", "paper_index": 0, "completed": True},
+            )
+            records = path.with_suffix(".json.records")
+            adjacent = records / (
+                "000001_" + hashlib.sha256(b"P2").hexdigest()[:16] + ".json"
+            )
+            adjacent.write_text(
+                json.dumps({"paper_id": "P2", "paper_index": 1, "completed": True}),
+                encoding="utf-8",
+            )
+            loaded = load_checkpoint(
+                str(path), expected_identity=self._identity(), frozen_ids=frozen
+            )
+            self.assertEqual(loaded["discarded_uncommitted_records"], [adjacent.name])
+            self.assertFalse(adjacent.exists())
+
+            future = records / (
+                "000002_" + hashlib.sha256(b"P3").hexdigest()[:16] + ".json"
+            )
+            future.write_text(
+                json.dumps({"paper_id": "P3", "paper_index": 2, "completed": True}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "beyond the legal completed prefix"):
+                load_checkpoint(
+                    str(path), expected_identity=self._identity(), frozen_ids=frozen
+                )
+
+    def test_fresh_formal_run_rejects_residual_memory_without_checkpoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "checkpoint.json"
+            (Path(directory) / "memory_library.jsonl").write_text(
+                '{"stale": true}\n', encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "residual Memory"):
+                load_checkpoint(
+                    str(path), expected_identity=self._identity(), frozen_ids=["P1"]
+                )
 
     def test_mutation_feedback_guard_is_fail_closed(self):
         feedback = EvalFeedback(

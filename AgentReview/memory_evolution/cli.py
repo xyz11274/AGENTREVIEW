@@ -17,7 +17,7 @@ from .metrics import get_metric
 from .meta_cache import build_meta_input_cache
 from .models import Episode, EvalItem
 from .quality import check_program_path
-from .formal_protocol import run_formal_protocol_gate
+from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
 from .search import EvolutionConfig, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
@@ -31,7 +31,6 @@ from .tasks import (
 from agentreview.single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
 from .toolkit import MemoryToolkit, load_frozen_s2_pool
 from .benchmark_adapter import CoCoMetricBenchmarkAdapter
-from .assets import FOUR_ZONES, audit_four_zone_isolation, load_temporal_split_manifest, validate_asset_manifest
 
 
 TASK_MODEL_DEFAULT = "gpt-5-mini"
@@ -679,39 +678,13 @@ def _final_evaluate_suite(args):
     meta_manifest = json.loads(meta_manifest_path.read_text(encoding="utf-8"))
     test_manifest = json.loads(test_manifest_path.read_text(encoding="utf-8"))
     args.s2_retrieval_pool = str(test_manifest.get("semantic_scholar_cache") or "")
-    asset_gate = validate_asset_manifest(
-        args.asset_manifest,
-        required_assets=(
-            "temporal_split_manifest",
-            "frozen_s2_pool",
-            "frozen_reviewer_identity",
-        ),
+    formal_test_gate = run_formal_test_gate(
+        asset_manifest_path=args.asset_manifest,
+        temporal_split_manifest_path=args.temporal_split_manifest,
+        test_manifest_path=str(test_manifest_path),
     )
-    if not asset_gate["formal_ready"]:
-        raise RuntimeError(
-            f"D Asset Manifest is not formal-ready: {asset_gate['formal_blockers']}"
-        )
-    if asset_gate["verified_assets"]["frozen_s2_pool"]["resolved_path"] != str(
-        Path(args.s2_retrieval_pool).expanduser().resolve()
-    ):
-        raise RuntimeError("D S2 pool differs from the Asset Manifest")
-    _, temporal_zones = load_temporal_split_manifest(args.temporal_split_manifest)
-    temporal_audit = audit_four_zone_isolation(temporal_zones)
-    if not temporal_audit["passed"]:
-        raise RuntimeError("D gate failed four-zone temporal audit")
-    if int(test_manifest.get("paper_count", -1)) != len(
-        temporal_zones[FOUR_ZONES[3]]
-    ):
-        raise RuntimeError("D materialization does not match held-out manifest")
-    expected_d_ids_sha = hashlib.sha256(
-        "\n".join(
-            str(value["paper_id"]) for value in temporal_zones[FOUR_ZONES[3]]
-        ).encode("utf-8")
-    ).hexdigest()
-    if test_manifest.get("paper_ids_sha256") != expected_d_ids_sha:
-        raise RuntimeError("D paper identities differ from held-out manifest")
-    if not (test_manifest.get("semantic_scholar_temporal_audit") or {}).get("passed"):
-        raise RuntimeError("D frozen S2 asset lacks a passing future-leak audit")
+    asset_gate = formal_test_gate["asset_manifest"]
+    temporal_audit = formal_test_gate["four_zone_temporal_audit"]
     task_toolkit, _, judge_toolkit = _toolkits(args)
     specialist_results = {}
     specialist_answers = {}
@@ -908,6 +881,7 @@ def _final_evaluate_suite(args):
         "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
         "benchmark_adapter_bypassed": False,
         "asset_gate": asset_gate,
+        "formal_test_gate": formal_test_gate,
         "four_zone_temporal_audit": temporal_audit,
         "test_feedback_used_for_evolution": False,
         "test_manifest": str(test_manifest_path),

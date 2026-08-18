@@ -103,11 +103,13 @@ def validate_frozen_s2_pool(
         by_id[paper_id] = entry
         cutoff_text = str(entry.get("paper_review_cutoff") or "")
         required = (
+            "target_identity",
             "retrieval_method",
             "retrieval_version",
             "top_k",
             "retrieval_config",
             "result_sha256",
+            "pool_version",
         )
         missing = [name for name in required if entry.get(name) in (None, "")]
         if not cutoff_text:
@@ -119,6 +121,18 @@ def validate_frozen_s2_pool(
             )
         if missing:
             provenance_errors.append(f"{paper_id}: missing provenance {sorted(set(missing))}")
+            continue
+        target_identity = entry.get("target_identity")
+        target_identity_id = (
+            str(target_identity.get("paper_id") or "")
+            if isinstance(target_identity, dict)
+            else str(target_identity or "")
+        )
+        if target_identity_id != paper_id:
+            provenance_errors.append(f"{paper_id}: target identity mismatch")
+            continue
+        if entry.get("pool_version") != "frozen-s2-temporal-v1":
+            provenance_errors.append(f"{paper_id}: unsupported pool version")
             continue
         papers = (
             entry.get("retrieved_papers")

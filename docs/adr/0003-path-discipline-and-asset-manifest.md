@@ -1,6 +1,6 @@
 # 路径纪律与 Asset Manifest
 
-本仓库以日期快照目录（`AgentReview_0722`、`AgentReview_0811`……）的方式演进，已有产物（`effectiveness_screening_v1.json`、`suite_manifest.json`、各 `config.json`）内嵌的绝对路径仍指向前一个快照 `_0722`——实际资产在 `_0811`，混用后实验结果将无法解释。为此决定：项目内部文件一律从当前 project root 相对解析；外部数据根（`/data0/xyj/shengao/OpenReview`、`/data0/xyj/shengao/CoCoReviewBench`）通过统一配置传入；建立 Asset Manifest 记录每项资产最终解析后的路径、SHA256、版本和数据 split。任何资产不得从目录名推断。
+本仓库以日期快照目录（`AgentReview_0722`、`AgentReview_0811`……）的方式演进，已有产物（`effectiveness_screening_v1.json`、`suite_manifest.json`、各 `config.json`）可能内嵌旧快照绝对路径，混用后实验结果将无法解释。为此决定：项目内部文件一律从当前 project root 相对解析；OpenReview / CoCoReviewBench 等外部数据根通过 CLI、环境变量或 Asset Manifest external-root resolver 显式传入；建立 Asset Manifest 记录每项资产最终解析后的路径、SHA256、版本和数据 split。任何资产不得从目录名推断。
 
 ## Considered Options
 

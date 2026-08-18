@@ -27,7 +27,13 @@ REQUIRED_ASSETS = (
     "seed_experience_learner",
     "frozen_reviewer_identity",
     "frozen_s2_pool",
+    "frozen_s2_pool_manifest",
 )
+FROZEN_S2_POOL_VERSION = "frozen-s2-temporal-v1"
+FROZEN_S2_REQUIRED_VERSIONS = {
+    "frozen_s2_pool": FROZEN_S2_POOL_VERSION,
+    "frozen_s2_pool_manifest": FROZEN_S2_POOL_VERSION,
+}
 
 
 def _iter_jsonl(path: Path):
@@ -65,7 +71,9 @@ def run_formal_protocol_gate(
     config_identity: Dict[str, Any],
 ) -> Dict[str, Any]:
     asset_report = validate_asset_manifest(
-        asset_manifest_path, required_assets=REQUIRED_ASSETS
+        asset_manifest_path,
+        required_assets=REQUIRED_ASSETS,
+        required_versions=FROZEN_S2_REQUIRED_VERSIONS,
     )
     if not asset_report["formal_ready"]:
         raise RuntimeError(
@@ -179,4 +187,74 @@ def run_formal_protocol_gate(
         ],
         "experiment_config_sha256": config_sha256,
         "source_asset_identity": split_summary.get("source_sha256"),
+    }
+
+
+def run_formal_test_gate(
+    *,
+    asset_manifest_path: str,
+    temporal_split_manifest_path: str,
+    test_manifest_path: str,
+) -> Dict[str, Any]:
+    """Fail-closed gate used exclusively by ``final-evaluate-suite``."""
+    asset_report = validate_asset_manifest(
+        asset_manifest_path,
+        required_assets=(
+            "temporal_split_manifest",
+            "frozen_s2_pool",
+            "frozen_s2_pool_manifest",
+            "frozen_reviewer_identity",
+        ),
+        required_versions=FROZEN_S2_REQUIRED_VERSIONS,
+    )
+    if not asset_report["formal_ready"]:
+        raise RuntimeError(
+            f"D Asset Manifest is not formal-ready: {asset_report['formal_blockers']}"
+        )
+    _, zones = load_temporal_split_manifest(temporal_split_manifest_path)
+    temporal_audit = audit_four_zone_isolation(zones)
+    if not temporal_audit["passed"]:
+        raise RuntimeError("D gate failed four-zone temporal audit")
+    temporal_asset = asset_report["verified_assets"]["temporal_split_manifest"]
+    if temporal_asset["resolved_path"] != str(
+        Path(temporal_split_manifest_path).expanduser().resolve()
+    ):
+        raise RuntimeError("D temporal split differs from the Asset Manifest")
+
+    manifest_source = Path(test_manifest_path).expanduser().resolve()
+    test_manifest = json.loads(manifest_source.read_text(encoding="utf-8"))
+    s2_path = str(test_manifest.get("semantic_scholar_cache") or "")
+    if not s2_path:
+        raise RuntimeError("D materialization lacks its frozen S2 pool path")
+    s2_asset = asset_report["verified_assets"]["frozen_s2_pool"]
+    if s2_asset["resolved_path"] != str(Path(s2_path).expanduser().resolve()):
+        raise RuntimeError("D S2 pool differs from the Asset Manifest")
+
+    held_out = zones[FOUR_ZONES[3]]
+    if int(test_manifest.get("paper_count", -1)) != len(held_out):
+        raise RuntimeError("D materialization does not match held-out manifest")
+    expected_ids_sha = hashlib.sha256(
+        "\n".join(str(value["paper_id"]) for value in held_out).encode("utf-8")
+    ).hexdigest()
+    if test_manifest.get("paper_ids_sha256") != expected_ids_sha:
+        raise RuntimeError("D paper identities differ from held-out manifest")
+    cutoffs = {
+        str(value["paper_id"]): str(value["paper_review_cutoff"])
+        for value in held_out
+    }
+    s2_audit = validate_frozen_s2_pool(
+        s2_path, expected_cutoffs=cutoffs, required_ids=set(cutoffs)
+    )
+    if not s2_audit["passed"]:
+        raise RuntimeError(f"D frozen S2 temporal audit failed: {s2_audit}")
+    return {
+        "protocol": "formal-held-out-test-gate-v1",
+        "passed": True,
+        "asset_manifest": asset_report,
+        "four_zone_temporal_audit": temporal_audit,
+        "s2_future_leak_audit": s2_audit,
+        "test_manifest": str(manifest_source),
+        "test_manifest_sha256": sha256_file(manifest_source),
+        "held_out_paper_count": len(held_out),
+        "held_out_paper_ids_sha256": expected_ids_sha,
     }

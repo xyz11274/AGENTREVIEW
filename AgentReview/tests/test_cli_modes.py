@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 
-from memory_evolution.cli import _experiment_kind, _is_nonformal, build_parser
+from memory_evolution.cli import _experiment_kind, _is_nonformal, build_parser, main
 
 
 class CliModeTest(unittest.TestCase):
@@ -63,6 +64,27 @@ class CliModeTest(unittest.TestCase):
                     "--pilot",
                 ]
             )
+
+    def test_evaluate_final_test_is_always_forbidden(self):
+        argv = [
+            "memory_evolution.cli",
+            "evaluate",
+            "--task-id",
+            "QUAL",
+            "--program",
+            "program.py",
+            "--episodes",
+            "episodes.jsonl",
+            "--eval",
+            "arbitrary.jsonl",
+            "--output",
+            "report.json",
+            "--final-test",
+        ]
+        with patch("sys.argv", argv), self.assertRaisesRegex(
+            SystemExit, "only formal D/Test entry point is final-evaluate-suite"
+        ):
+            main()
 
 
 if __name__ == "__main__":

@@ -41,8 +41,10 @@ targets.
   experience learner.
 - Six role pools; inside each specialist pool the three Seed code lineages stay
   independent and runtime Memory State is never inherited across Candidates.
-- Formal defaults: 21 iterations (7 per lineage), static 25, rotating 5, ratio 5:1,
-  temperature 0.15, three compile repairs, five experiment seeds.
+- Formal defaults: 21 successful child candidate evaluations (7 per lineage),
+  static 25, rotating 5, ratio 5:1, temperature 0.15, three compile repairs,
+  five experiment seeds. Failed mutation/guard/compile/evaluation attempts do
+  not consume a completed lineage slot.
 - Static cases never enter Reflector feedback. Rotating feedback may expose at
   most two weighted failures and two successes.
 - Test data is evaluated only after promotion and never becomes feedback.

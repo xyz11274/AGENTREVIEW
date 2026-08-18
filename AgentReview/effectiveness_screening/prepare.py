@@ -653,7 +653,7 @@ def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
         }
         existing[paper_id] = {
             "paper_id": paper_id,
-            "target_identity": paper_id,
+            "target_identity": {"paper_id": paper_id, "title": title},
             "paper_review_cutoff": cutoff_text,
             "query": title,
             "queries_attempted": (
@@ -671,6 +671,7 @@ def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
             "result_sha256": canonical_json_sha256(papers),
             "future_or_unknown_results_rejected": len(rejected_future_or_unknown),
             "status": "ok",
+            "pool_version": "frozen-s2-temporal-v1",
         }
         write_jsonl(destination, [existing[key] for key in sorted(existing)])
         result_note = f"{len(papers)} papers" if papers else "confirmed empty"

@@ -40,7 +40,7 @@ a new split.
 
 ```bash
 python -m memory_evolution.cli prepare-specialists \
-  --openreview-root /data0/xyj/shengao/OpenReview \
+  --openreview-root "$OPENREVIEW_ROOT" \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
   --output-dir data/evolution \
   --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
@@ -58,7 +58,9 @@ results, legacy cache records and partial caches are rejected.
 
 ## Evolve the five specialists
 
-A formal run uses three seed programs and 21 mutations (7 per lineage), static
+A formal run uses three seed programs and 21 successful child candidate
+evaluations (7 per lineage); failed mutation/guard/compile/evaluation attempts
+do not consume that completed budget. Static
 validation size 25, rotating feedback size 5, train-to-validation budget 5:1,
 parent softmax temperature 0.15, three compile repairs, and five independent
 evolution seeds.
@@ -123,7 +125,7 @@ python -m memory_evolution.cli cache-meta-inputs \
   --embedding-revision <same-immutable-model-commit>
 
 python -m memory_evolution.cli prepare-meta \
-  --openreview-root /data0/xyj/shengao/OpenReview \
+  --openreview-root "$OPENREVIEW_ROOT" \
   --specialist-outputs data/evolution/meta_inputs.jsonl \
   --output-dir data/evolution
 
@@ -209,8 +211,10 @@ python -m memory_evolution.cli final-evaluate-suite \
   --embedding-revision <same-immutable-model-commit>
 ```
 
-The lower-level `evaluate` command remains available for a single task or
-ablation, but it also requires the promoted run's `selection.json` formally.
+The lower-level `evaluate` command remains available for development single-task
+evaluation or ablation. `evaluate --final-test` is always rejected and cannot
+produce a formal report. The only legal D/Test entry is
+`final-evaluate-suite → formal gate → CoCoMetricBenchmarkAdapter`.
 
 CoCoReviewBench is used as an opinion-taxonomy and metric-design reference. Its
 benchmark construction and left-out-reviewer workflow are not part of the M★

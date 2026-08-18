@@ -221,7 +221,12 @@ def load_temporal_split_manifest(path: str) -> Tuple[Dict[str, Any], Dict[str, L
     return summary, zones
 
 
-def validate_asset_manifest(path: str, *, required_assets: Sequence[str] = ()) -> Dict[str, Any]:
+def validate_asset_manifest(
+    path: str,
+    *,
+    required_assets: Sequence[str] = (),
+    required_versions: Optional[Mapping[str, str]] = None,
+) -> Dict[str, Any]:
     """Resolve every declared asset and fail closed on any identity mismatch."""
     source = Path(path).expanduser().resolve()
     payload = json.loads(source.read_text(encoding="utf-8"))
@@ -234,6 +239,12 @@ def validate_asset_manifest(path: str, *, required_assets: Sequence[str] = ()) -
     missing = sorted(set(required_assets) - set(assets))
     if missing:
         raise ValueError(f"Asset manifest is missing required assets: {missing}")
+    expected_versions = dict(required_versions or {})
+    missing_versioned = sorted(set(expected_versions) - set(assets))
+    if missing_versioned:
+        raise ValueError(
+            f"Asset manifest is missing versioned assets: {missing_versioned}"
+        )
     verified = {}
     for name, entry in assets.items():
         recorded = str(entry.get("path") or "")
@@ -248,7 +259,19 @@ def validate_asset_manifest(path: str, *, required_assets: Sequence[str] = ()) -
         expected = str(entry.get("sha256") or "")
         if not expected or actual != expected:
             raise ValueError(f"Asset SHA256 mismatch: {name}")
-        verified[name] = {"resolved_path": str(resolved), "sha256": actual}
+        actual_version = str(entry.get("version") or "")
+        required_version = expected_versions.get(name)
+        if required_version is not None and actual_version != required_version:
+            raise ValueError(
+                f"Asset version mismatch: {name}: expected "
+                f"{required_version!r}, got {actual_version!r}"
+            )
+        verified[name] = {
+            "resolved_path": str(resolved),
+            "sha256": actual,
+            "version": actual_version,
+            "split": str(entry.get("split") or ""),
+        }
     return {
         "manifest": str(source),
         "manifest_sha256": sha256_file(source),

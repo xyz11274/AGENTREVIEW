@@ -2044,6 +2044,10 @@ def main(args: Namespace):
         if not papers:
             raise RuntimeError("Strict Historical replay requires a non-empty manifest")
         strict_state = _strict_history_state(args, papers)
+        # Only the checkpoint prefix is authoritative. The immediate next
+        # paper is an uncommitted crash window and must be regenerated in full,
+        # even when partial per-paper artifacts already exist.
+        args.overwrite = True
 
     results = []
     for index, paper_info in enumerate(papers, start=1):
