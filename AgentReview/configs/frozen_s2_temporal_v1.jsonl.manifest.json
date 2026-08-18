@@ -1,0 +1,20 @@
+{
+  "asset": "/data0/xyj/shengao/AgentReview_0811/AgentReview/configs/frozen_s2_temporal_v1.jsonl",
+  "asset_sha256": "79eb9171a1652156de62ed3c80878f421a48268b8e4d30dea672e4903f1ec21e",
+  "paper_count": 3900,
+  "pool_version": "frozen-s2-temporal-v1",
+  "source_pool_count": 3900,
+  "temporal_audit": {
+    "asset_sha256": "79eb9171a1652156de62ed3c80878f421a48268b8e4d30dea672e4903f1ec21e",
+    "cached_count": 3900,
+    "future_results": [],
+    "missing_target_ids": [],
+    "passed": true,
+    "protocol": "frozen-s2-temporal-v1",
+    "provenance_errors": [],
+    "required_count": 3900
+  },
+  "temporal_split_manifest": "/data0/xyj/shengao/AgentReview_0811/AgentReview/configs/coco_temporal_split_v1/manifest.json",
+  "temporal_split_manifest_sha256": "0b040aefcef39bb4aa89869f941233ff5025665da50351ca40faa65e6443dc26",
+  "top_k": 10
+}

@@ -33,9 +33,9 @@ from .toolkit import MemoryToolkit, load_frozen_s2_pool
 from .benchmark_adapter import CoCoMetricBenchmarkAdapter
 
 
-TASK_MODEL_DEFAULT = "gpt-5-mini"
-REFLECTOR_MODEL_DEFAULT = "gpt-5-mini"
-JUDGE_MODEL_DEFAULT = "gpt-5-mini"
+TASK_MODEL_DEFAULT = "kimi-k3"
+REFLECTOR_MODEL_DEFAULT = "kimi-k3"
+JUDGE_MODEL_DEFAULT = "kimi-k3"
 
 
 def _load_jsonl(path: str):
