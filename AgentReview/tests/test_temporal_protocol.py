@@ -12,9 +12,17 @@ from memory_evolution.assets import (
 from memory_evolution.checkpoint import load_checkpoint, save_checkpoint
 from memory_evolution.reflector import EvalFeedback, validate_candidate_feedback
 from memory_evolution.evaluator import evaluate_program
+from memory_evolution.formal_protocol import (
+    FORMAL_REQUIRED_VERSIONS,
+    _validate_v2_sidecar,
+)
 from memory_evolution.models import Episode, EvalItem
 from memory_evolution.sandbox import SandboxSession
-from memory_evolution.toolkit import MemoryToolkit, validate_frozen_s2_pool
+from memory_evolution.toolkit import (
+    MemoryToolkit,
+    frozen_s2_pool_version,
+    validate_frozen_s2_pool,
+)
 from scripts.finalize_formal_readiness import build_candidate_manifest
 
 
@@ -101,6 +109,17 @@ class TemporalProtocolTest(unittest.TestCase):
             self.assertFalse(report["passed"])
             self.assertEqual(len(report["future_results"]), 1)
 
+    def test_strict_history_identity_reads_v2_pool_version_from_asset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "frozen.jsonl"
+            path.write_text(
+                json.dumps({"pool_version": "frozen-s2-temporal-v2"}) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                frozen_s2_pool_version(path), "frozen-s2-temporal-v2"
+            )
+
     def test_readiness_manifest_registration_is_explicit_and_versioned(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -108,6 +127,23 @@ class TemporalProtocolTest(unittest.TestCase):
             sidecar = root / "pool.jsonl.manifest.json"
             pool.write_text("{}\n", encoding="utf-8")
             sidecar.write_text("{}\n", encoding="utf-8")
+            split = root / "manifest.json"
+            split.write_text("{}\n", encoding="utf-8")
+            family_path = root / "paper_families.jsonl"
+            family_path.write_text("", encoding="utf-8")
+            split_summary = {
+                "zones": {},
+                "families": {"path": family_path.name},
+            }
+            for zone in (
+                "historical_experience",
+                "evolution_validation",
+                "effectiveness_holdout",
+                "held_out_benchmark_test",
+            ):
+                zone_path = root / f"{zone}.jsonl"
+                zone_path.write_text("", encoding="utf-8")
+                split_summary["zones"][zone] = {"path": zone_path.name}
             candidate = build_candidate_manifest(
                 {
                     "manifest_version": "mstar-assets-v2-temporal",
@@ -115,6 +151,8 @@ class TemporalProtocolTest(unittest.TestCase):
                     "formal_ready": False,
                     "formal_blockers": ["fixture"],
                 },
+                temporal_split_manifest=split,
+                split_summary=split_summary,
                 s2_pool=pool,
                 s2_manifest=sidecar,
             )
@@ -122,7 +160,7 @@ class TemporalProtocolTest(unittest.TestCase):
             self.assertEqual(candidate["formal_blockers"], [])
             self.assertEqual(
                 candidate["assets"]["frozen_s2_pool"]["version"],
-                "frozen-s2-temporal-v1",
+                "frozen-s2-temporal-v2",
             )
             self.assertEqual(
                 len(candidate["assets"]["frozen_s2_pool"]["sha256"]), 64
@@ -157,6 +195,108 @@ class TemporalProtocolTest(unittest.TestCase):
                     required_versions={
                         "frozen_s2_pool": "frozen-s2-temporal-v1"
                     },
+                )
+
+    def test_current_formal_versions_reject_frozen_v1_manifest(self):
+        root = Path(__file__).parents[1]
+        manifest_path = root / "configs" / "asset_manifest_v2.json"
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            payload["assets"]["temporal_split_manifest"]["version"],
+            "coco-temporal-paper-split-v1",
+        )
+        with self.assertRaises(ValueError):
+            validate_asset_manifest(
+                str(manifest_path),
+                required_assets=("temporal_split_manifest",),
+                required_versions=FORMAL_REQUIRED_VERSIONS,
+            )
+
+    def test_formal_required_versions_explicitly_reject_v1_versions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assets = {}
+            for name in FORMAL_REQUIRED_VERSIONS:
+                path = root / f"{name}.json"
+                path.write_text("{}\n", encoding="utf-8")
+                assets[name] = {
+                    "path": str(path),
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                    "version": (
+                        "coco-temporal-paper-split-v1"
+                        if name == "temporal_split_manifest"
+                        else "frozen-s2-temporal-v1"
+                    ),
+                    "split": "A+B+C+D",
+                }
+            manifest = root / "assets.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "manifest_version": "mstar-assets-v2-temporal",
+                        "assets": assets,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                ValueError, "Asset version mismatch: temporal_split_manifest"
+            ):
+                validate_asset_manifest(
+                    str(manifest),
+                    required_assets=tuple(FORMAL_REQUIRED_VERSIONS),
+                    required_versions=FORMAL_REQUIRED_VERSIONS,
+                )
+
+    def test_formal_v2_sidecar_requires_passed_query_and_temporal_audits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            split = root / "split.json"
+            pool = root / "pool.jsonl"
+            sidecar_path = root / "pool.jsonl.manifest.json"
+            split.write_text("{}\n", encoding="utf-8")
+            pool.write_text("{}\n", encoding="utf-8")
+            sidecar = {
+                "pool_version": "frozen-s2-temporal-v2",
+                "asset_sha256": hashlib.sha256(pool.read_bytes()).hexdigest(),
+                "temporal_split_manifest_sha256": hashlib.sha256(
+                    split.read_bytes()
+                ).hexdigest(),
+                "temporal_audit": {"passed": True},
+                "query_integrity_audit": {
+                    "required_count": 3900,
+                    "checked_count": 3900,
+                    "malformed_titles": [],
+                    "canonical_mismatches": [],
+                    "polluted_query_titles": [],
+                    "passed": True,
+                },
+            }
+            sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+            asset_report = {
+                "verified_assets": {
+                    "frozen_s2_pool_manifest": {
+                        "resolved_path": str(sidecar_path)
+                    }
+                }
+            }
+            self.assertEqual(
+                _validate_v2_sidecar(
+                    asset_report,
+                    temporal_split_manifest_path=str(split),
+                    s2_pool_path=str(pool),
+                    expected_target_count=3900,
+                )["pool_version"],
+                "frozen-s2-temporal-v2",
+            )
+            sidecar["query_integrity_audit"]["passed"] = False
+            sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "query integrity"):
+                _validate_v2_sidecar(
+                    asset_report,
+                    temporal_split_manifest_path=str(split),
+                    s2_pool_path=str(pool),
+                    expected_target_count=3900,
                 )
 
     def test_adjacent_uncommitted_record_is_cleaned_but_future_is_rejected(self):

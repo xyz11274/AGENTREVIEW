@@ -61,15 +61,25 @@
     },
     "temporal_split_generator": {
       "path": "scripts/build_coco_temporal_split.py",
-      "sha256": "b70bda74f32a7f7903f13fded7b87bd60900232eb8105dec28b7126b87879105",
-      "version": "coco-temporal-paper-split-v1",
+      "sha256": "b9d67356fa831cd6c24dc16eb0974aaa39d3430d2707db15c3213df25b79d86f",
+      "version": "coco-temporal-paper-split-v2",
       "split": "infrastructure"
+    }
+  },
+  "deprecated_assets": {
+    "frozen_s2_temporal_v1": {
+      "path": "configs/frozen_s2_temporal_v1.jsonl",
+      "work_path": "configs/frozen_s2_temporal_v1.jsonl.work",
+      "version": "frozen-s2-temporal-v1",
+      "deprecated_for_formal_use": true,
+      "reason": "query_title_serialization_contamination"
     }
   },
   "formal_ready": false,
   "formal_blockers": [
-    "frozen_s2_pool is not yet generated with frozen-s2-temporal-v1 provenance",
-    "A/B task bundles must be regenerated from the temporal split manifest"
+    "coco_temporal_split_v2 must be generated and pass the v1/v2 comparison audit",
+    "frozen_s2_temporal_v2 must be generated with passed temporal and query-integrity audits",
+    "A/B task bundles must be regenerated from coco_temporal_split_v2"
   ],
   "supersedes": "configs/asset_manifest_v1.json"
 }

@@ -12,7 +12,12 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 
 ASSET_MANIFEST_VERSION = "mstar-assets-v2-temporal"
-TEMPORAL_SPLIT_VERSION = "coco-temporal-paper-split-v1"
+TEMPORAL_SPLIT_V1_VERSION = "coco-temporal-paper-split-v1"
+TEMPORAL_SPLIT_VERSION = "coco-temporal-paper-split-v2"
+SUPPORTED_TEMPORAL_SPLIT_VERSIONS = (
+    TEMPORAL_SPLIT_V1_VERSION,
+    TEMPORAL_SPLIT_VERSION,
+)
 FOUR_ZONES = (
     "historical_experience",
     "evolution_validation",
@@ -163,7 +168,7 @@ def audit_four_zone_isolation(
             {"rule": "Historical manifest order must be chronological"}
         )
     report = {
-        "protocol": "four-zone-temporal-isolation-v2",
+        "protocol": "four-zone-temporal-isolation-v3",
         "zone_counts": {zone: len(zones.get(zone, [])) for zone in FOUR_ZONES},
         "overlaps": overlaps,
         "missing_paper_review_cutoffs": missing_cutoffs,
@@ -181,10 +186,10 @@ def audit_four_zone_isolation(
 
 
 def load_temporal_split_manifest(path: str) -> Tuple[Dict[str, Any], Dict[str, List[Dict[str, Any]]]]:
-    """Load and checksum the four paper-level zone manifests."""
+    """Load and checksum the four temporal target-zone manifests."""
     source = Path(path).expanduser().resolve()
     summary = json.loads(source.read_text(encoding="utf-8"))
-    if summary.get("version") != TEMPORAL_SPLIT_VERSION:
+    if summary.get("version") not in SUPPORTED_TEMPORAL_SPLIT_VERSIONS:
         raise ValueError(
             f"Unsupported temporal split protocol: {summary.get('version')!r}"
         )
@@ -215,9 +220,64 @@ def load_temporal_split_manifest(path: str) -> Tuple[Dict[str, Any], Dict[str, L
         if len(values) != int(entry.get("count", -1)):
             raise ValueError(f"Temporal zone count mismatch: {zone}")
         zones[zone] = values
-    expected_total = int(summary.get("source_pool_count", -1))
+    expected_total = int(
+        summary.get("formal_target_count", -1)
+        if summary.get("version") == TEMPORAL_SPLIT_VERSION
+        else summary.get("source_pool_count", -1)
+    )
     if sum(map(len, zones.values())) != expected_total:
-        raise ValueError("Temporal split does not account for the frozen source pool")
+        raise ValueError("Temporal split target count does not match its manifest")
+    if summary.get("version") == TEMPORAL_SPLIT_VERSION:
+        family_entry = summary.get("families") or {}
+        family_recorded = str(family_entry.get("path") or "")
+        family_path = Path(family_recorded)
+        if not family_path.is_absolute():
+            family_path = source.parent / family_path
+        family_path = family_path.resolve()
+        if not family_path.is_file():
+            raise FileNotFoundError(f"Temporal family manifest missing: {family_path}")
+        if sha256_file(family_path) != str(family_entry.get("sha256") or ""):
+            raise ValueError("Temporal family manifest SHA256 mismatch")
+        family_records = []
+        with family_path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    family_records.append(json.loads(line))
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Invalid temporal family JSONL {family_path}:{line_number}"
+                    ) from exc
+        if len(family_records) != int(family_entry.get("count", -1)):
+            raise ValueError("Temporal family manifest count mismatch")
+        zone_records = [record for zone in FOUR_ZONES for record in zones[zone]]
+        zone_by_family = {
+            str(record.get("family_id") or ""): record for record in zone_records
+        }
+        indexed_by_family = {
+            str(record.get("family_id") or ""): record for record in family_records
+        }
+        if (
+            "" in zone_by_family
+            or "" in indexed_by_family
+            or len(zone_by_family) != len(zone_records)
+            or len(indexed_by_family) != len(family_records)
+            or set(zone_by_family) != set(indexed_by_family)
+        ):
+            raise ValueError("Temporal split violates one-family-one-target identity")
+        for family_id, record in zone_by_family.items():
+            family = indexed_by_family[family_id]
+            if (
+                record.get("paper_family") != family_id
+                or record.get("representative_paper_id") != record.get("paper_id")
+                or family.get("representative_paper_id") != record.get("paper_id")
+                or family.get("excluded_paper_ids") != record.get("excluded_paper_ids")
+                or family.get("zone") != record.get("zone")
+            ):
+                raise ValueError(
+                    f"Temporal family representative metadata mismatch: {family_id}"
+                )
     return summary, zones
 
 

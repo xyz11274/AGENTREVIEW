@@ -22,7 +22,12 @@ from agentreview.source_map import (
 
 from .tasks import META_TASK, SPECIALIST_TASKS
 from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
-from .assets import FOUR_ZONES, load_temporal_split_manifest, sha256_file
+from .assets import (
+    FOUR_ZONES,
+    TEMPORAL_SPLIT_VERSION,
+    load_temporal_split_manifest,
+    sha256_file,
+)
 from .toolkit import validate_frozen_s2_pool
 
 
@@ -500,10 +505,23 @@ def prepare_openreview_data(
             str(s2_cache_path),
             expected_cutoffs=cutoff_by_id,
             required_ids=required_s2_ids,
+            expected_pool_version=(
+                "frozen-s2-temporal-v2"
+                if split_summary.get("version") == TEMPORAL_SPLIT_VERSION
+                else "frozen-s2-temporal-v1"
+            ),
+            expected_queries=(
+                {
+                    paper_id: str(allowed_entries[paper_id]["title"])
+                    for paper_id in required_s2_ids
+                }
+                if split_summary.get("version") == TEMPORAL_SPLIT_VERSION
+                else None
+            ),
         )
         if s2_cache_path
         else {
-            "protocol": "frozen-s2-temporal-v1",
+            "protocol": "frozen-s2-temporal-v2",
             "passed": False,
             "missing_target_ids": sorted(required_s2_ids),
             "future_results": [],
@@ -834,6 +852,19 @@ def prepare_held_out_test_data(
             for value in d_entries
         },
         required_ids=required_ids,
+        expected_pool_version=(
+            "frozen-s2-temporal-v2"
+            if split_summary.get("version") == TEMPORAL_SPLIT_VERSION
+            else "frozen-s2-temporal-v1"
+        ),
+        expected_queries=(
+            {
+                str(value["paper_id"]): str(value["title"])
+                for value in d_entries
+            }
+            if split_summary.get("version") == TEMPORAL_SPLIT_VERSION
+            else None
+        ),
     )
     if not s2_temporal_audit["passed"]:
         raise ValueError("Frozen S2 cache failed D temporal-leak audit")
@@ -956,7 +987,16 @@ def prepare_held_out_test_data(
         "paper_ids_sha256": hashlib.sha256(
             "\n".join(str(value["paper_id"]) for value in d_entries).encode("utf-8")
         ).hexdigest(),
-        "benchmark_source_pool_count": int(split_summary["source_pool_count"]),
+        "benchmark_source_pool_count": int(
+            split_summary.get(
+                "source_record_count", split_summary["source_pool_count"]
+            )
+        ),
+        "formal_target_count": int(
+            split_summary.get(
+                "formal_target_count", split_summary["source_pool_count"]
+            )
+        ),
         "missing_markdown": missing_markdown,
         "sealed_test_feedback": False,
         "tasks": tasks,

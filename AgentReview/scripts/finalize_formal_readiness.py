@@ -25,6 +25,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from memory_evolution.assets import (
     ASSET_MANIFEST_VERSION,
     FOUR_ZONES,
+    TEMPORAL_SPLIT_VERSION,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     sha256_file,
@@ -34,7 +35,14 @@ from memory_evolution.tasks import SPECIALIST_TASKS
 from memory_evolution.toolkit import validate_frozen_s2_pool
 
 
-POOL_VERSION = "frozen-s2-temporal-v1"
+POOL_VERSION = "frozen-s2-temporal-v2"
+DEPRECATION_REASON = "query_title_serialization_contamination_and_duplicate_family_targets"
+ZONE_ASSET_NAMES = {
+    FOUR_ZONES[0]: "zone_A_historical_experience",
+    FOUR_ZONES[1]: "zone_B_evolution_validation",
+    FOUR_ZONES[2]: "zone_C_effectiveness_holdout",
+    FOUR_ZONES[3]: "zone_D_held_out_benchmark_test",
+}
 
 
 def portable_path(path: Path) -> str:
@@ -48,6 +56,8 @@ def portable_path(path: Path) -> str:
 def build_candidate_manifest(
     payload: Dict[str, Any],
     *,
+    temporal_split_manifest: Path,
+    split_summary: Dict[str, Any],
     s2_pool: Path,
     s2_manifest: Path,
 ) -> Dict[str, Any]:
@@ -55,6 +65,53 @@ def build_candidate_manifest(
     if candidate.get("manifest_version") != ASSET_MANIFEST_VERSION:
         raise ValueError("Unsupported Asset Manifest version")
     assets = candidate.setdefault("assets", {})
+    previous_temporal = copy.deepcopy(assets.get("temporal_split_manifest") or {})
+    deprecated = candidate.setdefault("deprecated_assets", {})
+    if previous_temporal:
+        previous_temporal.update(
+            {
+                "deprecated_for_formal_use": True,
+                "reason": DEPRECATION_REASON,
+            }
+        )
+        deprecated["coco_temporal_split_v1"] = previous_temporal
+    deprecated["frozen_s2_temporal_v1"] = {
+        "path": "configs/frozen_s2_temporal_v1.jsonl",
+        "work_path": "configs/frozen_s2_temporal_v1.jsonl.work",
+        "version": "frozen-s2-temporal-v1",
+        "deprecated_for_formal_use": True,
+        "reason": DEPRECATION_REASON,
+    }
+    assets["temporal_split_manifest"] = {
+        "path": portable_path(temporal_split_manifest),
+        "sha256": sha256_file(temporal_split_manifest),
+        "version": TEMPORAL_SPLIT_VERSION,
+        "split": "A+B+C+D",
+    }
+    family_entry = split_summary["families"]
+    family_path = temporal_split_manifest.parent / family_entry["path"]
+    assets["temporal_family_manifest"] = {
+        "path": portable_path(family_path),
+        "sha256": sha256_file(family_path),
+        "version": TEMPORAL_SPLIT_VERSION,
+        "split": "A+B+C+D-family-index",
+    }
+    for zone in FOUR_ZONES:
+        entry = split_summary["zones"][zone]
+        zone_path = temporal_split_manifest.parent / entry["path"]
+        assets[ZONE_ASSET_NAMES[zone]] = {
+            "path": portable_path(zone_path),
+            "sha256": sha256_file(zone_path),
+            "version": TEMPORAL_SPLIT_VERSION,
+            "split": zone,
+        }
+    generator = PROJECT_ROOT / "scripts/build_coco_temporal_split.py"
+    assets["temporal_split_generator"] = {
+        "path": portable_path(generator),
+        "sha256": sha256_file(generator),
+        "version": TEMPORAL_SPLIT_VERSION,
+        "split": "infrastructure",
+    }
     assets["frozen_s2_pool"] = {
         "path": portable_path(s2_pool),
         "sha256": sha256_file(s2_pool),
@@ -95,7 +152,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--temporal-split-manifest",
-        default=str(PROJECT_ROOT / "configs/coco_temporal_split_v1/manifest.json"),
+        default=str(PROJECT_ROOT / "configs/coco_temporal_split_v2/manifest.json"),
     )
     parser.add_argument("--s2-pool", required=True)
     parser.add_argument("--data-root", required=True)
@@ -118,6 +175,10 @@ def main() -> None:
         raise FileNotFoundError(f"Formal A/B data root is missing: {data_root}")
 
     split_summary, zones = load_temporal_split_manifest(str(split_path))
+    if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
+        raise RuntimeError("Formal readiness rejects contaminated temporal split v1")
+    if not (split_summary.get("v1_v2_comparison_audit") or {}).get("passed"):
+        raise RuntimeError("Temporal split v2 comparison audit is missing or failed")
     temporal_audit = audit_four_zone_isolation(zones)
     if not temporal_audit["passed"]:
         raise RuntimeError(f"Temporal split audit failed: {temporal_audit}")
@@ -126,24 +187,43 @@ def main() -> None:
         str(value["paper_id"]): str(value["paper_review_cutoff"])
         for value in all_targets
     }
+    queries = {
+        str(value["paper_id"]): str(value["title"])
+        for value in all_targets
+    }
     s2_audit = validate_frozen_s2_pool(
-        str(s2_path), expected_cutoffs=cutoffs, required_ids=set(cutoffs)
+        str(s2_path),
+        expected_cutoffs=cutoffs,
+        required_ids=set(cutoffs),
+        expected_pool_version=POOL_VERSION,
+        expected_queries=queries,
     )
     if not s2_audit["passed"] or s2_audit["cached_count"] != len(all_targets):
         raise RuntimeError(f"Frozen S2 pool is not complete/time-safe: {s2_audit}")
     sidecar = json.loads(s2_manifest_path.read_text(encoding="utf-8"))
+    query_audit = sidecar.get("query_integrity_audit") or {}
     if (
         sidecar.get("pool_version") != POOL_VERSION
         or int(sidecar.get("paper_count", -1)) != len(all_targets)
         or sidecar.get("asset_sha256") != sha256_file(s2_path)
         or sidecar.get("temporal_split_manifest_sha256") != sha256_file(split_path)
         or not (sidecar.get("temporal_audit") or {}).get("passed")
+        or not query_audit.get("passed")
+        or query_audit.get("required_count") != len(all_targets)
+        or query_audit.get("checked_count") != len(all_targets)
+        or query_audit.get("malformed_titles") != []
+        or query_audit.get("canonical_mismatches") != []
+        or query_audit.get("polluted_query_titles") != []
     ):
         raise RuntimeError("Frozen S2 sidecar manifest does not match audited assets")
 
     current = json.loads(asset_path.read_text(encoding="utf-8"))
     candidate = build_candidate_manifest(
-        current, s2_pool=s2_path, s2_manifest=s2_manifest_path
+        current,
+        temporal_split_manifest=split_path,
+        split_summary=split_summary,
+        s2_pool=s2_path,
+        s2_manifest=s2_manifest_path,
     )
     seed_root = PROJECT_ROOT / "memory_evolution" / "seeds"
     seed_paths = [
@@ -199,6 +279,7 @@ def main() -> None:
         "temporal_zone_counts": temporal_audit["zone_counts"],
         "s2_target_count": s2_audit["cached_count"],
         "s2_asset_sha256": s2_audit["asset_sha256"],
+        "query_integrity_audit": sidecar["query_integrity_audit"],
         "specialist_gates": {
             task_id: {
                 "passed": gate_reports[task_id]["passed"],

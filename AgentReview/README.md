@@ -34,17 +34,18 @@ Run all commands from this directory. The tested project interpreter is:
 
 ## Prepare specialist evolution data
 
-The frozen CoCo temporal manifest supplies paper membership and work-family
-identity. A comes from <=2022 and B from 2023; the CLI does not randomly invent
-a new split.
+The frozen CoCo temporal manifest supplies family-level target membership.
+The 3900 read-only submission records are canonicalized and clustered, then one
+deterministic score/review-independent representative is selected per family.
+The resulting 3889 targets use A/B/C/D counts 2391/299/300/899.
 
 ```bash
 python -m memory_evolution.cli prepare-specialists \
   --openreview-root "$OPENREVIEW_ROOT" \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
   --output-dir data/evolution \
-  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
-  --s2-cache /path/to/frozen_semantic_scholar_cache.jsonl
+  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
+  --s2-cache configs/frozen_s2_temporal_v2.jsonl
 ```
 
 This creates independent `QUAL`, `CLAR`, `SIGN`, `ORIG`, and `POL` datasets.
@@ -74,7 +75,7 @@ python -m memory_evolution.cli evolve-specialists \
   --experiment-seeds 0 \
   --primary-seed 0 \
   --asset-manifest configs/asset_manifest_v2.json \
-  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
+  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <immutable-ReviewSplit-commit> \
@@ -194,8 +195,8 @@ Materialize only the frozen D manifest from the CoCo source pool:
 python -m memory_evolution.cli prepare-test \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
   --output-dir data/sealed_test \
-  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
-  --s2-cache /path/to/frozen_semantic_scholar_cache.jsonl
+  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
+  --s2-cache configs/frozen_s2_temporal_v2.jsonl
 ```
 
 The formal suite command executes every test specialist exactly once, constructs
@@ -209,7 +210,7 @@ python -m memory_evolution.cli final-evaluate-suite \
   --program-root runs/formal \
   --output runs/formal/final_suite_test.json \
   --asset-manifest configs/asset_manifest_v2.json \
-  --temporal-split-manifest configs/coco_temporal_split_v1/manifest.json \
+  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <same-ReviewSplit-commit> \

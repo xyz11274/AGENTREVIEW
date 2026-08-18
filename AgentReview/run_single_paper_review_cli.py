@@ -49,7 +49,11 @@ try:
     from memory_evolution.models import Episode
     from memory_evolution.task_agent import build_task_agent
     from memory_evolution.tasks import resolve_program_path, verify_promoted_program
-    from memory_evolution.toolkit import MemoryToolkit, load_frozen_s2_pool
+    from memory_evolution.toolkit import (
+        MemoryToolkit,
+        frozen_s2_pool_version,
+        load_frozen_s2_pool,
+    )
     from memory_evolution.checkpoint import (
         canonical_sha256,
         load_checkpoint as load_history_checkpoint,
@@ -1976,7 +1980,7 @@ def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
         "historical_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
         "experiment_config_sha256": runtime_condition_fingerprint(args, papers[0]),
         "s2_asset_sha256": hashlib.sha256(s2_path.read_bytes()).hexdigest(),
-        "s2_asset_version": "frozen-s2-temporal-v1",
+        "s2_asset_version": frozen_s2_pool_version(s2_path),
         "run_seed": args.run_seed,
         "seed_control_available": False,
         "generation_config": {

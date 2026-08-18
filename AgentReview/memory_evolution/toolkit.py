@@ -72,6 +72,28 @@ def load_frozen_s2_pool(path: Optional[str]):
     return pool, digest
 
 
+def frozen_s2_pool_version(path: str | Path) -> str:
+    """Read the declared pool identity without guessing it from the filename."""
+    source = Path(path).expanduser().resolve()
+    with source.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"Invalid Frozen S2 JSONL at {source}:{line_number}"
+                ) from exc
+            version = record.get("pool_version") if isinstance(record, dict) else None
+            if not isinstance(version, str) or not version.strip():
+                raise RuntimeError(
+                    f"Frozen S2 record lacks pool_version at {source}:{line_number}"
+                )
+            return version.strip()
+    raise RuntimeError(f"Frozen S2 pool is empty: {source}")
+
+
 def _publication_cutoff(value: Dict[str, Any]) -> date:
     raw = value.get("publication_date") or value.get("publicationDate")
     if raw:
@@ -87,12 +109,16 @@ def validate_frozen_s2_pool(
     *,
     expected_cutoffs: Dict[str, str],
     required_ids: Iterable[str],
+    expected_pool_version: str = "frozen-s2-temporal-v1",
+    expected_queries: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Prove that every frozen result existed no later than target review time."""
     entries, digest = _load_s2_entries(path)
     by_id = {}
     future = []
     provenance_errors = []
+    canonical_mismatches = []
+    polluted_query_titles = []
     for entry in entries:
         paper_id = str(
             entry.get("paper_id") or entry.get("id") or entry.get("query_id") or ""
@@ -131,15 +157,19 @@ def validate_frozen_s2_pool(
         if target_identity_id != paper_id:
             provenance_errors.append(f"{paper_id}: target identity mismatch")
             continue
-        if entry.get("pool_version") != "frozen-s2-temporal-v1":
+        if entry.get("pool_version") != expected_pool_version:
             provenance_errors.append(f"{paper_id}: unsupported pool version")
             continue
-        papers = (
-            entry.get("retrieved_papers")
-            or entry.get("papers")
-            or entry.get("results")
-            or []
-        )
+        papers = entry.get("retrieved_papers")
+        if papers is None:
+            papers = entry.get("papers")
+        if papers is None:
+            papers = entry.get("results")
+        if papers is None:
+            papers = []
+        if not isinstance(papers, list):
+            provenance_errors.append(f"{paper_id}: retrieved results are not a list")
+            continue
         result_sha = hashlib.sha256(
             json.dumps(
                 papers, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -148,6 +178,48 @@ def validate_frozen_s2_pool(
         if result_sha != str(entry.get("result_sha256")):
             provenance_errors.append(f"{paper_id}: result SHA256 mismatch")
             continue
+        if expected_queries is not None:
+            expected_query = str(expected_queries.get(paper_id) or "").strip()
+            canonical_query = str(entry.get("canonical_query_title") or "").strip()
+            actual_query = str(entry.get("query") or "").strip()
+            query_sha = hashlib.sha256(canonical_query.encode("utf-8")).hexdigest()
+            mismatch_fields = []
+            if not expected_query or canonical_query != expected_query:
+                mismatch_fields.append("canonical_query_title")
+            if actual_query != canonical_query:
+                mismatch_fields.append("query")
+            if not isinstance(target_identity, dict) or str(
+                target_identity.get("title") or ""
+            ).strip() != expected_query:
+                mismatch_fields.append("target_identity.title")
+            if entry.get("query_sha256") != query_sha:
+                mismatch_fields.append("query_sha256")
+            if entry.get("result_count") != len(papers):
+                mismatch_fields.append("result_count")
+            record_payload = dict(entry)
+            recorded_record_sha = str(record_payload.pop("record_sha256", ""))
+            actual_record_sha = hashlib.sha256(
+                json.dumps(
+                    record_payload,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+            if recorded_record_sha != actual_record_sha:
+                mismatch_fields.append("record_sha256")
+            if mismatch_fields:
+                canonical_mismatches.append(
+                    {"paper_id": paper_id, "fields": mismatch_fields}
+                )
+            if (
+                canonical_query.startswith("{")
+                and "value" in canonical_query
+                and canonical_query.endswith("}")
+            ):
+                polluted_query_titles.append(
+                    {"paper_id": paper_id, "query": canonical_query}
+                )
         cutoff = date.fromisoformat(cutoff_text[:10])
         for result in papers:
             try:
@@ -166,14 +238,22 @@ def validate_frozen_s2_pool(
                 )
     missing_ids = sorted({str(value) for value in required_ids} - set(by_id))
     return {
-        "protocol": "frozen-s2-temporal-v1",
+        "protocol": expected_pool_version,
         "asset_sha256": digest,
         "required_count": len(set(map(str, required_ids))),
         "cached_count": len(by_id),
         "missing_target_ids": missing_ids,
         "future_results": future,
         "provenance_errors": provenance_errors,
-        "passed": not (missing_ids or future or provenance_errors),
+        "canonical_mismatches": canonical_mismatches,
+        "polluted_query_titles": polluted_query_titles,
+        "passed": not (
+            missing_ids
+            or future
+            or provenance_errors
+            or canonical_mismatches
+            or polluted_query_titles
+        ),
     }
 
 

@@ -282,7 +282,7 @@ def _add_runtime_args(parser):
         default=str(
             Path(__file__).resolve().parent.parent
             / "configs"
-            / "coco_temporal_split_v1"
+            / "coco_temporal_split_v2"
             / "manifest.json"
         ),
     )
@@ -623,7 +623,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         experiment_config_sha256=(
             formal_gate["experiment_config_sha256"] if formal_gate else ""
         ),
-        s2_asset_version="frozen-s2-temporal-v1" if formal_gate else "",
+        s2_asset_version="frozen-s2-temporal-v2" if formal_gate else "",
         run_seed=seed,
         seed_control_available=False,
     )
@@ -739,7 +739,7 @@ def _final_evaluate_suite(args):
                 ).encode()
             ).hexdigest(),
             "s2_asset_sha256": task_toolkit.s2_retrieval_pool_sha256,
-            "s2_asset_version": "frozen-s2-temporal-v1",
+            "s2_asset_version": "frozen-s2-temporal-v2",
             "run_seed": None,
             "seed_control_available": False,
             "generation_config": config_identity["generation"],
