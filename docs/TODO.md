@@ -7,7 +7,7 @@
 - [x] ~~**修复 Human Reference Boundary**：candidate-visible episode 剥离 human reference；reference 仅保留在 evaluator 侧。~~（2026-08-17）
 - [x] ~~**Canonical Rich Paper Interface**：Evolution、Historical Experience Generation、Deployment 共用 `canonical-rich-paper-v1` builder、统一 60K 可配置预算；related work 不再默认拼接。~~（2026-08-17）
 - [x] ~~**Metadata visibility 二分落地**：candidate-visible metadata 与 internal provenance 分离，canonical builder 拒绝 provenance 字段。~~（2026-08-17）
-- [ ] **Frozen S2 Retrieval Pool + Optional Usage**（冻结器与 fail-closed 校验已完成；实际 3900-target 资产仍等待可用 S2 API 凭据）：
+- [ ] **Frozen S2 Retrieval Pool + Optional Usage**（冻结器与 fail-closed 校验已完成；实际 3889-target family-representative 资产待 split v2 冻结后生成）：
 
   - 对实验涉及的每篇论文按稳定 paper identity / paper ID 统一运行 Semantic Scholar retrieval；
   - 将结果冻结、版本化、缓存，形成 paper-specific S2 Retrieval Pool；
@@ -32,15 +32,15 @@
   - Context organization 与实际资源使用属于 Harness 策略；
   - 保留模型/API物理限制和安全上限；
   - 记录 LLM calls、prompt/completion tokens、actual context size、memory context size、S2 usage，以及可获得的 latency/cost。
-- [x] ~~**Asset Manifest v2 + paper-level temporal split**：冻结 `configs/coco_temporal_split_v1/`，当前 A/B/C/D=2400/300/300/900；paper/title/family overlap=0，temporal audit PASS；v1 venue-year reservation 明确 superseded。~~（2026-08-18）
+- [ ] **Temporal split v2 provenance migration**：从 3900 条只读 CoCo submission records 以严格 string/dict-value title+paperhash parser 重建 family；每族按统一 status/year/PDF-version/stable-ID 规则选一个 representative。只读审计得到 3889 targets、11 exclusions、A/B/C/D=2391/299/300/899；正式 asset 尚待手工冻结。split v1 禁止 formal use。
 - [x] ~~**Formal protocol gate**：Asset SHA、A/B/C/D isolation、temporal validity、canonical preprocessing、A/B membership、S2 future-leak audit 全部接入 formal 入口；任一失败拒绝启动。~~（2026-08-18）
 - [x] ~~**Strict checkpoint/resume**：Candidate × lineage × replicate identity-bound checkpoint；Memory snapshot、completed prefix、next index、Program/Historical/config/S2 SHA；中断论文整篇重跑。~~（2026-08-18）
-- [ ] **生成 time-safe Frozen S2 Pool**：覆盖正式 A/B/C/D 实际使用 paper IDs；每条含 cutoff、method/version、top_k/config、result SHA；未知日期和 future result 拒绝。当前 formal blocker。
+- [ ] **生成 time-safe Frozen S2 v2 Pool**：基于 split v2 canonical query；clean v1 query/result 可 provenance-safe 复用，query 变化者重抓；每条绑定 query SHA、record SHA、cutoff、method/version、top_k/config、result SHA；未知日期和 future result 拒绝。当前 formal blocker。
 - [ ] **从 temporal manifest 重建 canonical A/B/C/D task bundles**：旧 pilot/effectiveness selections 仅作历史分析，不进入 formal。
 - [x] ~~**Evaluator feedback 旁路审计**：Reflector 仅接收 scalar score、数值 structured metrics 与 error type；question / gold / answer / context / rationale 全部剥离。~~（2026-08-17）
 - [ ] **Promotion manifest 全链路自动化**（`verify_promoted_program()` 流程）。
 
-当前正式数据口径只有一套：CoCoReviewBench 3900 篇是 benchmark source pool，由 frozen chronological manifest 划为 A/B/C/D=2400/300/300/900。B 是 300 篇 2023 Evolution Validation，不再从 OpenReview 另抽默认 30 篇。旧 20+20 screening 与 OpenReview 20–50/默认 30 规则只允许作为 historical/deprecated artifact 说明，不进入 formal gate。
+当前正式数据口径只有一套：CoCoReviewBench 3900 条 submissions 是只读 source pool，按 `1 paper family = 1 representative target` 得到 3889 targets，并由 frozen chronological manifest 划为 A/B/C/D=2391/299/300/899。B 不再从 OpenReview 另抽默认 30 篇。旧 20+20 screening 与 OpenReview 20–50/默认 30 规则只允许作为 historical/deprecated artifact 说明，不进入 formal gate。
 
 ## 4. 评价解耦
 

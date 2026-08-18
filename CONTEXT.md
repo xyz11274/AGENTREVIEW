@@ -87,7 +87,7 @@ _Avoid_: AC、Area Chair（本项目单论文管线中没有 AC 阶段）
 ### 经验与记忆
 
 **Shared Raw Material**:
-所有 Seed / Program 公平共享的同一批历史材料：**论文全文 + candidate-visible metadata + source anchors**。共享的是题目，不是答案，也不是提前加工好的经验。related work **不属于**默认共享材料（见 Semantic Scholar Capability）。当前正式 Historical source zone 是 frozen temporal manifest 的 A 区 2400 篇；具体 run 只能按 manifest 顺序冻结其可审计子集。旧 `memory_corpus.jsonl` 20 篇仅属 deprecated screening artifact，不是当前正式 Historical Set。
+所有 Seed / Program 公平共享的同一批历史材料：**论文全文 + candidate-visible metadata + source anchors**。共享的是题目，不是答案，也不是提前加工好的经验。related work **不属于**默认共享材料（见 Semantic Scholar Capability）。当前 family-level formal split 的 Historical source zone 是 A 区 2391 个 representative targets；具体 run 只能按 manifest 顺序冻结其可审计子集。旧 `memory_corpus.jsonl` 20 篇仅属 deprecated screening artifact，不是当前正式 Historical Set。
 
 **Candidate-Visible Metadata**:
 Reviewer 合理需要知道的论文描述信息：`paper_id`、`title`、`venue`、`year`、当前 Reviewer role / task（QUAL / CLAR / SIGN / ORIG / POL），以及其他确实影响审稿任务且不造成 benchmark 泄漏的论文属性。只有这类 metadata 可以进入 episode / prompt。
@@ -106,10 +106,10 @@ Reviewer 合理需要知道的论文描述信息：`paper_id`、`title`、`venue
 **Source Pool**:
 系统可使用的原始数据来源通过 `OPENREVIEW_ROOT` / `COCOREVIEWBENCH_ROOT` 或 Asset Manifest 的 external-root resolver 显式配置，不在活跃脚本与文档示例中绑定机器绝对路径。
 
-Source Pool 不等于实验 split。CoCoReviewBench 的 3900 篇是 benchmark source pool，经 `configs/coco_temporal_split_v1/manifest.json` 按 paper family 和时间冻结为 A/B/C/D；3900 不等于正式 D 的规模。旧“整个 CoCo/其 venue-year 全量 benchmark_reserved”规则已 superseded，禁止进入新 formal run。
+Source Pool 不等于实验 split。CoCoReviewBench 的 3900 条 submission records 是只读 benchmark source pool；正式协议先规范化 title/paperhash、重建 family，再由全局 deterministic 且与 score/review 内容无关的规则为每个 family 选一个 representative。最终 3889 个 family-level targets 冻结为 A/B/C/D=2391/299/300/899。`coco_temporal_split_v1` 与旧“整个 CoCo/其 venue-year 全量 benchmark_reserved”规则均禁止进入新 formal run。
 
 **Historical / Experience Set**:
-数据区 A：让各 Program 真正「做过历史任务并积累自己的经验」。Candidate 可见论文全文、Candidate-Visible Metadata、source anchors、可选且 time-safe 的 S2 Capability；不可见 human review / gold / taxonomy / judge。当前 frozen source zone 为 2400 篇（≤2022）；具体 run 可冻结其子集，但必须保持 manifest 顺序与 SHA。每篇成功后原子 checkpoint；同一 run 可恢复自身 verified prefix，不得跨 Candidate/replicate 继承 Memory。
+数据区 A：让各 Program 真正「做过历史任务并积累自己的经验」。Candidate 可见论文全文、Candidate-Visible Metadata、source anchors、可选且 time-safe 的 S2 Capability；不可见 human review / gold / taxonomy / judge。当前 family-level source zone 为 2391 个 representatives（≤2022）；具体 run 可冻结其子集，但必须保持 manifest 顺序与 SHA。每篇成功后原子 checkpoint；同一 run 可恢复自身 verified prefix，不得跨 Candidate/replicate 继承 Memory。
 _Avoid_: memory_corpus.jsonl（那只是论文选择清单）、frozen_memory_library（废弃路线）、训练集
 
 **Evolution Validation Set**:
@@ -167,7 +167,7 @@ _Avoid_: 评估指标（泛指时）、benchmark（不特指时）
 **Official Benchmark**:
 数据区 D：系统最外层的独立裁判。当前第一个为 CoCoReviewBench。
 
-CoCoReviewBench source pool 共 3900 篇；当前 frozen D manifest 为 900 篇（2024–2025），且从未进入 A/B/C。D 只在 Program fully frozen 后经 Benchmark Adapter 运行；看过 D 后回改 Program 会使该 D 结果失去 untouched-test 身份。
+CoCoReviewBench source pool 共 3900 条 submission records；family dedup 后当前 D manifest 为 899 个 representative targets（2024–2025），且对应 family 从未进入 A/B/C。D 只在 Program fully frozen 后经 Benchmark Adapter 运行；看过 D 后回改 Program 会使该 D 结果失去 untouched-test 身份。
 
 **Temporal Leakage Boundary**：每篇论文都携带 `paper_review_cutoff`。当前源记录缺精确日期，因此 v1 明确采用保守 year-level cutoff（venue year 前一年 12-31）。S2 每个 target 缓存必须记录 cutoff、method/version、top_k/config、result SHA；publication date 缺失或晚于 cutoff 的结果拒绝。formal mode 无 provenance 或 future-leak audit 不通过即停止。
 
