@@ -200,6 +200,35 @@ def run_formal_protocol_gate(
     prepared_leak_audit = prepared_manifest.get("human_reference_leak_audit") or {}
     if not prepared_leak_audit.get("passed"):
         raise RuntimeError("Formal prepared-data Human Reference audit did not pass")
+    if task_id != "META":
+        reference_source = prepared_manifest.get("evaluator_reference_source") or {}
+        if reference_source.get("implementation") != (
+            "CoCoReviewBench.src.evaluation._4_evaluation.load_human_review_data"
+        ):
+            raise RuntimeError("Formal evaluator references were not built by CoCo")
+        for path_key, sha_key in (
+            ("implementation_path", "implementation_sha256"),
+            ("selection_loader_path", "selection_loader_sha256"),
+            ("left_out_selection", "left_out_selection_sha256"),
+        ):
+            source_path = Path(str(reference_source.get(path_key) or ""))
+            if (
+                not source_path.is_file()
+                or sha256_file(source_path)
+                != str(reference_source.get(sha_key) or "")
+            ):
+                raise RuntimeError(
+                    f"Formal CoCo reference provenance mismatch: {path_key}"
+                )
+        benchmark_sha256 = reference_source.get("benchmark_file_sha256") or {}
+        if not benchmark_sha256:
+            raise RuntimeError("Formal CoCo reference benchmark provenance is empty")
+        for source, expected_sha in benchmark_sha256.items():
+            source_path = Path(str(source))
+            if not source_path.is_file() or sha256_file(source_path) != expected_sha:
+                raise RuntimeError(
+                    f"Formal CoCo benchmark provenance mismatch: {source_path}"
+                )
     episodes_path = task_root / "episodes.jsonl"
     validation_path = task_root / "validation.jsonl"
     queries_path = task_root / "queries.jsonl"
@@ -238,6 +267,26 @@ def run_formal_protocol_gate(
             raise RuntimeError(
                 "Formal B evaluator reference lacks candidate-forbidden access"
             )
+    # Reapply the same-paper boundary assertion used at preparation time.
+    authorized_fragments_by_paper = {}
+    for value in [*episodes, *validation, *queries]:
+        paper_id = _base_id(value)
+        md_path = str(
+            ((value.get("metadata") or {}).get("internal_provenance") or {}).get(
+                "paper_md_path"
+            )
+            or ""
+        )
+        if not md_path:
+            raise RuntimeError(f"Formal Candidate task lacks Markdown source: {paper_id}")
+        path = Path(md_path)
+        if not path.is_file():
+            raise FileNotFoundError(f"Formal Candidate Markdown is missing: {path}")
+        authorized_fragments_by_paper.setdefault(paper_id, set()).update(
+            line.strip()
+            for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            if len(line.strip()) >= 20
+        )
     human_reference_audit = assert_no_human_reference_leak(
         {
             "historical_tasks": episodes,
@@ -245,6 +294,7 @@ def run_formal_protocol_gate(
             "queries": queries,
         },
         evaluator_references,
+        authorized_fragments_by_paper=authorized_fragments_by_paper,
     )
     violations = []
     for value in episodes:

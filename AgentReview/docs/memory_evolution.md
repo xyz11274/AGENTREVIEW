@@ -90,6 +90,15 @@ canonical preprocessing and asset hashes. It does not sample a new OpenReview
 validation split. The old 20-paper `memory_corpus.jsonl` and OpenReview default-30
 validation rules are deprecated screening protocols, not formal inputs.
 
+Candidate paper input follows CoCoReviewBench's own reviewer-generation
+boundary: manifest-selected `MD_path` Markdown is the paper data plane. Raw
+benchmark records are not copied and then sanitized. On the evaluator plane,
+AgentReview calls CoCoReviewBench's official `load_human_review_data` and reuses
+`benchmark_left_out_human.jsonl` for its existing reviewer selection; only the
+resulting `category_correct` map is projected into the five specialist schemas.
+The manifest records SHA-256 identities for both the upstream implementation
+and the left-out artifact.
+
 The preparation command references a separate frozen Semantic Scholar pool and
 records its SHA-256. Every target entry carries its review cutoff, target
 identity, pool/method version, retrieval config, result SHA, and dated results.

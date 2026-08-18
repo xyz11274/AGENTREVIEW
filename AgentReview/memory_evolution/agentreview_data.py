@@ -5,7 +5,7 @@ import json
 import random
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from agentreview.memory_library import infer_reviewer_dimension
 from agentreview.paper_context import (
@@ -29,6 +29,7 @@ from .assets import (
     sha256_file,
 )
 from .toolkit import validate_frozen_s2_pool
+from .coco_reference import load_official_coco_human_references
 
 
 def normalize_title(value: str) -> str:
@@ -304,11 +305,7 @@ def _sentence_id_values(value: Any) -> List[int]:
 def build_coco_evaluator_reference(
     record: Dict[str, Any], task_id: str
 ) -> Tuple[str, List[str]]:
-    """Reconstruct one evaluator-only specialist reference from CoCo labels.
-
-    Only reviewer sentences are included. Author rebuttals may share an opinion
-    group, but are not human review reference text and are deliberately omitted.
-    """
+    """Legacy fixture adapter; formal CoCo data uses the official program."""
     sentence_texts = record.get("sentence_texts") or []
     opinions = record.get("opinions") or []
     if not isinstance(sentence_texts, list) or not isinstance(opinions, list):
@@ -336,13 +333,12 @@ def build_coco_evaluator_reference(
             if role and not role.startswith("reviewer"):
                 continue
             sentence_ids.extend(_sentence_id_values(turn.get("sentence_ids")))
-        texts = [
+        text = "\n".join(
             str(sentence_texts[sentence_id]).strip()
             for sentence_id in sorted(set(sentence_ids))
             if 0 <= sentence_id < len(sentence_texts)
             and str(sentence_texts[sentence_id]).strip()
-        ]
-        text = "\n".join(texts).strip()
+        )
         if not text:
             continue
         blocks.append((categories, text))
@@ -358,10 +354,28 @@ def build_coco_evaluator_reference(
 def _evaluator_reference(
     record: Dict[str, Any], task_id: str
 ) -> Tuple[str, List[str]]:
-    """Adapt formal CoCo records while preserving the legacy pilot schema."""
+    """Compatibility path for legacy pilot/fixture records without CoCo root."""
     if "opinions" in record or "sentence_texts" in record:
         return build_coco_evaluator_reference(record, task_id)
     return _category_reference(record, task_id)
+
+
+def _official_task_reference(
+    paper_reference: Dict[str, Any], task_id: str
+) -> Tuple[str, List[str]]:
+    """Project CoCo's official precomputed category map to one specialist."""
+    by_category = paper_reference.get("category_correct") or {}
+    selected: List[Tuple[str, str]] = []
+    for category, texts in sorted(by_category.items()):
+        if not str(category).startswith(f"{task_id}-"):
+            continue
+        for text in texts if isinstance(texts, list) else []:
+            if isinstance(text, str) and text.strip():
+                selected.append((str(category), text.strip()))
+    return (
+        "\n\n".join(f"[{category}]\n{text}" for category, text in selected),
+        list(dict.fromkeys(category for category, _ in selected)),
+    )
 
 
 _HUMAN_REFERENCE_FIELDS = {
@@ -388,10 +402,24 @@ def _normalized_field_name(value: Any) -> str:
 def audit_candidate_visible_artifacts(
     artifacts: Dict[str, Sequence[Dict[str, Any]]],
     evaluator_references: Sequence[Dict[str, Any]] = (),
+    authorized_fragments_by_paper: Optional[Dict[str, Set[str]]] = None,
 ) -> Dict[str, Any]:
-    """Fail-closed structural and text audit for Candidate-visible data."""
+    """Fail-closed structural and same-paper text audit for Candidate data.
+
+    Candidate artifacts are an allowlisted projection of CoCo paper Markdown,
+    not benchmark records with fields removed. The text check is defense in
+    depth: it compares only references for the same paper and discounts lines
+    already present in that paper's legitimate Markdown input.
+    """
+    authorized_by_paper = authorized_fragments_by_paper or {}
     field_leaks: List[Dict[str, str]] = []
     text_leaks: List[Dict[str, str]] = []
+
+    def paper_id(value: Dict[str, Any]) -> str:
+        metadata = value.get("metadata") or {}
+        return str(metadata.get("paper_id") or value.get("id") or "").split(
+            "::", 1
+        )[0]
 
     def visit(value: Any, artifact: str, path: str) -> Iterable[str]:
         if isinstance(value, dict):
@@ -408,23 +436,29 @@ def audit_candidate_visible_artifacts(
         elif isinstance(value, str):
             yield value
 
-    reference_fragments: Dict[str, set] = {}
+    reference_fragments_by_paper: Dict[str, Dict[str, set]] = {}
     for value in evaluator_references:
+        reference_paper_id = paper_id(value)
+        authorized = authorized_by_paper.get(reference_paper_id, set())
         text = str(value.get("answer") or "").strip()
         fragments = [text, *text.splitlines()]
         for fragment in fragments:
             fragment = fragment.strip()
             if (
                 len(fragment) >= 20
+                and fragment not in authorized
                 and not (fragment.startswith("[") and fragment.endswith("]"))
             ):
-                reference_fragments.setdefault(fragment, set()).add(
-                    str(value.get("id") or "")
-                )
-    reference_fragment_set = set(reference_fragments)
+                reference_fragments_by_paper.setdefault(
+                    reference_paper_id, {}
+                ).setdefault(fragment, set()).add(str(value.get("id") or ""))
     for artifact, values in artifacts.items():
         for index, value in enumerate(values):
             candidate_strings = list(visit(value, artifact, f"[{index}]"))
+            reference_fragments = reference_fragments_by_paper.get(
+                paper_id(value), {}
+            )
+            reference_fragment_set = set(reference_fragments)
             for candidate_text in candidate_strings:
                 candidate_fragments = {
                     fragment.strip()
@@ -441,7 +475,7 @@ def audit_candidate_visible_artifacts(
                             }
                         )
     return {
-        "protocol": "human-reference-boundary-v1",
+        "protocol": "human-reference-boundary-v2-same-paper",
         "candidate_visible_artifact_count": len(artifacts),
         "field_leaks": field_leaks,
         "human_reference_text_leaks": text_leaks,
@@ -462,47 +496,16 @@ def audit_candidate_visible_artifacts(
 def assert_no_human_reference_leak(
     artifacts: Dict[str, Sequence[Dict[str, Any]]],
     evaluator_references: Sequence[Dict[str, Any]] = (),
+    authorized_fragments_by_paper: Optional[Dict[str, Set[str]]] = None,
 ) -> Dict[str, Any]:
-    report = audit_candidate_visible_artifacts(artifacts, evaluator_references)
+    report = audit_candidate_visible_artifacts(
+        artifacts,
+        evaluator_references,
+        authorized_fragments_by_paper=authorized_fragments_by_paper,
+    )
     if not report["passed"]:
         raise ValueError(f"Human Reference leak gate failed: {report}")
     return report
-
-
-def _source_human_reference_corpus(
-    records: Sequence[Dict[str, Any]],
-) -> List[Dict[str, str]]:
-    """Collect source-side human text solely for the in-memory leak audit."""
-    corpus: List[Dict[str, str]] = []
-
-    def strings(value: Any) -> Iterable[str]:
-        if isinstance(value, str):
-            if value.strip():
-                yield value.strip()
-        elif isinstance(value, dict):
-            for item in value.values():
-                yield from strings(item)
-        elif isinstance(value, (list, tuple)):
-            for item in value:
-                yield from strings(item)
-
-    for record in records:
-        paper_id = str(record.get("id") or "")
-        sensitive_values = [
-            record.get("sentence_texts"),
-            record.get("opinions_md_by_category_dict"),
-            record.get("metareview"),
-            record.get("reviews"),
-            record.get("decision"),
-            record.get("reviewer_scores"),
-            record.get("human_score"),
-            record.get("gold_score"),
-        ]
-        for index, text in enumerate(strings(sensitive_values)):
-            corpus.append(
-                {"id": f"source::{paper_id}::{index}", "answer": text}
-            )
-    return corpus
 
 
 def _meta_reference(record: Dict[str, Any]) -> str:
@@ -641,26 +644,33 @@ def prepare_openreview_data(
     )
     train_path = source_root / "train_clean.jsonl"
     test_path = source_root / "test.jsonl"
-    if not train_path.is_file() or not test_path.is_file():
-        raise FileNotFoundError(
-            f"Expected train_clean.jsonl and test.jsonl under {source_root}"
-        )
-
-    train_records = list(_iter_jsonl(train_path))
-    test_records = list(_iter_jsonl(test_path))
+    if coco_root:
+        # Formal CoCo already owns both the paper Markdown and evaluator
+        # annotations. Do not load the duplicated 2GB OpenReview export only to
+        # overwrite the same paper ids below.
+        train_records: List[Dict[str, Any]] = []
+        test_records: List[Dict[str, Any]] = []
+    else:
+        if not train_path.is_file() or not test_path.is_file():
+            raise FileNotFoundError(
+                f"Expected train_clean.jsonl and test.jsonl under {source_root}"
+            )
+        train_records = list(_iter_jsonl(train_path))
+        test_records = list(_iter_jsonl(test_path))
     split_summary, zones = load_temporal_split_manifest(temporal_split_manifest)
     a_entries = zones[FOUR_ZONES[0]]
     b_entries = zones[FOUR_ZONES[1]]
     allowed_entries = {
         str(value["paper_id"]): value for value in [*a_entries, *b_entries]
     }
-    # CoCo's 3,900-paper source pool is mirrored by OpenReview/test.jsonl in
-    # this checkout. Combining by explicit paper identity also supports small
-    # fixtures and avoids inferring membership from a directory/split name.
+    # The no-coco path remains only for legacy fixtures/pilots. Formal CoCo uses
+    # its own benchmark records and Markdown without a duplicate OpenReview
+    # source or a second human-field sanitization pass.
     by_id = {
         str(record.get("id") or ""): record
         for record in [*train_records, *test_records]
     }
+    benchmark_source_paths: List[Path] = []
     if coco_root:
         source_files = {
             str(value.get("source_asset") or "").rsplit("/", 1)[-1]
@@ -670,6 +680,7 @@ def prepare_openreview_data(
             path = markdown_root / "benchmark" / filename
             if not path.is_file():
                 raise FileNotFoundError(f"Frozen CoCo source file missing: {path}")
+            benchmark_source_paths.append(path.resolve())
             for record in _iter_jsonl(path):
                 paper_id = str(record.get("id") or "")
                 if paper_id in allowed_entries:
@@ -677,7 +688,7 @@ def prepare_openreview_data(
     missing_source = sorted(set(allowed_entries) - set(by_id))
     if missing_source:
         raise ValueError(
-            f"OpenReview source is missing {len(missing_source)} temporal A/B papers"
+            f"Paper source is missing {len(missing_source)} temporal A/B papers"
         )
     a_families_ordered = list(
         dict.fromkeys(str(value["paper_family"]) for value in a_entries)
@@ -725,6 +736,24 @@ def prepare_openreview_data(
     records = [
         record for record in source_records if work_family_key(record) in allowed_families
     ]
+    official_references: Optional[Dict[str, Dict[str, Any]]] = None
+    official_reference_provenance: Dict[str, Any] = {
+        "implementation": "legacy fixture adapter",
+        "requested_paper_count": 0,
+    }
+    if coco_root:
+        validation_records = {
+            str(record.get("id") or ""): record
+            for record in records
+            if work_family_key(record) in validation_family_set
+        }
+        official_references, official_reference_provenance = (
+            load_official_coco_human_references(
+                str(markdown_root),
+                validation_records,
+                benchmark_source_paths,
+            )
+        )
     required_s2_ids = {str(record.get("id") or "") for record in records}
     missing_s2_ids = sorted(required_s2_ids - set(s2_cache))
     cutoff_by_id = {
@@ -770,12 +799,24 @@ def prepare_openreview_data(
         for task_id in SPECIALIST_TASKS
     }
     missing_markdown = 0
+    missing_markdown_ids: List[str] = []
+    # CoCo's own reviewer-generation path consumes paper Markdown. Keep the
+    # same paper-only source boundary instead of stripping fields from a
+    # benchmark record and then attempting to prove they were removed.
+    authorized_fragments_by_paper: Dict[str, Set[str]] = {}
     for record in records:
         markdown_path = _resolve_markdown(markdown_root, record)
         if markdown_path is None:
             missing_markdown += 1
+            missing_markdown_ids.append(str(record.get("id") or ""))
             continue
         paper_text = markdown_path.read_text(encoding="utf-8", errors="ignore")
+        paper_id = str(record.get("id") or "")
+        authorized_fragments_by_paper[paper_id] = {
+            line.strip()
+            for line in paper_text.splitlines()
+            if len(line.strip()) >= 20
+        }
         anchors = build_source_anchors(load_content_list(str(markdown_path)))
         if not anchors:
             anchors = [
@@ -794,7 +835,6 @@ def prepare_openreview_data(
         # In particular, never stringify source ``content.title`` because newer
         # OpenReview records may encode it as {"value": "..."}.
         title = str(canonical_entry.get("title") or "")
-        paper_id = str(record.get("id") or "")
         venue = str(canonical_entry.get("venue") or "")
         year = str(canonical_entry.get("year") or "")
         family = work_family_key(record)
@@ -867,7 +907,13 @@ def prepare_openreview_data(
                         "metadata": common_metadata,
                     }
                 )
-                reference, categories = _evaluator_reference(record, task_id)
+                reference, categories = (
+                    _official_task_reference(
+                        (official_references or {})[paper_id], task_id
+                    )
+                    if official_references is not None
+                    else _evaluator_reference(record, task_id)
+                )
                 per_task[task_id]["evaluator_references"].append(
                     {
                         "id": item_id,
@@ -914,9 +960,16 @@ def prepare_openreview_data(
         for values in per_task.values()
         for reference in values["evaluator_references"]
     ]
+    if missing_markdown:
+        raise ValueError(
+            f"{missing_markdown} of {len(records)} A/B papers have no resolvable "
+            f"markdown under {markdown_root}; refusing to emit incomplete formal "
+            f"data. Examples: {missing_markdown_ids[:10]}"
+        )
     human_reference_leak_audit = assert_no_human_reference_leak(
         candidate_artifacts,
-        [*evaluator_references, *_source_human_reference_corpus(records)],
+        evaluator_references,
+        authorized_fragments_by_paper=authorized_fragments_by_paper,
     )
 
     output_root = Path(output_dir).expanduser().resolve()
@@ -958,7 +1011,20 @@ def prepare_openreview_data(
         }
 
     manifest = {
-        "source": [str(train_path), str(test_path)],
+        "source": (
+            [str(path) for path in benchmark_source_paths]
+            if coco_root
+            else [str(train_path), str(test_path)]
+        ),
+        "candidate_paper_source": {
+            "kind": "CoCo paper Markdown via manifest-selected MD_path",
+            "benchmark_files": [str(path) for path in benchmark_source_paths],
+            "projection": (
+                "manifest identity + paper Markdown only; no benchmark human "
+                "field is copied or stripped"
+            ),
+        },
+        "evaluator_reference_source": official_reference_provenance,
         "held_out_test": "defined only by frozen CoCo D manifest",
         "seed": seed,
         "temporal_split_manifest": str(Path(temporal_split_manifest).resolve()),
@@ -1001,6 +1067,11 @@ def prepare_openreview_data(
             "human references; validation gold is evaluator-only"
         ),
         "human_reference_leak_audit": human_reference_leak_audit,
+        "human_reference_leak_scope": {
+            "comparison": "same paper only",
+            "authorized_source": "that paper's CoCo Markdown lines",
+            "raw_human_corpus_rescanned": False,
+        },
         "missing_markdown": missing_markdown,
         "tasks": task_manifest,
         "meta_status": "prepared only after five specialist winners are frozen",
