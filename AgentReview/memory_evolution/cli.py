@@ -483,6 +483,56 @@ def _paths(data_root: str, task_id: str):
     return root / "episodes.jsonl", root / "validation.jsonl"
 
 
+def _load_evaluator_validation(data_root: Path, task_id: str):
+    """Join Candidate-visible B tasks with evaluator-forbidden references."""
+    task_path = data_root / task_id / "validation.jsonl"
+    task_values = _load_jsonl(str(task_path))
+    references_path = (
+        data_root
+        / "evaluator_only"
+        / task_id
+        / "validation_references.jsonl"
+    )
+    if not references_path.is_file():
+        # Explicit compatibility path for legacy pilot/META artifacts. Formal
+        # specialist gates require the separated evaluator-only artifact.
+        return [EvalItem.from_value(item) for item in task_values]
+    references = _load_jsonl(str(references_path))
+    references_by_id = {str(item.get("id") or ""): item for item in references}
+    if len(references_by_id) != len(references):
+        raise ValueError(f"Duplicate evaluator reference ids in {references_path}")
+    task_ids = {str(item.get("id") or "") for item in task_values}
+    if len(task_ids) != len(task_values) or task_ids != set(references_by_id):
+        raise ValueError(
+            f"Validation/reference coverage mismatch for {task_id}: "
+            f"tasks={len(task_ids)} references={len(references_by_id)}"
+        )
+    output = []
+    for item in task_values:
+        item_id = str(item.get("id") or "")
+        reference = references_by_id[item_id]
+        access = reference.get("access") or {}
+        if not (
+            access.get("evaluator_only") is True
+            and access.get("candidate_forbidden") is True
+        ):
+            raise ValueError(
+                f"Evaluator reference lacks candidate-forbidden access: {item_id}"
+            )
+        output.append(
+            EvalItem(
+                id=item_id,
+                question=str(item.get("question") or ""),
+                answer=str(reference.get("answer") or ""),
+                metadata={
+                    **dict(item.get("metadata") or {}),
+                    **dict(reference.get("metadata") or {}),
+                },
+            )
+        )
+    return output
+
+
 def _parse_experiment_seeds(value: str):
     try:
         seeds = [int(item) for item in str(value).split(",") if item.strip()]
@@ -500,10 +550,8 @@ def _parse_experiment_seeds(value: str):
 def _run_task(args, task_id: str, output: Path, seed: int):
     episodes_path, validation_path = _paths(args.data_root, task_id)
     episodes = [Episode.from_value(item) for item in _load_jsonl(str(episodes_path))]
-    validation = [
-        EvalItem.from_value(item) for item in _load_jsonl(str(validation_path))
-    ]
     data_root = Path(args.data_root).expanduser().resolve()
+    validation = _load_evaluator_validation(data_root, task_id)
     manifest_path = (
         data_root / META_TASK / "manifest.json"
         if task_id == META_TASK

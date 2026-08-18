@@ -114,6 +114,7 @@ def validate_frozen_s2_pool(
 ) -> Dict[str, Any]:
     """Prove that every frozen result existed no later than target review time."""
     entries, digest = _load_s2_entries(path)
+    required_id_set = {str(value) for value in required_ids}
     by_id = {}
     future = []
     provenance_errors = []
@@ -179,23 +180,13 @@ def validate_frozen_s2_pool(
             provenance_errors.append(f"{paper_id}: result SHA256 mismatch")
             continue
         if expected_queries is not None:
-            expected_query = str(expected_queries.get(paper_id) or "").strip()
             canonical_query = str(entry.get("canonical_query_title") or "").strip()
-            actual_query = str(entry.get("query") or "").strip()
-            query_sha = hashlib.sha256(canonical_query.encode("utf-8")).hexdigest()
             mismatch_fields = []
-            if not expected_query or canonical_query != expected_query:
-                mismatch_fields.append("canonical_query_title")
-            if actual_query != canonical_query:
-                mismatch_fields.append("query")
-            if not isinstance(target_identity, dict) or str(
-                target_identity.get("title") or ""
-            ).strip() != expected_query:
-                mismatch_fields.append("target_identity.title")
-            if entry.get("query_sha256") != query_sha:
-                mismatch_fields.append("query_sha256")
+            # Result-count and whole-record hashes are pool-wide provenance
+            # checks. They remain active for C/D even when this invocation only
+            # requires A/B.
             if entry.get("result_count") != len(papers):
-                mismatch_fields.append("result_count")
+                provenance_errors.append(f"{paper_id}: result_count mismatch")
             record_payload = dict(entry)
             recorded_record_sha = str(record_payload.pop("record_sha256", ""))
             actual_record_sha = hashlib.sha256(
@@ -207,18 +198,38 @@ def validate_frozen_s2_pool(
                 ).encode("utf-8")
             ).hexdigest()
             if recorded_record_sha != actual_record_sha:
-                mismatch_fields.append("record_sha256")
+                provenance_errors.append(f"{paper_id}: record SHA256 mismatch")
+
+            # Canonical target/query identity belongs to the caller's required
+            # scope. A full A+B+C+D pool must not fail an A+B preparation merely
+            # because C/D have no entry in the caller's expected-query map.
+            if paper_id in required_id_set:
+                expected_query = str(expected_queries.get(paper_id) or "").strip()
+                actual_query = str(entry.get("query") or "").strip()
+                query_sha = hashlib.sha256(
+                    canonical_query.encode("utf-8")
+                ).hexdigest()
+                if not expected_query or canonical_query != expected_query:
+                    mismatch_fields.append("canonical_query_title")
+                if actual_query != canonical_query:
+                    mismatch_fields.append("query")
+                if not isinstance(target_identity, dict) or str(
+                    target_identity.get("title") or ""
+                ).strip() != expected_query:
+                    mismatch_fields.append("target_identity.title")
+                if entry.get("query_sha256") != query_sha:
+                    mismatch_fields.append("query_sha256")
+                if (
+                    canonical_query.startswith("{")
+                    and "value" in canonical_query
+                    and canonical_query.endswith("}")
+                ):
+                    polluted_query_titles.append(
+                        {"paper_id": paper_id, "query": canonical_query}
+                    )
             if mismatch_fields:
                 canonical_mismatches.append(
                     {"paper_id": paper_id, "fields": mismatch_fields}
-                )
-            if (
-                canonical_query.startswith("{")
-                and "value" in canonical_query
-                and canonical_query.endswith("}")
-            ):
-                polluted_query_titles.append(
-                    {"paper_id": paper_id, "query": canonical_query}
                 )
         cutoff = date.fromisoformat(cutoff_text[:10])
         for result in papers:
@@ -236,11 +247,11 @@ def validate_frozen_s2_pool(
                         "paper_review_cutoff": cutoff.isoformat(),
                     }
                 )
-    missing_ids = sorted({str(value) for value in required_ids} - set(by_id))
+    missing_ids = sorted(required_id_set - set(by_id))
     return {
         "protocol": expected_pool_version,
         "asset_sha256": digest,
-        "required_count": len(set(map(str, required_ids))),
+        "required_count": len(required_id_set),
         "cached_count": len(by_id),
         "missing_target_ids": missing_ids,
         "future_results": future,

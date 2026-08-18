@@ -18,6 +18,7 @@ from .assets import (
     validate_asset_manifest,
 )
 from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
+from .agentreview_data import assert_no_human_reference_leak
 from .toolkit import validate_frozen_s2_pool
 
 
@@ -170,15 +171,81 @@ def run_formal_protocol_gate(
         zone: {str(value["paper_id"]): value for value in values}
         for zone, values in zones.items()
     }
-    task_root = Path(data_root).expanduser().resolve() / task_id
+    data_path = Path(data_root).expanduser().resolve()
+    task_root = data_path / task_id
+    prepared_manifest_path = (
+        task_root / "manifest.json"
+        if task_id == "META"
+        else data_path / "manifest.json"
+    )
+    if not prepared_manifest_path.is_file():
+        raise FileNotFoundError("Formal prepared-data manifest is missing")
+    prepared_manifest = json.loads(
+        prepared_manifest_path.read_text(encoding="utf-8")
+    )
+    task_manifest = (
+        prepared_manifest
+        if task_id == "META"
+        else (prepared_manifest.get("tasks") or {}).get(task_id) or {}
+    )
+    reference_access = task_manifest.get("evaluator_reference_access") or {}
+    if not (
+        reference_access.get("evaluator_only") is True
+        and reference_access.get("candidate_forbidden") is True
+    ):
+        raise RuntimeError(
+            "Formal prepared-data manifest does not forbid Candidate access "
+            "to evaluator references"
+        )
+    prepared_leak_audit = prepared_manifest.get("human_reference_leak_audit") or {}
+    if not prepared_leak_audit.get("passed"):
+        raise RuntimeError("Formal prepared-data Human Reference audit did not pass")
     episodes_path = task_root / "episodes.jsonl"
     validation_path = task_root / "validation.jsonl"
+    queries_path = task_root / "queries.jsonl"
+    evaluator_references_path = (
+        data_path
+        / "evaluator_only"
+        / task_id
+        / "validation_references.jsonl"
+    )
     if not episodes_path.is_file() or not validation_path.is_file():
         raise FileNotFoundError("Formal A/B task files are missing")
+    if not evaluator_references_path.is_file():
+        raise FileNotFoundError(
+            "Formal B evaluator-only reference artifact is missing"
+        )
     episodes = list(_iter_jsonl(episodes_path))
     validation = list(_iter_jsonl(validation_path))
+    queries = list(_iter_jsonl(queries_path)) if queries_path.is_file() else []
+    evaluator_references = list(_iter_jsonl(evaluator_references_path))
     if not episodes or not validation:
         raise ValueError("Formal A and B must both be non-empty")
+    reference_ids = [str(value.get("id") or "") for value in evaluator_references]
+    validation_ids = [str(value.get("id") or "") for value in validation]
+    if (
+        len(set(reference_ids)) != len(reference_ids)
+        or len(set(validation_ids)) != len(validation_ids)
+        or set(reference_ids) != set(validation_ids)
+    ):
+        raise RuntimeError("Formal B evaluator reference coverage mismatch")
+    for value in evaluator_references:
+        access = value.get("access") or {}
+        if not (
+            access.get("evaluator_only") is True
+            and access.get("candidate_forbidden") is True
+        ):
+            raise RuntimeError(
+                "Formal B evaluator reference lacks candidate-forbidden access"
+            )
+    human_reference_audit = assert_no_human_reference_leak(
+        {
+            "historical_tasks": episodes,
+            "validation_tasks": validation,
+            "queries": queries,
+        },
+        evaluator_references,
+    )
     violations = []
     for value in episodes:
         paper_id = _base_id(value)
@@ -257,6 +324,11 @@ def run_formal_protocol_gate(
         "historical_manifest_sha256": sha256_file(episodes_path),
         "evolution_validation_manifest": str(validation_path),
         "evolution_validation_manifest_sha256": sha256_file(validation_path),
+        "evaluator_only_validation_references": str(evaluator_references_path),
+        "evaluator_only_validation_references_sha256": sha256_file(
+            evaluator_references_path
+        ),
+        "human_reference_leak_audit": human_reference_audit,
         "program_sha256": program_sha256,
         "task_id": task_id,
         "lineage_names": [

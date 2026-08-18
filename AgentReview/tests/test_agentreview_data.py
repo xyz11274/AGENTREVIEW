@@ -3,13 +3,22 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from memory_evolution.agentreview_data import prepare_openreview_data
+from memory_evolution.agentreview_data import (
+    assert_no_human_reference_leak,
+    build_coco_evaluator_reference,
+    prepare_openreview_data,
+)
+from memory_evolution.cli import _load_evaluator_validation
 from memory_evolution.tasks import SPECIALIST_TASKS
 
 
 class AgentReviewDataTest(unittest.TestCase):
-    def _temporal_manifest(self, root, a_ids, b_ids, c_ids=(), d_ids=()):
+    def _temporal_manifest(
+        self, root, a_ids, b_ids, c_ids=(), d_ids=(), titles=None
+    ):
+        titles = titles or {}
         zones = {
             "historical_experience": list(a_ids),
             "evolution_validation": list(b_ids),
@@ -26,7 +35,7 @@ class AgentReviewDataTest(unittest.TestCase):
             values = [
                 {
                     "paper_id": paper_id,
-                    "title": paper_id,
+                    "title": titles.get(paper_id, paper_id),
                     "normalized_title": paper_id,
                     "paper_family": f"family-{paper_id}",
                     "venue": "iclr",
@@ -349,6 +358,158 @@ class AgentReviewDataTest(unittest.TestCase):
                 episode["metadata"]["experience_protocol"],
                 "self_generated_after_review",
             )
+
+    def test_historical_task_needs_no_human_reference_or_category_adapter(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_unsupervised_a_") as directory:
+            root = Path(directory)
+            records = [
+                self._record("a0", "Source A", "work-a"),
+                self._record("b0", "Source B", "work-b"),
+            ]
+            for record in records:
+                record.pop("opinions_md_by_category_dict")
+                record.pop("metareview")
+                record["sentence_texts"] = []
+                record["opinions"] = []
+            self._write_source(root, records)
+            with patch(
+                "memory_evolution.agentreview_data._category_reference",
+                side_effect=AssertionError("legacy reference adapter must not gate A"),
+            ):
+                manifest = prepare_openreview_data(
+                    str(root),
+                    str(root / "prepared"),
+                    str(self._temporal_manifest(root, ["a0"], ["b0"])),
+                    validation_families=1,
+                    meta_validation_families=0,
+                )
+            for task_id in SPECIALIST_TASKS:
+                self.assertEqual(manifest["tasks"][task_id]["episode_count"], 1)
+                self.assertEqual(manifest["tasks"][task_id]["validation_count"], 1)
+
+    def test_coco_reference_is_evaluator_only_and_never_enters_candidate_input(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_evaluator_only_") as directory:
+            root = Path(directory)
+            records = [
+                self._record("a0", "Source A", "work-a"),
+                self._record("b0", "Source B", "work-b"),
+            ]
+            for record in records:
+                record.pop("opinions_md_by_category_dict")
+                record["sentence_texts"] = [
+                    "Reviewer-specific quality concern long enough for leak audit.",
+                    "Author rebuttal must not become the evaluator reference.",
+                ]
+                record["opinions"] = [
+                    {
+                        "category": ["QUAL-MET", "CLAR-WRT"],
+                        "data": [
+                            {"role": "Reviewer 1", "sentence_ids": [0]},
+                            {"role": "Author", "sentence_ids": [1]},
+                        ],
+                    }
+                ]
+            self._write_source(root, records)
+            manifest = prepare_openreview_data(
+                str(root),
+                str(root / "prepared"),
+                str(self._temporal_manifest(root, ["a0"], ["b0"])),
+                validation_families=1,
+                meta_validation_families=0,
+            )
+            qual = manifest["tasks"]["QUAL"]
+            episode = json.loads(Path(qual["episodes"]).read_text().splitlines()[0])
+            task = json.loads(Path(qual["validation"]).read_text().splitlines()[0])
+            reference = json.loads(
+                Path(qual["evaluator_references"]).read_text().splitlines()[0]
+            )
+            self.assertNotIn("answer", task)
+            self.assertNotIn("categories", task["metadata"])
+            self.assertNotIn(reference["answer"], task["question"])
+            self.assertNotIn(reference["answer"], episode["text"])
+            self.assertNotIn("Author rebuttal", reference["answer"])
+            self.assertTrue(reference["access"]["candidate_forbidden"])
+            joined = _load_evaluator_validation(root / "prepared", "QUAL")
+            self.assertEqual(joined[0].answer, reference["answer"])
+            self.assertNotIn(joined[0].answer, joined[0].question)
+            self.assertEqual(joined[0].metadata["categories"], ["QUAL-MET"])
+
+    def test_coco_opinions_adapter_reconstructs_qual_reference(self):
+        reference, categories = build_coco_evaluator_reference(
+            {
+                "sentence_texts": ["Reviewer concern.", "Author reply."],
+                "opinions": [
+                    {
+                        "category": ["QUAL-EXP", "ORIG-MTH"],
+                        "data": [
+                            {"role": "Reviewer 2", "sentence_ids": [0]},
+                            {"role": "Author", "sentence_ids": [1]},
+                        ],
+                    }
+                ],
+            },
+            "QUAL",
+        )
+        self.assertEqual(categories, ["QUAL-EXP"])
+        self.assertIn("Reviewer concern.", reference)
+        self.assertNotIn("Author reply.", reference)
+
+    def test_leak_gate_rejects_field_and_reference_text_injection(self):
+        reference = {
+            "id": "b0::QUAL",
+            "answer": "A human reference sentence that must remain evaluator-only.",
+        }
+        with self.assertRaisesRegex(ValueError, "Human Reference leak gate failed"):
+            assert_no_human_reference_leak(
+                {"validation": [{"id": "b0::QUAL", "human_reference": "leak"}]},
+                [reference],
+            )
+        with self.assertRaisesRegex(ValueError, "Human Reference leak gate failed"):
+            assert_no_human_reference_leak(
+                {
+                    "validation": [
+                        {"id": "b0::QUAL", "notes": reference["answer"]}
+                    ]
+                },
+                [reference],
+            )
+
+    def test_manifest_title_is_canonical_when_source_title_is_structured(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_canonical_title_") as directory:
+            root = Path(directory)
+            records = [
+                self._record("a0", "Source A", "work-a"),
+                self._record("b0", "Source B", "work-b"),
+            ]
+            records[0]["content"]["title"] = {"value": "Contaminated Source Title"}
+            self._write_source(root, records)
+            (root / records[0]["MD_path"] / "md_content.md").write_text(
+                "# Paper body\nMethod.", encoding="utf-8"
+            )
+            manifest = prepare_openreview_data(
+                str(root),
+                str(root / "prepared"),
+                str(
+                    self._temporal_manifest(
+                        root,
+                        ["a0"],
+                        ["b0"],
+                        titles={"a0": "Canonical Manifest Title"},
+                    )
+                ),
+                validation_families=1,
+                meta_validation_families=0,
+            )
+            episode = json.loads(
+                Path(manifest["tasks"]["QUAL"]["episodes"])
+                .read_text()
+                .splitlines()[0]
+            )
+            self.assertEqual(
+                episode["metadata"]["paper_title"], "Canonical Manifest Title"
+            )
+            self.assertIn("Canonical Manifest Title", episode["text"])
+            self.assertNotIn("{'value':", episode["text"])
 
 
 if __name__ == "__main__":

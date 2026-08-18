@@ -162,6 +162,77 @@ class FrozenS2PoolV2Test(unittest.TestCase):
             self.assertFalse(report["passed"])
             self.assertEqual(report["canonical_mismatches"][0]["paper_id"], "paper-1")
 
+    def test_canonical_audit_ignores_valid_pool_records_outside_required_scope(self):
+        required = self._target("Required A/B Title")
+        extra = {
+            **self._target("Extra C/D Title"),
+            "paper_id": "paper-extra",
+            "zone": "held_out_benchmark_test",
+        }
+        records = [
+            build_v2_record(
+                target,
+                top_k=10,
+                results=[],
+                retrieval_method="fixture",
+                retrieval_version="fixture-v2",
+                retrieval_origin="retrieved_missing_clean_v1",
+                raw_api_response_sha256="a" * 64,
+            )
+            for target in (required, extra)
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "pool.jsonl"
+            path.write_text(
+                "".join(json.dumps(value) + "\n" for value in records),
+                encoding="utf-8",
+            )
+            report = validate_frozen_s2_pool(
+                str(path),
+                expected_cutoffs={"paper-1": "2023-12-31"},
+                required_ids={"paper-1"},
+                expected_pool_version=POOL_VERSION,
+                expected_queries={"paper-1": "Required A/B Title"},
+            )
+            self.assertTrue(report["passed"])
+            self.assertEqual(report["required_count"], 1)
+            self.assertEqual(report["cached_count"], 2)
+            self.assertEqual(report["canonical_mismatches"], [])
+
+    def test_canonical_audit_still_rejects_wrong_required_title(self):
+        record = build_v2_record(
+            self._target("Wrong Stored Title"),
+            top_k=10,
+            results=[],
+            retrieval_method="fixture",
+            retrieval_version="fixture-v2",
+            retrieval_origin="retrieved_missing_clean_v1",
+            raw_api_response_sha256="a" * 64,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "pool.jsonl"
+            path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+            report = validate_frozen_s2_pool(
+                str(path),
+                expected_cutoffs={"paper-1": "2023-12-31"},
+                required_ids={"paper-1"},
+                expected_pool_version=POOL_VERSION,
+                expected_queries={"paper-1": "Expected Manifest Title"},
+            )
+            self.assertFalse(report["passed"])
+            self.assertEqual(
+                report["canonical_mismatches"],
+                [
+                    {
+                        "paper_id": "paper-1",
+                        "fields": [
+                            "canonical_query_title",
+                            "target_identity.title",
+                        ],
+                    }
+                ],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

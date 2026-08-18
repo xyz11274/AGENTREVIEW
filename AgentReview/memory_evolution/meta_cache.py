@@ -141,6 +141,10 @@ def build_meta_input_cache(
                 paper_id,
                 {
                     "id": paper_id,
+                    "paper_title": str(
+                        (query.get("metadata") or {}).get("paper_title")
+                        or paper_id
+                    ),
                     "split": (
                         "validation"
                         if query["metadata"]["split"] == "meta_validation"

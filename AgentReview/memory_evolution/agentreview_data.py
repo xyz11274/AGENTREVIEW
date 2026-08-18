@@ -260,6 +260,7 @@ def _resolve_markdown(openreview_root: Path, record: Dict[str, Any]) -> Optional
 
 
 def _category_reference(record: Dict[str, Any], task_id: str) -> Tuple[str, List[str]]:
+    """Read the legacy supervised/pilot category-reference schema."""
     by_category = record.get("opinions_md_by_category_dict") or {}
     selected: List[Tuple[str, str]] = []
     for category, value in sorted(by_category.items()):
@@ -277,6 +278,231 @@ def _category_reference(record: Dict[str, Any], task_id: str) -> Tuple[str, List
             selected.append((str(category), text))
     reference = "\n\n".join(f"[{category}]\n{text}" for category, text in selected)
     return reference, [category for category, _ in selected]
+
+
+def _sentence_id_values(value: Any) -> List[int]:
+    """Return sentence ids from CoCo's list or nested score-bearing forms."""
+    if isinstance(value, bool):
+        return []
+    if isinstance(value, int):
+        return [value]
+    if isinstance(value, (list, tuple)):
+        output: List[int] = []
+        for item in value:
+            output.extend(_sentence_id_values(item))
+        return output
+    if isinstance(value, dict):
+        output = []
+        for key, item in value.items():
+            if str(key).lower() == "scores":
+                continue
+            output.extend(_sentence_id_values(item))
+        return output
+    return []
+
+
+def build_coco_evaluator_reference(
+    record: Dict[str, Any], task_id: str
+) -> Tuple[str, List[str]]:
+    """Reconstruct one evaluator-only specialist reference from CoCo labels.
+
+    Only reviewer sentences are included. Author rebuttals may share an opinion
+    group, but are not human review reference text and are deliberately omitted.
+    """
+    sentence_texts = record.get("sentence_texts") or []
+    opinions = record.get("opinions") or []
+    if not isinstance(sentence_texts, list) or not isinstance(opinions, list):
+        return "", []
+    blocks: List[Tuple[Tuple[str, ...], str]] = []
+    categories_seen: List[str] = []
+    for opinion in opinions:
+        if not isinstance(opinion, dict):
+            continue
+        raw_categories = opinion.get("category") or []
+        if isinstance(raw_categories, str):
+            raw_categories = [raw_categories]
+        categories = tuple(
+            str(category)
+            for category in raw_categories
+            if str(category).startswith(f"{task_id}-")
+        )
+        if not categories:
+            continue
+        sentence_ids: List[int] = []
+        for turn in opinion.get("data") or []:
+            if not isinstance(turn, dict):
+                continue
+            role = str(turn.get("role") or "").strip().lower()
+            if role and not role.startswith("reviewer"):
+                continue
+            sentence_ids.extend(_sentence_id_values(turn.get("sentence_ids")))
+        texts = [
+            str(sentence_texts[sentence_id]).strip()
+            for sentence_id in sorted(set(sentence_ids))
+            if 0 <= sentence_id < len(sentence_texts)
+            and str(sentence_texts[sentence_id]).strip()
+        ]
+        text = "\n".join(texts).strip()
+        if not text:
+            continue
+        blocks.append((categories, text))
+        for category in categories:
+            if category not in categories_seen:
+                categories_seen.append(category)
+    reference = "\n\n".join(
+        f"[{', '.join(categories)}]\n{text}" for categories, text in blocks
+    )
+    return reference, categories_seen
+
+
+def _evaluator_reference(
+    record: Dict[str, Any], task_id: str
+) -> Tuple[str, List[str]]:
+    """Adapt formal CoCo records while preserving the legacy pilot schema."""
+    if "opinions" in record or "sentence_texts" in record:
+        return build_coco_evaluator_reference(record, task_id)
+    return _category_reference(record, task_id)
+
+
+_HUMAN_REFERENCE_FIELDS = {
+    "answer",
+    "gold_annotation",
+    "gold_annotations",
+    "gold_review",
+    "gold_score",
+    "human_reference",
+    "human_score",
+    "metareview",
+    "opinions",
+    "opinions_md_by_category_dict",
+    "reference_review",
+    "reviewer_scores",
+    "reviews",
+}
+
+
+def _normalized_field_name(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", str(value).lower()).strip("_")
+
+
+def audit_candidate_visible_artifacts(
+    artifacts: Dict[str, Sequence[Dict[str, Any]]],
+    evaluator_references: Sequence[Dict[str, Any]] = (),
+) -> Dict[str, Any]:
+    """Fail-closed structural and text audit for Candidate-visible data."""
+    field_leaks: List[Dict[str, str]] = []
+    text_leaks: List[Dict[str, str]] = []
+
+    def visit(value: Any, artifact: str, path: str) -> Iterable[str]:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                child_path = f"{path}.{key}" if path else str(key)
+                if _normalized_field_name(key) in _HUMAN_REFERENCE_FIELDS:
+                    field_leaks.append(
+                        {"artifact": artifact, "path": child_path}
+                    )
+                yield from visit(item, artifact, child_path)
+        elif isinstance(value, (list, tuple)):
+            for index, item in enumerate(value):
+                yield from visit(item, artifact, f"{path}[{index}]")
+        elif isinstance(value, str):
+            yield value
+
+    reference_fragments: Dict[str, set] = {}
+    for value in evaluator_references:
+        text = str(value.get("answer") or "").strip()
+        fragments = [text, *text.splitlines()]
+        for fragment in fragments:
+            fragment = fragment.strip()
+            if (
+                len(fragment) >= 20
+                and not (fragment.startswith("[") and fragment.endswith("]"))
+            ):
+                reference_fragments.setdefault(fragment, set()).add(
+                    str(value.get("id") or "")
+                )
+    reference_fragment_set = set(reference_fragments)
+    for artifact, values in artifacts.items():
+        for index, value in enumerate(values):
+            candidate_strings = list(visit(value, artifact, f"[{index}]"))
+            for candidate_text in candidate_strings:
+                candidate_fragments = {
+                    fragment.strip()
+                    for fragment in [candidate_text, *candidate_text.splitlines()]
+                    if len(fragment.strip()) >= 20
+                }
+                for fragment in candidate_fragments & reference_fragment_set:
+                    for reference_id in sorted(reference_fragments[fragment]):
+                        text_leaks.append(
+                            {
+                                "artifact": artifact,
+                                "record": str(value.get("id") or index),
+                                "reference_id": reference_id,
+                            }
+                        )
+    return {
+        "protocol": "human-reference-boundary-v1",
+        "candidate_visible_artifact_count": len(artifacts),
+        "field_leaks": field_leaks,
+        "human_reference_text_leaks": text_leaks,
+        "leakage_count": len(field_leaks) + len(text_leaks),
+        "historical_leakage_count": sum(
+            "episodes" in value["artifact"]
+            for value in [*field_leaks, *text_leaks]
+        ),
+        "validation_leakage_count": sum(
+            "validation" in value["artifact"]
+            for value in [*field_leaks, *text_leaks]
+        ),
+        "formal_ready": not field_leaks and not text_leaks,
+        "passed": not field_leaks and not text_leaks,
+    }
+
+
+def assert_no_human_reference_leak(
+    artifacts: Dict[str, Sequence[Dict[str, Any]]],
+    evaluator_references: Sequence[Dict[str, Any]] = (),
+) -> Dict[str, Any]:
+    report = audit_candidate_visible_artifacts(artifacts, evaluator_references)
+    if not report["passed"]:
+        raise ValueError(f"Human Reference leak gate failed: {report}")
+    return report
+
+
+def _source_human_reference_corpus(
+    records: Sequence[Dict[str, Any]],
+) -> List[Dict[str, str]]:
+    """Collect source-side human text solely for the in-memory leak audit."""
+    corpus: List[Dict[str, str]] = []
+
+    def strings(value: Any) -> Iterable[str]:
+        if isinstance(value, str):
+            if value.strip():
+                yield value.strip()
+        elif isinstance(value, dict):
+            for item in value.values():
+                yield from strings(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                yield from strings(item)
+
+    for record in records:
+        paper_id = str(record.get("id") or "")
+        sensitive_values = [
+            record.get("sentence_texts"),
+            record.get("opinions_md_by_category_dict"),
+            record.get("metareview"),
+            record.get("reviews"),
+            record.get("decision"),
+            record.get("reviewer_scores"),
+            record.get("human_score"),
+            record.get("gold_score"),
+        ]
+        for index, text in enumerate(strings(sensitive_values)):
+            corpus.append(
+                {"id": f"source::{paper_id}::{index}", "answer": text}
+            )
+    return corpus
 
 
 def _meta_reference(record: Dict[str, Any]) -> str:
@@ -487,6 +713,7 @@ def prepare_openreview_data(
         ):
             continue
         copied = dict(by_id[str(entry["paper_id"])])
+        copied["_canonical_manifest_entry"] = dict(entry)
         copied["_mstar_work_family"] = family
         copied["_paper_review_cutoff"] = entry["paper_review_cutoff"]
         copied["_temporal_zone"] = entry["zone"]
@@ -534,7 +761,12 @@ def prepare_openreview_data(
     )
 
     per_task: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
-        task_id: {"episodes": [], "validation": [], "queries": []}
+        task_id: {
+            "episodes": [],
+            "validation": [],
+            "queries": [],
+            "evaluator_references": [],
+        }
         for task_id in SPECIALIST_TASKS
     }
     missing_markdown = 0
@@ -557,12 +789,14 @@ def prepare_openreview_data(
                 if paper_text[start : start + 500].strip()
             ][:40]
         source_anchor_text = format_source_anchors(anchors)
-        content = record.get("content") or {}
-        title = str(content.get("title") or record.get("id") or "")
+        canonical_entry = record.get("_canonical_manifest_entry") or {}
+        # The temporal split manifest is the sole formal identity authority.
+        # In particular, never stringify source ``content.title`` because newer
+        # OpenReview records may encode it as {"value": "..."}.
+        title = str(canonical_entry.get("title") or "")
         paper_id = str(record.get("id") or "")
-        venue = str(record.get("conference") or record.get("venue") or "")
-        year_match = re.search(r"(?:19|20)\d{2}", venue)
-        year = str(record.get("year") or (year_match.group(0) if year_match else ""))
+        venue = str(canonical_entry.get("venue") or "")
+        year = str(canonical_entry.get("year") or "")
         family = work_family_key(record)
         if family in validation_family_set:
             split = "specialist_validation"
@@ -572,9 +806,6 @@ def prepare_openreview_data(
             split = "train"
 
         for task_id in SPECIALIST_TASKS:
-            reference, categories = _category_reference(record, task_id)
-            if not reference:
-                continue
             question = _paper_question(
                 task_id,
                 title,
@@ -594,17 +825,18 @@ def prepare_openreview_data(
             )
             provenance_metadata = {
                 "work_family": family,
-                "categories": categories,
                 "paper_md_path": str(markdown_path),
                 "split": split,
+                "temporal_split_manifest": str(
+                    Path(temporal_split_manifest).expanduser().resolve()
+                ),
             }
             common_metadata = {
                 "paper_id": paper_id,
                 "paper_title": title,
                 "work_family": family,
                 "task_id": task_id,
-                "categories": categories,
-                "conference": record.get("conference"),
+                "conference": venue,
                 "markdown_path": str(markdown_path),
                 "split": split,
                 "candidate_visible": visible_metadata,
@@ -618,7 +850,7 @@ def prepare_openreview_data(
                 per_task[task_id]["episodes"].append(
                     {
                         "id": item_id,
-                        "text": _training_episode(question, reference),
+                        "text": _training_episode(question),
                         "metadata": {
                             **common_metadata,
                             "experience_protocol": EXPERIENCE_PROTOCOL,
@@ -632,8 +864,35 @@ def prepare_openreview_data(
                     {
                         "id": item_id,
                         "question": question,
-                        "answer": reference,
                         "metadata": common_metadata,
+                    }
+                )
+                reference, categories = _evaluator_reference(record, task_id)
+                per_task[task_id]["evaluator_references"].append(
+                    {
+                        "id": item_id,
+                        "answer": reference,
+                        "metadata": {
+                            "paper_id": paper_id,
+                            "paper_title": title,
+                            "work_family": family,
+                            "task_id": task_id,
+                            "categories": categories,
+                            "split": split,
+                            "paper_review_cutoff": str(
+                                record.get("_paper_review_cutoff") or ""
+                            ),
+                            "temporal_zone": str(
+                                record.get("_temporal_zone") or ""
+                            ),
+                            "paper_context_version": (
+                                CANONICAL_PAPER_CONTEXT_VERSION
+                            ),
+                        },
+                        "access": {
+                            "evaluator_only": True,
+                            "candidate_forbidden": True,
+                        },
                     }
                 )
             if split in {"train", "meta_validation"}:
@@ -645,6 +904,21 @@ def prepare_openreview_data(
                     }
                 )
 
+    candidate_artifacts = {
+        f"{task_id}/{artifact_name}.jsonl": values[artifact_name]
+        for task_id, values in per_task.items()
+        for artifact_name in ("episodes", "validation", "queries")
+    }
+    evaluator_references = [
+        reference
+        for values in per_task.values()
+        for reference in values["evaluator_references"]
+    ]
+    human_reference_leak_audit = assert_no_human_reference_leak(
+        candidate_artifacts,
+        [*evaluator_references, *_source_human_reference_corpus(records)],
+    )
+
     output_root = Path(output_dir).expanduser().resolve()
     task_manifest = {}
     for task_id, values in per_task.items():
@@ -652,15 +926,35 @@ def prepare_openreview_data(
         episodes_path = task_root / "episodes.jsonl"
         validation_path = task_root / "validation.jsonl"
         queries_path = task_root / "queries.jsonl"
+        evaluator_references_path = (
+            output_root
+            / "evaluator_only"
+            / task_id
+            / "validation_references.jsonl"
+        )
         _write_jsonl(episodes_path, values["episodes"])
         _write_jsonl(validation_path, values["validation"])
         _write_jsonl(queries_path, values["queries"])
+        _write_jsonl(
+            evaluator_references_path, values["evaluator_references"]
+        )
         task_manifest[task_id] = {
             "episodes": str(episodes_path),
             "validation": str(validation_path),
             "queries": str(queries_path),
+            "evaluator_references": str(evaluator_references_path),
+            "evaluator_reference_access": {
+                "artifact_class": "evolution_fitness_reference",
+                "evaluator_only": True,
+                "candidate_forbidden": True,
+            },
             "episode_count": len(values["episodes"]),
             "validation_count": len(values["validation"]),
+            "evaluator_reference_count": len(values["evaluator_references"]),
+            "evaluator_reference_nonempty_count": sum(
+                bool(str(value.get("answer") or "").strip())
+                for value in values["evaluator_references"]
+            ),
         }
 
     manifest = {
@@ -689,12 +983,24 @@ def prepare_openreview_data(
         "semantic_scholar_cached_count": len(required_s2_ids) - len(missing_s2_ids),
         "semantic_scholar_missing_ids": missing_s2_ids,
         "semantic_scholar_temporal_audit": s2_temporal_audit,
-        "formal_ready": bool(s2_cache_sha256) and s2_temporal_audit["passed"],
+        "formal_ready": (
+            bool(s2_cache_sha256)
+            and s2_temporal_audit["passed"]
+            and human_reference_leak_audit["passed"]
+            and all(
+                value["validation_count"] == value["evaluator_reference_count"]
+                for value in task_manifest.values()
+            )
+        ),
         "semantic_scholar_default_injection": False,
         "semantic_scholar_usage": "optional frozen capability",
         "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
         "paper_context_max_chars": int(max_paper_chars),
-        "human_reference_boundary": "candidate-visible episodes exclude references",
+        "human_reference_boundary": (
+            "candidate-visible historical/validation/query artifacts exclude "
+            "human references; validation gold is evaluator-only"
+        ),
+        "human_reference_leak_audit": human_reference_leak_audit,
         "missing_markdown": missing_markdown,
         "tasks": task_manifest,
         "meta_status": "prepared only after five specialist winners are frozen",
@@ -720,6 +1026,7 @@ def prepare_meta_data(
     }
     episodes: List[Dict[str, Any]] = []
     validation: List[Dict[str, Any]] = []
+    validation_references: List[Dict[str, Any]] = []
     families_by_split = {"train": set(), "validation": set()}
     for cached in _iter_jsonl(Path(specialist_outputs_path).expanduser().resolve()):
         paper_id = str(cached.get("id") or "")
@@ -730,8 +1037,6 @@ def prepare_meta_data(
         if set(specialists) != set(SPECIALIST_TASKS):
             raise ValueError(f"Meta cache for {paper_id} must contain all five specialists")
         reference = _meta_reference(record)
-        if not reference:
-            continue
         question = (
             f"Review task: {META_TASK}\nPaper id: {paper_id}\n\n"
             + "\n\n".join(
@@ -747,13 +1052,13 @@ def prepare_meta_data(
         families_by_split[split].add(family)
         metadata = {
             "paper_id": paper_id,
-            "paper_title": (record.get("content") or {}).get("title", ""),
+            "paper_title": str(cached.get("paper_title") or paper_id),
             "work_family": family,
             "task_id": META_TASK,
             "split": split,
             "candidate_visible": {
                 "paper_id": paper_id,
-                "title": str((record.get("content") or {}).get("title", "")),
+                "title": str(cached.get("paper_title") or paper_id),
                 "venue": str(record.get("conference") or ""),
                 "year": str(record.get("year") or ""),
                 "reviewer_role": META_TASK,
@@ -786,22 +1091,55 @@ def prepare_meta_data(
                 {
                     "id": f"{paper_id}::{META_TASK}",
                     "question": question,
-                    "answer": reference,
                     "metadata": metadata,
+                }
+            )
+            validation_references.append(
+                {
+                    "id": f"{paper_id}::{META_TASK}",
+                    "answer": reference,
+                    "metadata": {
+                        "paper_id": paper_id,
+                        "task_id": META_TASK,
+                        "split": split,
+                    },
+                    "access": {
+                        "evaluator_only": True,
+                        "candidate_forbidden": True,
+                    },
                 }
             )
     overlap = families_by_split["train"] & families_by_split["validation"]
     if overlap:
         raise ValueError(f"Meta cache leaks {len(overlap)} work families across splits")
     output_root = Path(output_dir).expanduser().resolve() / META_TASK
+    evaluator_references_path = (
+        Path(output_dir).expanduser().resolve()
+        / "evaluator_only"
+        / META_TASK
+        / "validation_references.jsonl"
+    )
+    human_reference_leak_audit = assert_no_human_reference_leak(
+        {"episodes": episodes, "validation": validation},
+        validation_references,
+    )
     _write_jsonl(output_root / "episodes.jsonl", episodes)
     _write_jsonl(output_root / "validation.jsonl", validation)
+    _write_jsonl(evaluator_references_path, validation_references)
     manifest = {
         "task_id": META_TASK,
         "episodes": str(output_root / "episodes.jsonl"),
         "validation": str(output_root / "validation.jsonl"),
+        "evaluator_references": str(evaluator_references_path),
+        "evaluator_reference_access": {
+            "artifact_class": "evolution_fitness_reference",
+            "evaluator_only": True,
+            "candidate_forbidden": True,
+        },
         "episode_count": len(episodes),
         "validation_count": len(validation),
+        "evaluator_reference_count": len(validation_references),
+        "human_reference_leak_audit": human_reference_leak_audit,
         "family_overlap": 0,
         "specialist_outputs": str(Path(specialist_outputs_path).resolve()),
         "specialist_outputs_sha256": _sha256_file(

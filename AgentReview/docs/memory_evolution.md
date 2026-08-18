@@ -80,8 +80,8 @@ send feedback into specialist pools.
 
 CoCoReviewBench's 3900 papers are a benchmark source pool, not a requirement to
 run all 3900 as the official test. The frozen chronological manifest defines the
-only formal split: A Historical=2400, B Evolution Validation=300, C
-Effectiveness Holdout=300, and D Held-out CoCo Test=900. Paper ID, normalized
+only formal split: A Historical=2391, B Evolution Validation=299, C
+Effectiveness Holdout=300, and D Held-out CoCo Test=899. Paper ID, normalized
 title, and paper family overlap are all zero; A/B/C are permanently excluded
 from D and development cutoffs precede held-out-test cutoffs.
 
@@ -97,9 +97,13 @@ Unknown-date and post-cutoff results are rejected. S2 is an optional capability,
 not default context, and candidate processes cannot perform live queries.
 
 The Human Reference Boundary is unchanged in every zone: human opinions, gold,
-taxonomy and judge rationale/full traces stay evaluator-only. Candidate-visible
-episodes and self-generated experience contain the paper, safe metadata and
-source anchors, never the human answer.
+taxonomy and judge rationale/full traces stay evaluator-only. A historical
+`episodes.jsonl`, B `validation.jsonl`, and specialist `queries.jsonl` contain
+only paper tasks, safe metadata and source anchors. B gold is stored separately
+under `evaluator_only/<TASK>/validation_references.jsonl`, marked
+`evaluator_only=true` and `candidate_forbidden=true`, and joined by ID only in
+the evaluator loader. Preparation and formal runtime both fail closed on
+forbidden fields or copied human-reference text in Candidate-visible artifacts.
 
 ## Fitness
 
