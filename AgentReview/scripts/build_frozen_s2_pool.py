@@ -61,6 +61,35 @@ def publication_time(paper: Dict[str, Any]) -> date:
     raise ValueError("Semantic Scholar result lacks publication date/year")
 
 
+def normalize_search_payload(payload: Any) -> Dict[str, Any]:
+    """Validate an S2 search response and canonicalize its zero-result form."""
+    if not isinstance(payload, dict):
+        raise ValueError("Semantic Scholar search payload must be an object")
+    total = payload.get("total")
+    if isinstance(total, bool) or not isinstance(total, int) or total < 0:
+        raise ValueError("Semantic Scholar search payload has invalid total")
+    if "data" not in payload:
+        if total != 0:
+            raise ValueError(
+                "Semantic Scholar search payload has positive total but no data"
+            )
+        normalized = dict(payload)
+        normalized["data"] = []
+        return normalized
+    if not isinstance(payload["data"], list):
+        raise ValueError("Semantic Scholar search payload data must be a list")
+    return dict(payload)
+
+
+def retry_delay(response: Any, attempt: int, min_interval_seconds: float) -> float:
+    retry_after = response.headers.get("Retry-After", "").strip()
+    try:
+        delay = float(retry_after)
+    except ValueError:
+        delay = min(60.0, 5.0 * (2 ** (attempt - 1)))
+    return max(min_interval_seconds, min(delay, 300.0))
+
+
 def request_search(
     *,
     title: str,
@@ -70,7 +99,6 @@ def request_search(
     min_interval_seconds: float,
 ) -> Dict[str, Any]:
     headers = {"x-api-key": api_key} if api_key else {}
-    retryable = {429, 500, 502, 503, 504}
     for attempt in range(1, max_attempts + 1):
         response = requests.get(
             ENDPOINT,
@@ -79,24 +107,25 @@ def request_search(
             timeout=60,
         )
         if response.status_code == 200:
-            payload = response.json()
-            if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
-                print("HTTP status:", response.status_code)
-                print("Response body:", response.text[:1000])
-                raise RuntimeError("Semantic Scholar returned an invalid search payload")
+            try:
+                payload = normalize_search_payload(response.json())
+            except (ValueError, TypeError) as exc:
+                if attempt == max_attempts:
+                    raise RuntimeError(
+                        "Semantic Scholar returned a malformed search payload "
+                        f"after {max_attempts} attempts: {exc}"
+                    ) from exc
+                time.sleep(retry_delay(response, attempt, min_interval_seconds))
+                continue
             return payload
-        if response.status_code not in retryable or attempt == max_attempts:
+        transient = response.status_code == 429 or 500 <= response.status_code <= 599
+        if not transient or attempt == max_attempts:
             key_hint = " Set S2_API_KEY." if response.status_code in {403, 429} else ""
             raise RuntimeError(
                 f"Semantic Scholar search failed: HTTP {response.status_code}."
                 f"{key_hint} Response={response.text[:300]!r}"
             )
-        retry_after = response.headers.get("Retry-After", "").strip()
-        try:
-            delay = float(retry_after)
-        except ValueError:
-            delay = min(60.0, 5.0 * (2 ** (attempt - 1)))
-        time.sleep(max(min_interval_seconds, min(delay, 300.0)))
+        time.sleep(retry_delay(response, attempt, min_interval_seconds))
     raise AssertionError("unreachable")
 
 
@@ -111,8 +140,22 @@ def valid_work_record(
         and value.get("retrieval_version") == RETRIEVAL_VERSION
         and value.get("top_k") == top_k
         and isinstance(results, list)
+        and (
+            "result_count" not in value
+            or value.get("result_count") == len(results)
+        )
         and value.get("result_sha256") == canonical_sha256(results)
     )
+
+
+def asset_record_from_work(value: Dict[str, Any]) -> Dict[str, Any]:
+    """Add current asset fields without mutating a resumable work record."""
+    results = value.get("retrieved_papers")
+    if not isinstance(results, list):
+        raise ValueError("S2 work record retrieved_papers must be a list")
+    asset_record = dict(value)
+    asset_record["result_count"] = len(results)
+    return asset_record
 
 
 def iter_targets(zones: Dict[str, Iterable[Dict[str, Any]]]):
@@ -205,6 +248,7 @@ def main() -> None:
             "top_k": args.top_k,
             "query": target["title"],
             "retrieved_papers": accepted,
+            "result_count": len(accepted),
             "result_sha256": canonical_sha256(accepted),
             "raw_api_response_sha256": canonical_sha256(payload),
             "future_results_rejected": rejected_future,
@@ -224,7 +268,7 @@ def main() -> None:
         value = json.loads(work_path.read_text(encoding="utf-8"))
         if not valid_work_record(value, target, args.top_k):
             raise RuntimeError(f"Invalid S2 work record for {paper_id}")
-        ordered.append(value)
+        ordered.append(asset_record_from_work(value))
     temporary = output.with_suffix(output.suffix + ".tmp")
     with temporary.open("w", encoding="utf-8") as handle:
         for value in ordered:
