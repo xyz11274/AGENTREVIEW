@@ -157,6 +157,14 @@ def main() -> None:
     parser.add_argument("--s2-pool", required=True)
     parser.add_argument("--data-root", required=True)
     parser.add_argument(
+        "--coco-root",
+        required=True,
+        help=(
+            "Current CoCoReviewBench root used to remap frozen CoCo provenance "
+            "paths while preserving their relative identities and SHA256 values."
+        ),
+    )
+    parser.add_argument(
         "--check-only",
         action="store_true",
         help="Run the same audit without updating Asset Manifest.",
@@ -168,11 +176,14 @@ def main() -> None:
     s2_path = Path(args.s2_pool).expanduser().resolve()
     s2_manifest_path = s2_path.with_suffix(s2_path.suffix + ".manifest.json")
     data_root = Path(args.data_root).expanduser().resolve()
+    coco_root = Path(args.coco_root).expanduser().resolve()
     for required in (asset_path, split_path, s2_path, s2_manifest_path):
         if not required.is_file():
             raise FileNotFoundError(f"Required existing asset is missing: {required}")
     if not data_root.is_dir():
         raise FileNotFoundError(f"Formal A/B data root is missing: {data_root}")
+    if not coco_root.is_dir():
+        raise FileNotFoundError(f"Current CoCo root is missing: {coco_root}")
 
     split_summary, zones = load_temporal_split_manifest(str(split_path))
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
@@ -254,11 +265,13 @@ def main() -> None:
                 task_id=task_id,
                 s2_pool_path=str(s2_path),
                 program_paths=seed_paths,
+                coco_root=str(coco_root),
                 config_identity={
                     "audit_only": True,
                     "task_id": task_id,
                     "temporal_split_version": split_summary["version"],
                     "s2_asset_sha256": s2_audit["asset_sha256"],
+                    "coco_root": str(coco_root),
                 },
             )
     finally:
@@ -273,6 +286,10 @@ def main() -> None:
         "check_only": bool(args.check_only),
         "asset_manifest_updated": not args.check_only,
         "asset_manifest": str(asset_path),
+        "coco_root": str(coco_root),
+        "frozen_coco_root": gate_reports["QUAL"]["coco_provenance"][
+            "frozen_root"
+        ],
         "asset_manifest_sha256": (
             sha256_file(asset_path) if not args.check_only else None
         ),

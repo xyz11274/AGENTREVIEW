@@ -39,6 +39,117 @@ FORMAL_REQUIRED_VERSIONS = {
     "frozen_s2_pool": FROZEN_S2_POOL_VERSION,
     "frozen_s2_pool_manifest": FROZEN_S2_POOL_VERSION,
 }
+FROZEN_COCO_ROOT = Path("/data0/xyj/shengao/CoCoReviewBench")
+
+
+def _remap_frozen_coco_path(source: str, coco_root: str) -> tuple[Path, Path]:
+    """Map one frozen CoCo path to the same relative path under ``coco_root``.
+
+    The frozen source identity is intentionally narrow: callers cannot use this
+    mechanism to remap arbitrary absolute paths or paths that escape through
+    ``..`` components or symlinks.
+    """
+    source_text = str(source or "")
+    source_path = Path(source_text)
+    if not source_path.is_absolute():
+        raise ValueError(f"Formal CoCo provenance path is not absolute: {source_text!r}")
+    try:
+        relative = source_path.relative_to(FROZEN_COCO_ROOT)
+    except ValueError as exc:
+        raise ValueError(
+            "Formal CoCo provenance path is outside the frozen CoCo root: "
+            f"{source_text}"
+        ) from exc
+    if not relative.parts or any(part in {".", ".."} for part in relative.parts):
+        raise ValueError(
+            f"Formal CoCo provenance path has unsafe relative identity: {source_text}"
+        )
+
+    configured_root = Path(str(coco_root or "")).expanduser()
+    if not str(coco_root or "") or not configured_root.is_absolute():
+        raise ValueError("Formal CoCo provenance requires an absolute current coco_root")
+    resolved_root = configured_root.resolve()
+    if not resolved_root.is_dir():
+        raise FileNotFoundError(
+            f"Configured current CoCo root is missing: {resolved_root}"
+        )
+    lexical_mapped = resolved_root / relative
+    mapped = lexical_mapped.resolve(strict=False)
+    try:
+        mapped.relative_to(resolved_root)
+    except ValueError as exc:
+        raise ValueError(
+            "Mapped Formal CoCo provenance path escapes the current CoCo root: "
+            f"{source_text}"
+        ) from exc
+    if mapped != lexical_mapped:
+        raise ValueError(
+            "Mapped Formal CoCo provenance path does not preserve relative path "
+            f"identity: {source_text}"
+        )
+    return mapped, relative
+
+
+def _verify_remapped_coco_file(
+    source: str,
+    expected_sha256: str,
+    *,
+    coco_root: str,
+    label: str,
+) -> Dict[str, str]:
+    mapped, relative = _remap_frozen_coco_path(source, coco_root)
+    if not mapped.is_file():
+        raise RuntimeError(
+            f"Formal CoCo {label} is missing after root remap: {mapped}"
+        )
+    actual_sha256 = sha256_file(mapped)
+    if actual_sha256 != str(expected_sha256 or ""):
+        raise RuntimeError(
+            f"Formal CoCo {label} SHA256 mismatch after root remap: {mapped}"
+        )
+    return {
+        "frozen_path": str(source),
+        "relative_path": relative.as_posix(),
+        "resolved_path": str(mapped),
+        "sha256": actual_sha256,
+    }
+
+
+def _validate_frozen_coco_provenance(
+    reference_source: Dict[str, Any], *, coco_root: str
+) -> Dict[str, Any]:
+    verified = {}
+    for path_key, sha_key in (
+        ("implementation_path", "implementation_sha256"),
+        ("selection_loader_path", "selection_loader_sha256"),
+        ("left_out_selection", "left_out_selection_sha256"),
+    ):
+        verified[path_key] = _verify_remapped_coco_file(
+            str(reference_source.get(path_key) or ""),
+            str(reference_source.get(sha_key) or ""),
+            coco_root=coco_root,
+            label=path_key,
+        )
+
+    benchmark_sha256 = reference_source.get("benchmark_file_sha256") or {}
+    if not benchmark_sha256:
+        raise RuntimeError("Formal CoCo reference benchmark provenance is empty")
+    verified_benchmarks = []
+    for source, expected_sha in benchmark_sha256.items():
+        verified_benchmarks.append(
+            _verify_remapped_coco_file(
+                str(source),
+                str(expected_sha),
+                coco_root=coco_root,
+                label="benchmark provenance",
+            )
+        )
+    return {
+        "frozen_root": str(FROZEN_COCO_ROOT),
+        "current_root": str(Path(coco_root).expanduser().resolve()),
+        "verified_reference_files": verified,
+        "verified_benchmark_files": verified_benchmarks,
+    }
 
 
 def _validate_family_target_protocol(
@@ -130,6 +241,7 @@ def run_formal_protocol_gate(
     s2_pool_path: str,
     program_paths: Sequence[str],
     config_identity: Dict[str, Any],
+    coco_root: str = "",
 ) -> Dict[str, Any]:
     asset_report = validate_asset_manifest(
         asset_manifest_path,
@@ -200,35 +312,16 @@ def run_formal_protocol_gate(
     prepared_leak_audit = prepared_manifest.get("human_reference_leak_audit") or {}
     if not prepared_leak_audit.get("passed"):
         raise RuntimeError("Formal prepared-data Human Reference audit did not pass")
+    coco_provenance = None
     if task_id != "META":
         reference_source = prepared_manifest.get("evaluator_reference_source") or {}
         if reference_source.get("implementation") != (
             "CoCoReviewBench.src.evaluation._4_evaluation.load_human_review_data"
         ):
             raise RuntimeError("Formal evaluator references were not built by CoCo")
-        for path_key, sha_key in (
-            ("implementation_path", "implementation_sha256"),
-            ("selection_loader_path", "selection_loader_sha256"),
-            ("left_out_selection", "left_out_selection_sha256"),
-        ):
-            source_path = Path(str(reference_source.get(path_key) or ""))
-            if (
-                not source_path.is_file()
-                or sha256_file(source_path)
-                != str(reference_source.get(sha_key) or "")
-            ):
-                raise RuntimeError(
-                    f"Formal CoCo reference provenance mismatch: {path_key}"
-                )
-        benchmark_sha256 = reference_source.get("benchmark_file_sha256") or {}
-        if not benchmark_sha256:
-            raise RuntimeError("Formal CoCo reference benchmark provenance is empty")
-        for source, expected_sha in benchmark_sha256.items():
-            source_path = Path(str(source))
-            if not source_path.is_file() or sha256_file(source_path) != expected_sha:
-                raise RuntimeError(
-                    f"Formal CoCo benchmark provenance mismatch: {source_path}"
-                )
+        coco_provenance = _validate_frozen_coco_provenance(
+            reference_source, coco_root=coco_root
+        )
     episodes_path = task_root / "episodes.jsonl"
     validation_path = task_root / "validation.jsonl"
     queries_path = task_root / "queries.jsonl"
@@ -279,7 +372,7 @@ def run_formal_protocol_gate(
         )
         if not md_path:
             raise RuntimeError(f"Formal Candidate task lacks Markdown source: {paper_id}")
-        path = Path(md_path)
+        path, _ = _remap_frozen_coco_path(md_path, coco_root)
         if not path.is_file():
             raise FileNotFoundError(f"Formal Candidate Markdown is missing: {path}")
         authorized_fragments_by_paper.setdefault(paper_id, set()).update(
@@ -388,6 +481,7 @@ def run_formal_protocol_gate(
         ],
         "experiment_config_sha256": config_sha256,
         "source_asset_identity": split_summary.get("source_sha256"),
+        "coco_provenance": coco_provenance,
     }
 
 

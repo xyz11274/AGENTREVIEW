@@ -38,6 +38,7 @@ class EvolutionConfig:
     seed: int = 0
     dry_run: bool = False
     max_fix_attempts: int = 3
+    max_attempts_per_lineage: Optional[int] = None
     write_timeout: float = 60.0
     read_timeout: float = 60.0
     max_llm_calls_per_operation: int = 1
@@ -108,7 +109,24 @@ class EvolutionResult:
         return asdict(self)
 
 
-SEARCH_STATE_VERSION = "formal-search-controller-checkpoint-v1"
+SEARCH_STATE_VERSION = "formal-search-controller-checkpoint-v2"
+
+
+def resolve_formal_attempt_budget(
+    iterations: int, configured_max_attempts_per_lineage: Optional[int]
+) -> int:
+    target_successes_per_lineage = int(iterations) // 3
+    resolved = (
+        3 * target_successes_per_lineage
+        if configured_max_attempts_per_lineage is None
+        else int(configured_max_attempts_per_lineage)
+    )
+    if resolved < target_successes_per_lineage:
+        raise ValueError(
+            "Formal max_attempts_per_lineage must be at least the successful "
+            f"target per lineage: max={resolved}, target={target_successes_per_lineage}"
+        )
+    return resolved
 
 
 def _canonical_sha256(value: Any) -> str:
@@ -344,6 +362,10 @@ def run_evolution(
         raise ValueError(
             "Formal lineage comparison requires iterations divisible by three"
         )
+    if cfg.formal:
+        cfg.max_attempts_per_lineage = resolve_formal_attempt_budget(
+            cfg.iterations, cfg.max_attempts_per_lineage
+        )
     reflector = reflector_client or toolkit
     print(
         "[MSTAR] Starting evolution: "
@@ -436,6 +458,7 @@ def run_evolution(
                 "lineage_cursor": 0,
                 "next_index": 0,
                 "successful_by_lineage": {},
+                "attempts_by_lineage": {},
                 "selection_scores": {},
             }
             _atomic_write_json(controller_path, controller)
@@ -670,6 +693,9 @@ def run_evolution(
     successful_by_lineage = {
         f"evolved_from_{name}": 0 for name in seed_names
     }
+    attempts_by_lineage = {
+        f"evolved_from_{name}": 0 for name in seed_names
+    }
     if cfg.formal:
         successful_by_lineage.update(
             {
@@ -679,6 +705,14 @@ def run_evolution(
                 ).items()
             }
         )
+        stored_attempts = dict(controller.get("attempts_by_lineage") or {})
+        if set(stored_attempts) - set(attempts_by_lineage):
+            raise RuntimeError("Formal checkpoint has unknown lineage attempt counters")
+        attempts_by_lineage.update(
+            {str(key): int(value) for key, value in stored_attempts.items()}
+        )
+        if any(value < 0 for value in attempts_by_lineage.values()):
+            raise RuntimeError("Formal checkpoint has negative lineage attempt counters")
     target_successes_per_lineage = (
         cfg.iterations // len(seed_names) if cfg.formal else None
     )
@@ -748,6 +782,7 @@ def run_evolution(
             lineage_cursor=cursor_value,
             next_index=next_index_value,
             successful_by_lineage=successful_by_lineage,
+            attempts_by_lineage=attempts_by_lineage,
             inflight_candidate=None,
             phase="search",
         )
@@ -827,6 +862,15 @@ def run_evolution(
                     f"evolved_from_{seed_names[lineage_cursor % len(seed_names)]}"
                 )
                 lineage_cursor += 1
+                lineage_attempts = attempts_by_lineage[active_lineage]
+                if lineage_attempts >= cfg.max_attempts_per_lineage:
+                    raise RuntimeError(
+                        "Formal lineage attempt budget exhausted: "
+                        f"lineage={active_lineage}, attempts={lineage_attempts}, "
+                        f"successful={successful_by_lineage[active_lineage]}, "
+                        f"target={target_successes_per_lineage}, "
+                        f"max_attempts_per_lineage={cfg.max_attempts_per_lineage}"
+                    )
             else:
                 if attempt >= max(0, cfg.iterations):
                     break
@@ -834,6 +878,16 @@ def run_evolution(
                     f"evolved_from_{seed_names[attempt % len(seed_names)]}"
                 )
             attempt += 1
+            if cfg.formal:
+                attempts_by_lineage[active_lineage] += 1
+                commit_controller(
+                    attempt=attempt,
+                    lineage_cursor=lineage_cursor,
+                    next_index=next_index,
+                    successful_by_lineage=successful_by_lineage,
+                    attempts_by_lineage=attempts_by_lineage,
+                    phase="search",
+                )
             iteration = attempt
             program_id = f"program_{next_index:03d}_child"
             target = pool_dir / f"{program_id}.py"
@@ -954,6 +1008,7 @@ def run_evolution(
                     lineage_cursor=lineage_cursor,
                     next_index=next_index,
                     successful_by_lineage=successful_by_lineage,
+                    attempts_by_lineage=attempts_by_lineage,
                     phase="search",
                 )
                 continue
@@ -1011,6 +1066,7 @@ def run_evolution(
                         lineage_cursor=lineage_cursor,
                         next_index=next_index,
                         successful_by_lineage=successful_by_lineage,
+                        attempts_by_lineage=attempts_by_lineage,
                         inflight_candidate={
                             "program_id": program_id,
                             "path": str(target.resolve()),
@@ -1066,6 +1122,7 @@ def run_evolution(
             lineage_cursor=lineage_cursor,
             next_index=next_index,
             successful_by_lineage=successful_by_lineage,
+            attempts_by_lineage=attempts_by_lineage,
             phase="selection",
         )
 
@@ -1084,6 +1141,10 @@ def run_evolution(
             "budget_unit": "successful_child_candidate_evaluation",
             "requested_total": cfg.iterations,
             "target_per_lineage": target_successes_per_lineage,
+            "max_attempts_per_lineage": (
+                cfg.max_attempts_per_lineage if cfg.formal else None
+            ),
+            "attempts_by_lineage": attempts_by_lineage if cfg.formal else None,
             "successful_completed_by_lineage": successful_by_lineage,
             "equal_completed_budget_required": bool(cfg.formal),
             "equal_completed_budget_passed": (
@@ -1224,6 +1285,10 @@ def run_evolution(
         },
         "lineage_champions": lineage_champions,
         "lineage_successful_completed_counts": successful_by_lineage,
+        "lineage_attempt_counts": attempts_by_lineage if cfg.formal else None,
+        "max_attempts_per_lineage": (
+            cfg.max_attempts_per_lineage if cfg.formal else None
+        ),
         "lineage_completed_budget_equal": (
             len(set(successful_by_lineage.values())) == 1 if cfg.formal else None
         ),

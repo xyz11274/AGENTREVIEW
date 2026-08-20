@@ -9,7 +9,7 @@ from memory_evolution.metrics import exact_match
 from memory_evolution.models import Episode, EvalItem
 from memory_evolution.search import EvolutionConfig, run_evolution
 from memory_evolution.quality import QualityResult
-from memory_evolution.reflector import ChangeLog, MutationResult
+from memory_evolution.reflector import ChangeLog, CompileFixResult, MutationResult
 from memory_evolution.models import EvalResult
 from memory_evolution.task_agent import TaskAgent
 from memory_evolution.toolkit import MemoryToolkit
@@ -242,8 +242,157 @@ class SearchLoopTest(unittest.TestCase):
             )
             self.assertTrue(budget["equal_completed_budget_passed"])
             self.assertEqual(calls["mutation"], 4)
+            self.assertEqual(budget["max_attempts_per_lineage"], 3)
+            self.assertEqual(sum(budget["attempts_by_lineage"].values()), 4)
 
-    def test_formal_controller_resume_keeps_committed_candidates(self):
+    def test_formal_repeated_reflector_failure_exhausts_attempt_budget(self):
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        seed_paths = [
+            str(seed_dir / "vector_search.py"),
+            str(seed_dir / "llm_summarizer.py"),
+            str(seed_dir / "experience_learner.py"),
+        ]
+        with tempfile.TemporaryDirectory(prefix="mstar_reflector_cap_") as directory, patch(
+            "memory_evolution.search.check_program_path",
+            return_value=QualityResult(passed=True),
+        ), patch(
+            "memory_evolution.search.evaluate_program",
+            return_value=EvalResult(mean_score=0.5),
+        ), patch(
+            "memory_evolution.search.mutate_program",
+            side_effect=ValueError("repeated reflector rejection"),
+        ), patch(
+            "memory_evolution.search.build_static_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ), patch(
+            "memory_evolution.search.select_episode_subset",
+            side_effect=lambda values, *args, **kwargs: values,
+        ), patch(
+            "memory_evolution.search.sample_rotating_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ):
+            output = Path(directory) / "run"
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"lineage=evolved_from_vector_search, attempts=1, successful=0, target=1",
+            ):
+                run_evolution(
+                    seed_paths,
+                    [Episode(id="A1", text="historical")],
+                    [
+                        EvalItem(id="B1", question="one", answer="x"),
+                        EvalItem(id="B2", question="two", answer="x"),
+                    ],
+                    object(),
+                    MemoryToolkit(),
+                    exact_match,
+                    EvolutionConfig(
+                        output_dir=str(output),
+                        task_description="fixture",
+                        iterations=3,
+                        static_size=1,
+                        rotating_size=1,
+                        max_attempts_per_lineage=1,
+                        selection_repeats=1,
+                        selection_top_k=1,
+                        formal=True,
+                        historical_manifest_sha256="a" * 64,
+                        experiment_config_sha256="b" * 64,
+                        semantic_scholar_cache_sha256="c" * 64,
+                        s2_asset_version="frozen-s2-temporal-v2",
+                    ),
+                )
+            controller = json.loads(
+                (output / "search_controller_checkpoint.json").read_text()
+            )
+            self.assertEqual(controller["attempt"], 3)
+            self.assertEqual(set(controller["attempts_by_lineage"].values()), {1})
+            self.assertEqual(set(controller["successful_by_lineage"].values()), {0})
+
+    def test_formal_repeated_quality_rejection_exhausts_attempt_budget(self):
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        seed_paths = [
+            str(seed_dir / "vector_search.py"),
+            str(seed_dir / "llm_summarizer.py"),
+            str(seed_dir / "experience_learner.py"),
+        ]
+
+        def quality(path, *args, **kwargs):
+            if "seed_" in Path(path).stem:
+                return QualityResult(passed=True)
+            return QualityResult(passed=False, static_errors=["fixture rejection"])
+
+        def mutate(parent_code, *args, **kwargs):
+            return MutationResult(
+                analysis="fixture",
+                strategy="fixture",
+                program_code=parent_code,
+                change_log=ChangeLog(summary="quality rejection fixture"),
+            )
+
+        with tempfile.TemporaryDirectory(prefix="mstar_quality_cap_") as directory, patch(
+            "memory_evolution.search.check_program_path", side_effect=quality
+        ), patch(
+            "memory_evolution.search.evaluate_program",
+            return_value=EvalResult(mean_score=0.5),
+        ), patch(
+            "memory_evolution.search.mutate_program", side_effect=mutate
+        ), patch(
+            "memory_evolution.search.compile_fix_loop",
+            side_effect=lambda code, *args, **kwargs: CompileFixResult(
+                code, 0, False, ["fixture rejection"]
+            ),
+        ), patch(
+            "memory_evolution.search.build_static_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ), patch(
+            "memory_evolution.search.select_episode_subset",
+            side_effect=lambda values, *args, **kwargs: values,
+        ), patch(
+            "memory_evolution.search.sample_rotating_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ):
+            output = Path(directory) / "run"
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"lineage=evolved_from_vector_search, attempts=1, successful=0, target=1",
+            ):
+                run_evolution(
+                    seed_paths,
+                    [Episode(id="A1", text="historical")],
+                    [
+                        EvalItem(id="B1", question="one", answer="x"),
+                        EvalItem(id="B2", question="two", answer="x"),
+                    ],
+                    object(),
+                    MemoryToolkit(),
+                    exact_match,
+                    EvolutionConfig(
+                        output_dir=str(output),
+                        task_description="fixture",
+                        iterations=3,
+                        static_size=1,
+                        rotating_size=1,
+                        max_attempts_per_lineage=1,
+                        selection_repeats=1,
+                        selection_top_k=1,
+                        formal=True,
+                        historical_manifest_sha256="a" * 64,
+                        experiment_config_sha256="b" * 64,
+                        semantic_scholar_cache_sha256="c" * 64,
+                        s2_asset_version="frozen-s2-temporal-v2",
+                    ),
+                )
+            controller = json.loads(
+                (output / "search_controller_checkpoint.json").read_text()
+            )
+            self.assertEqual(controller["attempt"], 3)
+            self.assertEqual(set(controller["attempts_by_lineage"].values()), {1})
+            self.assertEqual(set(controller["successful_by_lineage"].values()), {0})
+
+    def test_formal_controller_resume_keeps_candidates_and_attempt_counters(self):
         root = Path(__file__).parents[1]
         seed_dir = root / "memory_evolution" / "seeds"
         seed_paths = [
@@ -296,6 +445,7 @@ class SearchLoopTest(unittest.TestCase):
                 iterations=3,
                 static_size=1,
                 rotating_size=1,
+                max_attempts_per_lineage=1,
                 selection_repeats=1,
                 selection_top_k=1,
                 formal=True,
@@ -334,6 +484,14 @@ class SearchLoopTest(unittest.TestCase):
             self.assertEqual(interrupted["phase"], "search_inflight")
             self.assertEqual(interrupted["attempt"], 2)
             self.assertEqual(len(interrupted["candidates"]), 4)
+            self.assertEqual(
+                interrupted["attempts_by_lineage"],
+                {
+                    "evolved_from_vector_search": 1,
+                    "evolved_from_llm_summarizer": 1,
+                    "evolved_from_experience_learner": 0,
+                },
+            )
 
             result = run_evolution(
                 seed_paths,
@@ -349,6 +507,7 @@ class SearchLoopTest(unittest.TestCase):
             )
             self.assertEqual(completed["phase"], "complete")
             self.assertEqual(completed["attempt"], 3)
+            self.assertEqual(set(completed["attempts_by_lineage"].values()), {1})
             self.assertEqual(result.pool_size, 6)
             self.assertEqual(len((output / "scores.jsonl").read_text().splitlines()), 6)
             self.assertEqual(subset_builder.call_count, 1)

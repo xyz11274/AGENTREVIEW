@@ -14,6 +14,9 @@ from memory_evolution.reflector import EvalFeedback, validate_candidate_feedback
 from memory_evolution.evaluator import evaluate_program
 from memory_evolution.formal_protocol import (
     FORMAL_REQUIRED_VERSIONS,
+    FROZEN_COCO_ROOT,
+    _remap_frozen_coco_path,
+    _validate_frozen_coco_provenance,
     _validate_v2_sidecar,
 )
 from memory_evolution.models import Episode, EvalItem
@@ -27,6 +30,106 @@ from scripts.finalize_formal_readiness import build_candidate_manifest
 
 
 class TemporalProtocolTest(unittest.TestCase):
+    def _coco_provenance_fixture(self, root: Path):
+        files = {
+            "implementation_path": root / "src" / "evaluation" / "_4_evaluation.py",
+            "selection_loader_path": root / "src" / "evaluation" / "_0_human_review.py",
+            "left_out_selection": root / "benchmark" / "benchmark_left_out_human.jsonl",
+            "benchmark": root / "benchmark" / "benchmark_ICLR_2023.jsonl",
+        }
+        for name, path in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"fixture:{name}\n", encoding="utf-8")
+
+        def frozen(path: Path) -> str:
+            return str(FROZEN_COCO_ROOT / path.relative_to(root))
+
+        return {
+            "implementation_path": frozen(files["implementation_path"]),
+            "implementation_sha256": hashlib.sha256(
+                files["implementation_path"].read_bytes()
+            ).hexdigest(),
+            "selection_loader_path": frozen(files["selection_loader_path"]),
+            "selection_loader_sha256": hashlib.sha256(
+                files["selection_loader_path"].read_bytes()
+            ).hexdigest(),
+            "left_out_selection": frozen(files["left_out_selection"]),
+            "left_out_selection_sha256": hashlib.sha256(
+                files["left_out_selection"].read_bytes()
+            ).hexdigest(),
+            "benchmark_file_sha256": {
+                frozen(files["benchmark"]): hashlib.sha256(
+                    files["benchmark"].read_bytes()
+                ).hexdigest()
+            },
+        }
+
+    def test_frozen_coco_provenance_remaps_same_relative_paths_and_sha(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            provenance = self._coco_provenance_fixture(current_root)
+            report = _validate_frozen_coco_provenance(
+                provenance, coco_root=str(current_root)
+            )
+            implementation = report["verified_reference_files"][
+                "implementation_path"
+            ]
+            self.assertEqual(
+                implementation["relative_path"], "src/evaluation/_4_evaluation.py"
+            )
+            self.assertEqual(
+                Path(implementation["resolved_path"]),
+                current_root / "src" / "evaluation" / "_4_evaluation.py",
+            )
+
+    def test_frozen_coco_provenance_missing_mapped_file_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            provenance = self._coco_provenance_fixture(current_root)
+            (current_root / "src" / "evaluation" / "_0_human_review.py").unlink()
+            with self.assertRaisesRegex(RuntimeError, "missing after root remap"):
+                _validate_frozen_coco_provenance(
+                    provenance, coco_root=str(current_root)
+                )
+
+    def test_frozen_coco_provenance_changed_implementation_sha_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            provenance = self._coco_provenance_fixture(current_root)
+            provenance["implementation_sha256"] = "0" * 64
+            with self.assertRaisesRegex(RuntimeError, "implementation_path SHA256"):
+                _validate_frozen_coco_provenance(
+                    provenance, coco_root=str(current_root)
+                )
+
+    def test_frozen_coco_provenance_changed_benchmark_sha_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            provenance = self._coco_provenance_fixture(current_root)
+            benchmark = next(iter(provenance["benchmark_file_sha256"]))
+            provenance["benchmark_file_sha256"][benchmark] = "0" * 64
+            with self.assertRaisesRegex(RuntimeError, "benchmark provenance SHA256"):
+                _validate_frozen_coco_provenance(
+                    provenance, coco_root=str(current_root)
+                )
+
+    def test_frozen_coco_path_escape_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            current_root.mkdir()
+            escaped = str(FROZEN_COCO_ROOT / "benchmark" / ".." / "outside.jsonl")
+            with self.assertRaisesRegex(ValueError, "unsafe relative identity"):
+                _remap_frozen_coco_path(escaped, str(current_root))
+
+    def test_unrelated_absolute_path_cannot_use_coco_root_remap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            current_root = Path(directory) / "current-coco"
+            current_root.mkdir()
+            with self.assertRaisesRegex(ValueError, "outside the frozen CoCo root"):
+                _remap_frozen_coco_path(
+                    "/unrelated/absolute/path.jsonl", str(current_root)
+                )
+
     def _identity(self):
         return {
             "candidate_id": "candidate-1",

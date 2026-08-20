@@ -11,7 +11,7 @@ from memory_evolution.cli import (
 
 
 class CliModeTest(unittest.TestCase):
-    def test_all_evolution_llm_roles_default_to_gpt_5_mini(self):
+    def test_all_evolution_llm_roles_default_to_kimi_k3(self):
         args = build_parser().parse_args(
             [
                 "evolve-task",
@@ -24,9 +24,25 @@ class CliModeTest(unittest.TestCase):
                 "--pilot",
             ]
         )
-        self.assertEqual(args.task_model_name, "gpt-5-mini")
-        self.assertEqual(args.reflector_model_name, "gpt-5-mini")
-        self.assertEqual(args.judge_model_name, "gpt-5-mini")
+        self.assertEqual(args.task_model_name, "kimi-k3")
+        self.assertEqual(args.reflector_model_name, "kimi-k3")
+        self.assertEqual(args.judge_model_name, "kimi-k3")
+
+    def test_formal_attempt_budget_cli_is_explicitly_configurable(self):
+        args = build_parser().parse_args(
+            [
+                "evolve-task",
+                "--task-id",
+                "QUAL",
+                "--data-root",
+                "data/formal",
+                "--output",
+                "runs/formal",
+                "--max-attempts-per-lineage",
+                "9",
+            ]
+        )
+        self.assertEqual(args.max_attempts_per_lineage, 9)
 
     def test_pilot_preserves_requested_search_size(self):
         args = build_parser().parse_args(

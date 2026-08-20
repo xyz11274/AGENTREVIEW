@@ -18,7 +18,7 @@ from .meta_cache import build_meta_input_cache
 from .models import Episode, EvalItem
 from .quality import check_program_path
 from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
-from .search import EvolutionConfig, run_evolution
+from .search import EvolutionConfig, resolve_formal_attempt_budget, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
     ALL_TASKS,
@@ -325,6 +325,15 @@ def _add_search_args(parser):
     parser.add_argument("--selection-top-k", type=int, default=3)
     parser.add_argument("--max-fix-attempts", type=int, default=3)
     parser.add_argument(
+        "--max-attempts-per-lineage",
+        type=int,
+        default=None,
+        help=(
+            "Formal fail-closed attempt cap per seed lineage. Defaults to three "
+            "times the required successful children per lineage. Ignored by smoke."
+        ),
+    )
+    parser.add_argument(
         "--parent-policy",
         choices=["softmax", "best"],
         default="softmax",
@@ -574,6 +583,13 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         )
     if formal and not getattr(args, "coco_root", ""):
         raise SystemExit("Formal execution requires configured --coco-root")
+    max_attempts_per_lineage = (
+        resolve_formal_attempt_budget(
+            args.iterations, args.max_attempts_per_lineage
+        )
+        if formal
+        else args.max_attempts_per_lineage
+    )
     formal_gate = None
     if formal:
         formal_gate = run_formal_protocol_gate(
@@ -583,6 +599,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             task_id=task_id,
             s2_pool_path=args.s2_retrieval_pool,
             program_paths=_seed_paths(),
+            coco_root=args.coco_root,
             config_identity={
                 "task_id": task_id,
                 "experiment_seed": seed,
@@ -591,6 +608,8 @@ def _run_task(args, task_id: str, output: Path, seed: int):
                 "rotating_size": args.rotating_size,
                 "temperature": args.temperature,
                 "episode_budget": args.episode_budget,
+                "max_attempts_per_lineage": max_attempts_per_lineage,
+                "coco_root": str(Path(args.coco_root).expanduser().resolve()),
                 "task_model_name": args.task_model_name,
                 "reflector_model_name": args.reflector_model_name,
                 "judge_model_name": args.judge_model_name,
@@ -663,6 +682,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         episode_budget=min(args.episode_budget or 10, 10) if args.smoke else args.episode_budget,
         seed=seed,
         max_fix_attempts=args.max_fix_attempts,
+        max_attempts_per_lineage=max_attempts_per_lineage,
         selection_repeats=1 if args.smoke else args.selection_repeats,
         selection_top_k=1 if args.smoke else args.selection_top_k,
         parent_policy=args.parent_policy,
