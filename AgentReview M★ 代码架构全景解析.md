@@ -1,245 +1,293 @@
-## 0. 一句话定位
+# AgentReview M★ 代码架构全景解析（2026-08-20 版）
 
-这是一个**"五专家审稿 + Meta 汇总"的多智能体审稿系统**，其核心研究点是 **M★(M-star)记忆自进化**：保持审稿 rubric、拓扑、Task Agent、评估器完全冻结，只让每个审稿角色各自进化一个**可执行记忆程序（MemoryProgram = Schema + write/read Logic + Instructions)**，通过离线进化搜索找到最优的"记什么、怎么存、怎么取、怎么注入"策略。
-
-系统因此天然分为**两个平面**:
-
-```
-┌─────────────────────────── 离线平面（进化，改代码）───────────────────────────┐
-│ OpenReview 数据 → prepare-specialists → evolve-specialists (5任务×5种子)      │
-│                → cache-meta-inputs → prepare-meta → evolve-meta              │
-│                → final-evaluate-suite（封存测试，只跑一次）                    │
-│  产物：runs/<suite>/{QUAL,CLAR,SIGN,ORIG,POL,META}/best_program.py           │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                    │ 冻结晋升
-┌─────────────────────────── 在线平面（审稿，不改代码）─────────────────────────┐
-│ 论文 Markdown → Paper Extractor（锚点+S2检索）→ 5 个 specialist 并行评审      │
-│              → META 汇总 → reviews.json / 追加在线 memory_library.jsonl       │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+> **基准**：commit `7256ffc`（20260820_修复云端使用路径不同步等问题）。
+> 本文以代码为准重写，取代本文件 0811–0812 期间的旧版本。旧版中「20 iterations / 5 evolution seeds / screening v1 / OpenReview 三分数据 / environments 层在用」等表述均已过时，请勿引用。
+> 术语定义见 [CONTEXT.md](CONTEXT.md)；系统边界见 [docs/adr/0005](docs/adr/0005-frozen-identity-evolvable-harness-outermost-benchmark.md)；数据协议见 [docs/adr/0006](docs/adr/0006-data-protocol-four-zones.md)；进化语义见 [docs/adr/0007](docs/adr/0007-evolution-semantics-fresh-state-lineage-budget.md)。全部文档的分类与新旧判定见 [docs/DOCUMENT_INDEX.md](docs/DOCUMENT_INDEX.md)。
 
 ---
 
-## 1. 仓库布局
+## 0. 一页总览
 
-工作区根为 [AGENTREVIEW/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/)，代码主体在 [AgentReview/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/):
+系统分五个平面，外加两个只读查看器：
 
-| 路径                                                                                                                                                                                                                                                                      | 角色                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [agentreview/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/)                                                                                                                                                 | 核心运行时框架（ChatArena 血统）+ 审稿业务角色 + 在线记忆库    |
-| [memory_evolution/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/)                                                                                                                                       | M★ 离线进化引擎（搜索、沙箱、反射变异、评估、数据准备）       |
-| [effectiveness_screening/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/effectiveness_screening/)                                                                                                                         | 冻结三臂有效性筛选实验（CoCo 风格 proxy)                       |
-| [evolution_viewer/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/evolution_viewer/)                                                                                                                                       | 进化过程审计台（Gradio,端口 7862)                              |
-| [viewer.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/viewer.py) + [viewer_data.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/viewer_data.py)         | 审稿结果查看器（Gradio，端口 7861)                             |
-| [run_single_paper_review_cli.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/run_single_paper_review_cli.py)                                                                                                             | **在线审稿主入口**(1970 行）                             |
-| [REVIEW_Request.md](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/REVIEW_Request.md)                                                                                                                                       | **唯一 rubric 来源**:5 维度 23 子类，运行时 SHA-256 校验 |
-| [AGENTS.md](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/AGENTS.md) / [docs/memory_evolution.md](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/docs/memory_evolution.md) | 架构契约与复现协议（具有规范效力）                             |
-| [runs/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/runs/)                                                                                                                                                               | 进化运行产物（pool/scores/lineage/traces/best_program)         |
-| [data/effectiveness_screening_v1/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/data/effectiveness_screening_v1/)                                                                                                         | 筛选实验的冻结输入（bundles、程序、审计）                      |
-| [tests/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/tests/)                                                                                                                                                             | 单元测试（约 20 个测试文件）                                   |
-| `outputs_baseline/ outputs_md/ outputs_mstar/`(AGENTREVIEW 根下）                                                                                                                                                                                                       | 三种模式的审稿输出                                             |
+```mermaid
+flowchart TB
+    subgraph EXT["外部数据源（显式配置 OPENREVIEW_ROOT / COCOREVIEWBENCH_ROOT / S2 API）"]
+        OR[(OpenReview 论文+人审)]
+        COCO[(CoCoReviewBench 3900 submissions)]
+        S2[(Semantic Scholar API)]
+    end
 
----
+    subgraph FREEZE["① 资产冻结平面（scripts/，一次性）"]
+        SPLIT["build_coco_temporal_split.py<br/>family 去重时序切分 A/B/C/D"]
+        S2P["build_frozen_s2_pool(_v2).py<br/>时间安全 S2 冻结池"]
+        READY["finalize_formal_readiness.py<br/>只读审计后登记 asset_manifest_v2"]
+    end
 
-## 2. 核心运行时框架 [agentreview/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/)
+    subgraph EVO["② 离线进化平面（memory_evolution/）"]
+        PREP["prepare-specialists/meta<br/>episodes / queries / validation"]
+        EVOLVE["evolve-specialists/meta<br/>21 次成功子代评测（7/lineage）"]
+        BEST["6 个 best_program.py<br/>（5 specialist + 1 meta）"]
+    end
 
-该包源自 ChatArena 式多智能体框架，采用经典的**六层结构**,所有组件可配置序列化：
+    subgraph SCREEN["③ 有效性筛选平面（effectiveness_screening/）"]
+        MATRIX["prepare + run_matrix<br/>预注册三臂两重复命令矩阵"]
+        EVAL["memory_cache + evaluate_proxy + summarize<br/>盲评 proxy 评测"]
+    end
 
-### 2.1 配置层 — [config.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/config.py)
+    subgraph ONLINE["④ 在线评审平面（run_single_paper_review_cli.py）"]
+        CLI["单论文评审主 CLI<br/>5 specialist 并发 + META + 锚点校验"]
+    end
 
-`Config`（基于 `AttributedDict`)→ 派生 `EnvironmentConfig` / `BackendConfig` / `AgentConfig` / `ArenaConfig`;`Configurable` mixin 提供 `from_config()` / `to_config()` 双向序列化。**整个 Arena 状态可以从 JSON 配置往返重建**，这是依赖注入的核心机制。
+    subgraph OUTER["⑤ 最外层 Benchmark（Program 冻结后）"]
+        BENCH["Benchmark Adapter -> CoCoReviewBench 官方 pipeline"]
+    end
 
-### 2.2 后端层 — [backends/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/backends/)
+    VIEW1["viewer.py :7861<br/>评审结果查看器（只读）"]
+    VIEW2["evolution_viewer :7862<br/>进化 artifact 查看器（只读）"]
 
-```
-IntelligenceBackend (base.py:10)  — query()/async_query()/reset()/to_config()
- ├─ OpenAIChat (openai.py, 主力，支持 gpt-5/o 系 reasoning_effort、限速、重试、空响应补偿、<think>剥离)
- ├─ Claude / CohereAIChat / Bard / TransformersConversational / LangChainOpenAIChat
- ├─ Human（人工输入）└─ Dummy（用于不调用 LLM 的 Paper Extractor)
-```
-
-注册表模式：`BACKEND_REGISTRY` + `load_backend(config)` 按 `backend_type` 分发。鉴权经 [authentication_utils.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/utility/authentication_utils.py) 从 `OPENAI_API_KEY/OPENAI_API_BASE/AZURE_*` 读环境变量。
-
-### 2.3 消息层 — [message.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/message.py) / [paper_review_message.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/paper_review_message.py)
-
-`Message`（带 `visible_to`、`msg_type`、SHA-256 `msg_hash`)+ `MessagePool`（按轮次和可见性过滤）。`PaperReviewMessagePool` 实现**阶段感知可见性**——环境状态与智能体感知彻底分离。
-
-### 2.4 智能体层 — [agent.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/agent.py) / [paper_review_player.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/paper_review_player.py) / [paper_review_player_md.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/paper_review_player_md.py)
-
-```
-Agent(抽象) → Player(act=backend.query) → Moderator（终止条件判断）
-                                        → AreaChair / Reviewer（旧会议流)
-                                        → PaperExtractorPlayer（PDF)
-                                        → MarkdownPaperExtractorPlayer（新流：MD+锚点+S2检索+冻结bundle校验)
+    OR --> SPLIT
+    COCO --> SPLIT
+    S2 --> S2P
+    SPLIT --> READY
+    S2P --> READY
+    READY --> PREP
+    S2P -.冻结 S2 池.-> PREP
+    PREP --> EVOLVE --> BEST
+    BEST -->|MSTAR_PROGRAM_DIR| CLI
+    MATRIX -->|逐条调用| CLI
+    CLI --> OUT[("outputs*/ …/single_paper_review/")]
+    BEST --> MATRIX
+    BEST --> BENCH
+    OUT --> VIEW1
+    EVO -->|runs/ lineage+scores| VIEW2
 ```
 
-### 2.5 环境层 — [environments/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/environments/)
+关键事实（旧文档常错处）：
 
-| 环境                                               | type_name                                       | 用途                                                                          |
-| -------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| `Conversation` / `ModeratedConversation`     | `conversation` / `moderated_conversation` | 通用轮流对话                                                                  |
-| `PaperReview` (paper_review.py:17)              | `paper_review`                                | **旧会议流**:5 阶段（提取→写评审→作者rebuttal→评审-AC讨论→AC写meta) |
-| `PaperDecision` (paper_decision.py:13)          | `paper_decision`                              | 旧流第 5 阶段：AC 做录用决策                                                  |
-| `SinglePaperReview` (single_paper_review.py:13) | `single_paper_review`                         | **新 M★ 流**:7 阶段（提取→QUAL→CLAR→SIGN→ORIG→POL→META)          |
-
-### 2.6 编排层 — [arena.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/arena.py) / [paper_review_arena.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/paper_review_arena.py)
-
-`Arena.step()` 循环：`get_next_player → get_observation → player(obs) → env.step`，非法动作重试 5 次。`PaperReviewArena` 按**名字前缀分发玩家类型**("Paper Extractor"/"AC"/"Reviewer")，并在阶段切换时动态改写 reviewer 的 `role_desc`。
-
-### 2.7 关键观察：双范式共存
-
-包内同时存在两套审稿业务：① 旧版会议模拟流（3 reviewer + AC + author + rebuttal,`role_descriptions.py`、`experiment_config.py` 的各种人设实验）;② 新版单篇专家流（M★ 用的 5 专家 + META)。两者共享底层框架，但 M★ 只与后者耦合。
+1. **真正的实验入口是顶层 `run_single_paper_review_cli.py`（2135 行）**，它完全绕过 Arena/Environment 循环，自己做并发、断点续跑与锚点校验。`agentreview/arena.py + paper_review_arena.py + environments/ + ui/cli.py` 是旧多论文模式遗产，**当前主流程不经过**（见 §6 活/死代码）。
+2. 正式进化预算是 **21 次 successful child evaluations（每 lineage 7 个）+ 单个 outer seed 0**，不是旧的「20 迭代 × 5 seeds」。
+3. 数据面是 **四区 family-level temporal split v2**（A/B/C/D = 2391/299/300/899，3889 个 family targets），不是旧的 OpenReview train/validation/test 三分。
+4. 三条 Seed lineage：`vector_search` / `llm_summarizer` / `experience_learner`（`memory_evolution/seeds/`）；`seed_experience` 是禁用的旧臂名。
+5. 默认模型是 **kimi-k3**（TASK/REFLECTOR/JUDGE 三处默认），README 中的 gpt-5-mini 示例已滞后。
 
 ---
 
-## 3. 审稿业务：冻结 rubric 与五专家拓扑
+## 1. 目录地图
 
-[single_paper_review_roles.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/single_paper_review_roles.py) 是业务核心：
-
-- **REVIEWER_SPECS**(:16):QUAL（技术质量）/CLAR（清晰度）/SIGN（重要性）/ORIG（原创性）/POL（政策合规），各带 focus 描述。
-- **不可变锚定**(:45-62)：运行时对 `REVIEW_Request.md` 做 SHA-256 校验（`609eb930...be42`)，不符即 `RuntimeError`；再按正则 `^([1-5])\. ([A-Z]+)` 切出五个 rubric 段落。**rubric 文本只允许这一个来源，别处不得复制**。
-- **结构化输出契约**(:83-108)：每个 specialist 必须产出 dimension score、confidence、以及原子化 Opinions(subcategory/polarity/claim/**evidence_anchors**/confidence/actionable_suggestion)，证据锚点只允许 `SRC-<digits>(page=<digits>)` 且必须逐字复制自输入的 SOURCE ANCHORS 列表——这是可验证性（grounding/verifiability）评估的基础。
-- META 描述（:131）要求显式调解五方分歧、"比平均更严格"、输出 Synthesis/Final score/Final recommendation。
-
-配套：[source_map.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/source_map.py) 从 `content_list.json` 生成最多 80 个 `SRC-NNN` 锚点；[paper_review_player_md.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/paper_review_player_md.py) 读 Markdown + 调 Semantic Scholar 检索相关工作，支持 `--frozen_context_bundle_path` 的 SHA-256 冻结输入包。
-
----
-
-## 4. 记忆系统（两层）
-
-### 4.1 在线记忆库 [memory_library.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/memory_library.py)
-
-纯 Python 的 JSONL 存储 + JSON 索引：
-
-- 产物：`<output_dir>/single_paper_review/memory_library.jsonl` + `memory_index.json`(by_sample_id / by_title_normalized / by_reviewer)
-- `update_memory_library()`(:70)：审稿完成后追加记录（按 sample_id 去重）
-- `retrieve_memory_context()`(:173):**token 重叠打分**检索（标题命中 +0.25、同 reviewer +0.2、同维度 +0.1)，渲染成 `=== REVIEW MEMORY CONTEXT ===` 文本块注入 prompt
-
-这是 `memory_mode=existing`（默认）使用的简单基线记忆。
-
-### 4.2 M★ 可执行记忆程序（进化的对象）
-
-契约定义在 [program_protocol.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/program_protocol.py)（仅 38 行）——每个候选程序是一个导出 7 个符号的 Python 模块：
-
-```python
-INSTRUCTION_KNOWLEDGE_ITEM / INSTRUCTION_QUERY / INSTRUCTION_RESPONSE / ALWAYS_ON_KNOWLEDGE  # 4 段可进化 prompt
-@dataclass KnowledgeItem      # 可进化 Schema:存什么
-@dataclass Query              # 可进化 Schema:查什么
-class KnowledgeBase:          # 可进化 Logic
-    def __init__(self, toolkit): ...
-    def write(self, item, raw_text) -> None      # 写入逻辑
-    def read(self, query) -> str                 # 检索逻辑,必须 ≤3000 字符
+```
+AgentReview_0811/
+├── CONTEXT.md                          # 术语权威（统一语言表）
+├── AgentReview M★ 代码架构全景解析.md    # 本文
+├── docs/
+│   ├── DOCUMENT_INDEX.md               # 全部文档的分类与新旧判定
+│   ├── DEPRECATED.md                   # 已废弃代码注册表（活文档）
+│   ├── RUN_AUDIT_20260818.md           # 在线管线运行前审计（B1/B2 等）
+│   ├── TODO.md                         # 工程待办
+│   └── adr/0001–0007                   # 架构决策记录
+└── AgentReview/                        # 代码根（约 2 万行 Python）
+    ├── run_single_paper_review_cli.py  # ★ 在线评审主 CLI（主实验入口）
+    ├── run.sh / pilot_full.sh / QUAL_test.sh / end2end_smoke.sh
+    ├── agentreview/                    # 评审框架包（核心+遗产并存）
+    ├── memory_evolution/               # M★ 离线进化引擎（约 9900 行）
+    ├── effectiveness_screening/        # 三臂两重复有效性筛选（约 2560 行）
+    ├── evolution_viewer/               # 进化查看器（Gradio :7862，只读）
+    ├── viewer.py                       # 评审结果查看器（Gradio :7861，只读）
+    ├── scripts/                        # 一次性资产构建脚本
+    ├── configs/                        # 冻结资产：split v2 / S2 池 v2 / asset manifests
+    ├── tests/                          # 21 个 unittest 文件
+    ├── data/                           # 进化任务数据（prepare 产物）
+    ├── runs/                           # 进化运行产物（lineage/scores/traces）
+    ├── outputs*/                       # 评审实验产物
+    └── papers_eval20/ test_data/       # 评审输入论文
 ```
 
-三个不可变的初始种子 [seeds/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/seeds/):**vector_search**（分块嵌入+维度过滤）、**llm_summarizer**（全文按维度存储，读时 1 次 LLM 调用做查询聚焦摘要）、**experience_learner**（结构化 lesson/fact 抽取+维度桶检索，零 LLM 调用）。
+---
+
+## 2. ① 资产冻结平面（`scripts/`，一次性）
+
+| 脚本 | 行数 | 职责 | 产物 |
+|---|---|---|---|
+| `scripts/build_coco_temporal_split.py` | 774 | CoCo 3900 条 submission → 规范化 title/paperhash → family 去重 → 按 deterministic 规则选 representative → 时序切分 | `configs/coco_temporal_split_v2/{historical_experience, evolution_validation, effectiveness_holdout, held_out_benchmark_test}.jsonl + manifest.json + paper_families.jsonl` |
+| `scripts/build_frozen_s2_pool.py` | 302 | v1 冻结 S2 检索池（断点续传、时间安全：publication date 晚于 cutoff 的结果拒绝） | `configs/frozen_s2_temporal_v1.jsonl` |
+| `scripts/build_frozen_s2_pool_v2.py` | 622 | 查询绑定（query-bound）的 v2 池；v1 clean 记录按 canonical title 迁移，其余重检索 | `configs/frozen_s2_temporal_v2.jsonl`（+.manifest.json +.work/） |
+| `scripts/finalize_formal_readiness.py` | 318 | 只读协议审计通过后，原子更新 Asset Manifest v2 并登记正式资产；**绝不构建数据或运行实验** | `configs/asset_manifest_v2.json` |
+
+四区身份由冻结 manifest 决定，不靠目录名。`memory_evolution/assets.py:FOUR_ZONES` 是代码侧权威定义；`audit_four_zone_isolation` 强制两两 paper ID / normalized title / family 零重叠，且 `max(A/B/C cutoff) ≤ min(D cutoff)`。
+
+**注意**：canonical 数据（`data/evolution_coco_v2_20260819` 五任务 bundle，已核 SHA）已经冻结——**不要再运行 prepare-specialists 重建**（见 [AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md](AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md)）。
 
 ---
 
-## 5. M★ 离线进化引擎 [memory_evolution/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/)
+## 3. ② 离线进化平面（`memory_evolution/`）
 
-### 5.1 CLI 编排 — [cli.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/cli.py)
+统一入口：`python -m memory_evolution.cli`，子命令 `prepare-specialists / prepare-test / prepare-meta / cache-meta-inputs / evolve-task / evolve-specialists / evolve-meta / evaluate / final-evaluate-suite`。全流程由 `pilot_full.sh` 编排（prepare-specialists → evolve-specialists → cache-meta-inputs → prepare-meta → evolve-meta → pilot_report）。
 
-9 个子命令构成严格流水线：`prepare-specialists → evolve-specialists → cache-meta-inputs → prepare-meta → evolve-meta → prepare-test → final-evaluate-suite`（另有 `evolve-task`、`evaluate` 用于单任务/消融）。正式配置硬编码为：20 迭代、static 25、rotating 5、温度 0.15、3 次编译修复、5 个进化种子（seed 0 为预注册主种子）。
+### 3.1 进化循环（`search.py`，1324 行）
 
-### 5.2 进化搜索 — [search.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/search.py)（核心，645 行）
+```
+parent 选择（softmax）
+  → reflector.mutate_program（LLM 突变，contextual V4A patch + compile_fix_loop）
+  → quality 质量门（静态检查：import 白名单 / KnowledgeBase 协议 / 读上限；编译+冒烟）
+  → sandbox 内评测（A 区回放积累 memory → B 区冻结评审 → fitness）
+  → lineage.jsonl / scores.jsonl 持久化（断点续跑）
+```
 
-`run_evolution()` 四阶段：
+- 正式预算：`resolve_formal_attempt_budget` = **21 次成功子代评测，每 lineage 7 个**；单个 outer seed 0。
+- 每次 fitness evaluation 语义：`fresh empty state → 按冻结顺序回放 A 区 → 自产 Experience/Memory → B 区 Evolution Validation`；B 的 gold 只进 `evaluator_only/` 产物。
+- 验证集：static 25 + rotating 5（`subset_selection.py`，冻结 BGE-M3，正式模式无随机回退）。
 
-1. **Setup**：验证集经 BGE-M3 嵌入 k-means 聚类选 25 条固定 static 子集；训练 episodes 用**贪心 facility-location** 选取（预算 = 5×static);
-2. **Seeds**：三个种子程序质检→静态评估→入池；
-3. **迭代循环**(×20):`softmax(static_score/0.15)` 选父 → 父在 5 条 rotating 样本上跑 → 构造 `EvalFeedback`（至多 2 个加权失败 + 2 个成功案例，**绝不包含 static 内容**)→ Reflector 变异 → 质检 + ≤3 次编译修复 → 子在 static 全集评估 → 入池并记录 lineage;
-4. **晋升**:Top-3 候选各重复评估 3 次，按均值最高、方差最低选胜，复制为 `best_program.py`。
+### 3.2 模块清单
 
-### 5.3 Reflector 变异 — [reflector.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/reflector.py)
+| 模块 | 行数 | 职责 |
+|---|---|---|
+| `cli.py` | 1356 | 统一 CLI；默认模型 kimi-k3；正式协议数字固化于此 |
+| `search.py` | 1324 | 进化主循环 + 持久化/断点续跑 |
+| `agentreview_data.py` | 1422 | OpenReview→进化任务数据；episode 构建；**泄漏审计** `assert_no_human_reference_leak` |
+| `toolkit.py` | 594 | `MemoryToolkit`：冻结 S2 池加载/校验、内存向量集合、LLM 调用——进化程序唯一可用 API 面 |
+| `formal_protocol.py` | 574 | 正式实验协议门：冻结 CoCo 溯源（路径重映射+SHA）、v2 sidecar、family 目标校验 |
+| `sandbox.py` / `sandbox_worker.py` | 410/473 | bubblewrap + rlimit 隔离执行候选程序；**宿主进程永不执行候选代码** |
+| `reflector.py` | 429 | LLM 突变 + mutation scope 校验 + 编译修复循环 |
+| `quality.py` | 360 | 质量门（静态检查 + 编译冒烟） |
+| `evaluator.py` | 381 | 单候选沙箱评测（trace 快照、A/B 冻结评审） |
+| `metrics.py` | 328 | 指标注册表；`CoCoReviewFitness`（专家+Meta 适应度） |
+| `embedding_adapter.py` | 391 | **BGE-M3 嵌入 + 持久精确文本缓存**（SQLite，默认 `cache/embedding_cache.sqlite3`，schema `embedding-cache-sqlite-v1`；2026-08 新增） |
+| `meta_cache.py` | 203 | META 任务分折泄漏安全输入缓存 |
+| `tasks.py` | 131 | 6 任务注册（QUAL/CLAR/SIGN/ORIG/POL/META）、`verify_promoted_program` |
+| `assets.py` | 435 | 四区隔离、Asset Manifest、temporal manifest 加载 |
+| `checkpoint.py` | 214 | 身份绑定检查点（canonical SHA256、memory_library 快照） |
+| `subset_selection.py` | 188 | static/rotating 验证集与 episode 子集选择 |
+| `task_agent.py` | 186 | judge 等 LLM 角色 |
+| `coco_adapter.py` | 206 | `FrozenCoCoAdapter`：固定 commit 加载 CoCo 官方实现 |
+| `coco_reference.py` / `benchmark_adapter.py` | 135/67 | CoCo 人审参考（防泄漏哈希）/ Benchmark Adapter 协议 |
+| `program_protocol.py` / `models.py` | 37/63 | `KnowledgeItem/Query/KnowledgeBase` 协议；`Episode/EvalItem/EvalResult` |
+| `integration.py` | 68 | `MemoryHarnessAdapter`：把 MemoryToolkit 适配给在线评审 CLI |
+| `api_preflight.py` / `pilot_report.py` | 107/92 | API 预检（不泄漏 key）/ pilot 摘要 |
+| `seeds/` | — | 三个种子程序：`vector_search.py` / `llm_summarizer.py` / `experience_learner.py` |
 
-LLM 驱动的代码变异器：输入父程序全文 + 反馈 + lineage + 池中 best/worst/median 三个参考程序（仅代码与分数）,**输出 V4A 上下文补丁**(`*** Begin Patch`/`@@` hunk，每块必须唯一匹配）。`mutation_scope` 支持 `full`/`schema_logic`/`instructions_only` 三种消融，用 AST dump 对比强制约束。`compile_fix_loop()` 做最小改动修复。
+### 3.3 进化产物布局
 
-### 5.4 沙箱 — [sandbox.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/sandbox.py) + [sandbox_worker.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/sandbox_worker.py)
-
-安全设计的重心：**候选代码绝不在宿主进程执行**。
-
-- bubblewrap `--unshare-all --clearenv --die-with-parent`，只读挂载运行时，无网络，tmpfs `/tmp`;
-- `RLIMIT_AS=1GB / RLIMIT_CPU=60s / RLIMIT_NOFILE=64`;
-- Python `-I -S` 隔离模式；worker 内剥离 `open/eval/exec/compile/globals...` 内建，导入白名单（json/re/sqlite3/chromadb 等约 15 个）;
-- **能力通道**：父子间 JSON-RPC(stdin/stdout)。候选程序只能通过 `CapabilityToolkit` 拿到：受限 LLM 调用（每次 write/read 至多 1 次）、embed、内存 SQLite(`:memory:`)、临时 Chroma 向量库、日志——**API key 和宿主文件系统对候选不可见**。
-
-### 5.5 Task Agent 与评估
-
-- [task_agent.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/task_agent.py)：固定不动的执行壳，三个方法（`extract_knowledge_item`/`generate_query`/`generate_response`）的行为**只受程序的 INSTRUCTION_* 影响**;system prompt 直接取自冻结的 reviewer role 描述。
-- [evaluator.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/evaluator.py):write 阶段（episode→知识条目→`session.write`)+ read 阶段（question→query→`session.read`→≤3000 字校验→生成回答→打分）。
-- [metrics.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/metrics.py):specialist 适应度 = **调和平均（5 维 judge 质量分， 类别召回率）**；类别由冻结的 ReviewSplit/ReviewClassify 分类器从候选文本独立提取（**忽略候选自报标签**，防止标签灌水），召回率 = |AI∩人工|/|人工|。META 适应度 = 三组（裁决/参考对齐/决策校准）均值再取调和平均。
-- [quality.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/quality.py)：三层质检——AST 静态检查（符号、字段类型、导入/调用黑名单）→ 沙箱编译检查（7 符号、dataclass 约束）→ 冒烟测试（write/read 各一次，read ≤3000 字）。
-
-### 5.6 数据隔离 — [agentreview_data.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/agentreview_data.py)
-
-防泄漏是整个实验协议的骨架：
-
-- **work family 并查集**(:48)：共享 paperhash 或规范化标题的记录并为一个 family,train/validation/test 严格 family 不相交；
-- `prepare-specialists`：剔除所有与 test.jsonl 同族的训练记录，切出 train / specialist_validation(250 族）/ **meta_validation(250 族，specialist 进化永远看不到）**;
-- 冻结 Semantic Scholar 缓存并记录 SHA-256,manifest 无哈希则拒绝正式运行；
-- [meta_cache.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/meta_cache.py):META 的训练输入用 **5 折 out-of-fold** 生成——一篇论文的 specialist 输出绝不用包含其人类答案的记忆来产生；
-- 验证问题只含论文与锚点，候选与 Task Agent 看不到 rebuttal/meta-review/decision/参考答案。
-
-### 5.7 外部适配器（可替换、带版本钉死）
-
-| 适配器                                                                                                                                                     | 作用                                                                   | 钉死方式                                |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------- |
-| [coco_adapter.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/coco_adapter.py)           | CoCoReviewBench 的 ReviewSplit(:13099)/ReviewClassify(:13098)vLLM 服务 | commit`2580687e...`                   |
-| [embedding_adapter.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/embedding_adapter.py) | BGE-M3 嵌入（k-means/facility-location)                                | `--embedding-revision` 不可变 commit |
-| [api_preflight.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/memory_evolution/api_preflight.py)         | 进化前检查 API 端点 DNS/TLS/鉴权                                       | —                                      |
-
----
-
-## 6. 在线审稿主入口 [run_single_paper_review_cli.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/run_single_paper_review_cli.py)
-
-1970 行，是"把进化产物用起来"的地方。`run_one_paper()`(:1685）流水线：
-
-1. **发现论文**(:154)：四级优先级——冻结 bundle > context manifest > 单文件 > 目录 glob;
-2. **提取**:`MarkdownPaperExtractorPlayer` 产出正文 + 锚点 + S2 相关工作；
-3. **构建记忆上下文**(:1072)：三种模式——`none` / `existing`(memory_library 关键词检索）/ `mstar_program`（按维度加载 6 个 `best_program.py`，经 `MemoryHarnessAdapter` 在沙箱中 ingest 记忆库并检索；支持预编译 KnowledgeItem 缓存 `--memory_knowledge_cache_dir`);
-4. **5 专家并行**(:1763):`ThreadPoolExecutor`,`--reviewer_workers=5`，每个专家收到裁剪后的论文 + "Memory Librarian" 记忆消息；`call_role_with_anchor_repair()`(:1151）校验锚点合法性并可要求修复一次；增量写 `specialist_checkpoint.json`（断点续跑）;
-5. **META 汇总**(:1794)：唯一能看到全部五份评审的节点；
-6. **持久化**:`reviews.json / memory.json / review_history.json / timing.json` + 输出校验 + 追加全局 `memory_library.jsonl`（除非 `--disable_memory_writeback`)。
-
-并发模型：**论文级串行、专家级并行、META 最后**。
+```
+runs/<run_name>/<TASK>/
+├── suite_manifest.json / best_program.py     # 提升产物（= MSTAR_PROGRAM_DIR 来源）
+└── seed_0/
+    ├── lineage.jsonl / scores.jsonl           # 进化谱系与分数（evolution_viewer 读这个）
+    ├── pool/program_*.py                      # 候选池
+    ├── traces/ selection.json config.json best_eval_report.json
+```
 
 ---
 
-## 7. 有效性筛选 [effectiveness_screening/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/effectiveness_screening/)
+## 4. ④ 在线评审平面（`run_single_paper_review_cli.py` + `agentreview/`）
 
-进化之后的独立验证层，回答"进化真的有用吗"。设计由 [configs/effectiveness_screening_v1.json](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/configs/effectiveness_screening_v1.json) 冻结（`design_lock.json` 记录全部代码/输入/模型哈希，改动即拒绝覆盖）:
+单篇论文评审流水线（当前主实验入口，`run.sh` 为生产样例）：
 
-- **三臂 × 2 重复 = 6 条件 × 20 篇 = 120 份评审**:`no_memory` vs `seed_experience`（未进化种子）vs `evolved`（进化最优）；分层抽样（ICLR/NeurIPS × accept/reject 各 5 篇，含 10 篇争议稿）;
-- POL 维度 seed 与 evolved 字节相同（强制校验），明确不计入进化收益——诚实性设计；
-- 15 步流水线：抽样（5 条泄漏不变量必须为 0)→ S2 检索冻结 → bundle 构建 → 程序冻结 → 设计锁 → 历史记忆库生成 → 记忆库冻结 → 双臂知识缓存预编译 → 预注册矩阵 → 批量运行 → 审计 → CoCo 分类 → judge 打分 → 盲评对（SHA-256 定向，key 密封）→ 汇总；
-- [summarize.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/effectiveness_screening/summarize.py) 的**筛选门**：`ΔCoCo_Average ≥ 0.1`、≥12/20 篇为正、双重复均为正、bootstrap CI 下界 > 0、盲评胜率 ≥ 0.6 等——过了才考虑跑 3900 篇的完整 CoCoReviewBench。
+```
+discover_markdown_papers（frozen bundle / manifest+split / 直接 md 路径）
+  → MarkdownPaperExtractorPlayer 建规范上下文 + source anchors（可选注入冻结 S2）
+  → run_parallel_reviews：ThreadPoolExecutor 并发 5 个 specialist
+      · --memory_mode mstar_program 时注入 M★ 程序记忆
+        （--memory_program_dir 的 6 个程序 + BGE-M3 嵌入 + 可选预编译缓存）
+  → 5 份评审冻结后运行 META（_mstar_meta_memory_context）
+  → validate_review_source_anchors / call_role_with_anchor_repair（引用锚点校验修复）
+  → save_structured_outputs → commit_global_memory 写回 memory_library.jsonl
+```
+
+运行时保障：specialist checkpoint 断点续跑、`--strict_history_resume` 身份绑定检查点（崩溃窗口内下一篇强制 overwrite）、`--reuse_completed_specialists`、`--replicate_id/--run_seed`、批量 `batch_manifest.json`。
+
+`agentreview/` 包内的角色分工：
+
+| 模块 | 状态 | 职责 |
+|---|---|---|
+| `paper_review_player_md.py` | **活** | Markdown 论文抽取器（单论文模式实际入口角色） |
+| `paper_context.py` | **活** | canonical paper context 构建与裁剪（版本常量 `CANONICAL_PAPER_CONTEXT_VERSION`，防 provenance 泄漏）；被 memory_evolution / effectiveness_screening 反向依赖的跨包契约点 |
+| `source_map.py` | **活** | source anchors 构建 |
+| `single_paper_review_roles.py` | **活** | 5 specialist + META 角色工厂；启动时校验 `REVIEW_Request.md` SHA-256（常量被两个外部包反向引用作契约） |
+| `memory_library.py` | **活（legacy 模式）** | `--memory_mode existing` 的词法记忆库；mstar 模式写回复用其 record 结构 |
+| `arguments.py` | **活** | 单论文 CLI 全部参数（约 60 个 flag） |
+| `backends/openai.py` | **活** | 主用 LLM 后端（重试/限速/gpt-5 token 适配） |
+| `viewer_data.py` | **活** | viewer.py 数据层 |
+| `arena.py` / `paper_review_arena.py` / `environments/` / `ui/cli.py` / `paper_review_player.py`(部分) / `role_descriptions.py` / `experiment_config.py` / `paper_review_settings.py` / `paper_review_message.py` / `paper_processor.py` / `database.py` / `openscholar_bridge/` | **遗产** | 旧多论文竞技场链路，主流程不经过（见 [docs/DEPRECATED.md](docs/DEPRECATED.md)） |
 
 ---
 
-## 8. 查看器与辅助
+## 5. ③ 有效性筛选平面（`effectiveness_screening/`）
 
-- [viewer.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/viewer.py)(7861)：审稿结果只读查看器，7 个标签页；[viewer_data.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/viewer_data.py) **刻意只用标准库**，与评审生成代码完全隔离，带路径穿越防护和 50MB 限制；
-- [evolution_viewer/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/evolution_viewer/)(7862):"M★ 程序转变审计台"，逐轮查看每次变异的 Prompt/Schema/write/read diff（词级）、诊断 traces、以及任意两程序间累计 A/B 对比（AST 级分区对比）;
-- [openscholar_bridge/](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/openscholar_bridge/):**休眠代码**——整个 Flask API 与 OpenScholar 检索/重排/生成管线被三引号注释掉，主流程实际走的是 [s2_retrieval.py](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/agentreview/utility/s2_retrieval.py) 的直连 Semantic Scholar 调用。
+配置驱动（`--config configs/effectiveness_screening_v2.json`，20 C + 20 A 论文、120 输出、三臂两重复、盲评协议）：
+
+| 模块 | 职责 |
+|---|---|
+| `prepare.py` | 防泄漏实验数据：决策分层抽样、S2 冻结相关工作、paper_context bundle + manifest |
+| `run_matrix.py` | 生成并审计**预注册**三臂两重复命令矩阵（fresh replay、no-writeback 约束），逐条调 `run_single_paper_review_cli.py` |
+| `memory_cache.py` | 6 个提升程序离线编译记忆缓存（沙箱回放历史 episode） |
+| `evaluate_proxy.py` | proxy 评测：分类器 + LLM judge（official judge prompt 校验）+ 盲评配对 |
+| `summarize.py` | 汇总分数 + bootstrap CI |
+| `preflight.py` | 运行前审计：端点、四区隔离、冻结 S2 池校验 |
+
+> ⚠️ `AgentReview/docs/effectiveness_screening.md` 的执行流程仍写着已废弃的 Frozen Library 路线（`freeze-memory-library` / `seed_experience` 臂），与其数据面（v2）矛盾，以代码与本节为准。
 
 ---
 
-## 9. 横切设计模式与不变量
+## 6. 活代码 vs 遗产代码（判定汇总）
 
-1. **万物可配置**(Configurable/`from_config`):backend、player、environment、arena 全部可序列化重建；
-2. **消息传递 + 阶段可见性**：环境持有真相，玩家只看到 `get_observation()` 过滤后的子集；
-3. **哈希钉死一切**:`REVIEW_Request.md`、S2 缓存、paper bundle、design lock、晋升程序——任何漂移都在运行时爆炸而非静默改变实验；
-4. **不可变/可进化边界清晰**:rubric、拓扑、Task Agent、评估器、种子数、默认超参全部冻结；进化的只有 MemoryProgram 的 Schema/Logic/Instructions;
-5. **安全纵深**:AST 黑名单 → bubblewrap 进程隔离 → 资源限额 → 内建剥离 → 能力通道（LLM/embed 全部代理）;
-6. **泄漏防控**:family 并查集、meta_validation 独立预留、out-of-fold META 输入、static 内容不进 Reflector、测试集只在晋升后跑一次且报告不可覆盖；
-7. **六池独立**:QUAL/CLAR/SIGN/ORIG/POL/META 各自的数据、种群、分数、lineage、胜者，跨维度零共享。
+| 判定 | 内容 | 依据 |
+|---|---|---|
+| **主链（活）** | `run_single_paper_review_cli.py`、`agentreview/{paper_review_player_md, paper_context, source_map, single_paper_review_roles, memory_library, arguments, backends/openai, viewer_data}`、整个 `memory_evolution/`、`effectiveness_screening/`、`scripts/`、两个 viewer | import 链实测（CLI 不经过 Arena/Environment） |
+| **遗产（标记保留，不删除）** | `arena.py`、`paper_review_arena.py`、`environments/`、`ui/cli.py`、`role_descriptions.py`（AC/author/恶意 reviewer 变体）、`experiment_config.py`、`paper_review_settings.py`、`paper_review_message.py`、`paper_processor.py`、`database.py`、`openscholar_bridge/`、backends 中 anthropic/cohere/bard 等 | [docs/DEPRECATED.md](docs/DEPRECATED.md) |
+| **降级产物（仅历史分析）** | `runs/pilot_full_iter5_202607300117`（episode 含真人参照，违反 Human Reference Boundary） | CONTEXT.md「Evolved Program」条目 |
 
-## 10. 值得注意的工程现实（非批评，供上手参考）
+---
 
-- **新旧两套评审流并存**，旧流（PaperReview/PaperDecision/rebuttal）与新 M★ 流共享框架但业务无关，读代码时容易混淆；
-- `openscholar_bridge` 是死代码，真正的检索在 `s2_retrieval.py`;
-- 在线侧论文级是串行的，大批量跑靠多次启动或外部并行；
-- 正式实验依赖外部服务：OpenAI 兼容 API、S2 API、ReviewSplit/ReviewClassify 两个 vLLM 服务（13099/13098)、BGE-M3 本地模型；
-- 脚本 [pilot_full.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/pilot_full.sh)（完整 pilot)、[run.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/run.sh)（在线 mstar 审稿）、[QUAL_test.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/QUAL_test.sh) / [end2end_smoke.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AGENTREVIEW/AgentReview/end2end_smoke.sh)(smoke）是最快的上手路径；注意 `QUAL_test.sh`/`end2end_smoke.sh` 内**硬编码了 API key**，外发前需清理。
+## 7. 端到端数据流（含落盘位置）
 
-总体评价：这是一个**研究协议驱动**的代码库——工程结构（框架分层、沙箱、哈希冻结、泄漏隔离）全部服务于一个目的：让"记忆程序自进化是否提升审稿质量"这个问题可以被严格、可复现地回答。
+```mermaid
+flowchart LR
+    subgraph Z["冻结资产层（configs/）"]
+        Z1[coco_temporal_split_v2 四区 jsonl]
+        Z2[frozen_s2_temporal_v2.jsonl]
+        Z3[asset_manifest_v2.json]
+    end
+    subgraph D["任务数据（data/）"]
+        D1["evolution_coco_v2_20260819/&lt;TASK&gt;/{episodes,queries,validation}.jsonl"]
+        D2["effectiveness_screening_v1/ paper_context bundles"]
+    end
+    subgraph R["运行产物"]
+        R1["runs/&lt;run&gt;/&lt;TASK&gt;/ seed_0/{lineage,scores}.jsonl + best_program.py"]
+        R2["outputs*/ …/single_paper_review/&lt;sample&gt;/ + memory_library.jsonl"]
+    end
+    Z --> D1 --> R1
+    Z --> D2 --> R2
+    R1 -->|MSTAR_PROGRAM_DIR 6 程序| R2
+```
+
+- **进化数据**：`data/evolution*` / `data/pilot*`；**进化运行**：`runs/`；**评审输出**：`outputs/`（含 visual/）、`outputs_eval20/`（20 篇 ICLR2024 对应 `papers_eval20/`）。
+- config 体系双轨：JSON 资产清单（asset_manifest_v2 等，由 scripts/screening 读写）+ 代码内常量（21 评测、static 25/rotating 5、温度 0.15、默认 kimi-k3、默认 embedding `create_bge_m3` 固化在 `cli.py`/`search.py`）。
+
+---
+
+## 8. 运行入口速查
+
+| 入口 | 用途 |
+|---|---|
+| `python -m memory_evolution.cli prepare-specialists / evolve-specialists / …` | 离线进化全流程（canonical 数据已冻结，勿重跑 prepare） |
+| `python -m memory_evolution.api_preflight` | API 端点预检 |
+| `python -m memory_evolution.pilot_report` | pilot 摘要 |
+| `./run.sh` | 在线评审生产样例（要求 `OPENAI_API_KEY/BASE`、`S2_API_KEY`、`MSTAR_PROGRAM_DIR`、`MSTAR_EMBEDDING_REVISION`） |
+| `./pilot_full.sh` | M★ 全流程 pilot 编排 |
+| `python viewer.py --output_dir outputs` | 评审结果查看器（:7861） |
+| `python -m evolution_viewer --runs-dir runs` | 进化查看器（:7862） |
+| `python -m unittest discover tests` | 测试（21 个文件） |
+
+云端正式 run 的完整命令、resume 程序与 readiness gate 见 [AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md](AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md)（当前最新运行权威；其审计对象为 `30fb8f9`，HEAD `7256ffc` 为其后的路径修复 + embedding cache，无协议变化）。
+
+**已知未修问题**（详见 [docs/RUN_AUDIT_20260818.md](docs/RUN_AUDIT_20260818.md) 与云端审计）：`QUAL_test.sh` / `end2end_smoke.sh` 内**硬编码了真实形态的 API key/base**，需清理；在线管线的 B1（环境变量名分裂）截至 08-20 仍存在。
+
+---
+
+## 9. 跨包契约点（改动时需三包同测）
+
+1. `agentreview/paper_context.py` 的 `CANONICAL_PAPER_CONTEXT_VERSION` —— memory_evolution、effectiveness_screening 直接 import。
+2. `agentreview/single_paper_review_roles.py` 的 `EXPECTED_REVIEW_REQUEST_SHA256`（`REVIEW_Request.md`，SHA `609eb930…7be42`）—— memory_evolution、effectiveness_screening 反向引用。
+3. `agentreview/memory_library.py` 的 record 结构 —— mstar 模式写回复用。
+4. `memory_evolution/assets.py:FOUR_ZONES` —— scripts 与 effectiveness_screening 共用。
+5. Unified Interface 原则：evolution 与 deployment 走同一 canonical paper-content builder、同一 clipping/truncation 实现，context budget 可参数化但同一次实验必须一致。

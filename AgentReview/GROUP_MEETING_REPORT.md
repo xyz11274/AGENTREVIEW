@@ -2,6 +2,8 @@
 
 > 汇报日期：2026-07-23  
 > 项目目录：`/data0/xyj/shengao/AgentReview_0722/AgentReview`
+>
+> **⚠️ 历史归档**：本文写于上一代快照（0722），其中协议数字（20 iterations / 5 seeds / 250 validation families）与数据面（OpenReview train_clean/test）均为旧口径，已被 ADR-0006/0007 与《[AgentReview M★ 代码架构全景解析（2026-08-20 版）](../AgentReview%20M★%20代码架构全景解析.md)》取代，仅作历史汇报存档。
 
 ## 1. 一页结论
 

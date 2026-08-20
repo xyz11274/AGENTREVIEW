@@ -2,6 +2,8 @@
 
 > 基于对当前仓库代码的 import 链追踪生成（2026-08-12），所有结论均来自代码本身。
 > 链接相对于 `/data0/xyj/shengao` 工作区根目录。
+>
+> **⚠️ 本文为 08-12 快照，已被《[AgentReview M★ 代码架构全景解析（2026-08-20 版）](../AgentReview%20M★%20代码架构全景解析.md)》取代**：本文缺少 08-17 后新增的 formal 协议层模块（formal_protocol / assets / checkpoint / subset_selection / coco_reference / finalize_formal_readiness），附录中的协议数字（每专家 5 个演化种子、train_clean/test 数据面）为旧口径。活/死代码判定部分仍然有效，可作沿革参考。
 
 ---
 

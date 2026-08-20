@@ -102,7 +102,13 @@ def _classifier_adapter(
     return splitter, classifier
 
 
-def _embedding_adapter(spec: str, model_name: str, revision: str):
+def _embedding_adapter(
+    spec: str,
+    model_name: str,
+    revision: str,
+    cache_path: str = "",
+    cache_enabled: bool = True,
+):
     if not spec:
         return None
     module_name, separator, factory_name = spec.partition(":")
@@ -110,9 +116,17 @@ def _embedding_adapter(spec: str, model_name: str, revision: str):
         raise ValueError("--embedding-adapter must use module:factory syntax")
     factory = getattr(importlib.import_module(module_name), factory_name)
     try:
-        client = factory(model_name=model_name, revision=revision)
+        client = factory(
+            model_name=model_name,
+            revision=revision,
+            cache_path=cache_path,
+            cache_enabled=cache_enabled,
+        )
     except TypeError:
-        client = factory()
+        try:
+            client = factory(model_name=model_name, revision=revision)
+        except TypeError:
+            client = factory()
     if not (
         callable(client)
         or hasattr(client, "embed")
@@ -150,6 +164,8 @@ def _task_toolkit(args):
             args.embedding_adapter,
             args.embedding_model_name,
             args.embedding_revision,
+            getattr(args, "embedding_cache", ""),
+            not getattr(args, "disable_embedding_cache", False),
         ),
         embedding_model=args.embedding_model_name,
         review_splitter=splitter,
@@ -263,6 +279,23 @@ def _add_runtime_args(parser):
         ),
     )
     parser.add_argument("--embedding-model-name", default="BAAI/bge-m3")
+    parser.add_argument(
+        "--embedding-cache",
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "cache"
+            / "embedding_cache.sqlite3"
+        ),
+        help=(
+            "Runtime-only persistent exact-text embedding cache. This path is "
+            "excluded from formal experiment and resume identity."
+        ),
+    )
+    parser.add_argument(
+        "--disable-embedding-cache",
+        action="store_true",
+        help="Disable the runtime embedding cache without changing formal semantics.",
+    )
     parser.add_argument(
         "--s2-retrieval-pool",
         default="",
