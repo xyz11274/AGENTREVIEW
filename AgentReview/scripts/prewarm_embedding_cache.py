@@ -113,7 +113,7 @@ def main() -> None:
     summary_path = (
         args.summary.expanduser().resolve()
         if args.summary
-        else cache_path.with_suffix(cache_path.suffix + ".audit.json")
+        else cache_path.with_name(cache_path.stem + ".audit.json")
     )
 
     import torch

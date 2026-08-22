@@ -3,8 +3,12 @@
 import argparse
 import importlib
 import hashlib
+import ipaddress
 import json
+import os
 import shutil
+import sqlite3
+import urllib.parse
 from pathlib import Path
 
 from .agentreview_data import (
@@ -36,11 +40,13 @@ from .tasks import (
 from agentreview.single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
 from .toolkit import MemoryToolkit, load_frozen_s2_pool
 from .benchmark_adapter import CoCoMetricBenchmarkAdapter
+from .api_preflight import run_preflight
+from agentreview.utility.authentication_utils import resolve_openai_base_url
 
 
-TASK_MODEL_DEFAULT = "kimi-k3"
-REFLECTOR_MODEL_DEFAULT = "kimi-k3"
-JUDGE_MODEL_DEFAULT = "kimi-k3"
+TASK_MODEL_DEFAULT = "qwen3.8-27b-fp8"
+REFLECTOR_MODEL_DEFAULT = "qwen3.8-27b-fp8"
+JUDGE_MODEL_DEFAULT = "qwen3.8-27b-fp8"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -71,13 +77,19 @@ def _backend(args, model_name: str):
     return OpenAIChat(
         model=model_name,
         max_tokens=args.max_tokens,
-        temperature=0.0,
+        temperature=args.llm_temperature,
         openai_client_type=args.openai_client_type,
+        openai_base_url=args.openai_base_url,
         request_timeout_seconds=args.api_request_timeout_seconds,
         connect_timeout_seconds=args.api_connect_timeout_seconds,
+        read_timeout_seconds=args.api_read_timeout_seconds,
+        write_timeout_seconds=args.api_write_timeout_seconds,
+        pool_timeout_seconds=args.api_pool_timeout_seconds,
+        api_max_retries=args.api_max_retries,
         reasoning_effort=(
             None if args.reasoning_effort == "none" else args.reasoning_effort
         ),
+        reasoning_effort_supported=args.reasoning_effort_supported,
         retry_max_tokens=args.retry_max_tokens,
     )
 
@@ -116,6 +128,7 @@ def _embedding_adapter(
     cache_enabled: bool = True,
     device: str = "",
     batch_size: int = 1,
+    fail_on_cache_miss: bool = False,
 ):
     if not spec:
         return None
@@ -131,6 +144,7 @@ def _embedding_adapter(
             cache_enabled=cache_enabled,
             device=device,
             batch_size=batch_size,
+            fail_on_cache_miss=fail_on_cache_miss,
         )
     except TypeError:
         try:
@@ -189,7 +203,76 @@ def _validate_formal_embedding_manifest(
     return identity, _sha256(path)
 
 
+def _validate_formal_embedding_cache_audit(
+    cache_path: str,
+    audit_path: str,
+    specification: dict,
+    fingerprint: str,
+) -> tuple[int, str]:
+    cache = Path(cache_path).expanduser().resolve()
+    audit = Path(audit_path).expanduser().resolve()
+    if not cache.is_file():
+        raise FileNotFoundError(f"Formal embedding cache is missing: {cache}")
+    if not audit.is_file():
+        raise FileNotFoundError(f"Formal embedding cache audit is missing: {audit}")
+    payload = json.loads(audit.read_text(encoding="utf-8"))
+    embedding = dict(payload.get("embedding") or {})
+    truncation = dict(payload.get("truncation") or {})
+    if payload.get("protocol") != "formal_temporal_v3_qwen3e8b":
+        raise RuntimeError("Formal embedding cache audit protocol mismatch")
+    if dict(embedding.get("specification") or {}) != specification:
+        raise RuntimeError("Formal embedding cache audit specification mismatch")
+    if str(embedding.get("fingerprint") or "") != fingerprint:
+        raise RuntimeError("Formal embedding cache audit fingerprint mismatch")
+    vector_count = int(payload.get("vector_count") or 0)
+    if vector_count != 12705:
+        raise RuntimeError(
+            f"Formal Qwen embedding cache requires 12705 vectors, got {vector_count}"
+        )
+    if int(payload.get("vector_dimension") or 0) != int(
+        specification.get("dimension") or 0
+    ):
+        raise RuntimeError("Formal embedding cache vector dimension mismatch")
+    if int(truncation.get("truncated_count") or 0) != 0:
+        raise RuntimeError("Formal embedding cache audit contains truncated inputs")
+    if float(embedding.get("single_multi_max_abs_diff") or 0.0) != 0.0:
+        raise RuntimeError("Formal embedding cache audit is not bit-identical")
+    connection = sqlite3.connect(
+        f"file:{cache}?mode=ro&immutable=1", uri=True, timeout=30.0
+    )
+    try:
+        observed_count = int(
+            connection.execute(
+                """
+                SELECT COUNT(*) FROM embeddings
+                WHERE model_name = ? AND model_revision = ?
+                  AND semantics_version = ?
+                """,
+                (
+                    specification["model_id"],
+                    specification["model_revision"],
+                    f"qwen3e8b:{fingerprint}",
+                ),
+            ).fetchone()[0]
+        )
+    finally:
+        connection.close()
+    if observed_count != vector_count:
+        raise RuntimeError(
+            "Formal embedding SQLite/audit vector count mismatch: "
+            f"sqlite={observed_count} audit={vector_count}"
+        )
+    return vector_count, _sha256(audit)
+
+
 def _task_toolkit(args):
+    _prepare_llm_runtime(args, formal=not _is_nonformal(args))
+    if getattr(args, "disable_embedding_cache", False) and getattr(
+        args, "embedding_cache_read_only", False
+    ):
+        raise SystemExit(
+            "--embedding-cache-read-only requires the embedding cache to be enabled"
+        )
     splitter, classifier = _classifier_adapter(
         args.classifier_adapter,
         args.review_split_revision,
@@ -210,6 +293,10 @@ def _task_toolkit(args):
             not getattr(args, "disable_embedding_cache", False),
             getattr(args, "embedding_device", ""),
             getattr(args, "embedding_batch_size", 1),
+            (
+                not _is_nonformal(args)
+                or getattr(args, "embedding_cache_read_only", False)
+            ),
         ),
         embedding_model=args.embedding_model_name,
         review_splitter=splitter,
@@ -233,6 +320,153 @@ def _toolkits(args):
         max_llm_calls_per_operation=1,
     )
     return task, reflector, judge
+
+
+def _prepare_llm_runtime(args, *, formal: bool):
+    """Resolve and preflight one process-bound OpenAI-compatible endpoint."""
+    try:
+        args.openai_base_url = resolve_openai_base_url(
+            getattr(args, "openai_base_url", None)
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    api_key = str(os.environ.get("OPENAI_API_KEY") or "")
+    if not api_key:
+        raise SystemExit(
+            "OPENAI_API_KEY is required; local vLLM endpoints may use 'dummy'"
+        )
+    model_names = {
+        str(args.task_model_name),
+        str(args.reflector_model_name),
+        str(args.judge_model_name),
+    }
+    if formal and args.openai_client_type != "openai":
+        raise SystemExit(
+            "Formal local evolution requires --openai-client-type openai"
+        )
+    if formal:
+        hostname = urllib.parse.urlparse(args.openai_base_url).hostname or ""
+        local_hostname = hostname == "localhost" or hostname.endswith(".local")
+        try:
+            address = ipaddress.ip_address(hostname)
+            local_address = address.is_private or address.is_loopback
+        except ValueError:
+            local_address = False
+        if not (local_hostname or local_address):
+            raise SystemExit(
+                "Formal local evolution requires a loopback/private OpenAI-compatible "
+                f"endpoint, got {args.openai_base_url!r}"
+            )
+    if formal and len(model_names) != 1:
+        raise SystemExit(
+            "Formal local evolution requires task/reflector/judge to use the "
+            "same served model name"
+        )
+    if formal:
+        missing = [
+            option
+            for option, value in (
+                ("--generation-model-source", args.generation_model_source),
+                ("--generation-model-revision", args.generation_model_revision),
+                ("--vllm-version", args.vllm_version),
+            )
+            if not str(value or "").strip()
+        ]
+        if missing:
+            raise SystemExit(
+                "Formal local evolution requires verifiable model/runtime identity: "
+                + ", ".join(missing)
+            )
+    cache_key = (
+        args.openai_base_url,
+        args.task_model_name,
+        args.max_tokens,
+        args.reasoning_effort,
+        args.reasoning_effort_supported,
+    )
+    if getattr(args, "_llm_preflight_key", None) != cache_key:
+        args._llm_preflight_result = run_preflight(
+            args.openai_base_url,
+            api_key,
+            args.api_request_timeout_seconds,
+            model_name=args.task_model_name,
+            max_tokens=min(args.max_tokens, 256),
+            reasoning_effort=(
+                "" if args.reasoning_effort == "none" else args.reasoning_effort
+            ),
+            reasoning_effort_supported=args.reasoning_effort_supported,
+        )
+        args._llm_preflight_key = cache_key
+    return args._llm_preflight_result
+
+
+def _llm_logical_identity(args) -> dict:
+    return {
+        "provider": "local_openai_compatible",
+        "served_model_names": {
+            "task": args.task_model_name,
+            "reflector": args.reflector_model_name,
+            "judge": args.judge_model_name,
+        },
+        "model_source": args.generation_model_source,
+        "model_revision": args.generation_model_revision,
+        "vllm_version": args.vllm_version,
+        "sampling": {
+            "temperature": args.llm_temperature,
+            "max_tokens": args.max_tokens,
+            "retry_max_tokens": args.retry_max_tokens,
+        },
+        "reasoning": {
+            "effort": args.reasoning_effort,
+            "supported": bool(args.reasoning_effort_supported),
+        },
+    }
+
+
+def _log_llm_runtime(args, embedding_spec: dict, embedding_fingerprint: str) -> None:
+    print("[LLM RUNTIME]", flush=True)
+    for key, value in (
+        ("provider", "local_openai_compatible"),
+        ("base_url", args.openai_base_url),
+        ("task_model", args.task_model_name),
+        ("reflector_model", args.reflector_model_name),
+        ("judge_model", args.judge_model_name),
+        ("reasoning_effort_supported", str(args.reasoning_effort_supported).lower()),
+        ("reasoning_effort", args.reasoning_effort),
+        ("embedding_provider", embedding_spec.get("provider", "none")),
+        ("embedding_cache", str(Path(args.embedding_cache).expanduser().resolve())),
+        ("embedding_fingerprint", embedding_fingerprint or "none"),
+    ):
+        print(f"{key}={value}", flush=True)
+
+
+def _record_llm_runtime(output: Path, args) -> None:
+    path = output / "llm_runtime.json"
+    payload = {
+        "logical_model_identity": _llm_logical_identity(args),
+        "base_url_history": [args.openai_base_url],
+        "latest_preflight": dict(args._llm_preflight_result),
+        "api_key_recorded": False,
+    }
+    if path.is_file():
+        previous = json.loads(path.read_text(encoding="utf-8"))
+        if previous.get("logical_model_identity") != payload["logical_model_identity"]:
+            raise RuntimeError("LLM logical model identity changed on resume")
+        payload["base_url_history"] = list(
+            dict.fromkeys(
+                [
+                    *list(previous.get("base_url_history") or []),
+                    args.openai_base_url,
+                ]
+            )
+        )
+    output.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    temporary.replace(path)
 
 
 def _seed_paths():
@@ -336,9 +570,27 @@ def _add_runtime_args(parser):
         ),
     )
     parser.add_argument(
+        "--embedding-cache-audit",
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "cache"
+            / "qwen3_embedding_8b_cache.audit.json"
+        ),
+        help="Frozen Qwen cache audit; required and verified in formal mode.",
+    )
+    parser.add_argument(
         "--disable-embedding-cache",
         action="store_true",
         help="Disable the runtime embedding cache without changing formal semantics.",
+    )
+    parser.add_argument(
+        "--embedding-cache-read-only",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Use the frozen cache with fail-on-miss semantics in non-formal "
+            "smoke/pilot runs. Formal mode always enables this behavior."
+        ),
     )
     parser.add_argument(
         "--embedding-device",
@@ -389,6 +641,38 @@ def _add_runtime_args(parser):
         choices=["openai", "azure_openai"],
         default="openai",
     )
+    parser.add_argument(
+        "--openai-base-url",
+        default=None,
+        help=(
+            "Process-bound OpenAI-compatible endpoint. Resolution order is "
+            "CLI, OPENAI_BASE_URL, OPENAI_API_BASE; no cloud default exists."
+        ),
+    )
+    parser.add_argument(
+        "--generation-model-source",
+        default="",
+        help="Local model path or repository id used by the vLLM service.",
+    )
+    parser.add_argument(
+        "--generation-model-revision",
+        default="",
+        help="Exact generation-model snapshot/commit/weights identity.",
+    )
+    parser.add_argument(
+        "--vllm-version",
+        default="",
+        help="vLLM version shared by equivalent local replicas.",
+    )
+    parser.add_argument(
+        "--llm-temperature",
+        type=float,
+        default=0.0,
+        help=(
+            "LLM sampling temperature. This is independent of --temperature, "
+            "which controls Evolution parent selection."
+        ),
+    )
     parser.add_argument("--max-tokens", type=int, default=8192)
     parser.add_argument("--retry-max-tokens", type=int, default=16384)
     parser.add_argument(
@@ -396,8 +680,27 @@ def _add_runtime_args(parser):
         choices=["none", "minimal", "low", "medium", "high"],
         default="low",
     )
+    parser.add_argument(
+        "--reasoning-effort-supported",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Declare endpoint support explicitly. When false, reasoning_effort "
+            "is not sent; a rejected true declaration fails without retrying "
+            "with a different request shape."
+        ),
+    )
     parser.add_argument("--api-request-timeout-seconds", type=float, default=600.0)
     parser.add_argument("--api-connect-timeout-seconds", type=float, default=30.0)
+    parser.add_argument("--api-read-timeout-seconds", type=float, default=600.0)
+    parser.add_argument("--api-write-timeout-seconds", type=float, default=60.0)
+    parser.add_argument("--api-pool-timeout-seconds", type=float, default=30.0)
+    parser.add_argument(
+        "--api-max-retries",
+        type=int,
+        default=2,
+        help="Retries after the initial request for transport/429/5xx failures.",
+    )
     parser.add_argument("--write-timeout", type=float, default=60.0)
     parser.add_argument("--read-timeout", type=float, default=60.0)
 
@@ -645,6 +948,18 @@ def _parse_experiment_seeds(value: str):
 
 
 def _run_task(args, task_id: str, output: Path, seed: int):
+    formal = not _is_nonformal(args)
+    _prepare_llm_runtime(args, formal=formal)
+    if formal and getattr(args, "disable_embedding_cache", False):
+        raise SystemExit(
+            "Formal evolution requires the frozen embedding cache; "
+            "--disable-embedding-cache is unavailable"
+        )
+    if formal and not Path(args.embedding_cache).expanduser().resolve().is_file():
+        raise SystemExit(
+            f"Formal embedding cache is missing: "
+            f"{Path(args.embedding_cache).expanduser().resolve()}"
+        )
     episodes_path, validation_path = _paths(args.data_root, task_id)
     episodes = [Episode.from_value(item) for item in _load_jsonl(str(episodes_path))]
     data_root = Path(args.data_root).expanduser().resolve()
@@ -663,7 +978,6 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         args.s2_retrieval_pool = str(
             manifest.get("semantic_scholar_cache") or ""
         )
-    formal = not _is_nonformal(args)
     if formal and args.iterations % len(_seed_paths()) != 0:
         raise SystemExit(
             "Formal evolution requires equal lineage budgets: --iterations "
@@ -701,10 +1015,15 @@ def _run_task(args, task_id: str, output: Path, seed: int):
                 "task_model_name": args.task_model_name,
                 "reflector_model_name": args.reflector_model_name,
                 "judge_model_name": args.judge_model_name,
+                "logical_model_identity": _llm_logical_identity(args),
                 "generation": {
+                    "temperature": args.llm_temperature,
                     "max_tokens": args.max_tokens,
                     "retry_max_tokens": args.retry_max_tokens,
                     "reasoning_effort": args.reasoning_effort,
+                    "reasoning_effort_supported": (
+                        args.reasoning_effort_supported
+                    ),
                 },
             },
         )
@@ -712,14 +1031,29 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     embedding_spec, embedding_fingerprint = _embedding_provenance(
         task_toolkit.embedding_client
     )
+    _log_llm_runtime(args, embedding_spec, embedding_fingerprint)
     formal_experiment_identity = ""
     formal_experiment_manifest_sha256 = ""
-    if formal and embedding_spec.get("provider") == "qwen3_embedding":
+    embedding_cache_audit_sha256 = ""
+    verify_frozen_qwen_cache = (
+        embedding_spec.get("provider") == "qwen3_embedding"
+        and (
+            formal
+            or getattr(args, "embedding_cache_read_only", False)
+        )
+    )
+    if verify_frozen_qwen_cache:
         (
             formal_experiment_identity,
             formal_experiment_manifest_sha256,
         ) = _validate_formal_embedding_manifest(
             args.formal_experiment_manifest,
+            embedding_spec,
+            embedding_fingerprint,
+        )
+        _, embedding_cache_audit_sha256 = _validate_formal_embedding_cache_audit(
+            args.embedding_cache,
+            args.embedding_cache_audit,
             embedding_spec,
             embedding_fingerprint,
         )
@@ -806,6 +1140,15 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         task_model_name=args.task_model_name,
         reflector_model_name=args.reflector_model_name,
         judge_model_name=args.judge_model_name,
+        llm_provider="local_openai_compatible",
+        generation_model_source=args.generation_model_source,
+        generation_model_revision=args.generation_model_revision,
+        vllm_version=args.vllm_version,
+        llm_sampling_temperature=args.llm_temperature,
+        max_tokens=args.max_tokens,
+        retry_max_tokens=args.retry_max_tokens,
+        reasoning_effort=args.reasoning_effort,
+        reasoning_effort_supported=args.reasoning_effort_supported,
         classifier_adapter=args.classifier_adapter,
         classifier_adapter_sha256=_adapter_sha256(args.classifier_adapter),
         review_split_revision=args.review_split_revision,
@@ -816,6 +1159,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         embedding_revision=args.embedding_revision,
         embedding_spec=embedding_spec,
         embedding_fingerprint=embedding_fingerprint,
+        embedding_cache_audit_sha256=embedding_cache_audit_sha256,
         formal_experiment_identity=formal_experiment_identity,
         formal_experiment_manifest_sha256=formal_experiment_manifest_sha256,
         formal=formal,
@@ -844,6 +1188,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             json.dumps(formal_gate, ensure_ascii=False, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+    _record_llm_runtime(output, args)
     return run_evolution(
         _seed_paths(),
         episodes,

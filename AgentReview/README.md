@@ -83,11 +83,18 @@ python -m memory_evolution.cli evolve-specialists \
   --asset-manifest configs/asset_manifest_v2.json \
   --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
+  --openai-base-url http://127.0.0.1:8000/v1 \
+  --generation-model-source "$QWEN_MODEL_SOURCE" \
+  --generation-model-revision "$QWEN_MODEL_REVISION" \
+  --vllm-version "$VLLM_VERSION" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <immutable-ReviewSplit-commit> \
   --review-classify-revision <immutable-ReviewClassify-commit> \
-  --embedding-adapter memory_evolution.embedding_adapter:create_bge_m3 \
-  --embedding-revision <immutable-model-commit>
+  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
+  --embedding-model-name Qwen/Qwen3-Embedding-8B \
+  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
+  --embedding-cache cache/qwen3_embedding_8b_cache.sqlite3 \
+  --embedding-cache-audit cache/qwen3_embedding_8b_cache.audit.json
 ```
 
 The bundled classifier adapter verifies the pinned CoCoReviewBench commit and
@@ -102,7 +109,7 @@ fallbacks but does not reduce the requested iterations, validation sizes or
 selection repeats. It is intended for a complete small-data pipeline test:
 
 ```bash
-# OPENAI_API_KEY and OPENAI_API_BASE must already be exported.
+# OPENAI_API_KEY plus OPENAI_BASE_URL (or legacy OPENAI_API_BASE) must be exported.
 ./pilot_full.sh
 ```
 
@@ -112,8 +119,10 @@ specialists and META; and prints a seed-versus-evolved score table. Override
 settings with `PILOT_ITERATIONS`, `PILOT_STATIC_SIZE`,
 `PILOT_ROTATING_SIZE`, `PILOT_RUN_ROOT` and the other variables at the top of
 the script. Pilot output is explicitly non-reportable.
-Formal M★ selection also requires a frozen BGE-M3 adapter and immutable model
-revision; the adapter source hash and revision are recorded in every run.
+Formal temporal v3 M★ selection requires the frozen Qwen3-Embedding-8B adapter,
+immutable revision, read-only SQLite cache, and cache audit; their hashes and
+complete embedding fingerprint are recorded in every run. See
+`docs/LOCAL_QWEN_OPENAI_ALIGNMENT.md` for local Qwen generation commands.
 
 Each specialist gets its own pool, scores, lineage, traces and promoted
 `best_program.py`. No program or feedback is shared between dimensions.
@@ -135,8 +144,12 @@ python -m memory_evolution.cli cache-meta-inputs \
   --data-root data/evolution \
   --program-root runs/formal \
   --output data/evolution/meta_inputs.jsonl \
-  --embedding-adapter memory_evolution.embedding_adapter:create_bge_m3 \
-  --embedding-revision <same-immutable-model-commit>
+  --openai-base-url http://127.0.0.1:8000/v1 \
+  --generation-model-source "$QWEN_MODEL_SOURCE" \
+  --generation-model-revision "$QWEN_MODEL_REVISION" \
+  --vllm-version "$VLLM_VERSION" \
+  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
+  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af
 
 python -m memory_evolution.cli prepare-meta \
   --openreview-root "$OPENREVIEW_ROOT" \
@@ -146,8 +159,12 @@ python -m memory_evolution.cli prepare-meta \
 python -m memory_evolution.cli evolve-meta \
   --data-root data/evolution \
   --output runs/formal \
-  --embedding-adapter memory_evolution.embedding_adapter:create_bge_m3 \
-  --embedding-revision <same-immutable-model-commit>
+  --openai-base-url http://127.0.0.1:8000/v1 \
+  --generation-model-source "$QWEN_MODEL_SOURCE" \
+  --generation-model-revision "$QWEN_MODEL_REVISION" \
+  --vllm-version "$VLLM_VERSION" \
+  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
+  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af
 ```
 
 For a non-reportable end-to-end pilot, `cache-meta-inputs --pilot` permits the
@@ -171,11 +188,11 @@ runs/formal/
 python run_single_paper_review_cli.py \
   --paper_md_dir /path/to/papers \
   --output_dir outputs/reviews \
-  --model_name gpt-5-mini \
+  --model_name qwen3.8-27b-fp8 \
   --memory_mode mstar_program \
   --memory_program_dir runs/formal \
-  --memory_embedding_adapter memory_evolution.embedding_adapter:create_bge_m3 \
-  --memory_embedding_revision <same-immutable-model-commit> \
+  --memory_embedding_adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
+  --memory_embedding_revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
   --overwrite
 ```
 
@@ -218,11 +235,16 @@ python -m memory_evolution.cli final-evaluate-suite \
   --asset-manifest configs/asset_manifest_v2.json \
   --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
   --coco-root "$COCOREVIEWBENCH_ROOT" \
+  --openai-base-url http://127.0.0.1:8000/v1 \
+  --generation-model-source "$QWEN_MODEL_SOURCE" \
+  --generation-model-revision "$QWEN_MODEL_REVISION" \
+  --vllm-version "$VLLM_VERSION" \
   --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
   --review-split-revision <same-ReviewSplit-commit> \
   --review-classify-revision <same-ReviewClassify-commit> \
-  --embedding-adapter memory_evolution.embedding_adapter:create_bge_m3 \
-  --embedding-revision <same-immutable-model-commit>
+  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
+  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
+  --embedding-cache cache/qwen3_embedding_8b_cache.sqlite3
 ```
 
 The lower-level `evaluate` command remains available for development single-task

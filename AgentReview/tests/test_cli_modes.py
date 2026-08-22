@@ -11,7 +11,7 @@ from memory_evolution.cli import (
 
 
 class CliModeTest(unittest.TestCase):
-    def test_all_evolution_llm_roles_default_to_kimi_k3(self):
+    def test_all_evolution_llm_roles_default_to_local_qwen(self):
         args = build_parser().parse_args(
             [
                 "evolve-task",
@@ -24,9 +24,9 @@ class CliModeTest(unittest.TestCase):
                 "--pilot",
             ]
         )
-        self.assertEqual(args.task_model_name, "kimi-k3")
-        self.assertEqual(args.reflector_model_name, "kimi-k3")
-        self.assertEqual(args.judge_model_name, "kimi-k3")
+        self.assertEqual(args.task_model_name, "qwen3.8-27b-fp8")
+        self.assertEqual(args.reflector_model_name, "qwen3.8-27b-fp8")
+        self.assertEqual(args.judge_model_name, "qwen3.8-27b-fp8")
 
     def test_formal_attempt_budget_cli_is_explicitly_configurable(self):
         args = build_parser().parse_args(

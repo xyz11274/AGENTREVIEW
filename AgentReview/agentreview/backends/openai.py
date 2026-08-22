@@ -8,17 +8,10 @@ import time
 from typing import List
 
 import httpx
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_random_exponential,
-)
 from openai import (
     APIConnectionError,
     APIStatusError,
     APITimeoutError,
-    BadRequestError,
     InternalServerError,
     RateLimitError,
 )
@@ -81,10 +74,7 @@ def _exception_chain_summary(error: Exception) -> str:
     return " <- ".join(values)
 
 
-def _log_retry(retry_state):
-    error = retry_state.outcome.exception()
-    agent_name = retry_state.args[2] if len(retry_state.args) > 2 else "request"
-    wait_seconds = retry_state.next_action.sleep if retry_state.next_action else 0
+def _log_retry(error, agent_name, attempt, max_attempts, wait_seconds):
     category = (
         "TIMEOUT"
         if isinstance(error, (APITimeoutError, httpx.TimeoutException))
@@ -92,7 +82,7 @@ def _log_retry(retry_state):
     )
     print(
         f"[API RETRY][{category}] {agent_name}: "
-        f"attempt {retry_state.attempt_number + 1}/3 "
+        f"attempt {attempt + 1}/{max_attempts} "
         f"in {wait_seconds:.1f}s after {_exception_chain_summary(error)}",
         flush=True,
     )
@@ -123,8 +113,14 @@ class OpenAIChat(IntelligenceBackend):
             merge_other_agents_as_one_user: bool = True,
             request_timeout_seconds: float = 600.0,
             connect_timeout_seconds: float = 30.0,
+            read_timeout_seconds: float = 600.0,
+            write_timeout_seconds: float = 60.0,
+            pool_timeout_seconds: float = 30.0,
+            api_max_retries: int = 2,
             reasoning_effort: str = None,
+            reasoning_effort_supported: bool = False,
             retry_max_tokens: int = None,
+            openai_base_url: str = None,
             **kwargs,
     ):
         """
@@ -143,12 +139,17 @@ class OpenAIChat(IntelligenceBackend):
             merge_other_agents_as_one_user=merge_other_agents_as_one_user,
             request_timeout_seconds=request_timeout_seconds,
             connect_timeout_seconds=connect_timeout_seconds,
+            read_timeout_seconds=read_timeout_seconds,
+            write_timeout_seconds=write_timeout_seconds,
+            pool_timeout_seconds=pool_timeout_seconds,
+            api_max_retries=api_max_retries,
             reasoning_effort=reasoning_effort,
+            reasoning_effort_supported=reasoning_effort_supported,
             retry_max_tokens=retry_max_tokens,
+            openai_base_url=openai_base_url,
             **kwargs,
         )
         self.client_type = kwargs.get("openai_client_type", None)
-        self.client = get_openai_client(self.client_type)
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.model = model
@@ -156,16 +157,26 @@ class OpenAIChat(IntelligenceBackend):
         self.min_interval_seconds = float(os.environ.get("AGENTREVIEW_API_MIN_INTERVAL_SECONDS", "2.0"))
         self.request_timeout_seconds = max(1.0, float(request_timeout_seconds))
         self.connect_timeout_seconds = max(1.0, float(connect_timeout_seconds))
+        self.read_timeout_seconds = max(1.0, float(read_timeout_seconds))
+        self.write_timeout_seconds = max(1.0, float(write_timeout_seconds))
+        self.pool_timeout_seconds = max(1.0, float(pool_timeout_seconds))
+        self.api_max_retries = max(0, int(api_max_retries))
         self.request_timeout = httpx.Timeout(
             timeout=self.request_timeout_seconds,
             connect=self.connect_timeout_seconds,
-            write=self.connect_timeout_seconds,
-            pool=self.connect_timeout_seconds,
+            read=self.read_timeout_seconds,
+            write=self.write_timeout_seconds,
+            pool=self.pool_timeout_seconds,
+        )
+        self.client = get_openai_client(
+            self.client_type,
+            base_url=openai_base_url,
+            timeout=self.request_timeout,
         )
         self.base_url = str(getattr(self.client, "base_url", "unknown")).rstrip("/")
         self.last_response_info = {}
         self.reasoning_effort = reasoning_effort
-        self.reasoning_effort_supported = None
+        self.reasoning_effort_supported = bool(reasoning_effort_supported)
         self.retry_max_tokens = max(
             self.max_tokens,
             int(retry_max_tokens or self.max_tokens * 2),
@@ -200,86 +211,21 @@ class OpenAIChat(IntelligenceBackend):
         }
         if self._is_reasoning_model():
             kwargs["max_completion_tokens"] = output_tokens
-            active_effort = (
-                reasoning_effort
-                if reasoning_effort is not None
-                else getattr(self, "reasoning_effort", None)
-            )
-            if (
-                active_effort
-                and getattr(self, "reasoning_effort_supported", None) is not False
-            ):
-                kwargs["reasoning_effort"] = active_effort
         else:
             kwargs["max_tokens"] = output_tokens
             kwargs["stop"] = STOP
+        active_effort = (
+            reasoning_effort
+            if reasoning_effort is not None
+            else getattr(self, "reasoning_effort", None)
+        )
+        if active_effort and getattr(self, "reasoning_effort_supported", False):
+            kwargs["reasoning_effort"] = active_effort
         return kwargs
 
-    @staticmethod
-    def _reasoning_effort_is_unsupported(error):
-        message = str(error).lower()
-        body = getattr(error, "body", None)
-        body_param = (
-            str(body.get("param", "")).lower()
-            if isinstance(body, dict)
-            else ""
-        )
-        mentions_parameter = (
-            "reasoning_effort" in message
-            or "reasoning effort" in message
-            or body_param == "reasoning_effort"
-        )
-        return mentions_parameter and any(
-            marker in message
-            for marker in (
-                "unsupported",
-                "not supported",
-                "unknown",
-                "unrecognized",
-                "not permitted",
-                "invalid parameter",
-                "invalid value",
-                "extra inputs",
-                "unexpected keyword",
-            )
-        )
-
     def _create_completion(self, kwargs, agent_name):
-        try:
-            completion = self.client.chat.completions.create(**kwargs)
-            if "reasoning_effort" in kwargs:
-                self.reasoning_effort_supported = True
-            return completion
-        except (BadRequestError, TypeError) as exc:
-            if (
-                "reasoning_effort" in kwargs
-                and self._reasoning_effort_is_unsupported(exc)
-            ):
-                unsupported_effort = kwargs.pop("reasoning_effort")
-                self.reasoning_effort_supported = False
-                print(
-                    f"[API CONFIG] {agent_name or 'request'}: provider rejected "
-                    f"reasoning_effort={unsupported_effort}; retrying without it",
-                    flush=True,
-                )
-                return self.client.chat.completions.create(**kwargs)
-            raise
+        return self.client.chat.completions.create(**kwargs)
 
-    @retry(
-        retry=retry_if_exception_type(
-            (
-                RateLimitError,
-                APIConnectionError,
-                APITimeoutError,
-                InternalServerError,
-                httpx.TimeoutException,
-            )
-        ),
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=2, max=20),
-        before_sleep=_log_retry,
-        reraise=True,
-    )
     def _get_response(
         self,
         messages,
@@ -294,14 +240,37 @@ class OpenAIChat(IntelligenceBackend):
         if self.client_type not in {"openai", "azure_openai"}:
             raise NotImplementedError
         requested_tokens = max(1, int(max_tokens or self.max_tokens))
-        completion = self._create_completion(
-            self._completion_kwargs(
-                messages,
-                max_tokens=requested_tokens,
-                reasoning_effort=reasoning_effort,
-            ),
-            agent_name,
+        request_kwargs = self._completion_kwargs(
+            messages,
+            max_tokens=requested_tokens,
+            reasoning_effort=reasoning_effort,
         )
+        retryable = (
+            RateLimitError,
+            APIConnectionError,
+            APITimeoutError,
+            InternalServerError,
+            httpx.TimeoutException,
+        )
+        max_attempts = getattr(self, "api_max_retries", 2) + 1
+        for attempt in range(1, max_attempts + 1):
+            try:
+                completion = self._create_completion(request_kwargs, agent_name)
+                break
+            except retryable as exc:
+                if attempt >= max_attempts:
+                    raise
+                wait_seconds = min(20.0, max(2.0, 2.0 ** attempt)) * random.uniform(
+                    0.75, 1.25
+                )
+                _log_retry(
+                    exc,
+                    agent_name or "request",
+                    attempt,
+                    max_attempts,
+                    wait_seconds,
+                )
+                time.sleep(wait_seconds)
 
         choice = completion.choices[0]
         message = choice.message
@@ -316,6 +285,7 @@ class OpenAIChat(IntelligenceBackend):
         details = getattr(usage, "completion_tokens_details", None)
         refusal = getattr(message, "refusal", None)
         reasoning_content = getattr(message, "reasoning_content", None)
+        reasoning = getattr(message, "reasoning", None)
         self.last_response_info = {
             "response_chars": len(response),
             "finish_reason": getattr(choice, "finish_reason", None),
@@ -331,11 +301,12 @@ class OpenAIChat(IntelligenceBackend):
                 if isinstance(reasoning_content, str)
                 else 0
             ),
+            "reasoning_chars": len(reasoning) if isinstance(reasoning, str) else 0,
             "requested_tokens": requested_tokens,
             "reasoning_effort": (
                 reasoning_effort or getattr(self, "reasoning_effort", None)
             )
-            if getattr(self, "reasoning_effort_supported", None) is not False
+            if getattr(self, "reasoning_effort_supported", False)
             else None,
         }
         if not response:
@@ -361,14 +332,6 @@ class OpenAIChat(IntelligenceBackend):
         return response
 
     @staticmethod
-    def _lower_reasoning_effort(effort):
-        if effort in {"high", "medium"}:
-            return "low"
-        if effort == "low":
-            return "minimal"
-        return effort
-
-    @staticmethod
     def _failure_category(exc):
         if isinstance(exc, (APITimeoutError, httpx.TimeoutException)):
             return "TIMEOUT"
@@ -388,9 +351,14 @@ class OpenAIChat(IntelligenceBackend):
             f"endpoint={self.base_url}, messages={len(messages)}, "
             f"prompt_chars={prompt_chars}, output_limit={self.max_tokens}, "
             f"token_parameter={'max_completion_tokens' if self._is_reasoning_model() else 'max_tokens'}, "
+            "reasoning_effort_supported="
+            f"{str(getattr(self, 'reasoning_effort_supported', False)).lower()}, "
             f"reasoning_effort={self.reasoning_effort or 'provider_default'}, "
             f"timeouts=connect:{self.connect_timeout_seconds:g}s/"
-            f"read:{self.request_timeout_seconds:g}s, "
+            f"read:{getattr(self, 'read_timeout_seconds', self.request_timeout_seconds):g}s/"
+            f"write:{getattr(self, 'write_timeout_seconds', self.connect_timeout_seconds):g}s/"
+            f"pool:{getattr(self, 'pool_timeout_seconds', self.connect_timeout_seconds):g}s, "
+            f"max_retries={getattr(self, 'api_max_retries', 2)}, "
             f"empty_response_attempts={self.empty_response_attempts}",
             flush=True,
         )
@@ -423,14 +391,10 @@ class OpenAIChat(IntelligenceBackend):
                     )
                     raise
                 previous_tokens = current_max_tokens
-                previous_effort = current_reasoning_effort
                 if exc.max_completion_tokens_exhausted:
                     current_max_tokens = min(
                         self.retry_max_tokens,
                         max(current_max_tokens + 1024, current_max_tokens * 2),
-                    )
-                    current_reasoning_effort = self._lower_reasoning_effort(
-                        current_reasoning_effort
                     )
                 wait_seconds = self.empty_response_retry_seconds + random.uniform(
                     0.0, self.empty_response_retry_seconds
@@ -442,8 +406,7 @@ class OpenAIChat(IntelligenceBackend):
                     f"in {wait_seconds:.1f}s, "
                     f"max_completion_tokens={previous_tokens}"
                     f"->{current_max_tokens}, "
-                    f"reasoning_effort={previous_effort or 'provider_default'}"
-                    f"->{current_reasoning_effort or 'provider_default'}",
+                    f"reasoning_effort={current_reasoning_effort or 'provider_default'}",
                     flush=True,
                 )
                 time.sleep(wait_seconds)

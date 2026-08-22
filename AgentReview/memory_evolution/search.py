@@ -50,6 +50,15 @@ class EvolutionConfig:
     task_model_name: str = ""
     reflector_model_name: str = ""
     judge_model_name: str = ""
+    llm_provider: str = "local_openai_compatible"
+    generation_model_source: str = ""
+    generation_model_revision: str = ""
+    vllm_version: str = ""
+    llm_sampling_temperature: float = 0.0
+    max_tokens: int = 8192
+    retry_max_tokens: int = 16384
+    reasoning_effort: str = "none"
+    reasoning_effort_supported: bool = False
     classifier_adapter: str = ""
     classifier_adapter_sha256: str = ""
     review_split_revision: str = ""
@@ -60,6 +69,7 @@ class EvolutionConfig:
     embedding_revision: str = ""
     embedding_spec: Dict[str, Any] = field(default_factory=dict)
     embedding_fingerprint: str = ""
+    embedding_cache_audit_sha256: str = ""
     formal_experiment_identity: str = ""
     formal_experiment_manifest_sha256: str = ""
     formal: bool = True
@@ -514,8 +524,16 @@ def run_evolution(
                     "seed_control_available": cfg.seed_control_available,
                     "generation_config": {
                         "task_model_name": cfg.task_model_name,
-                        "write_timeout": cfg.write_timeout,
-                        "read_timeout": cfg.read_timeout,
+                        "model_source": cfg.generation_model_source,
+                        "model_revision": cfg.generation_model_revision,
+                        "vllm_version": cfg.vllm_version,
+                        "temperature": cfg.llm_sampling_temperature,
+                        "max_tokens": cfg.max_tokens,
+                        "retry_max_tokens": cfg.retry_max_tokens,
+                        "reasoning_effort": cfg.reasoning_effort,
+                        "reasoning_effort_supported": (
+                            cfg.reasoning_effort_supported
+                        ),
                     },
                 }
                 if cfg.formal

@@ -51,12 +51,13 @@ class MockBgeEmbedding(BgeM3Embedding):
 
 
 class MockQwenEmbedding(Qwen3Embedding):
-    def __init__(self, cache_path: Path):
+    def __init__(self, cache_path: Path, *, fail_on_cache_miss: bool = False):
         super().__init__(
             "Qwen/Qwen3-Embedding-8B",
             "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
             cache_path=str(cache_path),
             expected_dimension=4,
+            fail_on_cache_miss=fail_on_cache_miss,
         )
         self.load_calls = 0
         self.batch_calls = []
@@ -87,6 +88,28 @@ class EmbeddingCacheTest(unittest.TestCase):
             qwen.embed(["paper"])
             self.assertEqual(qwen.load_calls, 1)
             self.assertEqual(qwen.batch_calls, [["paper"]])
+
+    def test_formal_qwen_cache_hit_never_loads_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "qwen.sqlite3"
+            writer = MockQwenEmbedding(cache)
+            expected = writer.embed(["paper"])
+            strict = MockQwenEmbedding(cache, fail_on_cache_miss=True)
+            self.assertEqual(strict.embed(["paper"]), expected)
+            self.assertEqual(strict.load_calls, 0)
+            self.assertEqual(strict.batch_calls, [])
+
+    def test_formal_qwen_cache_miss_fails_without_loading_or_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "qwen.sqlite3"
+            MockQwenEmbedding(cache).embed(["cached"])
+            before = cache.read_bytes()
+            strict = MockQwenEmbedding(cache, fail_on_cache_miss=True)
+            with self.assertRaisesRegex(RuntimeError, "Formal embedding cache miss"):
+                strict.embed(["missing"])
+            self.assertEqual(strict.load_calls, 0)
+            self.assertEqual(strict.batch_calls, [])
+            self.assertEqual(cache.read_bytes(), before)
 
     def test_second_embed_does_not_call_underlying_bge(self):
         with tempfile.TemporaryDirectory() as directory:

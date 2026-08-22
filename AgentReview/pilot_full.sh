@@ -5,7 +5,9 @@ PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd "$PROJECT_DIR"
 
 : "${OPENAI_API_KEY:?OPENAI_API_KEY is not set. Export it before running this script.}"
-: "${OPENAI_API_BASE:?OPENAI_API_BASE is not set. Export it before running this script.}"
+OPENAI_BASE_URL=${OPENAI_BASE_URL:-${OPENAI_API_BASE:-}}
+: "${OPENAI_BASE_URL:?Set OPENAI_BASE_URL to one local vLLM replica.}"
+export OPENAI_BASE_URL
 
 PYTHON_BIN=${PYTHON_BIN:-/data0/xyj/miniconda3/envs/env_shengao/bin/python}
 : "${OPENREVIEW_ROOT:?Set OPENREVIEW_ROOT to the external OpenReview data root}"
@@ -56,6 +58,7 @@ echo "[PILOT] API timeouts: connect=${PILOT_API_CONNECT_TIMEOUT_SECONDS}s read=$
     --output "$PILOT_RUN_ROOT" \
     --experiment-seeds "$PILOT_EXPERIMENT_SEEDS" \
     --primary-seed "$PILOT_PRIMARY_SEED" \
+    --openai-base-url "$OPENAI_BASE_URL" \
     --pilot \
     --iterations "$PILOT_ITERATIONS" \
     --static-size "$PILOT_STATIC_SIZE" \
@@ -73,6 +76,7 @@ echo "[PILOT] Generating leakage-safe specialist inputs for META..."
     --program-root "$PILOT_RUN_ROOT" \
     --output "$META_INPUTS" \
     --folds "$PILOT_FOLDS" \
+    --openai-base-url "$OPENAI_BASE_URL" \
     --pilot \
     --api-request-timeout-seconds "$PILOT_API_REQUEST_TIMEOUT_SECONDS" \
     --api-connect-timeout-seconds "$PILOT_API_CONNECT_TIMEOUT_SECONDS"
@@ -89,6 +93,7 @@ echo "[PILOT] Evolving META..."
     --output "$PILOT_RUN_ROOT" \
     --experiment-seeds "$PILOT_EXPERIMENT_SEEDS" \
     --primary-seed "$PILOT_PRIMARY_SEED" \
+    --openai-base-url "$OPENAI_BASE_URL" \
     --pilot \
     --iterations "$PILOT_ITERATIONS" \
     --static-size "$PILOT_STATIC_SIZE" \

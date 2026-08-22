@@ -212,6 +212,9 @@ share the 4096-dimensional, normalized, document-style representation recorded
 in `configs/formal_temporal_v3_qwen3e8b.json`. The full embedding fingerprint is
 part of cache, run, selection, resume and promotion identity. Historical BGE-M3
 experiments remain available through `create_bge_m3` and their original cache.
+Formal mode opens the Qwen SQLite cache as immutable/read-only and fails on any
+miss or invalid row before model loading. The frozen cache audit and its SHA-256
+are required; online embedding computation is unavailable during formal runs.
 
 ## Known operational requirement
 

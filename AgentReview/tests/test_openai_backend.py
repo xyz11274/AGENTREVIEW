@@ -57,7 +57,7 @@ class OpenAIBackendTest(unittest.TestCase):
         self.assertNotIn("stop", kwargs)
         self.assertNotIn("reasoning_effort", kwargs)
 
-    def test_length_limited_empty_response_increases_budget_and_lowers_effort(self):
+    def test_length_limited_empty_response_increases_budget_and_preserves_effort(self):
         backend = object.__new__(OpenAIChat)
         backend.model = "gpt-5"
         backend.base_url = "https://example.test/v1"
@@ -105,35 +105,17 @@ class OpenAIBackendTest(unittest.TestCase):
             )
 
         self.assertEqual(response, "review")
-        self.assertEqual(calls, [(8192, "low"), (16384, "minimal")])
+        self.assertEqual(calls, [(8192, "low"), (16384, "low")])
         self.assertIn("REASONING TOKEN EXHAUSTED", output.getvalue())
         self.assertIn("MAX_COMPLETION_TOKENS EXHAUSTED", output.getvalue())
 
-    def test_unsupported_reasoning_effort_retries_without_parameter(self):
+    def test_supported_reasoning_effort_rejection_is_not_retried_without_it(self):
         calls = []
 
         class RejectReasoningEffort:
             def create(self, **kwargs):
                 calls.append(dict(kwargs))
-                if "reasoning_effort" in kwargs:
-                    raise TypeError(
-                        "unexpected keyword argument 'reasoning_effort'"
-                    )
-                return SimpleNamespace(
-                    id="response-1",
-                    choices=[
-                        SimpleNamespace(
-                            message=SimpleNamespace(content="review"),
-                            finish_reason="stop",
-                        )
-                    ],
-                    usage=SimpleNamespace(
-                        completion_tokens=10,
-                        completion_tokens_details=SimpleNamespace(
-                            reasoning_tokens=0
-                        ),
-                    ),
-                )
+                raise TypeError("unexpected keyword argument 'reasoning_effort'")
 
         backend = object.__new__(OpenAIChat)
         backend.client_type = "openai"
@@ -144,22 +126,35 @@ class OpenAIBackendTest(unittest.TestCase):
         backend.temperature = 0.3
         backend.max_tokens = 8192
         backend.reasoning_effort = "low"
-        backend.reasoning_effort_supported = None
+        backend.reasoning_effort_supported = True
         backend.min_interval_seconds = 0
         backend.request_timeout_seconds = 10
 
-        response = backend._get_response(
-            [{"role": "user", "content": "test"}],
-            "Reviewer SIGN",
-            max_tokens=8192,
-            reasoning_effort="low",
-        )
+        with self.assertRaisesRegex(TypeError, "reasoning_effort"):
+            backend._get_response(
+                [{"role": "user", "content": "test"}],
+                "Reviewer SIGN",
+                max_tokens=8192,
+                reasoning_effort="low",
+            )
 
-        self.assertEqual(response, "review")
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0]["reasoning_effort"], "low")
-        self.assertNotIn("reasoning_effort", calls[1])
-        self.assertFalse(backend.reasoning_effort_supported)
+
+    def test_qwen_reasoning_effort_follows_explicit_capability(self):
+        backend = object.__new__(OpenAIChat)
+        backend.model = "qwen3.8-27b-fp8"
+        backend.temperature = 0.0
+        backend.max_tokens = 128
+        backend.request_timeout_seconds = 10
+        backend.reasoning_effort = "medium"
+        backend.reasoning_effort_supported = False
+        self.assertNotIn("reasoning_effort", backend._completion_kwargs([]))
+
+        backend.reasoning_effort_supported = True
+        kwargs = backend._completion_kwargs([])
+        self.assertEqual(kwargs["reasoning_effort"], "medium")
+        self.assertIn("max_tokens", kwargs)
 
     def test_empty_success_response_is_rejected_with_diagnostics(self):
         backend = object.__new__(OpenAIChat)
@@ -178,6 +173,46 @@ class OpenAIBackendTest(unittest.TestCase):
             "finish_reason=length.*reasoning_tokens=1200",
         ):
             backend._get_response([{"role": "user", "content": "test"}])
+
+    def test_reasoning_fields_are_audited_but_not_used_as_review_text(self):
+        completion = SimpleNamespace(
+            id="response-2",
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content="<think>private trace</think>Final review",
+                        reasoning_content="hidden reasoning",
+                        reasoning="alternate hidden reasoning",
+                    ),
+                    finish_reason="stop",
+                )
+            ],
+            usage=SimpleNamespace(
+                completion_tokens=20,
+                completion_tokens_details=SimpleNamespace(reasoning_tokens=10),
+            ),
+        )
+        backend = object.__new__(OpenAIChat)
+        backend.client_type = "openai"
+        backend.client = SimpleNamespace(
+            chat=SimpleNamespace(
+                completions=SimpleNamespace(create=lambda **_: completion)
+            )
+        )
+        backend.model = "qwen3.8-27b-fp8"
+        backend.temperature = 0.0
+        backend.max_tokens = 128
+        backend.reasoning_effort = "medium"
+        backend.reasoning_effort_supported = False
+        backend.min_interval_seconds = 0
+        backend.request_timeout_seconds = 10
+        backend.api_max_retries = 0
+
+        response = backend._get_response([{"role": "user", "content": "test"}])
+
+        self.assertEqual(response, "Final review")
+        self.assertEqual(backend.last_response_info["reasoning_content_chars"], 16)
+        self.assertGreater(backend.last_response_info["reasoning_chars"], 0)
 
 
 if __name__ == "__main__":

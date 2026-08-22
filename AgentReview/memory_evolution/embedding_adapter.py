@@ -65,10 +65,12 @@ class CachedDenseEmbedding:
         expected_dimension: int,
         semantics_version: str,
         specification: Dict[str, Any],
+        fail_on_cache_miss: bool = False,
     ):
         self.model_name = str(model_name)
         self.revision = str(revision)
         self.cache_enabled = bool(cache_enabled)
+        self.fail_on_cache_miss = bool(fail_on_cache_miss)
         self.cache_path = Path(cache_path).expanduser().resolve()
         self.expected_dimension = int(expected_dimension)
         if self.expected_dimension <= 0:
@@ -98,45 +100,77 @@ class CachedDenseEmbedding:
         raise NotImplementedError
 
     def _connect_cache(self) -> sqlite3.Connection:
-        self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         connection = None
         try:
-            connection = sqlite3.connect(str(self.cache_path), timeout=30.0)
-            connection.execute("PRAGMA busy_timeout=30000")
-            connection.execute("PRAGMA journal_mode=WAL")
-            connection.execute("PRAGMA synchronous=FULL")
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS cache_metadata (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL
-                )
-                """
-            )
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS embeddings (
-                    model_name TEXT NOT NULL,
-                    model_revision TEXT NOT NULL,
-                    semantics_version TEXT NOT NULL,
-                    text_sha256 TEXT NOT NULL,
-                    text_byte_length INTEGER NOT NULL,
-                    dimension INTEGER NOT NULL,
-                    vector_float32 BLOB NOT NULL,
-                    vector_sha256 TEXT NOT NULL,
-                    PRIMARY KEY (
-                        model_name,
-                        model_revision,
-                        semantics_version,
-                        text_sha256
+            if self.fail_on_cache_miss:
+                if not self.cache_path.is_file():
+                    raise FileNotFoundError(
+                        f"Formal embedding cache is missing: {self.cache_path}"
                     )
+                connection = sqlite3.connect(
+                    f"file:{self.cache_path}?mode=ro&immutable=1",
+                    uri=True,
+                    timeout=30.0,
                 )
-                """
-            )
+            else:
+                self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+                connection = sqlite3.connect(str(self.cache_path), timeout=30.0)
+            connection.execute("PRAGMA busy_timeout=30000")
+            if self.fail_on_cache_miss:
+                connection.execute("PRAGMA query_only=ON")
+            else:
+                connection.execute("PRAGMA journal_mode=WAL")
+                connection.execute("PRAGMA synchronous=FULL")
+            if self.fail_on_cache_miss:
+                tables = {
+                    str(row[0])
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    )
+                }
+                required = {"cache_metadata", "embeddings"}
+                if not required.issubset(tables):
+                    raise RuntimeError(
+                        "Formal embedding cache schema is incomplete: "
+                        f"missing={sorted(required - tables)}"
+                    )
+            else:
+                connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS cache_metadata (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )
+                    """
+                )
+                connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS embeddings (
+                        model_name TEXT NOT NULL,
+                        model_revision TEXT NOT NULL,
+                        semantics_version TEXT NOT NULL,
+                        text_sha256 TEXT NOT NULL,
+                        text_byte_length INTEGER NOT NULL,
+                        dimension INTEGER NOT NULL,
+                        vector_float32 BLOB NOT NULL,
+                        vector_sha256 TEXT NOT NULL,
+                        PRIMARY KEY (
+                            model_name,
+                            model_revision,
+                            semantics_version,
+                            text_sha256
+                        )
+                    )
+                    """
+                )
             row = connection.execute(
                 "SELECT value FROM cache_metadata WHERE key = 'schema_version'"
             ).fetchone()
             if row is None:
+                if self.fail_on_cache_miss:
+                    raise RuntimeError(
+                        "Formal embedding cache has no schema_version metadata"
+                    )
                 connection.execute(
                     "INSERT INTO cache_metadata(key, value) VALUES (?, ?)",
                     ("schema_version", CACHE_SCHEMA_VERSION),
@@ -231,20 +265,21 @@ class CachedDenseEmbedding:
                 cached[text_sha256] = vector
             elif row is not None:
                 invalid += 1
-                connection.execute(
-                    """
-                    DELETE FROM embeddings
-                    WHERE model_name = ? AND model_revision = ?
-                      AND semantics_version = ? AND text_sha256 = ?
-                    """,
-                    (
-                        self.model_name,
-                        self.revision,
-                        self.semantics_version,
-                        text_sha256,
-                    ),
-                )
-        if invalid:
+                if not self.fail_on_cache_miss:
+                    connection.execute(
+                        """
+                        DELETE FROM embeddings
+                        WHERE model_name = ? AND model_revision = ?
+                          AND semantics_version = ? AND text_sha256 = ?
+                        """,
+                        (
+                            self.model_name,
+                            self.revision,
+                            self.semantics_version,
+                            text_sha256,
+                        ),
+                    )
+        if invalid and not self.fail_on_cache_miss:
             connection.commit()
         return cached, invalid
 
@@ -278,6 +313,8 @@ class CachedDenseEmbedding:
     def write_vectors_to_cache(
         self, texts: Sequence[str], vectors: Sequence[Sequence[float]]
     ) -> None:
+        if self.fail_on_cache_miss:
+            raise RuntimeError("Formal embedding cache is read-only")
         if len(texts) != len(vectors):
             raise ValueError("Embedding cache write requires aligned texts and vectors")
         rows = [
@@ -337,6 +374,13 @@ class CachedDenseEmbedding:
                     )
                 if miss_count == 0:
                     return [cached[text_sha256] for text_sha256, _ in identities]
+                if self.fail_on_cache_miss:
+                    raise RuntimeError(
+                        "Formal embedding cache miss: "
+                        f"requested={len(normalized)} hits={hit_count} "
+                        f"misses={miss_count} invalid={invalid}; online model "
+                        "loading and cache mutation are disabled"
+                    )
 
                 missing = []
                 seen_missing = set()
@@ -474,6 +518,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         expected_dimension: int = QWEN3_EMBEDDING_DIMENSION,
         max_length: int = QWEN3_MAX_LENGTH,
         batch_size: int = QWEN3_MODEL_BATCH_SIZE,
+        fail_on_cache_miss: bool = False,
     ):
         if str(model_name) != QWEN3_MODEL_ID:
             raise ValueError(
@@ -504,6 +549,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
             expected_dimension=expected_dimension,
             semantics_version=f"qwen3e8b:{fingerprint}",
             specification=spec,
+            fail_on_cache_miss=fail_on_cache_miss,
         )
         self.max_length = int(max_length)
         self.attention_implementation = ""
@@ -706,6 +752,7 @@ def create_qwen3_embedding(
     cache_enabled: bool = True,
     device: str = "",
     batch_size: int = QWEN3_MODEL_BATCH_SIZE,
+    fail_on_cache_miss: bool = False,
     **_: Any,
 ):
     resolved_cache_path = str(
@@ -719,6 +766,7 @@ def create_qwen3_embedding(
         resolved_cache_path,
         str(device),
         int(batch_size),
+        bool(fail_on_cache_miss),
     )
     if key not in _INSTANCES:
         _INSTANCES[key] = Qwen3Embedding(
@@ -728,6 +776,7 @@ def create_qwen3_embedding(
             cache_enabled=cache_enabled,
             device=device,
             batch_size=batch_size,
+            fail_on_cache_miss=fail_on_cache_miss,
         )
     return _INSTANCES[key]
 

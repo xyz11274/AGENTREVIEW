@@ -2,13 +2,45 @@
 
 import logging
 import os
+from typing import Mapping, Optional
 
+import httpx
 import openai
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-def get_openai_client(client_type: str):
+def resolve_openai_base_url(
+    explicit_value: Optional[str] = None,
+    environ: Optional[Mapping[str, str]] = None,
+) -> str:
+    """Resolve an explicit OpenAI-compatible endpoint without a cloud default."""
+    values = os.environ if environ is None else environ
+    base_url = str(
+        explicit_value
+        or values.get("OPENAI_BASE_URL")
+        or values.get("OPENAI_API_BASE")
+        or ""
+    ).strip().rstrip("/")
+    if not base_url:
+        raise ValueError(
+            "OpenAI-compatible endpoint is required: pass --openai-base-url or "
+            "set OPENAI_BASE_URL/OPENAI_API_BASE"
+        )
+    if not base_url.startswith(("http://", "https://")):
+        raise ValueError(
+            f"OpenAI-compatible base URL must be an HTTP(S) URL, got {base_url!r}"
+        )
+    return base_url
+
+
+def get_openai_client(
+    client_type: str,
+    *,
+    base_url: Optional[str] = None,
+    api_key: Optional[str] = None,
+    timeout: Optional[httpx.Timeout] = None,
+):
     """
 
     Refer to [this page](https://platform.openai.com/docs/models) for authentication using OpenAI.
@@ -22,14 +54,16 @@ def get_openai_client(client_type: str):
         os.environ['OPENAI_API_VERSION'] = "2023-05-15"
 
     if client_type == "openai":
-        base_url = os.environ['OPENAI_BASE_URL'].rstrip("/")
-        if not base_url.startswith(("http://", "https://")):
+        resolved_base_url = resolve_openai_base_url(base_url)
+        resolved_api_key = str(api_key or os.environ.get("OPENAI_API_KEY") or "")
+        if not resolved_api_key:
             raise ValueError(
-                f"OPENAI_API_BASE must be an HTTP(S) URL, got {base_url!r}"
+                "OPENAI_API_KEY is required; local vLLM endpoints may use 'dummy'"
             )
         client = openai.OpenAI(
-            api_key=os.environ['OPENAI_API_KEY'],
-            base_url=base_url,
+            api_key=resolved_api_key,
+            base_url=resolved_base_url,
+            timeout=timeout,
             max_retries=0,
         )
 
