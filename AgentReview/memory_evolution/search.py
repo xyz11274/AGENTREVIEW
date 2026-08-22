@@ -58,6 +58,10 @@ class EvolutionConfig:
     embedding_adapter_sha256: str = ""
     embedding_model_name: str = ""
     embedding_revision: str = ""
+    embedding_spec: Dict[str, Any] = field(default_factory=dict)
+    embedding_fingerprint: str = ""
+    formal_experiment_identity: str = ""
+    formal_experiment_manifest_sha256: str = ""
     formal: bool = True
     review_request_sha256: str = ""
     data_manifest_sha256: str = ""
@@ -564,7 +568,14 @@ def run_evolution(
     selection_payload = {
         "static_validation_ids": sorted(static_ids),
         "episode_ids": [episode.id for episode in selected_episodes],
+        "embedding": {
+            "specification": dict(cfg.embedding_spec),
+            "fingerprint": cfg.embedding_fingerprint,
+        },
     }
+    selection_payload["selection_fingerprint"] = _canonical_sha256(
+        selection_payload
+    )
     if not cfg.formal or controller.get("phase") == "subset_selection":
         _write_json(output_dir / "selection.json", selection_payload)
         if cfg.formal:

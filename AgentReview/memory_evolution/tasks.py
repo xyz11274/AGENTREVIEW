@@ -82,6 +82,7 @@ def verify_promoted_program(
     program_path: Path,
     embedding_model_name: str,
     embedding_revision: str,
+    embedding_fingerprint: str = "",
 ) -> None:
     """Refuse deployment when promotion or embedding provenance has drifted."""
     root = Path(program_root).expanduser().resolve()
@@ -107,14 +108,21 @@ def verify_promoted_program(
     config = json.loads(config_path.read_text(encoding="utf-8"))
     expected_model = str(config.get("embedding_model_name") or "")
     expected_revision = str(config.get("embedding_revision") or "")
+    expected_fingerprint = str(config.get("embedding_fingerprint") or "")
     if (
         expected_model != str(embedding_model_name)
         or expected_revision != str(embedding_revision)
+        or (
+            expected_fingerprint
+            and expected_fingerprint != str(embedding_fingerprint)
+        )
     ):
         raise RuntimeError(
             f"{task_id} embedding provenance mismatch: evolved with "
-            f"{expected_model}@{expected_revision}, deployed with "
-            f"{embedding_model_name}@{embedding_revision}"
+            f"{expected_model}@{expected_revision} "
+            f"fingerprint={expected_fingerprint or '<legacy>'}, deployed with "
+            f"{embedding_model_name}@{embedding_revision} "
+            f"fingerprint={embedding_fingerprint or '<missing>'}"
         )
 
 

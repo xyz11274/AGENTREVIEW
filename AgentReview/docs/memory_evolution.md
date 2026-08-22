@@ -204,10 +204,14 @@ explicitly non-reportable. `pilot_full.sh` runs all five specialists, constructs
 out-of-fold META inputs, evolves META, and summarizes the initial-seed versus
 evolved-candidate validation scores.
 
-Formal searches require `--embedding-adapter module:factory` with
-`--embedding-model-name BAAI/bge-m3` and an immutable
-`--embedding-revision`. Static k-means and facility-location selection use only
-that adapter; hashed fallback embeddings are restricted to smoke/unit tests.
+Formal temporal v3 searches use
+`memory_evolution.embedding_adapter:create_qwen3_embedding` with
+`--embedding-model-name Qwen/Qwen3-Embedding-8B` and the resolved immutable
+commit in `--embedding-revision`. Static k-means and facility-location selection
+share the 4096-dimensional, normalized, document-style representation recorded
+in `configs/formal_temporal_v3_qwen3e8b.json`. The full embedding fingerprint is
+part of cache, run, selection, resume and promotion identity. Historical BGE-M3
+experiments remain available through `create_bge_m3` and their original cache.
 
 ## Known operational requirement
 

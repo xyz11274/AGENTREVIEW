@@ -1,0 +1,45 @@
+{
+  "experiment_identity": "formal_temporal_v3_qwen3e8b",
+  "protocol_version": "formal-temporal-v3-qwen3e8b-v1",
+  "embedding": {
+    "provider": "qwen3_embedding",
+    "model_id": "Qwen/Qwen3-Embedding-8B",
+    "model_revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+    "dimension": 4096,
+    "max_length": 32768,
+    "normalize_embeddings": true,
+    "pooling": "last_token",
+    "serialization_version": "agentreview-episode-text-v1",
+    "fingerprint": "f5fd62cb75e46177a293477c66cd9f2dfa0b3a7dad70d14ee7f0ada0130cb829"
+  },
+  "reused_frozen_assets": {
+    "temporal_split_manifest": {
+      "path": "configs/coco_temporal_split_v2/manifest.json",
+      "sha256": "65e524e644a58cac83aa5538f58c3bdc58528215640632d7c507cd8e51fefedb",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "frozen_s2_pool": {
+      "path": "configs/frozen_s2_temporal_v2.jsonl",
+      "sha256": "367cdff9f2255e280ec2de2843e87d79d7d6cc8cbc08f626b0500a0d2482ef49",
+      "version": "frozen-s2-temporal-v2"
+    },
+    "frozen_s2_pool_manifest": {
+      "path": "configs/frozen_s2_temporal_v2.jsonl.manifest.json",
+      "sha256": "559fa1ec2961ed911f3f48f9afb4aef6ca494eafd1b5d440cfab11a53b75b03e",
+      "version": "frozen-s2-temporal-v2"
+    }
+  },
+  "selection_assets": {
+    "status": "regeneration_required",
+    "required": [
+      "specialist_static_selection",
+      "meta_static_selection",
+      "rotating_selection_metadata",
+      "facility_location_episode_selection",
+      "qwen_embedding_cache",
+      "selection_fingerprints",
+      "readiness_manifest"
+    ]
+  },
+  "cache_namespace": "cache/qwen3_embedding_8b_cache.sqlite3"
+}

@@ -19,8 +19,8 @@ PROJECT_ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 : "${PAPER_MD_DIR:=$PROJECT_ROOT/test_data}"
 : "${REVIEW_OUTPUT_DIR:=$PROJECT_ROOT/outputs}"
 : "${MSTAR_PROGRAM_DIR:?Set MSTAR_PROGRAM_DIR to the promoted six-program suite.}"
-: "${MSTAR_EMBEDDING_ADAPTER:=memory_evolution.embedding_adapter:create_bge_m3}"
-: "${MSTAR_EMBEDDING_REVISION:?Set the immutable BGE-M3 model revision.}"
+: "${MSTAR_EMBEDDING_ADAPTER:=memory_evolution.embedding_adapter:create_qwen3_embedding}"
+: "${MSTAR_EMBEDDING_REVISION:?Set the immutable Qwen3-Embedding-8B model revision.}"
 
 "${PYTHON_BIN}" run_single_paper_review_cli.py \
   --paper_md_dir "${PAPER_MD_DIR}" \

@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from memory_evolution.cli import build_parser
-from memory_evolution.embedding_adapter import BgeM3Embedding
+from memory_evolution.embedding_adapter import BgeM3Embedding, Qwen3Embedding
 from memory_evolution.search import EvolutionConfig
 from memory_evolution.toolkit import InMemoryVectorCollection
 
@@ -50,7 +50,44 @@ class MockBgeEmbedding(BgeM3Embedding):
         return [self.vector(text) for text in batch]
 
 
+class MockQwenEmbedding(Qwen3Embedding):
+    def __init__(self, cache_path: Path):
+        super().__init__(
+            "Qwen/Qwen3-Embedding-8B",
+            "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+            cache_path=str(cache_path),
+            expected_dimension=4,
+        )
+        self.load_calls = 0
+        self.batch_calls = []
+
+    def _load(self):
+        self.load_calls += 1
+        self._model = object()
+
+    def _embed_uncached_batch(self, batch):
+        self.batch_calls.append(list(batch))
+        return [MockBgeEmbedding.vector(text) for text in batch]
+
+
 class EmbeddingCacheTest(unittest.TestCase):
+    def test_qwen_identity_contains_complete_formal_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            embedding = MockQwenEmbedding(Path(directory) / "qwen.sqlite3")
+            self.assertEqual(embedding.embedding_spec["provider"], "qwen3_embedding")
+            self.assertEqual(embedding.embedding_spec["pooling"], "last_token")
+            self.assertEqual(embedding.embedding_spec["max_length"], 32768)
+            self.assertEqual(len(embedding.embedding_fingerprint), 64)
+
+    def test_qwen_cache_identity_cannot_hit_bge_vector(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "shared.sqlite3"
+            MockBgeEmbedding(cache).embed(["paper"])
+            qwen = MockQwenEmbedding(cache)
+            qwen.embed(["paper"])
+            self.assertEqual(qwen.load_calls, 1)
+            self.assertEqual(qwen.batch_calls, [["paper"]])
+
     def test_second_embed_does_not_call_underlying_bge(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory) / "embedding.sqlite3"

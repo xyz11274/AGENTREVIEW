@@ -27,14 +27,36 @@ def _embed(client, texts: List[str]) -> List[List[float]]:
         vectors = client(texts)
     else:
         raise TypeError("Embedding client must provide embed() or be callable")
-    return [list(map(float, vector)) for vector in vectors]
+    output = [list(map(float, vector)) for vector in vectors]
+    if len(output) != len(texts):
+        raise ValueError(
+            "Embedding result count must match the input text count: "
+            f"vectors={len(output)}, texts={len(texts)}"
+        )
+    if output:
+        dimension = len(output[0])
+        if dimension <= 0:
+            raise ValueError("Embedding vectors must have a positive dimension")
+        for index, vector in enumerate(output):
+            if len(vector) != dimension:
+                raise ValueError(
+                    "Embedding vectors must share one dimension: "
+                    f"vector[0]={dimension}, vector[{index}]={len(vector)}"
+                )
+            if not all(math.isfinite(value) for value in vector):
+                raise ValueError(f"Embedding vector {index} must contain finite values")
+    return output
 
 
 def _cosine(left: List[float], right: List[float]) -> float:
-    size = min(len(left), len(right))
-    dot = sum(left[index] * right[index] for index in range(size))
-    left_norm = math.sqrt(sum(value * value for value in left[:size]))
-    right_norm = math.sqrt(sum(value * value for value in right[:size]))
+    if len(left) != len(right):
+        raise ValueError(
+            "Cosine similarity requires equal embedding dimensions: "
+            f"left={len(left)}, right={len(right)}"
+        )
+    dot = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
     if not left_norm or not right_norm:
         return 0.0
     return dot / (left_norm * right_norm)
@@ -43,7 +65,9 @@ def _cosine(left: List[float], right: List[float]) -> float:
 def _mean(vectors: List[List[float]]) -> List[float]:
     if not vectors:
         return []
-    dimensions = min(len(vector) for vector in vectors)
+    dimensions = len(vectors[0])
+    if any(len(vector) != dimensions for vector in vectors):
+        raise ValueError("Mean embedding requires equal vector dimensions")
     return [
         sum(vector[index] for vector in vectors) / len(vectors)
         for index in range(dimensions)
@@ -170,7 +194,7 @@ def select_episode_subset(
     while remaining and len(selected) < budget:
         best_index = None
         best_gain = float("-inf")
-        for episode_index in remaining:
+        for episode_index in sorted(remaining):
             gain = sum(
                 max(nearest[val_index], similarities[val_index][episode_index])
                 - nearest[val_index]

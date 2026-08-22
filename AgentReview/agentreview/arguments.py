@@ -187,11 +187,11 @@ def parse_args():
 
     parser.add_argument(
     "--memory_embedding_adapter", type=str, default=None,
-    help="Frozen embedding client as module:factory; use the same BGE-M3 adapter as evolution."
+    help="Frozen embedding client as module:factory; use the same adapter as evolution."
     )
 
     parser.add_argument(
-    "--memory_embedding_model_name", type=str, default="BAAI/bge-m3",
+    "--memory_embedding_model_name", type=str, default="Qwen/Qwen3-Embedding-8B",
     help="Embedding model identity used by the evolved MemoryPrograms."
     )
 

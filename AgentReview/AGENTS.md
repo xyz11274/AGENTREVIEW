@@ -50,6 +50,6 @@ targets.
   most two weighted failures and two successes.
 - Test data is evaluated only after promotion and never becomes feedback.
 - Candidate code never executes in the host process.
-- Formal subset selection uses frozen BGE-M3; no random/hash fallback.
+- Formal temporal v3 subset selection uses frozen Qwen3-Embedding-8B with its complete fingerprint.
 - META validation families are absent from all specialist evolution.
 - Reflector mutations and compile repairs use contextual V4A patches.

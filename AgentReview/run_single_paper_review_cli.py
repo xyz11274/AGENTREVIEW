@@ -756,7 +756,7 @@ def _memory_embedding_factory(args: Namespace):
         try:
             return factory(
                 model_name=getattr(
-                    args, "memory_embedding_model_name", "BAAI/bge-m3"
+                    args, "memory_embedding_model_name", "Qwen/Qwen3-Embedding-8B"
                 ),
                 revision=embedding_revision,
             )
@@ -822,7 +822,7 @@ def _mstar_toolkit(args: Namespace, backend, embedding_factory) -> MemoryToolkit
         llm_model=getattr(args, "model_name", None),
         embedding_client=embedding_factory(),
         embedding_model=getattr(
-            args, "memory_embedding_model_name", "BAAI/bge-m3"
+            args, "memory_embedding_model_name", "Qwen/Qwen3-Embedding-8B"
         ),
         s2_retrieval_pool=s2_pool,
         s2_retrieval_pool_sha256=s2_sha256,
@@ -894,8 +894,16 @@ def _mstar_memory_contexts(
                 args.memory_program_dir,
                 dimension,
                 program_path,
-                getattr(args, "memory_embedding_model_name", "BAAI/bge-m3"),
+                getattr(
+                    args,
+                    "memory_embedding_model_name",
+                    "Qwen/Qwen3-Embedding-8B",
+                ),
                 getattr(args, "memory_embedding_revision", ""),
+                str(
+                    getattr(toolkit.embedding_client, "embedding_fingerprint", "")
+                    or ""
+                ),
             )
         adapter = MemoryHarnessAdapter(
             str(program_path),
@@ -1001,8 +1009,16 @@ def _mstar_meta_memory_context(
             args.memory_program_dir,
             "META",
             program_path,
-            getattr(args, "memory_embedding_model_name", "BAAI/bge-m3"),
+            getattr(
+                args,
+                "memory_embedding_model_name",
+                "Qwen/Qwen3-Embedding-8B",
+            ),
             getattr(args, "memory_embedding_revision", ""),
+            str(
+                getattr(toolkit.embedding_client, "embedding_fingerprint", "")
+                or ""
+            ),
         )
     adapter = MemoryHarnessAdapter(
         str(program_path),

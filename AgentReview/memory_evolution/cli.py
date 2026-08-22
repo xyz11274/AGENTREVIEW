@@ -18,6 +18,11 @@ from .meta_cache import build_meta_input_cache
 from .models import Episode, EvalItem
 from .quality import check_program_path
 from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
+from .embedding_adapter import (
+    DEFAULT_QWEN3_EMBEDDING_CACHE,
+    QWEN3_MODEL_ID,
+    is_immutable_model_revision,
+)
 from .search import EvolutionConfig, resolve_formal_attempt_budget, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
@@ -36,6 +41,7 @@ from .benchmark_adapter import CoCoMetricBenchmarkAdapter
 TASK_MODEL_DEFAULT = "kimi-k3"
 REFLECTOR_MODEL_DEFAULT = "kimi-k3"
 JUDGE_MODEL_DEFAULT = "kimi-k3"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_jsonl(path: str):
@@ -108,6 +114,8 @@ def _embedding_adapter(
     revision: str,
     cache_path: str = "",
     cache_enabled: bool = True,
+    device: str = "",
+    batch_size: int = 1,
 ):
     if not spec:
         return None
@@ -121,6 +129,8 @@ def _embedding_adapter(
             revision=revision,
             cache_path=cache_path,
             cache_enabled=cache_enabled,
+            device=device,
+            batch_size=batch_size,
         )
     except TypeError:
         try:
@@ -136,6 +146,14 @@ def _embedding_adapter(
     return client
 
 
+def _embedding_provenance(client) -> tuple[dict, str]:
+    if client is None:
+        return {}, ""
+    specification = dict(getattr(client, "embedding_spec", {}) or {})
+    fingerprint = str(getattr(client, "embedding_fingerprint", "") or "")
+    return specification, fingerprint
+
+
 def _adapter_sha256(spec: str) -> str:
     if not spec:
         return ""
@@ -145,6 +163,30 @@ def _adapter_sha256(spec: str) -> str:
     if not source:
         raise ValueError(f"Cannot fingerprint adapter module: {module_name}")
     return _sha256(Path(source).resolve())
+
+
+def _validate_formal_embedding_manifest(
+    manifest_path: str, specification: dict, fingerprint: str
+) -> tuple[str, str]:
+    path = Path(manifest_path).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Formal experiment manifest is missing: {path}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    identity = str(payload.get("experiment_identity") or "")
+    expected = dict(payload.get("embedding") or {})
+    expected_fingerprint = str(expected.pop("fingerprint", "") or "")
+    if identity != "formal_temporal_v3_qwen3e8b":
+        raise RuntimeError("Formal Qwen experiment identity is inconsistent")
+    if expected != specification or expected_fingerprint != fingerprint:
+        raise RuntimeError(
+            "Formal embedding specification differs from the experiment manifest"
+        )
+    for label, asset in dict(payload.get("reused_frozen_assets") or {}).items():
+        asset_path = PROJECT_ROOT / str(asset.get("path") or "")
+        expected_sha256 = str(asset.get("sha256") or "")
+        if not asset_path.is_file() or _sha256(asset_path) != expected_sha256:
+            raise RuntimeError(f"Formal reused asset checksum mismatch: {label}")
+    return identity, _sha256(path)
 
 
 def _task_toolkit(args):
@@ -166,6 +208,8 @@ def _task_toolkit(args):
             args.embedding_revision,
             getattr(args, "embedding_cache", ""),
             not getattr(args, "disable_embedding_cache", False),
+            getattr(args, "embedding_device", ""),
+            getattr(args, "embedding_batch_size", 1),
         ),
         embedding_model=args.embedding_model_name,
         review_splitter=splitter,
@@ -272,19 +316,19 @@ def _add_runtime_args(parser):
     )
     parser.add_argument(
         "--embedding-adapter",
-        default="",
+        default="memory_evolution.embedding_adapter:create_qwen3_embedding",
         help=(
-            "Frozen BGE-M3 embedding client as module:factory. Required for "
-            "formal M★ subset selection."
+            "Frozen embedding client as module:factory. Formal temporal v3 "
+            "defaults to Qwen3-Embedding-8B."
         ),
     )
-    parser.add_argument("--embedding-model-name", default="BAAI/bge-m3")
+    parser.add_argument("--embedding-model-name", default=QWEN3_MODEL_ID)
     parser.add_argument(
         "--embedding-cache",
         default=str(
             Path(__file__).resolve().parent.parent
             / "cache"
-            / "embedding_cache.sqlite3"
+            / DEFAULT_QWEN3_EMBEDDING_CACHE.name
         ),
         help=(
             "Runtime-only persistent exact-text embedding cache. This path is "
@@ -296,6 +340,12 @@ def _add_runtime_args(parser):
         action="store_true",
         help="Disable the runtime embedding cache without changing formal semantics.",
     )
+    parser.add_argument(
+        "--embedding-device",
+        default="",
+        help="Single runtime device such as cuda:0; offline multi-GPU uses prewarm_embedding_cache.py.",
+    )
+    parser.add_argument("--embedding-batch-size", type=int, default=1)
     parser.add_argument(
         "--s2-retrieval-pool",
         default="",
@@ -309,6 +359,11 @@ def _add_runtime_args(parser):
             / "asset_manifest_v2.json"
         ),
         help="Versioned formal Asset Manifest; fail-closed in formal mode.",
+    )
+    parser.add_argument(
+        "--formal-experiment-manifest",
+        default=str(PROJECT_ROOT / "configs" / "formal_temporal_v3_qwen3e8b.json"),
+        help="Formal embedding and frozen-asset identity for temporal v3.",
     )
     parser.add_argument(
         "--temporal-split-manifest",
@@ -327,7 +382,7 @@ def _add_runtime_args(parser):
     parser.add_argument(
         "--embedding-revision",
         default="",
-        help="Immutable model revision/commit recorded for formal BGE-M3 runs.",
+        help="Immutable resolved model commit recorded for formal embedding runs.",
     )
     parser.add_argument(
         "--openai-client-type",
@@ -654,6 +709,20 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             },
         )
     task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
+    embedding_spec, embedding_fingerprint = _embedding_provenance(
+        task_toolkit.embedding_client
+    )
+    formal_experiment_identity = ""
+    formal_experiment_manifest_sha256 = ""
+    if formal and embedding_spec.get("provider") == "qwen3_embedding":
+        (
+            formal_experiment_identity,
+            formal_experiment_manifest_sha256,
+        ) = _validate_formal_embedding_manifest(
+            args.formal_experiment_manifest,
+            embedding_spec,
+            embedding_fingerprint,
+        )
     if formal and task_id != META_TASK and not args.classifier_adapter:
         raise SystemExit(
             "Formal specialist evolution requires --classifier-adapter. "
@@ -692,7 +761,19 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     ):
         raise SystemExit(
             "Formal evolution requires --embedding-adapter and an immutable "
-            "--embedding-revision for BGE-M3."
+            "--embedding-revision."
+        )
+    if formal and (not embedding_spec or not embedding_fingerprint):
+        raise SystemExit(
+            "Formal embedding adapter must provide a complete fingerprinted identity."
+        )
+    if (
+        formal
+        and embedding_spec.get("provider") == "qwen3_embedding"
+        and not is_immutable_model_revision(args.embedding_revision)
+    ):
+        raise SystemExit(
+            "Formal Qwen3 embedding requires a resolved immutable commit SHA."
         )
     metric = get_metric(
         "coco_review",
@@ -733,6 +814,10 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         embedding_adapter_sha256=_adapter_sha256(args.embedding_adapter),
         embedding_model_name=args.embedding_model_name,
         embedding_revision=args.embedding_revision,
+        embedding_spec=embedding_spec,
+        embedding_fingerprint=embedding_fingerprint,
+        formal_experiment_identity=formal_experiment_identity,
+        formal_experiment_manifest_sha256=formal_experiment_manifest_sha256,
         formal=formal,
         review_request_sha256=EXPECTED_REVIEW_REQUEST_SHA256,
         data_manifest_sha256=_sha256(manifest_path) if manifest_path.is_file() else "",
@@ -788,7 +873,7 @@ def _selected_episodes(data_root: Path, source_run: str, task_id: str):
 def _validate_formal_runtime(args, specialists: bool = True):
     if not args.embedding_adapter or not args.embedding_revision:
         raise SystemExit(
-            "Formal execution requires the frozen BGE-M3 adapter and revision."
+            "Formal execution requires a frozen embedding adapter and revision."
         )
     if specialists and (
         not args.classifier_adapter
@@ -898,6 +983,10 @@ def _final_evaluate_suite(args):
             program,
             args.embedding_model_name,
             args.embedding_revision,
+            str(
+                getattr(task_toolkit.embedding_client, "embedding_fingerprint", "")
+                or ""
+            ),
         )
         quality = check_program_path(
             str(program),
@@ -990,6 +1079,10 @@ def _final_evaluate_suite(args):
         meta_program,
         args.embedding_model_name,
         args.embedding_revision,
+        str(
+            getattr(task_toolkit.embedding_client, "embedding_fingerprint", "")
+            or ""
+        ),
     )
     meta_episodes, meta_selection_path = _selected_episodes(
         data_root, meta_promoted["source_run"], META_TASK
@@ -1104,7 +1197,7 @@ def main():
             and (not args.embedding_adapter or not args.embedding_revision)
         ):
             raise SystemExit(
-                "Meta input caching requires the same frozen BGE-M3 "
+                "Meta input caching requires the same frozen "
                 "--embedding-adapter and --embedding-revision as evolution."
             )
         result = build_meta_input_cache(
@@ -1236,7 +1329,7 @@ def main():
             not args.embedding_adapter or not args.embedding_revision
         ):
             raise SystemExit(
-                "Formal evaluation requires the frozen BGE-M3 "
+                "Formal evaluation requires the frozen "
                 "--embedding-adapter and --embedding-revision."
             )
         if (

@@ -31,6 +31,7 @@ from memory_evolution.assets import (
     sha256_file,
 )
 from memory_evolution.formal_protocol import run_formal_protocol_gate
+from memory_evolution.embedding_adapter import embedding_fingerprint
 from memory_evolution.tasks import SPECIALIST_TASKS
 from memory_evolution.toolkit import validate_frozen_s2_pool
 
@@ -60,6 +61,7 @@ def build_candidate_manifest(
     split_summary: Dict[str, Any],
     s2_pool: Path,
     s2_manifest: Path,
+    formal_experiment: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     candidate = copy.deepcopy(payload)
     if candidate.get("manifest_version") != ASSET_MANIFEST_VERSION:
@@ -124,6 +126,9 @@ def build_candidate_manifest(
         "version": POOL_VERSION,
         "split": "A+B+C+D",
     }
+    if formal_experiment:
+        candidate["experiment_identity"] = formal_experiment["experiment_identity"]
+        candidate["embedding"] = copy.deepcopy(formal_experiment["embedding"])
     candidate["formal_ready"] = True
     candidate["formal_readiness_scope"] = "pre-QUAL-evolution assets and A/B task bundles"
     candidate["formal_blockers"] = []
@@ -149,6 +154,10 @@ def main() -> None:
     parser.add_argument(
         "--asset-manifest",
         default=str(PROJECT_ROOT / "configs/asset_manifest_v2.json"),
+    )
+    parser.add_argument(
+        "--formal-experiment-manifest",
+        default=str(PROJECT_ROOT / "configs/formal_temporal_v3_qwen3e8b.json"),
     )
     parser.add_argument(
         "--temporal-split-manifest",
@@ -177,13 +186,33 @@ def main() -> None:
     s2_manifest_path = s2_path.with_suffix(s2_path.suffix + ".manifest.json")
     data_root = Path(args.data_root).expanduser().resolve()
     coco_root = Path(args.coco_root).expanduser().resolve()
-    for required in (asset_path, split_path, s2_path, s2_manifest_path):
+    formal_experiment_path = Path(
+        args.formal_experiment_manifest
+    ).expanduser().resolve()
+    for required in (
+        asset_path,
+        split_path,
+        s2_path,
+        s2_manifest_path,
+        formal_experiment_path,
+    ):
         if not required.is_file():
             raise FileNotFoundError(f"Required existing asset is missing: {required}")
     if not data_root.is_dir():
         raise FileNotFoundError(f"Formal A/B data root is missing: {data_root}")
     if not coco_root.is_dir():
         raise FileNotFoundError(f"Current CoCo root is missing: {coco_root}")
+    formal_experiment = json.loads(
+        formal_experiment_path.read_text(encoding="utf-8")
+    )
+    embedding = dict(formal_experiment.get("embedding") or {})
+    recorded_fingerprint = str(embedding.pop("fingerprint", "") or "")
+    if (
+        formal_experiment.get("experiment_identity")
+        != "formal_temporal_v3_qwen3e8b"
+        or embedding_fingerprint(embedding) != recorded_fingerprint
+    ):
+        raise RuntimeError("Formal Qwen experiment manifest identity is invalid")
 
     split_summary, zones = load_temporal_split_manifest(str(split_path))
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
@@ -235,6 +264,7 @@ def main() -> None:
         split_summary=split_summary,
         s2_pool=s2_path,
         s2_manifest=s2_manifest_path,
+        formal_experiment=formal_experiment,
     )
     seed_root = PROJECT_ROOT / "memory_evolution" / "seeds"
     seed_paths = [
@@ -286,6 +316,8 @@ def main() -> None:
         "check_only": bool(args.check_only),
         "asset_manifest_updated": not args.check_only,
         "asset_manifest": str(asset_path),
+        "experiment_identity": formal_experiment["experiment_identity"],
+        "embedding_fingerprint": recorded_fingerprint,
         "coco_root": str(coco_root),
         "frozen_coco_root": gate_reports["QUAL"]["coco_provenance"][
             "frozen_root"
