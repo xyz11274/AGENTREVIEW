@@ -1,0 +1,34 @@
+# Install only the section needed for the selected optional workflow. The
+# formal AgentReview + memory-evolution path uses requirements-runtime.txt.
+
+# Legacy provider adapters (not used by the formal OpenAI-compatible path).
+anthropic
+bardapi
+cohere
+langchain
+supabase
+
+# Interactive CLI, viewers, PDF/OpenReview ingestion, and OpenScholar helpers.
+beautifulsoup4
+colorama
+gradio>=5.0,<6.0
+jsonlines
+openreview-py
+pdfminer.six
+prompt-toolkit
+python-pptx
+rich
+
+# CoCo full-text BLEU/ROUGE/BERTScore functions. Formal M-star fitness does not
+# call these functions.
+bert-score
+nltk
+rouge-score
+
+# Development and test commands.
+pytest
+ruff
+
+# Optional Qwen embedding acceleration. Install after the CUDA torch wheel with
+# `python -m pip install flash-attn==2.8.3 --no-build-isolation`.
+flash-attn==2.8.3
