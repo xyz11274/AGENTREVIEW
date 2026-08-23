@@ -208,13 +208,30 @@ class CoCoReviewFitness:
         response = self.judge_toolkit.llm_completion(
             [{"role": "user", "content": prompt}]
         )
-        parsed = _json_object(response)
+        self.last_details = {
+            "task_id": self.task_id,
+            "raw_response_prefix": response[:500],
+            "parser_success": False,
+        }
+        try:
+            parsed = _json_object(response)
+        except Exception as exc:
+            self.last_details["parser_error"] = f"{type(exc).__name__}: {exc}"
+            raise
+        self.last_details.update(
+            {"parser_success": True, "parser_result": parsed}
+        )
         expected = (
             set(self.META_METRICS)
             if self.task_id == META_TASK
             else set(self.SPECIALIST_METRICS)
         )
         if set(parsed) != expected:
+            self.last_details["parser_success"] = False
+            self.last_details["parser_error"] = (
+                f"field mismatch: expected={sorted(expected)}, "
+                f"got={sorted(parsed)}"
+            )
             raise ValueError(
                 f"Judge fields mismatch: expected={sorted(expected)}, "
                 f"got={sorted(parsed)}"
@@ -227,6 +244,10 @@ class CoCoReviewFitness:
                 or not isinstance(value, (int, float))
                 or not 1 <= float(value) <= 5
             ):
+                self.last_details["parser_success"] = False
+                self.last_details["parser_error"] = (
+                    f"invalid score: {name}={value!r}"
+                )
                 raise ValueError(f"Invalid 1-5 judge score for {name}: {value!r}")
         if self.task_id == META_TASK:
             normalized = {

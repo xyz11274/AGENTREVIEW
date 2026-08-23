@@ -11,7 +11,7 @@ from memory_evolution.search import EvolutionConfig, run_evolution
 from memory_evolution.quality import QualityResult
 from memory_evolution.reflector import ChangeLog, CompileFixResult, MutationResult
 from memory_evolution.models import EvalResult
-from memory_evolution.task_agent import TaskAgent
+from memory_evolution.task_agent import TaskAgent, _parse_json_object
 from memory_evolution.toolkit import MemoryToolkit
 
 
@@ -58,6 +58,17 @@ class FakeLLM:
 
 
 class SearchLoopTest(unittest.TestCase):
+    def test_structured_parser_accepts_json_after_qwen_style_braced_prose(self):
+        response = (
+            "I will use {schema} as requested.\n"
+            "```json\n{\"query_text\": \"QUAL ablations\"}\n```"
+        )
+
+        self.assertEqual(
+            _parse_json_object(response),
+            {"query_text": "QUAL ablations"},
+        )
+
     def test_one_iteration_writes_child_and_artifacts(self):
         root = Path(__file__).parents[1]
         seed_dir = root / "memory_evolution" / "seeds"

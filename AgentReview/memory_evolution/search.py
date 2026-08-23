@@ -656,7 +656,6 @@ def run_evolution(
         print(f"[MSTAR] Seed {program_id}: quality check started", flush=True)
         quality = check_program_path(
             str(target),
-            toolkit=toolkit,
             write_timeout=cfg.write_timeout,
             read_timeout=cfg.read_timeout,
         )
@@ -668,12 +667,21 @@ def run_evolution(
                 f"evolved_from_{suffix}",
                 static_items,
                 replicate_id=f"search-{cfg.seed}",
-                collect_traces=False,
+                collect_traces=True,
             )
             score = evaluation.mean_score
+            _write_traces(
+                traces_dir / f"seed_{index:03d}_static.jsonl",
+                program_id,
+                evaluation.traces,
+            )
+            failed_count = sum(
+                not bool(case.get("success")) for case in evaluation.failed_cases
+            )
             print(
                 f"[MSTAR] Seed {program_id}: score={score:.4f}, "
-                f"traces={len(evaluation.traces)}",
+                f"traces={len(evaluation.traces)}, failed_cases={failed_count}, "
+                f"error={evaluation.error or 'none'}",
                 flush=True,
             )
         else:
@@ -1044,7 +1052,6 @@ def run_evolution(
             target.write_text(code, encoding="utf-8")
             quality = check_program_path(
                 str(target),
-                toolkit=toolkit,
                 write_timeout=cfg.write_timeout,
                 read_timeout=cfg.read_timeout,
             )
@@ -1082,7 +1089,6 @@ def run_evolution(
                 if scope_valid:
                     quality = check_program_path(
                         str(target),
-                        toolkit=toolkit,
                         write_timeout=cfg.write_timeout,
                         read_timeout=cfg.read_timeout,
                     )

@@ -316,6 +316,8 @@ def evaluate_program(
             )
         except Exception as exc:
             score = 0.0
+            parser_debug = getattr(task_agent, "last_parser_debug", None)
+            evaluator_debug = getattr(metric, "last_details", None)
             case.update(
                 {
                     "context": case.get("context", ""),
@@ -323,6 +325,14 @@ def evaluate_program(
                     "score": 0.0,
                     "success": False,
                     "error": f"{type(exc).__name__}: {exc}",
+                    "parser_debug": (
+                        dict(parser_debug) if isinstance(parser_debug, dict) else {}
+                    ),
+                    "evaluator_debug": (
+                        dict(evaluator_debug)
+                        if isinstance(evaluator_debug, dict)
+                        else {}
+                    ),
                 }
             )
         duration = time.monotonic() - read_started

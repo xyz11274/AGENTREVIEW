@@ -38,10 +38,18 @@ def _parse_json_object(response: str) -> Dict[str, Any]:
     try:
         value = json.loads(text)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-        if not match:
+        decoder = json.JSONDecoder()
+        value = None
+        for match in re.finditer(r"\{", text):
+            try:
+                candidate, _ = decoder.raw_decode(text[match.start() :])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(candidate, dict):
+                value = candidate
+                break
+        if value is None:
             raise
-        value = json.loads(match.group(0))
     if not isinstance(value, dict):
         raise ValueError("Expected a JSON object")
     return value
@@ -74,6 +82,7 @@ class TaskAgent:
         self.toolkit = toolkit
         self.system_prompt = system_prompt
         self.task_id = task_id
+        self.last_parser_debug: Dict[str, Any] = {}
 
     def _complete(self, prompt: str, agent_name: str = "Memory Harness") -> str:
         return self.toolkit.llm_completion(
@@ -85,9 +94,21 @@ class TaskAgent:
         )
 
     def _structured_completion(self, prompt: str, dataclass_type: Type):
-        value = _parse_json_object(
-            self._complete(prompt, agent_name=f"Memory {dataclass_type.__name__}")
+        response = self._complete(
+            prompt, agent_name=f"Memory {dataclass_type.__name__}"
         )
+        self.last_parser_debug = {
+            "schema": dataclass_type.__name__,
+            "raw_response_prefix": response[:500],
+            "parser_success": False,
+        }
+        try:
+            value = _parse_json_object(response)
+        except Exception as exc:
+            self.last_parser_debug["parser_error"] = (
+                f"{type(exc).__name__}: {exc}"
+            )
+            raise
         items = list(fields(dataclass_type))
         expected = {item.name for item in items}
         required = {
@@ -99,6 +120,10 @@ class TaskAgent:
         missing = required - actual
         extra = actual - expected
         if missing or extra:
+            self.last_parser_debug["parser_result"] = value
+            self.last_parser_debug["parser_error"] = (
+                f"field mismatch: missing={sorted(missing)}, extra={sorted(extra)}"
+            )
             raise ValueError(
                 f"JSON fields do not match {dataclass_type.__name__}: "
                 f"missing={sorted(missing)}, extra={sorted(extra)}"
@@ -110,10 +135,17 @@ class TaskAgent:
             and not _matches_annotation(value[item.name], item.type)
         ]
         if invalid:
+            self.last_parser_debug["parser_result"] = value
+            self.last_parser_debug["parser_error"] = (
+                f"type mismatch: fields={sorted(invalid)}"
+            )
             raise TypeError(
                 f"JSON field types do not match {dataclass_type.__name__}: "
                 f"{sorted(invalid)}"
             )
+        self.last_parser_debug.update(
+            {"parser_success": True, "parser_result": value}
+        )
         return dataclass_type(**value)
 
     def extract_knowledge_item(self, program, raw_text: str):
