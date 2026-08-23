@@ -1,85 +1,120 @@
 {
-  "manifest_version": "mstar-assets-v2-temporal",
-  "external_roots": {
-    "openreview": "/data0/xyj/shengao/OpenReview",
-    "cocoreviewbench": "/data0/xyj/shengao/CoCoReviewBench"
-  },
   "assets": {
-    "temporal_split_manifest": {
-      "path": "configs/coco_temporal_split_v1/manifest.json",
-      "sha256": "0b040aefcef39bb4aa89869f941233ff5025665da50351ca40faa65e6443dc26",
-      "version": "coco-temporal-paper-split-v1",
-      "split": "A+B+C+D"
+    "frozen_reviewer_identity": {
+      "path": "REVIEW_Request.md",
+      "sha256": "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
+      "split": "program",
+      "version": "frozen-reviewer-identity-v1"
     },
-    "zone_A_historical_experience": {
-      "path": "configs/coco_temporal_split_v1/historical_experience.jsonl",
-      "sha256": "8ed48ae171cdcac1e8af26495a7dbecd3edb28854d6e5ad795bcb19e245eced2",
-      "version": "coco-temporal-paper-split-v1",
-      "split": "historical_experience"
+    "frozen_s2_pool": {
+      "path": "configs/frozen_s2_temporal_v2.jsonl",
+      "sha256": "367cdff9f2255e280ec2de2843e87d79d7d6cc8cbc08f626b0500a0d2482ef49",
+      "split": "A+B+C+D",
+      "version": "frozen-s2-temporal-v2"
     },
-    "zone_B_evolution_validation": {
-      "path": "configs/coco_temporal_split_v1/evolution_validation.jsonl",
-      "sha256": "167f22a24952c1afd9e00bc88d7d1061a75d6436b60a109257ea94f1d7a1657f",
-      "version": "coco-temporal-paper-split-v1",
-      "split": "evolution_validation"
-    },
-    "zone_C_effectiveness_holdout": {
-      "path": "configs/coco_temporal_split_v1/effectiveness_holdout.jsonl",
-      "sha256": "ef82409d6ecc0ba64aa0007ad3b34c0ab9aa4aafc231d3e1284bcabb5dae5a61",
-      "version": "coco-temporal-paper-split-v1",
-      "split": "effectiveness_holdout"
-    },
-    "zone_D_held_out_benchmark_test": {
-      "path": "configs/coco_temporal_split_v1/held_out_benchmark_test.jsonl",
-      "sha256": "360e4e0ea6200594b8eff3dbe4fd5401387ac7df4050a6d5f7655ededd4be50f",
-      "version": "coco-temporal-paper-split-v1",
-      "split": "held_out_benchmark_test"
-    },
-    "seed_vector_search": {
-      "path": "memory_evolution/seeds/vector_search.py",
-      "sha256": "45ed77aaef8ac54a2955192ee61a85b66b7f4667f9c34d1bb302ddd2a7353bda",
-      "version": "seed-vector-search-v1",
-      "split": "program"
-    },
-    "seed_llm_summarizer": {
-      "path": "memory_evolution/seeds/llm_summarizer.py",
-      "sha256": "0f120fcd98f0d99bcab6709b08f5165b9194646ea46352b2a5ddfaafb505652f",
-      "version": "seed-llm-summarizer-v1",
-      "split": "program"
+    "frozen_s2_pool_manifest": {
+      "path": "configs/frozen_s2_temporal_v2.jsonl.manifest.json",
+      "sha256": "559fa1ec2961ed911f3f48f9afb4aef6ca494eafd1b5d440cfab11a53b75b03e",
+      "split": "A+B+C+D",
+      "version": "frozen-s2-temporal-v2"
     },
     "seed_experience_learner": {
       "path": "memory_evolution/seeds/experience_learner.py",
       "sha256": "2d8954a65c596721df3e832c5a23ee1d104920eb8a23e19b34783c01971eb5d8",
-      "version": "seed-experience-learner-v1",
-      "split": "program"
+      "split": "program",
+      "version": "seed-experience-learner-v1"
     },
-    "frozen_reviewer_identity": {
-      "path": "REVIEW_Request.md",
-      "sha256": "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
-      "version": "frozen-reviewer-identity-v1",
-      "split": "program"
+    "seed_llm_summarizer": {
+      "path": "memory_evolution/seeds/llm_summarizer.py",
+      "sha256": "0f120fcd98f0d99bcab6709b08f5165b9194646ea46352b2a5ddfaafb505652f",
+      "split": "program",
+      "version": "seed-llm-summarizer-v1"
+    },
+    "seed_vector_search": {
+      "path": "memory_evolution/seeds/vector_search.py",
+      "sha256": "45ed77aaef8ac54a2955192ee61a85b66b7f4667f9c34d1bb302ddd2a7353bda",
+      "split": "program",
+      "version": "seed-vector-search-v1"
+    },
+    "temporal_family_manifest": {
+      "path": "configs/coco_temporal_split_v2/paper_families.jsonl",
+      "sha256": "b42c19ca3603c5ab291f5b69d64b9b641280d9c74cf50264ec9dcb76fc229a3a",
+      "split": "A+B+C+D-family-index",
+      "version": "coco-temporal-paper-split-v2"
     },
     "temporal_split_generator": {
       "path": "scripts/build_coco_temporal_split.py",
       "sha256": "b9d67356fa831cd6c24dc16eb0974aaa39d3430d2707db15c3213df25b79d86f",
-      "version": "coco-temporal-paper-split-v2",
-      "split": "infrastructure"
+      "split": "infrastructure",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "temporal_split_manifest": {
+      "path": "configs/coco_temporal_split_v2/manifest.json",
+      "sha256": "65e524e644a58cac83aa5538f58c3bdc58528215640632d7c507cd8e51fefedb",
+      "split": "A+B+C+D",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "zone_A_historical_experience": {
+      "path": "configs/coco_temporal_split_v2/historical_experience.jsonl",
+      "sha256": "ad02e5e933993564c20ab8607cee59dda62afbdf20c8df577dd67758f37b407f",
+      "split": "historical_experience",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "zone_B_evolution_validation": {
+      "path": "configs/coco_temporal_split_v2/evolution_validation.jsonl",
+      "sha256": "0721c39c146a163429df182bcf59bb2511a34afb06a5b6b705f95babd6f53fa5",
+      "split": "evolution_validation",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "zone_C_effectiveness_holdout": {
+      "path": "configs/coco_temporal_split_v2/effectiveness_holdout.jsonl",
+      "sha256": "edd88ae292d69edc692935e09adb0b4b00a84b3625bc26bfeb0c83feb4e58dcf",
+      "split": "effectiveness_holdout",
+      "version": "coco-temporal-paper-split-v2"
+    },
+    "zone_D_held_out_benchmark_test": {
+      "path": "configs/coco_temporal_split_v2/held_out_benchmark_test.jsonl",
+      "sha256": "a5b91c501b30338296ae40727f75ae086005dacef393ec959515a8f08028e783",
+      "split": "held_out_benchmark_test",
+      "version": "coco-temporal-paper-split-v2"
     }
   },
   "deprecated_assets": {
-    "frozen_s2_temporal_v1": {
-      "path": "configs/frozen_s2_temporal_v1.jsonl",
-      "work_path": "configs/frozen_s2_temporal_v1.jsonl.work",
-      "version": "frozen-s2-temporal-v1",
+    "coco_temporal_split_v1": {
       "deprecated_for_formal_use": true,
-      "reason": "query_title_serialization_contamination"
+      "path": "configs/coco_temporal_split_v1/manifest.json",
+      "reason": "query_title_serialization_contamination_and_duplicate_family_targets",
+      "sha256": "0b040aefcef39bb4aa89869f941233ff5025665da50351ca40faa65e6443dc26",
+      "split": "A+B+C+D",
+      "version": "coco-temporal-paper-split-v1"
+    },
+    "frozen_s2_temporal_v1": {
+      "deprecated_for_formal_use": true,
+      "path": "configs/frozen_s2_temporal_v1.jsonl",
+      "reason": "query_title_serialization_contamination_and_duplicate_family_targets",
+      "version": "frozen-s2-temporal-v1",
+      "work_path": "configs/frozen_s2_temporal_v1.jsonl.work"
     }
   },
-  "formal_ready": false,
-  "formal_blockers": [
-    "coco_temporal_split_v2 must be generated and pass the v1/v2 comparison audit",
-    "frozen_s2_temporal_v2 must be generated with passed temporal and query-integrity audits",
-    "A/B task bundles must be regenerated from coco_temporal_split_v2"
-  ],
+  "embedding": {
+    "dimension": 4096,
+    "fingerprint": "f5fd62cb75e46177a293477c66cd9f2dfa0b3a7dad70d14ee7f0ada0130cb829",
+    "max_length": 32768,
+    "model_id": "Qwen/Qwen3-Embedding-8B",
+    "model_revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+    "normalize_embeddings": true,
+    "pooling": "last_token",
+    "provider": "qwen3_embedding",
+    "serialization_version": "agentreview-episode-text-v1"
+  },
+  "experiment_identity": "formal_temporal_v3_qwen3e8b",
+  "external_roots": {
+    "cocoreviewbench": "/data0/xyj/shengao/CoCoReviewBench",
+    "openreview": "/data0/xyj/shengao/OpenReview"
+  },
+  "formal_blockers": [],
+  "formal_readiness_scope": "pre-QUAL-evolution assets and A/B task bundles",
+  "formal_ready": true,
+  "manifest_version": "mstar-assets-v2-temporal",
   "supersedes": "configs/asset_manifest_v1.json"
 }
