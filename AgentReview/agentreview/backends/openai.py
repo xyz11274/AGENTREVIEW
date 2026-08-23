@@ -199,6 +199,7 @@ class OpenAIChat(IntelligenceBackend):
         *,
         max_tokens=None,
         reasoning_effort=None,
+        chat_template_kwargs=None,
     ):
         output_tokens = max(1, int(max_tokens or self.max_tokens))
         kwargs = {
@@ -221,6 +222,10 @@ class OpenAIChat(IntelligenceBackend):
         )
         if active_effort and getattr(self, "reasoning_effort_supported", False):
             kwargs["reasoning_effort"] = active_effort
+        if chat_template_kwargs:
+            kwargs["extra_body"] = {
+                "chat_template_kwargs": dict(chat_template_kwargs)
+            }
         return kwargs
 
     def _create_completion(self, kwargs, agent_name):
@@ -232,6 +237,7 @@ class OpenAIChat(IntelligenceBackend):
         agent_name=None,
         max_tokens=None,
         reasoning_effort=None,
+        chat_template_kwargs=None,
     ):
         # Refer to https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/switching-endpoints for how to
         # make API calls
@@ -244,6 +250,7 @@ class OpenAIChat(IntelligenceBackend):
             messages,
             max_tokens=requested_tokens,
             reasoning_effort=reasoning_effort,
+            chat_template_kwargs=chat_template_kwargs,
         )
         retryable = (
             RateLimitError,
@@ -303,6 +310,7 @@ class OpenAIChat(IntelligenceBackend):
             ),
             "reasoning_chars": len(reasoning) if isinstance(reasoning, str) else 0,
             "requested_tokens": requested_tokens,
+            "chat_template_kwargs": dict(chat_template_kwargs or {}),
             "reasoning_effort": (
                 reasoning_effort or getattr(self, "reasoning_effort", None)
             )
@@ -320,7 +328,9 @@ class OpenAIChat(IntelligenceBackend):
                 f"requested_tokens={requested_tokens}, "
                 f"refusal={refusal!r}, "
                 f"reasoning_content_chars="
-                f"{self.last_response_info['reasoning_content_chars']}). "
+                f"{self.last_response_info['reasoning_content_chars']}, "
+                f"reasoning_chars={self.last_response_info['reasoning_chars']}, "
+                f"raw_content_chars={len(message.content or '')}). "
                 "The provider returned an invalid success response; retrying "
                 "may recover from gateway routing or token exhaustion.",
                 finish_reason=getattr(choice, "finish_reason", None),
@@ -339,12 +349,21 @@ class OpenAIChat(IntelligenceBackend):
             return "HTTP/API ERROR"
         return "CLIENT ERROR"
 
-    def _get_response_for_agent(self, agent_name: str, messages):
+    def _get_response_for_agent(
+        self,
+        agent_name: str,
+        messages,
+        *,
+        chat_template_kwargs=None,
+    ):
         started = time.monotonic()
         prompt_chars = sum(
             len(str(message.get("content", "")))
             for message in messages
             if isinstance(message, dict)
+        )
+        thinking_mode = dict(chat_template_kwargs or {}).get(
+            "enable_thinking", "provider_default"
         )
         print(
             f"[API START] {agent_name}: model={self.model}, "
@@ -354,6 +373,7 @@ class OpenAIChat(IntelligenceBackend):
             "reasoning_effort_supported="
             f"{str(getattr(self, 'reasoning_effort_supported', False)).lower()}, "
             f"reasoning_effort={self.reasoning_effort or 'provider_default'}, "
+            f"enable_thinking={str(thinking_mode).lower()}, "
             f"timeouts=connect:{self.connect_timeout_seconds:g}s/"
             f"read:{getattr(self, 'read_timeout_seconds', self.request_timeout_seconds):g}s/"
             f"write:{getattr(self, 'write_timeout_seconds', self.connect_timeout_seconds):g}s/"
@@ -367,11 +387,17 @@ class OpenAIChat(IntelligenceBackend):
         current_reasoning_effort = self.reasoning_effort
         for attempt in range(1, self.empty_response_attempts + 1):
             try:
+                response_options = {}
+                if chat_template_kwargs:
+                    response_options["chat_template_kwargs"] = (
+                        chat_template_kwargs
+                    )
                 response = self._get_response(
                     messages,
                     agent_name,
                     max_tokens=current_max_tokens,
                     reasoning_effort=current_reasoning_effort,
+                    **response_options,
                 )
                 break
             except EmptyModelResponseError as exc:

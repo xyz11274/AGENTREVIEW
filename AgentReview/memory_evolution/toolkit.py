@@ -423,14 +423,16 @@ class MemoryToolkit:
         elif hasattr(client, "complete"):
             result = str(client.complete(messages=messages, **kwargs))
         elif hasattr(client, "_get_response_for_agent"):
+            agent_name = kwargs.pop("agent_name", "Memory Harness")
             result = str(
                 client._get_response_for_agent(
-                    kwargs.pop("agent_name", "Memory Harness"),
+                    agent_name,
                     messages,
+                    **kwargs,
                 )
             )
         elif hasattr(client, "_get_response"):
-            result = str(client._get_response(messages))
+            result = str(client._get_response(messages, **kwargs))
         elif hasattr(client, "query"):
             try:
                 from agentreview.message import Message

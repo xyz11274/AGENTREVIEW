@@ -20,6 +20,16 @@ class RecordingLLM:
         return "s" * 5000
 
 
+class RecordingBackend:
+    def __init__(self):
+        self.call = None
+        self.last_response_info = {}
+
+    def _get_response_for_agent(self, agent_name, messages, **kwargs):
+        self.call = (agent_name, messages, kwargs)
+        return "structured output"
+
+
 def _instance(dataclass_type):
     values = {}
     for item in fields(dataclass_type):
@@ -31,6 +41,23 @@ def _instance(dataclass_type):
 
 
 class MemoryProgramProtocolTest(unittest.TestCase):
+    def test_toolkit_forwards_structured_generation_options(self):
+        backend = RecordingBackend()
+        toolkit = MemoryToolkit(llm_client=backend)
+
+        result = toolkit.llm_completion(
+            [{"role": "user", "content": "make a patch"}],
+            agent_name="Memory Reflector",
+            chat_template_kwargs={"enable_thinking": False},
+        )
+
+        self.assertEqual(result, "structured output")
+        self.assertEqual(backend.call[0], "Memory Reflector")
+        self.assertEqual(
+            backend.call[2],
+            {"chat_template_kwargs": {"enable_thinking": False}},
+        )
+
     def test_seed_programs_import_and_smoke(self):
         seed_dir = Path(__file__).parents[1] / "memory_evolution" / "seeds"
         toolkit = MemoryToolkit(llm_client=FakeLLM())

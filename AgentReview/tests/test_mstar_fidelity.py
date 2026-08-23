@@ -1,7 +1,7 @@
 import unittest
 
 from memory_evolution.metrics import CoCoReviewFitness
-from memory_evolution.reflector import _apply_v4a_patch
+from memory_evolution.reflector import _apply_v4a_patch, _complete
 
 
 class FakeClassifierToolkit:
@@ -18,6 +18,27 @@ class FakeJudgeToolkit:
 
 
 class MstarFidelityTest(unittest.TestCase):
+    def test_reflector_requests_non_thinking_structured_output(self):
+        class RecordingReflector:
+            def __init__(self):
+                self.kwargs = None
+
+            def llm_completion(self, messages, **kwargs):
+                self.kwargs = kwargs
+                return "reflector response"
+
+        reflector = RecordingReflector()
+        response = _complete(
+            reflector, [{"role": "user", "content": "make a V4A patch"}]
+        )
+
+        self.assertEqual(response, "reflector response")
+        self.assertEqual(reflector.kwargs["agent_name"], "Memory Reflector")
+        self.assertEqual(
+            reflector.kwargs["chat_template_kwargs"],
+            {"enable_thinking": False},
+        )
+
     def test_contextual_v4a_patch_is_applied(self):
         source = "x = 1\ny = 2\n"
         response = (

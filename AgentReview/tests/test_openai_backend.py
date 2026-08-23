@@ -156,6 +156,24 @@ class OpenAIBackendTest(unittest.TestCase):
         self.assertEqual(kwargs["reasoning_effort"], "medium")
         self.assertIn("max_tokens", kwargs)
 
+    def test_qwen_chat_template_options_are_sent_in_extra_body(self):
+        backend = object.__new__(OpenAIChat)
+        backend.model = "qwen3.8-27b"
+        backend.temperature = 0.0
+        backend.max_tokens = 128
+        backend.request_timeout_seconds = 10
+        backend.reasoning_effort = "medium"
+        backend.reasoning_effort_supported = False
+
+        kwargs = backend._completion_kwargs(
+            [], chat_template_kwargs={"enable_thinking": False}
+        )
+
+        self.assertEqual(
+            kwargs["extra_body"],
+            {"chat_template_kwargs": {"enable_thinking": False}},
+        )
+
     def test_empty_success_response_is_rejected_with_diagnostics(self):
         backend = object.__new__(OpenAIChat)
         backend.client_type = "openai"
@@ -170,7 +188,7 @@ class OpenAIBackendTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
             EmptyModelResponseError,
-            "finish_reason=length.*reasoning_tokens=1200",
+            "finish_reason=length.*reasoning_tokens=1200.*reasoning_chars=0",
         ):
             backend._get_response([{"role": "user", "content": "test"}])
 

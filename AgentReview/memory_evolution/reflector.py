@@ -123,14 +123,18 @@ def validate_candidate_feedback(feedback: EvalFeedback) -> None:
 def _complete(client, messages) -> str:
     if client is None:
         raise RuntimeError("Reflector requires an LLM client")
+    completion_options = {
+        "agent_name": "Memory Reflector",
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
     if hasattr(client, "llm_completion"):
-        return str(client.llm_completion(messages))
+        return str(client.llm_completion(messages, **completion_options))
     if hasattr(client, "_get_response"):
-        return str(client._get_response(messages))
+        return str(client._get_response(messages, **completion_options))
     if hasattr(client, "complete"):
-        return str(client.complete(messages=messages))
+        return str(client.complete(messages=messages, **completion_options))
     if callable(client):
-        return str(client(messages))
+        return str(client(messages, **completion_options))
     raise TypeError(f"Unsupported reflector client: {type(client).__name__}")
 
 

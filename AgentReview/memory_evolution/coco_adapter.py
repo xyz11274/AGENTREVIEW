@@ -7,6 +7,7 @@ an evolved MemoryProgram.
 import importlib
 import os
 import sys
+import time
 from pathlib import Path
 from typing import List
 
@@ -19,6 +20,8 @@ SPLIT_BASE_URL = "http://localhost:13099/v1"
 CLASSIFY_BASE_URL = "http://localhost:13098/v1"
 SPLIT_MODEL = "Qwen3-8B-Split"
 CLASSIFY_MODEL = "Qwen3-8B-Classify"
+COCO_REQUEST_TIMEOUT_SECONDS = 600.0
+COCO_PREFLIGHT_TIMEOUT_SECONDS = 30.0
 
 
 def _head_commit(root: Path) -> str:
@@ -74,16 +77,71 @@ class FrozenCoCoAdapter:
         self.split_client = OpenAI(
             base_url=SPLIT_BASE_URL,
             api_key=os.environ.get("COCO_SPLIT_API_KEY", "dummy"),
+            timeout=COCO_REQUEST_TIMEOUT_SECONDS,
+            max_retries=0,
         )
         self.classify_client = OpenAI(
             base_url=CLASSIFY_BASE_URL,
             api_key=os.environ.get("COCO_CLASSIFY_API_KEY", "dummy"),
+            timeout=COCO_REQUEST_TIMEOUT_SECONDS,
+            max_retries=0,
         )
         self.allowed_categories, _ = self.utils.classify_categories()
+        self._preflight()
 
     @staticmethod
     def _content(response) -> str:
         return str(response.choices[0].message.content or "")
+
+    @staticmethod
+    def _request(client, phase: str, endpoint: str, **kwargs):
+        started = time.monotonic()
+        print(
+            f"[COCO START] phase={phase}, endpoint={endpoint}, "
+            f"model={kwargs.get('model')}, max_tokens={kwargs.get('max_tokens')}",
+            flush=True,
+        )
+        try:
+            response = client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Frozen CoCo {phase} request failed at {endpoint} after "
+                f"{time.monotonic() - started:.1f}s: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+        choice = response.choices[0]
+        usage = getattr(response, "usage", None)
+        print(
+            f"[COCO DONE] phase={phase}, elapsed={time.monotonic() - started:.1f}s, "
+            f"finish_reason={getattr(choice, 'finish_reason', None)}, "
+            f"completion_tokens={getattr(usage, 'completion_tokens', None)}",
+            flush=True,
+        )
+        return response
+
+    def _preflight(self) -> None:
+        for phase, endpoint, client, model in (
+            ("split_preflight", SPLIT_BASE_URL, self.split_client, SPLIT_MODEL),
+            (
+                "classify_preflight",
+                CLASSIFY_BASE_URL,
+                self.classify_client,
+                CLASSIFY_MODEL,
+            ),
+        ):
+            self._request(
+                client,
+                phase,
+                endpoint,
+                model=model,
+                messages=[{"role": "user", "content": "Reply OK."}],
+                temperature=0.0,
+                max_tokens=1,
+                timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
+                extra_body={
+                    "chat_template_kwargs": {"enable_thinking": False}
+                },
+            )
 
     def split_review(self, review_text: str) -> List[str]:
         to_text, prompt_text, _ = self.split_code.build_prompt(str(review_text))
@@ -92,7 +150,10 @@ class FrozenCoCoAdapter:
         complete = []
         incomplete = []
         for penalty in (0.0, 0.5, 1.0):
-            response = self.split_client.chat.completions.create(
+            response = self._request(
+                self.split_client,
+                f"split_penalty_{penalty:g}",
+                SPLIT_BASE_URL,
                 model=SPLIT_MODEL,
                 messages=[
                     {
@@ -150,7 +211,10 @@ class FrozenCoCoAdapter:
         for opinion in opinions:
             candidates = []
             for penalty in (0.0, 0.5, 1.0):
-                response = self.classify_client.chat.completions.create(
+                response = self._request(
+                    self.classify_client,
+                    f"classify_penalty_{penalty:g}",
+                    CLASSIFY_BASE_URL,
                     model=CLASSIFY_MODEL,
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -166,6 +230,9 @@ class FrozenCoCoAdapter:
                     temperature=0.6,
                     presence_penalty=penalty,
                     max_tokens=12288,
+                    extra_body={
+                        "chat_template_kwargs": {"enable_thinking": True}
+                    },
                 )
                 content = self._content(response)
                 labels, valid = self.classify_code.parse_labels_from_llm(
