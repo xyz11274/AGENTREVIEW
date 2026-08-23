@@ -44,6 +44,27 @@ class CliModeTest(unittest.TestCase):
         )
         self.assertEqual(args.max_attempts_per_lineage, 9)
 
+    def test_selection_and_runtime_embedding_caches_have_distinct_defaults(self):
+        args = build_parser().parse_args(
+            [
+                "evolve-task",
+                "--task-id",
+                "QUAL",
+                "--data-root",
+                "data/formal",
+                "--output",
+                "runs/formal",
+            ]
+        )
+
+        self.assertNotEqual(args.embedding_cache, args.runtime_embedding_cache)
+        self.assertTrue(args.embedding_cache.endswith("qwen3_embedding_8b_cache.sqlite3"))
+        self.assertTrue(
+            args.runtime_embedding_cache.endswith(
+                "qwen3_embedding_runtime.sqlite3"
+            )
+        )
+
     def test_pilot_preserves_requested_search_size(self):
         args = build_parser().parse_args(
             [

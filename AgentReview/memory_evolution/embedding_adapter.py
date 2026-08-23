@@ -32,6 +32,9 @@ DEFAULT_EMBEDDING_CACHE = PROJECT_ROOT / "cache" / "embedding_cache.sqlite3"
 DEFAULT_QWEN3_EMBEDDING_CACHE = (
     PROJECT_ROOT / "cache" / "qwen3_embedding_8b_cache.sqlite3"
 )
+DEFAULT_QWEN3_RUNTIME_EMBEDDING_CACHE = (
+    PROJECT_ROOT / "cache" / "qwen3_embedding_runtime.sqlite3"
+)
 CACHE_SCHEMA_VERSION = "embedding-cache-sqlite-v1"
 _IMMUTABLE_REVISION = re.compile(r"^[0-9a-f]{40,64}$", re.IGNORECASE)
 
@@ -66,11 +69,13 @@ class CachedDenseEmbedding:
         semantics_version: str,
         specification: Dict[str, Any],
         fail_on_cache_miss: bool = False,
+        cache_namespace: str = "selection",
     ):
         self.model_name = str(model_name)
         self.revision = str(revision)
         self.cache_enabled = bool(cache_enabled)
         self.fail_on_cache_miss = bool(fail_on_cache_miss)
+        self.cache_namespace = str(cache_namespace or "selection")
         self.cache_path = Path(cache_path).expanduser().resolve()
         self.expected_dimension = int(expected_dimension)
         if self.expected_dimension <= 0:
@@ -143,6 +148,20 @@ class CachedDenseEmbedding:
                     )
                     """
                 )
+                if self.cache_namespace == "candidate_runtime_v1":
+                    connection.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS runtime_embedding_audit (
+                            text_sha256 TEXT NOT NULL,
+                            embedding_fingerprint TEXT NOT NULL,
+                            model_revision TEXT NOT NULL,
+                            vector_sha256 TEXT NOT NULL,
+                            PRIMARY KEY (
+                                text_sha256, embedding_fingerprint, model_revision
+                            )
+                        )
+                        """
+                    )
                 connection.execute(
                     """
                     CREATE TABLE IF NOT EXISTS embeddings (
@@ -181,6 +200,29 @@ class CachedDenseEmbedding:
                     "Embedding cache schema mismatch: "
                     f"observed={row[0]!r}, expected={CACHE_SCHEMA_VERSION!r}"
                 )
+            if not self.fail_on_cache_miss and self.cache_namespace == "candidate_runtime_v1":
+                expected_metadata = {
+                    "cache_namespace": self.cache_namespace,
+                    "embedding_fingerprint": self.embedding_fingerprint,
+                    "model_revision": self.revision,
+                }
+                for key, expected in expected_metadata.items():
+                    metadata_key = f"runtime_{key}"
+                    observed = connection.execute(
+                        "SELECT value FROM cache_metadata WHERE key = ?",
+                        (metadata_key,),
+                    ).fetchone()
+                    if observed is None:
+                        connection.execute(
+                            "INSERT INTO cache_metadata(key, value) VALUES (?, ?)",
+                            (metadata_key, expected),
+                        )
+                    elif str(observed[0]) != expected:
+                        raise RuntimeError(
+                            "Runtime embedding cache identity mismatch: "
+                            f"{metadata_key}={observed[0]!r}, expected={expected!r}"
+                        )
+                connection.commit()
             return connection
         except sqlite3.DatabaseError as exc:
             if connection is not None:
@@ -263,6 +305,21 @@ class CachedDenseEmbedding:
             )
             if vector is not None:
                 cached[text_sha256] = vector
+                if self.cache_namespace == "candidate_runtime_v1":
+                    connection.execute(
+                        """
+                        INSERT OR REPLACE INTO runtime_embedding_audit (
+                            text_sha256, embedding_fingerprint,
+                            model_revision, vector_sha256
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            text_sha256,
+                            self.embedding_fingerprint,
+                            self.revision,
+                            str(row[3]),
+                        ),
+                    )
             elif row is not None:
                 invalid += 1
                 if not self.fail_on_cache_miss:
@@ -279,12 +336,13 @@ class CachedDenseEmbedding:
                             text_sha256,
                         ),
                     )
-        if invalid and not self.fail_on_cache_miss:
+        if (
+            invalid or self.cache_namespace == "candidate_runtime_v1"
+        ) and not self.fail_on_cache_miss:
             connection.commit()
         return cached, invalid
 
-    @staticmethod
-    def _write_cache_batch(connection: sqlite3.Connection, rows) -> None:
+    def _write_cache_batch(self, connection: sqlite3.Connection, rows) -> None:
         connection.executemany(
             """
             INSERT OR REPLACE INTO embeddings (
@@ -294,6 +352,19 @@ class CachedDenseEmbedding:
             """,
             rows,
         )
+        if self.cache_namespace == "candidate_runtime_v1":
+            connection.executemany(
+                """
+                INSERT OR REPLACE INTO runtime_embedding_audit (
+                    text_sha256, embedding_fingerprint,
+                    model_revision, vector_sha256
+                ) VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (row[3], self.embedding_fingerprint, row[1], row[7])
+                    for row in rows
+                ],
+            )
         connection.commit()
 
     def _cache_row(self, text: str, raw_vector) -> Tuple[List[float], tuple]:
@@ -519,6 +590,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         max_length: int = QWEN3_MAX_LENGTH,
         batch_size: int = QWEN3_MODEL_BATCH_SIZE,
         fail_on_cache_miss: bool = False,
+        cache_namespace: str = "selection",
     ):
         if str(model_name) != QWEN3_MODEL_ID:
             raise ValueError(
@@ -550,6 +622,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
             semantics_version=f"qwen3e8b:{fingerprint}",
             specification=spec,
             fail_on_cache_miss=fail_on_cache_miss,
+            cache_namespace=cache_namespace,
         )
         self.max_length = int(max_length)
         self.attention_implementation = ""
@@ -618,6 +691,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
                     revision=self.revision,
                     device=device,
                     trust_remote_code=True,
+                    local_files_only=True,
                     model_kwargs={
                         "attn_implementation": attention,
                         "dtype": dtype,
@@ -674,6 +748,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
                 revision=self.revision,
                 trust_remote_code=True,
                 padding_side="left",
+                local_files_only=True,
             )
         values = [str(text) for text in texts]
         total = 0
@@ -753,6 +828,7 @@ def create_qwen3_embedding(
     device: str = "",
     batch_size: int = QWEN3_MODEL_BATCH_SIZE,
     fail_on_cache_miss: bool = False,
+    cache_namespace: str = "selection",
     **_: Any,
 ):
     resolved_cache_path = str(
@@ -767,6 +843,7 @@ def create_qwen3_embedding(
         str(device),
         int(batch_size),
         bool(fail_on_cache_miss),
+        str(cache_namespace),
     )
     if key not in _INSTANCES:
         _INSTANCES[key] = Qwen3Embedding(
@@ -777,6 +854,7 @@ def create_qwen3_embedding(
             device=device,
             batch_size=batch_size,
             fail_on_cache_miss=fail_on_cache_miss,
+            cache_namespace=cache_namespace,
         )
     return _INSTANCES[key]
 

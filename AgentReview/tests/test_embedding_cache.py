@@ -51,13 +51,20 @@ class MockBgeEmbedding(BgeM3Embedding):
 
 
 class MockQwenEmbedding(Qwen3Embedding):
-    def __init__(self, cache_path: Path, *, fail_on_cache_miss: bool = False):
+    def __init__(
+        self,
+        cache_path: Path,
+        *,
+        fail_on_cache_miss: bool = False,
+        cache_namespace: str = "selection",
+    ):
         super().__init__(
             "Qwen/Qwen3-Embedding-8B",
             "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
             cache_path=str(cache_path),
             expected_dimension=4,
             fail_on_cache_miss=fail_on_cache_miss,
+            cache_namespace=cache_namespace,
         )
         self.load_calls = 0
         self.batch_calls = []
@@ -110,6 +117,38 @@ class EmbeddingCacheTest(unittest.TestCase):
             self.assertEqual(strict.load_calls, 0)
             self.assertEqual(strict.batch_calls, [])
             self.assertEqual(cache.read_bytes(), before)
+
+    def test_runtime_qwen_cache_computes_miss_and_records_audit_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory) / "qwen_runtime.sqlite3"
+            runtime = MockQwenEmbedding(
+                cache, cache_namespace="candidate_runtime_v1"
+            )
+            runtime.embed(["dynamic query"])
+
+            connection = sqlite3.connect(str(cache))
+            row = connection.execute(
+                """
+                SELECT text_sha256, embedding_fingerprint,
+                       model_revision, vector_sha256
+                FROM runtime_embedding_audit
+                """
+            ).fetchone()
+            metadata = dict(connection.execute("SELECT key, value FROM cache_metadata"))
+            connection.close()
+            self.assertEqual(
+                row[0], hashlib.sha256(b"dynamic query").hexdigest()
+            )
+            self.assertEqual(row[1], runtime.embedding_fingerprint)
+            self.assertEqual(row[2], runtime.revision)
+            self.assertEqual(len(row[3]), 64)
+            self.assertEqual(
+                metadata["runtime_cache_namespace"], "candidate_runtime_v1"
+            )
+            self.assertEqual(
+                metadata["runtime_embedding_fingerprint"],
+                runtime.embedding_fingerprint,
+            )
 
     def test_second_embed_does_not_call_underlying_bge(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -24,6 +24,7 @@ from .quality import check_program_path
 from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
 from .embedding_adapter import (
     DEFAULT_QWEN3_EMBEDDING_CACHE,
+    DEFAULT_QWEN3_RUNTIME_EMBEDDING_CACHE,
     QWEN3_MODEL_ID,
     is_immutable_model_revision,
 )
@@ -129,6 +130,7 @@ def _embedding_adapter(
     device: str = "",
     batch_size: int = 1,
     fail_on_cache_miss: bool = False,
+    cache_namespace: str = "selection",
 ):
     if not spec:
         return None
@@ -145,6 +147,7 @@ def _embedding_adapter(
             device=device,
             batch_size=batch_size,
             fail_on_cache_miss=fail_on_cache_miss,
+            cache_namespace=cache_namespace,
         )
     except TypeError:
         try:
@@ -289,14 +292,12 @@ def _task_toolkit(args):
             args.embedding_adapter,
             args.embedding_model_name,
             args.embedding_revision,
-            getattr(args, "embedding_cache", ""),
+            getattr(args, "runtime_embedding_cache", ""),
             not getattr(args, "disable_embedding_cache", False),
             getattr(args, "embedding_device", ""),
             getattr(args, "embedding_batch_size", 1),
-            (
-                not _is_nonformal(args)
-                or getattr(args, "embedding_cache_read_only", False)
-            ),
+            False,
+            "candidate_runtime_v1",
         ),
         embedding_model=args.embedding_model_name,
         review_splitter=splitter,
@@ -304,6 +305,23 @@ def _task_toolkit(args):
         max_llm_calls_per_operation=1,
         s2_retrieval_pool=s2_pool,
         s2_retrieval_pool_sha256=s2_pool_sha256,
+    )
+
+
+def _selection_embedding_client(args):
+    return _embedding_adapter(
+        args.embedding_adapter,
+        args.embedding_model_name,
+        args.embedding_revision,
+        getattr(args, "embedding_cache", ""),
+        not getattr(args, "disable_embedding_cache", False),
+        getattr(args, "embedding_device", ""),
+        getattr(args, "embedding_batch_size", 1),
+        (
+            not _is_nonformal(args)
+            or getattr(args, "embedding_cache_read_only", False)
+        ),
+        "selection",
     )
 
 
@@ -434,7 +452,14 @@ def _log_llm_runtime(args, embedding_spec: dict, embedding_fingerprint: str) -> 
         ("reasoning_effort_supported", str(args.reasoning_effort_supported).lower()),
         ("reasoning_effort", args.reasoning_effort),
         ("embedding_provider", embedding_spec.get("provider", "none")),
-        ("embedding_cache", str(Path(args.embedding_cache).expanduser().resolve())),
+        (
+            "selection_embedding_cache",
+            str(Path(args.embedding_cache).expanduser().resolve()),
+        ),
+        (
+            "runtime_embedding_cache",
+            str(Path(args.runtime_embedding_cache).expanduser().resolve()),
+        ),
         ("embedding_fingerprint", embedding_fingerprint or "none"),
     ):
         print(f"{key}={value}", flush=True)
@@ -447,6 +472,13 @@ def _record_llm_runtime(output: Path, args) -> None:
         "base_url_history": [args.openai_base_url],
         "latest_preflight": dict(args._llm_preflight_result),
         "api_key_recorded": False,
+        "embedding_runtime": {
+            "namespace": "candidate_runtime_v1",
+            "cache": str(
+                Path(args.runtime_embedding_cache).expanduser().resolve()
+            ),
+            "local_files_only": True,
+        },
     }
     if path.is_file():
         previous = json.loads(path.read_text(encoding="utf-8"))
@@ -565,8 +597,15 @@ def _add_runtime_args(parser):
             / DEFAULT_QWEN3_EMBEDDING_CACHE.name
         ),
         help=(
-            "Runtime-only persistent exact-text embedding cache. This path is "
-            "excluded from formal experiment and resume identity."
+            "Frozen exact-text cache used only for episode/validation selection."
+        ),
+    )
+    parser.add_argument(
+        "--runtime-embedding-cache",
+        default=str(DEFAULT_QWEN3_RUNTIME_EMBEDDING_CACHE),
+        help=(
+            "Writable candidate-runtime embedding cache. Misses are computed "
+            "locally with the frozen embedding model and recorded with hashes."
         ),
     )
     parser.add_argument(
@@ -1025,12 +1064,32 @@ def _run_task(args, task_id: str, output: Path, seed: int):
                         args.reasoning_effort_supported
                     ),
                 },
+                "runtime_embedding": {
+                    "namespace": "candidate_runtime_v1",
+                    "local_files_only": True,
+                    "model_name": args.embedding_model_name,
+                    "model_revision": args.embedding_revision,
+                },
             },
         )
     task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
+    selection_embedding = _selection_embedding_client(args)
     embedding_spec, embedding_fingerprint = _embedding_provenance(
+        selection_embedding
+    )
+    runtime_spec, runtime_fingerprint = _embedding_provenance(
         task_toolkit.embedding_client
     )
+    if runtime_spec != embedding_spec or runtime_fingerprint != embedding_fingerprint:
+        raise RuntimeError(
+            "Selection and candidate-runtime embedding identities differ"
+        )
+    if Path(args.embedding_cache).expanduser().resolve() == Path(
+        args.runtime_embedding_cache
+    ).expanduser().resolve():
+        raise RuntimeError(
+            "Selection and candidate-runtime embedding caches must be separate"
+        )
     _log_llm_runtime(args, embedding_spec, embedding_fingerprint)
     formal_experiment_identity = ""
     formal_experiment_manifest_sha256 = ""
@@ -1159,6 +1218,8 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         embedding_revision=args.embedding_revision,
         embedding_spec=embedding_spec,
         embedding_fingerprint=embedding_fingerprint,
+        runtime_embedding_namespace="candidate_runtime_v1",
+        runtime_embedding_local_files_only=True,
         embedding_cache_audit_sha256=embedding_cache_audit_sha256,
         formal_experiment_identity=formal_experiment_identity,
         formal_experiment_manifest_sha256=formal_experiment_manifest_sha256,
@@ -1198,6 +1259,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         metric,
         config,
         reflector_client=reflector_toolkit,
+        selection_embedding_client=selection_embedding,
     )
 
 

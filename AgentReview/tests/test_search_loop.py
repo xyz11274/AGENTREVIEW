@@ -7,7 +7,11 @@ from unittest.mock import Mock, patch
 from memory_evolution.integration import MemoryHarnessAdapter
 from memory_evolution.metrics import exact_match
 from memory_evolution.models import Episode, EvalItem
-from memory_evolution.search import EvolutionConfig, run_evolution
+from memory_evolution.search import (
+    EvolutionConfig,
+    run_embedding_closure_smoke,
+    run_evolution,
+)
 from memory_evolution.quality import QualityResult
 from memory_evolution.reflector import ChangeLog, CompileFixResult, MutationResult
 from memory_evolution.models import EvalResult
@@ -58,6 +62,115 @@ class FakeLLM:
 
 
 class SearchLoopTest(unittest.TestCase):
+    def test_vector_embedding_closure_smoke_writes_and_reads_real_items(self):
+        class RuntimeEmbedding:
+            fail_on_cache_miss = False
+            cache_namespace = "candidate_runtime_v1"
+            embedding_fingerprint = "f" * 64
+            revision = "1" * 40
+            cache_path = "/tmp/runtime-fixture.sqlite3"
+
+            @staticmethod
+            def embed(texts):
+                return [[float(len(text)), 1.0, 0.0, 0.0] for text in texts]
+
+        root = Path(__file__).parents[1]
+        toolkit = MemoryToolkit(
+            llm_client=FakeLLM(""), embedding_client=RuntimeEmbedding()
+        )
+        result = run_embedding_closure_smoke(
+            str(root / "memory_evolution" / "seeds" / "vector_search.py"),
+            Episode(id="A::QUAL", text="A QUAL episode about ablations."),
+            EvalItem(
+                id="B::QUAL",
+                question="Produce a QUAL review with ablation evidence.",
+                answer="",
+            ),
+            TaskAgent(toolkit),
+            toolkit,
+        )
+
+        self.assertTrue(result["passed"])
+        self.assertEqual(result["runtime_namespace"], "candidate_runtime_v1")
+        self.assertGreater(result["context_chars"], 0)
+
+    def test_three_iteration_formal_run_executes_embedding_closure(self):
+        class RuntimeEmbedding:
+            fail_on_cache_miss = False
+            cache_namespace = "candidate_runtime_v1"
+            embedding_fingerprint = "f" * 64
+            revision = "1" * 40
+            cache_path = "/tmp/runtime-fixture.sqlite3"
+
+            @staticmethod
+            def embed(texts):
+                return [[float(len(text)), 1.0, 0.0, 0.0] for text in texts]
+
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        child_code = (seed_dir / "experience_learner.py").read_text(
+            encoding="utf-8"
+        )
+        toolkit = MemoryToolkit(
+            llm_client=FakeLLM(child_code),
+            embedding_client=RuntimeEmbedding(),
+        )
+        episode = Episode(
+            id="A::QUAL",
+            text="A QUAL episode whose answer is alpha.",
+            metadata={
+                "experience_protocol": "self_generated_after_review",
+                "experience_protocol_version": "self-generated-experience-v1",
+            },
+        )
+        validation = [
+            EvalItem(id="B1::QUAL", question="Return alpha.", answer="alpha"),
+            EvalItem(id="B2::QUAL", question="Return alpha.", answer="alpha"),
+        ]
+
+        with tempfile.TemporaryDirectory(prefix="mstar_closure_formal_") as directory:
+            output = Path(directory) / "run"
+            result = run_evolution(
+                [
+                    str(seed_dir / "vector_search.py"),
+                    str(seed_dir / "llm_summarizer.py"),
+                    str(seed_dir / "experience_learner.py"),
+                ],
+                [episode],
+                validation,
+                TaskAgent(toolkit),
+                toolkit,
+                exact_match,
+                EvolutionConfig(
+                    output_dir=str(output),
+                    task_description="Return alpha.",
+                    iterations=3,
+                    static_size=1,
+                    rotating_size=1,
+                    episode_budget=1,
+                    selection_repeats=1,
+                    selection_top_k=1,
+                    write_timeout=2,
+                    read_timeout=2,
+                    formal=True,
+                    embedding_spec={"provider": "qwen3_embedding"},
+                    embedding_fingerprint="f" * 64,
+                    historical_manifest_sha256="a" * 64,
+                    experiment_config_sha256="b" * 64,
+                    semantic_scholar_cache_sha256="c" * 64,
+                    s2_asset_version="fixture-v1",
+                ),
+                selection_embedding_client=RuntimeEmbedding(),
+            )
+
+            closure = json.loads(
+                (output / "embedding_closure_smoke.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertTrue(closure["passed"])
+            self.assertEqual(result.pool_size, 6)
+
     def test_structured_parser_accepts_json_after_qwen_style_braced_prose(self):
         response = (
             "I will use {schema} as requested.\n"

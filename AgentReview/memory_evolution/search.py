@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from .evaluator import candidate_safe_case, candidate_safe_trace, evaluate_program
 from .models import Episode, EvalItem
 from .quality import QualityResult, check_program_path
+from .sandbox import SandboxSession
 from .reflector import (
     ChangeLog,
     EvalFeedback,
@@ -69,6 +70,8 @@ class EvolutionConfig:
     embedding_revision: str = ""
     embedding_spec: Dict[str, Any] = field(default_factory=dict)
     embedding_fingerprint: str = ""
+    runtime_embedding_namespace: str = "candidate_runtime_v1"
+    runtime_embedding_local_files_only: bool = True
     embedding_cache_audit_sha256: str = ""
     formal_experiment_identity: str = ""
     formal_experiment_manifest_sha256: str = ""
@@ -260,6 +263,60 @@ def _write_traces(path: Path, program_id: str, traces: List[Dict[str, Any]]) -> 
             )
 
 
+def run_embedding_closure_smoke(
+    program_path: str,
+    episode: Episode,
+    validation_item: EvalItem,
+    task_agent,
+    toolkit,
+) -> Dict[str, Any]:
+    """Exercise one real vector write/read through the runtime embedder."""
+    embedding = getattr(toolkit, "embedding_client", None)
+    if embedding is None:
+        raise RuntimeError("Embedding closure smoke requires a runtime embedder")
+    if getattr(embedding, "fail_on_cache_miss", False):
+        raise RuntimeError("Candidate runtime embedding must allow local cache misses")
+    if getattr(embedding, "cache_namespace", "") != "candidate_runtime_v1":
+        raise RuntimeError("Candidate runtime embedding namespace is invalid")
+
+    toolkit.reset_vector_collections()
+    session = SandboxSession(program_path, toolkit)
+    try:
+        program = session.program_interface()
+        item = task_agent.extract_knowledge_item(program, episode.text)
+        with toolkit.operation("embedding_closure_write"):
+            session.write(item, episode.text)
+        query = task_agent.generate_query(program, validation_item.question)
+        with toolkit.operation("embedding_closure_read"):
+            context = session.read(query)
+        if not isinstance(context, str):
+            raise TypeError("Embedding closure read must return str")
+        query_text = str(getattr(query, "query_text", ""))
+        return {
+            "passed": True,
+            "program": str(Path(program_path).name),
+            "episode_id": episode.id,
+            "validation_id": validation_item.id,
+            "episode_text_sha256": hashlib.sha256(
+                episode.text.encode("utf-8")
+            ).hexdigest(),
+            "query_text_sha256": hashlib.sha256(
+                query_text.encode("utf-8")
+            ).hexdigest(),
+            "context_chars": len(context),
+            "embedding_fingerprint": str(
+                getattr(embedding, "embedding_fingerprint", "")
+            ),
+            "model_revision": str(getattr(embedding, "revision", "")),
+            "runtime_cache": str(getattr(embedding, "cache_path", "")),
+            "runtime_namespace": str(
+                getattr(embedding, "cache_namespace", "")
+            ),
+        }
+    finally:
+        session.close(force=True)
+
+
 def _candidate_record(
     candidate: ProgramCandidate,
     rotating_score: float = 0.0,
@@ -370,8 +427,10 @@ def run_evolution(
     metric,
     config,
     reflector_client=None,
+    selection_embedding_client=None,
 ) -> EvolutionResult:
     cfg = EvolutionConfig.from_value(config)
+    selection_embedding_client = selection_embedding_client or toolkit
     if cfg.formal and cfg.iterations % 3 != 0:
         raise ValueError(
             "Formal lineage comparison requires iterations divisible by three"
@@ -559,7 +618,7 @@ def run_evolution(
     else:
         static_items = build_static_validation_set(
             validation_values,
-            toolkit,
+            selection_embedding_client,
             n_static=cfg.static_size,
             seed=cfg.seed,
             allow_random_fallback=not cfg.formal,
@@ -570,7 +629,7 @@ def run_evolution(
         selected_episodes = select_episode_subset(
             episode_values,
             static_items,
-            toolkit,
+            selection_embedding_client,
             budget=budget,
             allow_random_fallback=not cfg.formal,
         )
@@ -594,6 +653,27 @@ def run_evolution(
     selection_payload["selection_fingerprint"] = _canonical_sha256(
         selection_payload
     )
+    if (
+        cfg.formal
+        and cfg.embedding_spec.get("provider") == "qwen3_embedding"
+        and controller.get("phase") == "subset_selection"
+    ):
+        if not selected_episodes or not static_items:
+            raise RuntimeError("Embedding closure smoke requires selected A/B items")
+        closure = run_embedding_closure_smoke(
+            str(seed_program_paths[0]),
+            Episode.from_value(selected_episodes[0]),
+            EvalItem.from_value(static_items[0]),
+            task_agent,
+            toolkit,
+        )
+        _write_json(output_dir / "embedding_closure_smoke.json", closure)
+        print(
+            "[MSTAR] Embedding closure smoke passed: "
+            f"episode={closure['episode_id']}, "
+            f"validation={closure['validation_id']}",
+            flush=True,
+        )
     if not cfg.formal or controller.get("phase") == "subset_selection":
         _write_json(output_dir / "selection.json", selection_payload)
         if cfg.formal:
@@ -656,6 +736,7 @@ def run_evolution(
         print(f"[MSTAR] Seed {program_id}: quality check started", flush=True)
         quality = check_program_path(
             str(target),
+            toolkit=toolkit,
             write_timeout=cfg.write_timeout,
             read_timeout=cfg.read_timeout,
         )
@@ -1052,6 +1133,7 @@ def run_evolution(
             target.write_text(code, encoding="utf-8")
             quality = check_program_path(
                 str(target),
+                toolkit=toolkit,
                 write_timeout=cfg.write_timeout,
                 read_timeout=cfg.read_timeout,
             )
@@ -1089,6 +1171,7 @@ def run_evolution(
                 if scope_valid:
                     quality = check_program_path(
                         str(target),
+                        toolkit=toolkit,
                         write_timeout=cfg.write_timeout,
                         read_timeout=cfg.read_timeout,
                     )
