@@ -11,8 +11,7 @@ import time
 from pathlib import Path
 from typing import List
 
-from openai import OpenAI
-
+from agentreview.utility.authentication_utils import get_openai_client
 from .tasks import COCOREVIEWBENCH_COMMIT
 
 
@@ -74,24 +73,67 @@ class FrozenCoCoAdapter:
             self.utils,
             self.prompts,
         ) = _load_official_modules(root)
-        self.split_client = OpenAI(
+        self.split_client = get_openai_client(
+            "openai",
             base_url=SPLIT_BASE_URL,
             api_key=os.environ.get("COCO_SPLIT_API_KEY", "dummy"),
             timeout=COCO_REQUEST_TIMEOUT_SECONDS,
-            max_retries=0,
         )
-        self.classify_client = OpenAI(
+        self.classify_client = get_openai_client(
+            "openai",
             base_url=CLASSIFY_BASE_URL,
             api_key=os.environ.get("COCO_CLASSIFY_API_KEY", "dummy"),
             timeout=COCO_REQUEST_TIMEOUT_SECONDS,
-            max_retries=0,
         )
         self.allowed_categories, _ = self.utils.classify_categories()
+        self._verify_served_revision(
+            self.split_client,
+            SPLIT_MODEL,
+            self.split_revision,
+            SPLIT_BASE_URL,
+        )
+        self._verify_served_revision(
+            self.classify_client,
+            CLASSIFY_MODEL,
+            self.classify_revision,
+            CLASSIFY_BASE_URL,
+        )
         self._preflight()
 
     @staticmethod
     def _content(response) -> str:
         return str(response.choices[0].message.content or "")
+
+    @staticmethod
+    def _verify_served_revision(client, model: str, expected: str, endpoint: str):
+        response = client.models.list(timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS)
+        served = next(
+            (value for value in response.data if str(value.id) == model),
+            None,
+        )
+        if served is None:
+            raise RuntimeError(
+                f"Frozen CoCo model {model!r} is absent from {endpoint}"
+            )
+        model_root_value = str(getattr(served, "root", "") or "").strip()
+        if not model_root_value:
+            raise RuntimeError(
+                f"Frozen CoCo model {model!r} at {endpoint} did not expose its root"
+            )
+        model_root = Path(model_root_value).expanduser().resolve()
+        metadata_dir = model_root / ".cache" / "huggingface" / "download"
+        revisions = set()
+        for metadata in metadata_dir.glob("*.metadata"):
+            lines = metadata.read_text(encoding="utf-8").splitlines()
+            if lines and lines[0].strip():
+                revisions.add(lines[0].strip())
+        if revisions != {expected}:
+            raise RuntimeError(
+                f"Frozen CoCo model revision mismatch for {model}: "
+                f"expected={expected}, observed={sorted(revisions)}, "
+                f"root={model_root}"
+            )
+        return model_root
 
     @staticmethod
     def _request(client, phase: str, endpoint: str, **kwargs):
@@ -120,27 +162,82 @@ class FrozenCoCoAdapter:
         return response
 
     def _preflight(self) -> None:
-        for phase, endpoint, client, model in (
-            ("split_preflight", SPLIT_BASE_URL, self.split_client, SPLIT_MODEL),
-            (
-                "classify_preflight",
-                CLASSIFY_BASE_URL,
-                self.classify_client,
-                CLASSIFY_MODEL,
-            ),
-        ):
-            self._request(
-                client,
-                phase,
-                endpoint,
-                model=model,
-                messages=[{"role": "user", "content": "Reply OK."}],
-                temperature=0.0,
-                max_tokens=1,
-                timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
-                extra_body={
-                    "chat_template_kwargs": {"enable_thinking": False}
+        review = "The evaluation lacks ablations and random-seed variance."
+        to_text, prompt_text, _ = self.split_code.build_prompt(review)
+        split_response = self._request(
+            self.split_client,
+            "split_preflight",
+            SPLIT_BASE_URL,
+            model=SPLIT_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": self.prompts.split_ai_reviewer_prompt(
+                        len(to_text)
+                    ).strip(),
                 },
+                {"role": "user", "content": prompt_text},
+            ],
+            temperature=0.0,
+            max_tokens=512,
+            timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+        split_content = self._content(split_response)
+        parsed = self.split_code.parse_llm_output(split_content)
+        coverage, _ = self.split_code.compute_coverage(parsed, len(to_text))
+        split_finish_reason = split_response.choices[0].finish_reason
+        if (
+            not split_content
+            or coverage < 1.0
+            or split_finish_reason != "stop"
+        ):
+            raise RuntimeError(
+                "Frozen CoCo split_preflight returned invalid semantic output "
+                f"(coverage={coverage:.3f}, finish_reason="
+                f"{split_finish_reason}, "
+                f"content_prefix={split_content[:200]!r})"
+            )
+
+        system_prompt, prompt_body = self.prompts.classify_reviews_prompt()
+        classify_response = self._request(
+            self.classify_client,
+            "classify_preflight",
+            CLASSIFY_BASE_URL,
+            model=CLASSIFY_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": (
+                        prompt_body.strip()
+                        + "\n\n\nReviewer Comment:\n"
+                        + review
+                    ),
+                },
+            ],
+            temperature=0.0,
+            max_tokens=512,
+            timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+        classify_content = self._content(classify_response)
+        labels, valid = self.classify_code.parse_labels_from_llm(
+            classify_content, self.allowed_categories
+        )
+        classify_finish_reason = classify_response.choices[0].finish_reason
+        if (
+            not classify_content
+            or not valid
+            or not labels
+            or self.classify_code._is_na_labelset(set(labels))
+            or classify_finish_reason != "stop"
+        ):
+            raise RuntimeError(
+                "Frozen CoCo classify_preflight returned invalid semantic output "
+                f"(valid={valid}, labels={labels}, finish_reason="
+                f"{classify_finish_reason}, "
+                f"content_prefix={classify_content[:200]!r})"
             )
 
     def split_review(self, review_text: str) -> List[str]:

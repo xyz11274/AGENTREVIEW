@@ -61,8 +61,9 @@ class LocalOpenAIRuntimeTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "endpoint is required"):
                 _prepare_llm_runtime(args, formal=True)
 
+    @patch("agentreview.utility.authentication_utils.httpx.Client")
     @patch("agentreview.utility.authentication_utils.openai.OpenAI")
-    def test_dummy_key_initializes_local_client(self, openai_client):
+    def test_dummy_key_initializes_local_client(self, openai_client, http_client):
         get_openai_client(
             "openai",
             base_url="http://127.0.0.1:8000/v1",
@@ -73,6 +74,25 @@ class LocalOpenAIRuntimeTest(unittest.TestCase):
             openai_client.call_args.kwargs["base_url"],
             "http://127.0.0.1:8000/v1",
         )
+        self.assertFalse(http_client.call_args.kwargs["trust_env"])
+        self.assertIs(
+            openai_client.call_args.kwargs["http_client"],
+            http_client.return_value,
+        )
+
+    @patch("agentreview.utility.authentication_utils.httpx.Client")
+    @patch("agentreview.utility.authentication_utils.openai.OpenAI")
+    def test_remote_client_keeps_environment_proxy_policy(
+        self, openai_client, http_client
+    ):
+        get_openai_client(
+            "openai",
+            base_url="https://api.example.test/v1",
+            api_key="secret",
+        )
+
+        http_client.assert_not_called()
+        self.assertNotIn("http_client", openai_client.call_args.kwargs)
 
     def test_port_change_preserves_identity_and_secret_is_absent(self):
         first = self._args()

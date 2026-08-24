@@ -1,13 +1,25 @@
 #AgentReview/agentreview/utility/authentication_utils.py
 
+import ipaddress
 import logging
 import os
 from typing import Mapping, Optional
+from urllib.parse import urlparse
 
 import httpx
 import openai
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+def _is_loopback_url(value: str) -> bool:
+    hostname = (urlparse(str(value)).hostname or "").strip().lower()
+    if hostname == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
 def resolve_openai_base_url(
@@ -60,11 +72,18 @@ def get_openai_client(
             raise ValueError(
                 "OPENAI_API_KEY is required; local vLLM endpoints may use 'dummy'"
             )
+        client_options = {}
+        if _is_loopback_url(resolved_base_url):
+            transport_options = {"trust_env": False}
+            if timeout is not None:
+                transport_options["timeout"] = timeout
+            client_options["http_client"] = httpx.Client(**transport_options)
         client = openai.OpenAI(
             api_key=resolved_api_key,
             base_url=resolved_base_url,
             timeout=timeout,
             max_retries=0,
+            **client_options,
         )
 
     elif client_type == "azure_openai":
