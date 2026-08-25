@@ -1,15 +1,20 @@
 import time
 from contextlib import nullcontext
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from .checkpoint import load_checkpoint, save_checkpoint
 from .benchmark_adapter import ReviewSubmission, evaluate_frozen_review
 from .models import Episode, EvalItem, EvalResult, to_serializable
-from .sandbox import SandboxSession
-
-
-EXPERIENCE_PROTOCOL = "self_generated_after_review"
-EXPERIENCE_PROTOCOL_VERSION = "self-generated-experience-v1"
+from agentreview.history_checkpoint import canonical_sha256
+from agentreview.reviewer_runtime.artifacts import CandidateReviewRecord
+from agentreview.reviewer_runtime.engine import (
+    EXPERIENCE_PROTOCOL,
+    EXPERIENCE_PROTOCOL_VERSION,
+    ReviewerSession,
+)
+from agentreview.reviewer_runtime.models import ReviewRequest
+from agentreview.reviewer_runtime.tasks import ALL_TASKS
 
 
 def candidate_safe_case(case: Dict[str, Any]) -> Dict[str, Any]:
@@ -69,6 +74,7 @@ def evaluate_program(
     checkpoint_path: Optional[str] = None,
     run_identity: Optional[Dict[str, Any]] = None,
     benchmark_adapter_factory: Optional[Callable] = None,
+    candidate_review_sink: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> EvalResult:
     started = time.monotonic()
     resource_before = (
@@ -87,14 +93,21 @@ def evaluate_program(
     session = None
     try:
         toolkit.reset_vector_collections()
-        session = SandboxSession(
-            program_path,
-            toolkit,
+        runtime_task_id = str(getattr(task_agent, "task_id", "") or "")
+        if runtime_task_id not in ALL_TASKS:
+            suffix = str(eval_items[0].id).rsplit("::", 1)[-1] if eval_items else ""
+            runtime_task_id = suffix if suffix in ALL_TASKS else "QUAL"
+        reviewer_runtime = ReviewerSession(
+            task_id=runtime_task_id,
+            memory_program=program_path,
+            toolkit=toolkit,
+            task_agent=task_agent,
             timeout_seconds=max(write_timeout, read_timeout),
             cpu_seconds=max(1, int(max(write_timeout, read_timeout))),
             require_bubblewrap=require_bubblewrap,
         )
-        program = session.program_interface()
+        session = reviewer_runtime.sandbox
+        program = reviewer_runtime.program
     except Exception as exc:
         if session is not None:
             session.close(force=True)
@@ -174,30 +187,40 @@ def evaluate_program(
                 if episode.metadata.get("experience_protocol") == EXPERIENCE_PROTOCOL:
                     # Historical Paper_i is reviewed against only Memory built from
                     # Paper_1..Paper_{i-1}.  Writeback happens strictly afterwards.
-                    historical_query = task_agent.generate_query(program, episode.text)
-                    with toolkit.operation("historical_memory_read"):
-                        historical_context = session.read(historical_query)
-                    generated_review = task_agent.generate_response(
-                        program,
-                        episode.text,
-                        historical_context,
+                    generated = reviewer_runtime.review(
+                        ReviewRequest(
+                            paper_id=episode.id.split("::", 1)[0],
+                            task_id=runtime_task_id,
+                            question=episode.text,
+                            model=str(getattr(toolkit, "llm_model", "") or "unspecified"),
+                            revision=str(
+                                ((run_identity or {}).get("generation_config") or {}).get(
+                                    "model_revision"
+                                )
+                                or "unspecified"
+                            ),
+                            run_identity=(
+                                canonical_sha256(run_identity)
+                                if isinstance(run_identity, dict)
+                                else f"evaluation:{Path(program_path).stem}"
+                            ),
+                            read_operation="historical_memory_read",
+                        )
                     )
                     raw_text = (
                         "HISTORICAL PAPER TASK\n"
                         f"{episode.text}\n\n"
                         "SELF-GENERATED REVIEW EXPERIENCE\n"
-                        f"{generated_review}"
+                        f"{generated.review_text}"
                     )
                     trace.update(
                         {
                             "experience_protocol": "review_then_write",
-                            "prior_memory_chars": len(historical_context),
-                            "generated_review_chars": len(generated_review),
+                            "prior_memory_chars": len(generated.memory_context),
+                            "generated_review_chars": len(generated.review_text),
                         }
                     )
-                item = task_agent.extract_knowledge_item(program, raw_text)
-                with toolkit.operation("memory_write"):
-                    session.write(item, raw_text)
+                item = reviewer_runtime.ingest_text(raw_text)
             trace.update(
                 {
                     "knowledge_item": to_serializable(item),
@@ -264,6 +287,7 @@ def evaluate_program(
             "question": eval_item.question,
             "gold": eval_item.answer,
         }
+        candidate_review_record = None
         try:
             paper_scope = (
                 toolkit.paper_scope(eval_item.id)
@@ -271,16 +295,52 @@ def evaluate_program(
                 else nullcontext()
             )
             with paper_scope:
-                query = task_agent.generate_query(program, eval_item.question)
-                with toolkit.operation("memory_read"):
-                    context = session.read(query)
-                if not isinstance(context, str):
-                    raise TypeError("KnowledgeBase.read() must return str")
-                if len(context) > 3000:
-                    raise ValueError("KnowledgeBase.read() exceeded 3000 characters")
-                answer = task_agent.generate_response(
-                    program, eval_item.question, context
+                model_revision = str(
+                    ((run_identity or {}).get("generation_config") or {}).get(
+                        "model_revision"
+                    )
+                    or getattr(getattr(toolkit, "llm_client", None), "revision", "")
+                    or "unspecified"
                 )
+                stable_run_identity = (
+                    canonical_sha256(run_identity)
+                    if isinstance(run_identity, dict)
+                    else f"evaluation:{Path(program_path).stem}"
+                )
+                review_result = reviewer_runtime.review(
+                    ReviewRequest(
+                        paper_id=eval_item.id.split("::", 1)[0],
+                        task_id=runtime_task_id,
+                        question=eval_item.question,
+                        metadata=dict(eval_item.metadata),
+                        model=str(getattr(toolkit, "llm_model", "") or "unspecified"),
+                        revision=model_revision,
+                        run_identity=stable_run_identity,
+                        provenance={
+                            key: (run_identity or {}).get(key)
+                            for key in (
+                                "candidate_id",
+                                "lineage",
+                                "replicate_id",
+                            )
+                            if (run_identity or {}).get(key) is not None
+                        },
+                    )
+                )
+                query = review_result.query
+                context = review_result.memory_context
+                answer = review_result.review_text
+            candidate_review_record = CandidateReviewRecord.from_result(
+                review_result
+            ).to_dict()
+            case.update(
+                {
+                    "query": to_serializable(query),
+                    "context": context,
+                    "answer": answer,
+                    "candidate_review": candidate_review_record,
+                }
+            )
             if benchmark_adapter_factory is not None:
                 adapter = benchmark_adapter_factory(
                     metric, eval_item.answer, to_serializable(eval_item)
@@ -302,9 +362,6 @@ def evaluate_program(
                 metric_details = getattr(metric, "last_details", None)
             case.update(
                 {
-                    "query": to_serializable(query),
-                    "context": context,
-                    "answer": answer,
                     "score": score,
                     "success": True,
                     "structured_metrics": (
@@ -336,6 +393,11 @@ def evaluate_program(
                 }
             )
         duration = time.monotonic() - read_started
+        if candidate_review_record is not None and candidate_review_sink is not None:
+            try:
+                candidate_review_sink(candidate_review_record)
+            except Exception as exc:
+                case["candidate_artifact_error"] = f"{type(exc).__name__}: {exc}"
         read_durations.append(duration)
         case["duration_seconds"] = duration
         scores.append(score)

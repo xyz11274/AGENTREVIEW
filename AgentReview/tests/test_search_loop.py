@@ -223,6 +223,18 @@ class SearchLoopTest(unittest.TestCase):
             self.assertTrue(list((output / "pool").glob("program_003_child.py")))
             self.assertTrue((output / "scores.jsonl").is_file())
             self.assertTrue((output / "lineage.jsonl").is_file())
+            self.assertTrue((output / "candidate_reviews.jsonl").is_file())
+            candidate_reviews = [
+                json.loads(line)
+                for line in (output / "candidate_reviews.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
+                if line.strip()
+            ]
+            self.assertTrue(candidate_reviews)
+            self.assertTrue(
+                all("provenance" in value for value in candidate_reviews)
+            )
             self.assertTrue((output / "best_program.py").is_file())
             trace_manifest = json.loads(
                 (output / "traces" / "manifest.json").read_text(encoding="utf-8")

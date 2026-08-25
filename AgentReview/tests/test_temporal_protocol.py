@@ -301,19 +301,35 @@ class TemporalProtocolTest(unittest.TestCase):
                 )
 
     def test_current_formal_versions_reject_frozen_v1_manifest(self):
-        root = Path(__file__).parents[1]
-        manifest_path = root / "configs" / "asset_manifest_v2.json"
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        self.assertEqual(
-            payload["assets"]["temporal_split_manifest"]["version"],
-            "coco-temporal-paper-split-v1",
-        )
-        with self.assertRaises(ValueError):
-            validate_asset_manifest(
-                str(manifest_path),
-                required_assets=("temporal_split_manifest",),
-                required_versions=FORMAL_REQUIRED_VERSIONS,
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            frozen_v1 = root / "temporal_v1.json"
+            frozen_v1.write_text("{}\n", encoding="utf-8")
+            manifest_path = root / "asset_manifest_v1.json"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "manifest_version": "mstar-assets-v2-temporal",
+                        "assets": {
+                            "temporal_split_manifest": {
+                                "path": str(frozen_v1),
+                                "sha256": hashlib.sha256(
+                                    frozen_v1.read_bytes()
+                                ).hexdigest(),
+                                "version": "coco-temporal-paper-split-v1",
+                                "split": "A+B+C+D",
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
             )
+            with self.assertRaises(ValueError):
+                validate_asset_manifest(
+                    str(manifest_path),
+                    required_assets=("temporal_split_manifest",),
+                    required_versions=FORMAL_REQUIRED_VERSIONS,
+                )
 
     def test_formal_required_versions_explicitly_reject_v1_versions(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -498,6 +514,266 @@ class TemporalProtocolTest(unittest.TestCase):
         second.close()
         self.assertIn("check ablations", value)
 
+    def test_large_vector_snapshot_is_compact_and_restores_same_retrieval(self):
+        class DeterministicEmbedding:
+            @staticmethod
+            def embed(texts):
+                values = []
+                for text in texts:
+                    vector = [0.0] * 4096
+                    vector[0 if "needle" in text else 1] = 1.0
+                    values.append(vector)
+                return values
+
+        root = Path(__file__).parents[1]
+        toolkit = MemoryToolkit(embedding_client=DeterministicEmbedding())
+        program = root / "memory_evolution" / "seeds" / "vector_search.py"
+        chunks = []
+        for index in range(256):
+            marker = "needle" if index == 137 else f"chunk-{index:03d}"
+            chunks.append((marker + " ").ljust(500, "x"))
+        raw_text = "".join(chunks)
+
+        first = SandboxSession(
+            str(program),
+            toolkit,
+            require_bubblewrap=False,
+            memory_mb=128,
+        )
+        try:
+            interface = first.program_interface()
+            first.write(
+                interface.KnowledgeItem(
+                    topic="stress",
+                    content="",
+                    reviewer_name="Reviewer QUAL",
+                    reviewer_dimension="QUAL",
+                ),
+                raw_text,
+            )
+            before = first.read(
+                interface.Query(
+                    query_text="needle",
+                    reviewer_dimension="QUAL",
+                )
+            )
+            snapshot = first.snapshot()
+        finally:
+            first.close(force=True)
+
+        self.assertLess(
+            len(json.dumps(snapshot, separators=(",", ":"))),
+            1_000_000,
+        )
+
+        second = SandboxSession(
+            str(program),
+            toolkit,
+            require_bubblewrap=False,
+            memory_mb=128,
+        )
+        try:
+            interface = second.program_interface()
+            second.restore(snapshot)
+            after = second.read(
+                interface.Query(
+                    query_text="needle",
+                    reviewer_dimension="QUAL",
+                )
+            )
+        finally:
+            second.close(force=True)
+
+        self.assertEqual(after, before)
+        self.assertIn("needle", after)
+
+    def test_legacy_vector_snapshot_restores_through_current_runtime(self):
+        class DeterministicEmbedding:
+            @staticmethod
+            def embed(texts):
+                return [
+                    [1.0, 0.0] if "needle" in text else [0.0, 1.0]
+                    for text in texts
+                ]
+
+        root = Path(__file__).parents[1]
+        toolkit = MemoryToolkit(embedding_client=DeterministicEmbedding())
+        program = root / "memory_evolution" / "seeds" / "vector_search.py"
+        legacy_snapshot = {
+            "snapshot_version": "mstar-memory-snapshot-v1",
+            "knowledge_base_state": {
+                "toolkit": {"__mstar_type__": "toolkit"},
+                "collection": {
+                    "__mstar_type__": "collection",
+                    "name": "mstar_vector_search",
+                },
+                "seen": {
+                    "__mstar_type__": "set",
+                    "items": ["legacy-id"],
+                },
+            },
+            "sqlite_dump": ["BEGIN TRANSACTION;", "COMMIT;"],
+            "collections": {
+                "mstar_vector_search": {
+                    "records": [
+                        {
+                            "id": "legacy-id",
+                            "text": "needle evidence",
+                            "embedding": [1.0, 0.0],
+                            "metadata": {
+                                "reviewer_dimension": "QUAL",
+                            },
+                        }
+                    ],
+                    "ids": ["legacy-id"],
+                }
+            },
+        }
+
+        session = SandboxSession(
+            str(program),
+            toolkit,
+            require_bubblewrap=False,
+            memory_mb=128,
+        )
+        try:
+            interface = session.program_interface()
+            session.restore(legacy_snapshot)
+            value = session.read(
+                interface.Query(
+                    query_text="needle",
+                    reviewer_dimension="QUAL",
+                )
+            )
+            migrated = session.snapshot()
+        finally:
+            session.close(force=True)
+
+        self.assertIn("needle evidence", value)
+        self.assertLess(
+            len(json.dumps(migrated, separators=(",", ":"))),
+            10_000,
+        )
+
+    def test_same_session_restore_reuses_verified_snapshot_embeddings(self):
+        class DisableableEmbedding:
+            enabled = True
+
+            def embed(self, texts):
+                if not self.enabled:
+                    raise RuntimeError("embedding backend unavailable")
+                return [
+                    [1.0, 0.0] if "needle" in text else [0.0, 1.0]
+                    for text in texts
+                ]
+
+        root = Path(__file__).parents[1]
+        embedding = DisableableEmbedding()
+        toolkit = MemoryToolkit(embedding_client=embedding)
+        program = root / "memory_evolution" / "seeds" / "vector_search.py"
+        session = SandboxSession(
+            str(program),
+            toolkit,
+            require_bubblewrap=False,
+            memory_mb=128,
+        )
+        try:
+            interface = session.program_interface()
+            session.write(
+                interface.KnowledgeItem(
+                    topic="fixture",
+                    content="",
+                    reviewer_name="Reviewer QUAL",
+                    reviewer_dimension="QUAL",
+                ),
+                "needle evidence",
+            )
+            snapshot = session.snapshot()
+            embedding.enabled = False
+            session.restore(snapshot)
+            embedding.enabled = True
+            value = session.read(
+                interface.Query(
+                    query_text="needle",
+                    reviewer_dimension="QUAL",
+                )
+            )
+        finally:
+            session.close(force=True)
+
+        self.assertIn("needle evidence", value)
+
+    def test_explicit_vector_snapshot_restores_without_embedding_backend(self):
+        class DisabledEmbedding:
+            @staticmethod
+            def embed(texts):
+                raise RuntimeError("embedding backend must not be used")
+
+        source = '''
+from dataclasses import dataclass
+
+INSTRUCTION_KNOWLEDGE_ITEM = "fixture"
+INSTRUCTION_QUERY = "fixture"
+INSTRUCTION_RESPONSE = "fixture"
+ALWAYS_ON_KNOWLEDGE = "fixture"
+
+@dataclass
+class KnowledgeItem:
+    content: str = ""
+
+@dataclass
+class Query:
+    query_text: str = ""
+
+class KnowledgeBase:
+    def __init__(self, toolkit):
+        self.collection = toolkit.create_vector_collection("explicit")
+
+    def write(self, item, raw_text):
+        self.collection.add(
+            texts=[raw_text],
+            embeddings=[[1.0, 0.0]],
+            metadatas=[{"source": "explicit"}],
+            ids=["explicit-1"],
+        )
+
+    def read(self, query):
+        values = self.collection.query([1.0, 0.0], top_k=1)
+        return values[0]["text"] if values else ""
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            program = Path(directory) / "explicit_program.py"
+            program.write_text(source, encoding="utf-8")
+            toolkit = MemoryToolkit(embedding_client=DisabledEmbedding())
+
+            first = SandboxSession(
+                str(program),
+                toolkit,
+                require_bubblewrap=False,
+                memory_mb=128,
+            )
+            try:
+                interface = first.program_interface()
+                first.write(interface.KnowledgeItem(content="manual"), "manual")
+                snapshot = first.snapshot()
+            finally:
+                first.close(force=True)
+
+            second = SandboxSession(
+                str(program),
+                toolkit,
+                require_bubblewrap=False,
+                memory_mb=128,
+            )
+            try:
+                interface = second.program_interface()
+                second.restore(snapshot)
+                value = second.read(interface.Query(query_text="manual"))
+            finally:
+                second.close(force=True)
+
+        self.assertEqual(value, "manual")
+
     def test_formal_replay_writes_A_and_keeps_B_read_only(self):
         class Agent:
             @staticmethod
@@ -566,6 +842,42 @@ class TemporalProtocolTest(unittest.TestCase):
                 run_identity=self._identity(),
             )
             self.assertIn("legacy experience protocol", legacy.error)
+
+    def test_metric_failure_trace_preserves_generated_answer(self):
+        class Agent:
+            @staticmethod
+            def generate_query(program, text):
+                return program.Query(
+                    query_text="QUAL ablations",
+                    reviewer_dimension="QUAL",
+                )
+
+            @staticmethod
+            def generate_response(program, question, context):
+                return "generated specialist review"
+
+        class FailingMetric:
+            last_details = {"parser_success": True}
+
+            def __call__(self, prediction, gold, item):
+                raise TimeoutError("classifier stalled")
+
+        root = Path(__file__).parents[1]
+        program = root / "memory_evolution" / "seeds" / "vector_search.py"
+        result = evaluate_program(
+            str(program),
+            [],
+            [EvalItem(id="B1::QUAL", question="paper", answer="reference")],
+            Agent(),
+            MemoryToolkit(),
+            FailingMetric(),
+            require_bubblewrap=False,
+        )
+
+        trace = result.traces[0]
+        self.assertFalse(trace["success"])
+        self.assertEqual(trace["answer"], "generated specialist review")
+        self.assertEqual(trace["evaluator_debug"], {"parser_success": True})
 
 
 if __name__ == "__main__":

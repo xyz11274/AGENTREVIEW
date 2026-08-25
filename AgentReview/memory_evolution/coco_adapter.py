@@ -21,6 +21,8 @@ SPLIT_MODEL = "Qwen3-8B-Split"
 CLASSIFY_MODEL = "Qwen3-8B-Classify"
 COCO_REQUEST_TIMEOUT_SECONDS = 600.0
 COCO_PREFLIGHT_TIMEOUT_SECONDS = 30.0
+SPLIT_ENABLE_THINKING = False
+CLASSIFY_ENABLE_THINKING = True
 
 
 def _head_commit(root: Path) -> str:
@@ -138,9 +140,13 @@ class FrozenCoCoAdapter:
     @staticmethod
     def _request(client, phase: str, endpoint: str, **kwargs):
         started = time.monotonic()
+        template_kwargs = (
+            kwargs.get("extra_body", {}).get("chat_template_kwargs", {})
+        )
         print(
             f"[COCO START] phase={phase}, endpoint={endpoint}, "
-            f"model={kwargs.get('model')}, max_tokens={kwargs.get('max_tokens')}",
+            f"model={kwargs.get('model')}, max_tokens={kwargs.get('max_tokens')}, "
+            f"enable_thinking={template_kwargs.get('enable_thinking')}",
             flush=True,
         )
         try:
@@ -181,7 +187,11 @@ class FrozenCoCoAdapter:
             temperature=0.0,
             max_tokens=512,
             timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
-            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            extra_body={
+                "chat_template_kwargs": {
+                    "enable_thinking": SPLIT_ENABLE_THINKING
+                }
+            },
         )
         split_content = self._content(split_response)
         parsed = self.split_code.parse_llm_output(split_content)
@@ -264,7 +274,11 @@ class FrozenCoCoAdapter:
                 temperature=0.6,
                 presence_penalty=penalty,
                 max_tokens=32768,
-                extra_body={"chat_template_kwargs": {"enable_thinking": True}},
+                extra_body={
+                    "chat_template_kwargs": {
+                        "enable_thinking": SPLIT_ENABLE_THINKING
+                    }
+                },
             )
             parsed = self.split_code.parse_llm_output(self._content(response))
             coverage, missing = self.split_code.compute_coverage(
@@ -328,7 +342,9 @@ class FrozenCoCoAdapter:
                     presence_penalty=penalty,
                     max_tokens=12288,
                     extra_body={
-                        "chat_template_kwargs": {"enable_thinking": True}
+                        "chat_template_kwargs": {
+                            "enable_thinking": CLASSIFY_ENABLE_THINKING
+                        }
                     },
                 )
                 content = self._content(response)

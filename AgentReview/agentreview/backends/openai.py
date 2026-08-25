@@ -63,6 +63,25 @@ class EmptyModelResponseError(RuntimeError):
         )
 
 
+class TruncatedModelResponseError(RuntimeError):
+    """The provider stopped at the token limit with partial assistant text."""
+
+    def __init__(
+        self,
+        message,
+        *,
+        completion_tokens=None,
+        reasoning_tokens=None,
+        requested_tokens=None,
+        partial_response_chars=0,
+    ):
+        super().__init__(message)
+        self.completion_tokens = completion_tokens
+        self.reasoning_tokens = reasoning_tokens
+        self.requested_tokens = requested_tokens
+        self.partial_response_chars = partial_response_chars
+
+
 def _exception_chain_summary(error: Exception) -> str:
     values = []
     current = error
@@ -339,6 +358,20 @@ class OpenAIChat(IntelligenceBackend):
                 requested_tokens=requested_tokens,
             )
             raise error
+        if getattr(choice, "finish_reason", None) == "length":
+            raise TruncatedModelResponseError(
+                "Provider returned a truncated assistant message "
+                f"(finish_reason=length, completion_tokens="
+                f"{getattr(usage, 'completion_tokens', None)}, "
+                f"reasoning_tokens={getattr(details, 'reasoning_tokens', None)}, "
+                f"requested_tokens={requested_tokens}, "
+                f"partial_response_chars={len(response)}). "
+                "The partial response was discarded.",
+                completion_tokens=getattr(usage, "completion_tokens", None),
+                reasoning_tokens=getattr(details, "reasoning_tokens", None),
+                requested_tokens=requested_tokens,
+                partial_response_chars=len(response),
+            )
         return response
 
     @staticmethod
@@ -385,7 +418,10 @@ class OpenAIChat(IntelligenceBackend):
         response = None
         current_max_tokens = self.max_tokens
         current_reasoning_effort = self.reasoning_effort
-        for attempt in range(1, self.empty_response_attempts + 1):
+        # Keep one independent attempt available for a length-limited response
+        # to retry at retry_max_tokens. Empty responses still fail at their
+        # existing empty_response_attempts threshold below.
+        for attempt in range(1, self.empty_response_attempts + 2):
             try:
                 response_options = {}
                 if chat_template_kwargs:
@@ -400,6 +436,27 @@ class OpenAIChat(IntelligenceBackend):
                     **response_options,
                 )
                 break
+            except TruncatedModelResponseError as exc:
+                if current_max_tokens >= self.retry_max_tokens:
+                    print(
+                        f"[API FAILED][TRUNCATED RESPONSE] {agent_name}: "
+                        "response remained length-limited at "
+                        f"retry_max_tokens={self.retry_max_tokens} after "
+                        f"{time.monotonic() - started:.1f}s - {exc}",
+                        flush=True,
+                    )
+                    raise
+                previous_tokens = current_max_tokens
+                current_max_tokens = self.retry_max_tokens
+                print(
+                    f"[API RETRY][TRUNCATED RESPONSE] {agent_name}: "
+                    "discarded partial response; "
+                    f"retry {attempt + 1} with max_completion_tokens="
+                    f"{previous_tokens}->{current_max_tokens}, "
+                    f"reasoning_effort="
+                    f"{current_reasoning_effort or 'provider_default'}",
+                    flush=True,
+                )
             except EmptyModelResponseError as exc:
                 labels = ["EMPTY RESPONSE"]
                 if exc.reasoning_tokens_exhausted:
@@ -407,6 +464,18 @@ class OpenAIChat(IntelligenceBackend):
                 if exc.max_completion_tokens_exhausted:
                     labels.append("MAX_COMPLETION_TOKENS EXHAUSTED")
                 label_text = "][".join(labels)
+                if (
+                    exc.max_completion_tokens_exhausted
+                    and current_max_tokens >= self.retry_max_tokens
+                ):
+                    print(
+                        f"[API FAILED][{label_text}] {agent_name}: "
+                        "response remained length-limited at "
+                        f"retry_max_tokens={self.retry_max_tokens} after "
+                        f"{time.monotonic() - started:.1f}s - {exc}",
+                        flush=True,
+                    )
+                    raise
                 if attempt >= self.empty_response_attempts:
                     print(
                         f"[API FAILED][{label_text}] {agent_name}: "

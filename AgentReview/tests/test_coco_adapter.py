@@ -1,5 +1,5 @@
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -182,7 +182,7 @@ class CoCoAdapterTest(unittest.TestCase):
         ):
             adapter._preflight()
 
-    def test_frozen_split_sampling_parameters_remain_unchanged(self):
+    def test_frozen_split_uses_direct_output_with_official_sampling(self):
         calls = RecordingCompletions(
             response=_response(content="##1: [1]", completion_tokens=4)
         )
@@ -218,7 +218,7 @@ class CoCoAdapterTest(unittest.TestCase):
             self.assertEqual(call["temperature"], 0.6)
             self.assertEqual(
                 call["extra_body"],
-                {"chat_template_kwargs": {"enable_thinking": True}},
+                {"chat_template_kwargs": {"enable_thinking": False}},
             )
 
 

@@ -44,17 +44,26 @@ try:
         build_specialist_reviewer_configs,
     )
     from agentreview.utility.utils import project_setup
-    from memory_evolution.integration import MemoryHarnessAdapter
-    from memory_evolution.agentreview_data import build_reviewer_memory_episode_text
-    from memory_evolution.models import Episode
-    from memory_evolution.task_agent import build_task_agent
-    from memory_evolution.tasks import resolve_program_path, verify_promoted_program
-    from memory_evolution.toolkit import (
+    from agentreview.reviewer_runtime.memory_runtime import MemoryHarnessAdapter
+    from agentreview.reviewer_runtime.episodes import build_reviewer_memory_episode_text
+    from agentreview.reviewer_runtime.models import Episode
+    from agentreview.reviewer_runtime.task_agent import build_task_agent
+    from agentreview.reviewer_runtime.program_loader import (
+        MemoryProgramLoader,
+        resolve_program_path,
+        verify_promoted_program,
+    )
+    from agentreview.reviewer_runtime.artifacts import (
+        CandidateReviewRecord,
+        CandidateReviewWriter,
+    )
+    from agentreview.reviewer_runtime.tasks import reviewer_identity
+    from agentreview.reviewer_runtime.toolkit import (
         MemoryToolkit,
         frozen_s2_pool_version,
         load_frozen_s2_pool,
     )
-    from memory_evolution.checkpoint import (
+    from agentreview.history_checkpoint import (
         canonical_sha256,
         load_checkpoint as load_history_checkpoint,
         save_checkpoint as save_history_checkpoint,
@@ -350,6 +359,45 @@ def save_structured_outputs(
     reviews_path = output_dir / "reviews.json"
     reviews_path.write_text(json.dumps(reviews, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    candidate_reviews_path = output_dir / "candidate_reviews.jsonl"
+    candidate_reviews_path.write_text("", encoding="utf-8")
+    candidate_writer = CandidateReviewWriter(candidate_reviews_path)
+    memory_mode = str(extraction_memory.get("memory_mode") or "existing")
+    for reviewer_name, review_text in reviews.items():
+        task_id = infer_reviewer_dimension(reviewer_name) or "META"
+        context = dict((reviewer_memory_contexts or {}).get(reviewer_name) or {})
+        program_path = str(context.get("program_path") or "")
+        if program_path:
+            program = MemoryProgramLoader.identity(program_path, task_id)
+            program_identity = program.to_dict()
+            program_sha256 = program.sha256
+        else:
+            logical = f"legacy-{memory_mode}-memory"
+            program_identity = {
+                "logical_identity": logical,
+                "source_kind": "legacy_memory_mode",
+            }
+            program_sha256 = hashlib.sha256(logical.encode("utf-8")).hexdigest()
+        candidate_writer.append(
+            CandidateReviewRecord(
+                paper_id=str(paper_info["sample_id"]),
+                task_id=task_id,
+                review_text=review_text,
+                reviewer_identity=reviewer_identity(task_id),
+                memory_program_identity=program_identity,
+                memory_program_sha256=program_sha256,
+                model=str(args.model_name),
+                revision=str(
+                    getattr(args, "model_revision", "")
+                    or "legacy-backend-unspecified"
+                ),
+                run_identity=(
+                    f"legacy:{getattr(args, 'replicate_id', '')}:"
+                    f"{paper_info['sample_id']}"
+                ),
+            )
+        )
+
     memory_path = output_dir / "memory.json"
     memory_path.write_text(json.dumps(extraction_memory, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -369,6 +417,7 @@ def save_structured_outputs(
         "review_dir": str(output_dir),
         "memory_path": str(memory_path),
         "reviews_path": str(reviews_path),
+        "candidate_reviews_path": str(candidate_reviews_path),
         "memory_record": memory_record,
     }
 

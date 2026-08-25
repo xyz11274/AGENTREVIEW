@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from agentreview.backends.openai import (
     EmptyModelResponseError,
     OpenAIChat,
+    TruncatedModelResponseError,
     _exception_chain_summary,
 )
 
@@ -108,6 +109,194 @@ class OpenAIBackendTest(unittest.TestCase):
         self.assertEqual(calls, [(8192, "low"), (16384, "low")])
         self.assertIn("REASONING TOKEN EXHAUSTED", output.getvalue())
         self.assertIn("MAX_COMPLETION_TOKENS EXHAUSTED", output.getvalue())
+
+    def test_length_limited_empty_response_at_max_budget_fails_closed_once(self):
+        calls = []
+
+        def create(**kwargs):
+            calls.append(kwargs["max_completion_tokens"])
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(content=""),
+                        finish_reason="length",
+                    )
+                ],
+                usage=SimpleNamespace(
+                    completion_tokens=16384,
+                    completion_tokens_details=SimpleNamespace(
+                        reasoning_tokens=16384
+                    ),
+                ),
+            )
+
+        backend = object.__new__(OpenAIChat)
+        backend.client_type = "openai"
+        backend.client = SimpleNamespace(
+            chat=SimpleNamespace(
+                completions=SimpleNamespace(create=create)
+            )
+        )
+        backend.model = "gpt-5"
+        backend.base_url = "https://example.test/v1"
+        backend.temperature = 0.0
+        backend.max_tokens = 16384
+        backend.retry_max_tokens = 16384
+        backend.reasoning_effort = "low"
+        backend.reasoning_effort_supported = False
+        backend.min_interval_seconds = 0
+        backend.request_timeout_seconds = 10
+        backend.connect_timeout_seconds = 10
+        backend.read_timeout_seconds = 10
+        backend.write_timeout_seconds = 10
+        backend.pool_timeout_seconds = 10
+        backend.api_max_retries = 0
+        backend.empty_response_attempts = 3
+        backend.empty_response_retry_seconds = 0
+        backend.last_response_info = {}
+
+        with self.assertRaisesRegex(
+            EmptyModelResponseError,
+            "finish_reason=length",
+        ):
+            backend._get_response_for_agent(
+                "Memory Response",
+                [{"role": "user", "content": "paper"}],
+            )
+
+        self.assertEqual(calls, [16384])
+
+    def test_length_limited_partial_response_is_discarded_and_retried_at_max_budget(self):
+        calls = []
+        completions = iter(
+            [
+                SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="partial review"),
+                            finish_reason="length",
+                        )
+                    ],
+                    usage=SimpleNamespace(
+                        completion_tokens=8192,
+                        completion_tokens_details=SimpleNamespace(
+                            reasoning_tokens=None
+                        ),
+                    ),
+                ),
+                SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content="complete review"),
+                            finish_reason="stop",
+                        )
+                    ],
+                    usage=SimpleNamespace(
+                        completion_tokens=9000,
+                        completion_tokens_details=SimpleNamespace(
+                            reasoning_tokens=None
+                        ),
+                    ),
+                ),
+            ]
+        )
+
+        def create(**kwargs):
+            calls.append(kwargs["max_tokens"])
+            return next(completions)
+
+        backend = object.__new__(OpenAIChat)
+        backend.client_type = "openai"
+        backend.client = SimpleNamespace(
+            chat=SimpleNamespace(
+                completions=SimpleNamespace(create=create)
+            )
+        )
+        backend.model = "qwen3.8-27b"
+        backend.base_url = "https://example.test/v1"
+        backend.temperature = 0.0
+        backend.max_tokens = 8192
+        backend.retry_max_tokens = 16384
+        backend.reasoning_effort = "low"
+        backend.reasoning_effort_supported = False
+        backend.min_interval_seconds = 0
+        backend.request_timeout_seconds = 10
+        backend.connect_timeout_seconds = 10
+        backend.read_timeout_seconds = 10
+        backend.write_timeout_seconds = 10
+        backend.pool_timeout_seconds = 10
+        backend.api_max_retries = 0
+        backend.empty_response_attempts = 3
+        backend.empty_response_retry_seconds = 0
+        backend.last_response_info = {}
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            response = backend._get_response_for_agent(
+                "Memory Response",
+                [{"role": "user", "content": "paper"}],
+            )
+
+        self.assertEqual(response, "complete review")
+        self.assertEqual(calls, [8192, 16384])
+        self.assertNotEqual(response, "partial review")
+
+    def test_length_limited_partial_response_at_max_budget_fails_closed(self):
+        calls = []
+        completion = SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content="partial review"),
+                    finish_reason="length",
+                )
+            ],
+            usage=SimpleNamespace(
+                completion_tokens=16384,
+                completion_tokens_details=SimpleNamespace(
+                    reasoning_tokens=None
+                ),
+            ),
+        )
+
+        def create(**kwargs):
+            calls.append(kwargs["max_tokens"])
+            return completion
+
+        backend = object.__new__(OpenAIChat)
+        backend.client_type = "openai"
+        backend.client = SimpleNamespace(
+            chat=SimpleNamespace(
+                completions=SimpleNamespace(create=create)
+            )
+        )
+        backend.model = "qwen3.8-27b"
+        backend.base_url = "https://example.test/v1"
+        backend.temperature = 0.0
+        backend.max_tokens = 16384
+        backend.retry_max_tokens = 16384
+        backend.reasoning_effort = "low"
+        backend.reasoning_effort_supported = False
+        backend.min_interval_seconds = 0
+        backend.request_timeout_seconds = 10
+        backend.connect_timeout_seconds = 10
+        backend.read_timeout_seconds = 10
+        backend.write_timeout_seconds = 10
+        backend.pool_timeout_seconds = 10
+        backend.api_max_retries = 0
+        backend.empty_response_attempts = 3
+        backend.empty_response_retry_seconds = 0
+        backend.last_response_info = {}
+
+        with self.assertRaisesRegex(
+            TruncatedModelResponseError,
+            "truncated assistant message.*partial response was discarded",
+        ):
+            backend._get_response_for_agent(
+                "Memory Response",
+                [{"role": "user", "content": "paper"}],
+            )
+
+        self.assertEqual(calls, [16384])
 
     def test_supported_reasoning_effort_rejection_is_not_retried_without_it(self):
         calls = []

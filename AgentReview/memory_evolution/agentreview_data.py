@@ -19,6 +19,8 @@ from agentreview.source_map import (
     format_source_anchors,
     load_content_list,
 )
+from agentreview.reviewer_runtime.episodes import build_reviewer_memory_episode_text
+from agentreview.reviewer_runtime.requests import build_review_question
 
 from .tasks import META_TASK, SPECIALIST_TASKS
 from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
@@ -168,48 +170,6 @@ def _format_related_work(papers: Sequence[Dict[str, Any]]) -> str:
             + (f"\n{abstract[:1500]}" if abstract else "")
         )
     return "\n\n".join(blocks) or "(no cached related work)"
-
-
-def build_reviewer_memory_episode_text(
-    record: Dict[str, Any], reviewer_name: str, review: str
-) -> str:
-    """Format one self-generated experience through the canonical paper input."""
-    dimension = infer_reviewer_dimension(reviewer_name) or "META"
-    paper_path = Path(str(record.get("paper_md_path") or "")).expanduser()
-    visible = dict(record.get("candidate_visible_metadata") or {})
-    paper_id = str(record.get("sample_id") or record.get("paper_id") or "")
-    title = str(record.get("paper_title") or visible.get("title") or paper_id)
-    if paper_path.is_file():
-        from agentreview.paper_context import build_canonical_paper_context
-
-        canonical = build_canonical_paper_context(
-            str(paper_path),
-            paper_id=paper_id,
-            title=title,
-            venue=str(visible.get("venue") or ""),
-            year=visible.get("year") or "",
-            reviewer_role=dimension,
-            max_chars=int(
-                record.get("paper_context_max_chars")
-                or DEFAULT_PAPER_CONTEXT_MAX_CHARS
-            ),
-            internal_provenance={"paper_md_path": str(paper_path.resolve())},
-        ).text
-    else:
-        # Legacy review records may no longer have a resolvable Markdown file.
-        # They remain readable for historical analysis, but formal preflight
-        # requires canonical bundles and therefore never takes this branch.
-        canonical = (
-            f"paper_id: {paper_id}\n"
-            f"title: {title}\n"
-            f"reviewer_role: {dimension}"
-        )
-    return (
-        f"{canonical}\n\n"
-        "SELF-GENERATED REVIEW EXPERIENCE\n"
-        f"Reviewer name: {reviewer_name}\n"
-        f"{review}"
-    ).strip()
 
 
 def _iter_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
@@ -541,9 +501,7 @@ def _paper_question(
     year: Any = "",
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
 ) -> str:
-    # ``related_work_text`` remains in the signature for callers of historical
-    # snapshots, but is deliberately not injected.  Frozen S2 data is exposed
-    # through a separate optional capability.
+    # ``related_work_text`` remains in the signature for legacy callers.
     del related_work_text
     anchors = []
     for line in str(source_anchor_text or "").splitlines():
@@ -566,22 +524,15 @@ def _paper_question(
                 "text": match.group(4).strip(),
             }
         )
-    visible = candidate_visible_metadata(
+    return build_review_question(
+        task_id=task_id,
         paper_id=paper_id,
         title=title,
+        paper_text=paper_text,
+        source_anchors=anchors,
         venue=venue,
         year=year,
-        reviewer_role=task_id,
-    )
-    context = format_canonical_paper_context(
-        paper_text,
-        visible,
-        anchors,
-        max_chars=max_paper_chars,
-    )
-    return (
-        f"Review task: {task_id}\n\n{context}\n\n"
-        f"Return the complete {task_id} specialist review using the frozen output protocol."
+        max_paper_chars=max_paper_chars,
     )
 
 

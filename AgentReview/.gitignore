@@ -186,3 +186,6 @@ etc/
 *.xlsx
 *.csv
 *.zip
+
+# Local runtime embedding caches
+/cache/*.sqlite3

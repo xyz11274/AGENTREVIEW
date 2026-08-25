@@ -460,6 +460,7 @@ def run_evolution(
     traces_dir = output_dir / "traces"
     scores_path = output_dir / "scores.jsonl"
     lineage_path = output_dir / "lineage.jsonl"
+    candidate_reviews_path = output_dir / "candidate_reviews.jsonl"
     controller_path = output_dir / "search_controller_checkpoint.json"
     controller_identity = _canonical_sha256(
         {
@@ -513,6 +514,7 @@ def run_evolution(
         )
         scores_path.write_text("", encoding="utf-8")
         lineage_path.write_text("", encoding="utf-8")
+        candidate_reviews_path.write_text("", encoding="utf-8")
         (output_dir / "config.json").write_text(
             json.dumps(asdict(cfg), ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -557,6 +559,19 @@ def run_evolution(
             / program_id
             / f"{replicate_id}.json"
         )
+        def observe_candidate_review(value):
+            record = dict(value)
+            provenance = dict(record.get("provenance") or {})
+            provenance.update(
+                {
+                    "candidate_id": program_id,
+                    "lineage": lineage_name,
+                    "replicate_id": replicate_id,
+                }
+            )
+            record["provenance"] = provenance
+            _append_jsonl(candidate_reviews_path, record)
+
         evaluation = evaluate_program(
             program_path,
             selected_episodes,
@@ -598,6 +613,7 @@ def run_evolution(
                 if cfg.formal
                 else None
             ),
+            candidate_review_sink=observe_candidate_review,
         )
         if cfg.formal and evaluation.error:
             raise RuntimeError(evaluation.error)
