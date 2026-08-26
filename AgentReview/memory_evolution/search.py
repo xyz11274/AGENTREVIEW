@@ -42,6 +42,7 @@ class EvolutionConfig:
     max_attempts_per_lineage: Optional[int] = None
     write_timeout: float = 60.0
     read_timeout: float = 60.0
+    sandbox_memory_mb: int = 1024
     max_llm_calls_per_operation: int = 1
     task_id: str = ""
     selection_repeats: int = 3
@@ -269,6 +270,7 @@ def run_embedding_closure_smoke(
     validation_item: EvalItem,
     task_agent,
     toolkit,
+    sandbox_memory_mb: int = 1024,
 ) -> Dict[str, Any]:
     """Exercise one real vector write/read through the runtime embedder."""
     embedding = getattr(toolkit, "embedding_client", None)
@@ -280,7 +282,11 @@ def run_embedding_closure_smoke(
         raise RuntimeError("Candidate runtime embedding namespace is invalid")
 
     toolkit.reset_vector_collections()
-    session = SandboxSession(program_path, toolkit)
+    session = SandboxSession(
+        program_path,
+        toolkit,
+        memory_mb=sandbox_memory_mb,
+    )
     try:
         program = session.program_interface()
         item = task_agent.extract_knowledge_item(program, episode.text)
@@ -454,6 +460,8 @@ def run_evolution(
         raise ValueError("Validation data must contain at least one item")
     if cfg.static_size <= 0:
         raise ValueError("static_size must be greater than zero")
+    if int(cfg.sandbox_memory_mb) < 64:
+        raise ValueError("sandbox_memory_mb must be at least 64")
     rng = random.Random(cfg.seed)
     output_dir = Path(cfg.output_dir).resolve()
     pool_dir = output_dir / "pool"
@@ -462,9 +470,14 @@ def run_evolution(
     lineage_path = output_dir / "lineage.jsonl"
     candidate_reviews_path = output_dir / "candidate_reviews.jsonl"
     controller_path = output_dir / "search_controller_checkpoint.json"
+    controller_config = asdict(cfg)
+    # Runtime capacity is audited separately. Excluding it from search-state
+    # identity permits an infrastructure-only increase to resume compatible
+    # checkpoints without changing selection or fitness semantics.
+    controller_config.pop("sandbox_memory_mb", None)
     controller_identity = _canonical_sha256(
         {
-            "config": asdict(cfg),
+            "config": controller_config,
             "seed_program_sha256": {
                 Path(path).name: _sha256_file(Path(path))
                 for path in seed_program_paths
@@ -501,6 +514,13 @@ def run_evolution(
     output_dir.mkdir(parents=True, exist_ok=True)
     pool_dir.mkdir(parents=True, exist_ok=True)
     traces_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(
+        output_dir / "runtime_resources.json",
+        {
+            "policy_version": "mstar-runtime-resources-v1",
+            "sandbox_memory_mb": int(cfg.sandbox_memory_mb),
+        },
+    )
     if controller is None:
         _write_json(
             traces_dir / "manifest.json",
@@ -582,6 +602,7 @@ def run_evolution(
             collect_traces=collect_traces,
             write_timeout=cfg.write_timeout,
             read_timeout=cfg.read_timeout,
+            sandbox_memory_mb=cfg.sandbox_memory_mb,
             formal=cfg.formal,
             checkpoint_path=str(checkpoint) if cfg.formal else None,
             run_identity=(
@@ -682,6 +703,7 @@ def run_evolution(
             EvalItem.from_value(static_items[0]),
             task_agent,
             toolkit,
+            sandbox_memory_mb=cfg.sandbox_memory_mb,
         )
         _write_json(output_dir / "embedding_closure_smoke.json", closure)
         print(
@@ -755,6 +777,7 @@ def run_evolution(
             toolkit=toolkit,
             write_timeout=cfg.write_timeout,
             read_timeout=cfg.read_timeout,
+            sandbox_memory_mb=cfg.sandbox_memory_mb,
         )
         if quality.passed:
             print(f"[MSTAR] Seed {program_id}: static evaluation started", flush=True)
@@ -1152,6 +1175,7 @@ def run_evolution(
                 toolkit=toolkit,
                 write_timeout=cfg.write_timeout,
                 read_timeout=cfg.read_timeout,
+                sandbox_memory_mb=cfg.sandbox_memory_mb,
             )
             fix_attempts = 0
             if not quality.passed and mutation_error is None:
@@ -1167,6 +1191,7 @@ def run_evolution(
                     llm_client=reflector,
                     constraints=constraints,
                     toolkit=toolkit,
+                    sandbox_memory_mb=cfg.sandbox_memory_mb,
                 )
                 fix_attempts = fixed.attempts
                 code = fixed.program_code
@@ -1190,6 +1215,7 @@ def run_evolution(
                         toolkit=toolkit,
                         write_timeout=cfg.write_timeout,
                         read_timeout=cfg.read_timeout,
+                        sandbox_memory_mb=cfg.sandbox_memory_mb,
                     )
 
             static_eval = None

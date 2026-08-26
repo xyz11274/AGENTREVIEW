@@ -62,6 +62,59 @@ class FakeLLM:
 
 
 class SearchLoopTest(unittest.TestCase):
+    def test_evolution_propagates_sandbox_memory_limit_to_runtime_and_quality(self):
+        root = Path(__file__).parents[1]
+        seed_dir = root / "memory_evolution" / "seeds"
+        with tempfile.TemporaryDirectory(prefix="mstar_sandbox_memory_") as directory, patch(
+            "memory_evolution.search.check_program_path",
+            return_value=QualityResult(passed=True),
+        ) as quality, patch(
+            "memory_evolution.search.evaluate_program",
+            return_value=EvalResult(mean_score=0.5),
+        ) as evaluate, patch(
+            "memory_evolution.search.build_static_validation_set",
+            side_effect=lambda values, *args, **kwargs: values[:1],
+        ), patch(
+            "memory_evolution.search.select_episode_subset",
+            side_effect=lambda values, *args, **kwargs: values,
+        ):
+            run_evolution(
+                [
+                    str(seed_dir / "vector_search.py"),
+                    str(seed_dir / "llm_summarizer.py"),
+                    str(seed_dir / "experience_learner.py"),
+                ],
+                [Episode(id="A1", text="historical")],
+                [EvalItem(id="B1", question="one", answer="x")],
+                object(),
+                MemoryToolkit(),
+                exact_match,
+                EvolutionConfig(
+                    output_dir=str(Path(directory) / "run"),
+                    iterations=0,
+                    static_size=1,
+                    episode_budget=1,
+                    dry_run=True,
+                    formal=False,
+                    sandbox_memory_mb=8192,
+                ),
+            )
+
+        self.assertTrue(evaluate.call_args_list)
+        self.assertTrue(quality.call_args_list)
+        self.assertTrue(
+            all(
+                call.kwargs["sandbox_memory_mb"] == 8192
+                for call in evaluate.call_args_list
+            )
+        )
+        self.assertTrue(
+            all(
+                call.kwargs["sandbox_memory_mb"] == 8192
+                for call in quality.call_args_list
+            )
+        )
+
     def test_vector_embedding_closure_smoke_writes_and_reads_real_items(self):
         class RuntimeEmbedding:
             fail_on_cache_miss = False
@@ -536,7 +589,7 @@ class SearchLoopTest(unittest.TestCase):
             str(seed_dir / "llm_summarizer.py"),
             str(seed_dir / "experience_learner.py"),
         ]
-        calls = {"mutation": 0, "static_interrupt": 0}
+        calls = {"mutation": 0, "static_interrupt": 0, "sandbox_limits": []}
         subset_builder = Mock(side_effect=lambda values, *args, **kwargs: values[:1])
 
         def mutate(parent_code, *args, **kwargs):
@@ -549,6 +602,7 @@ class SearchLoopTest(unittest.TestCase):
             )
 
         def evaluate(program_path, *args, **kwargs):
+            calls["sandbox_limits"].append(kwargs.get("sandbox_memory_mb"))
             if (
                 Path(program_path).stem == "program_004_child"
                 and calls["static_interrupt"] == 0
@@ -629,6 +683,7 @@ class SearchLoopTest(unittest.TestCase):
                 },
             )
 
+            config.sandbox_memory_mb = 8192
             result = run_evolution(
                 seed_paths,
                 episodes,
@@ -648,6 +703,12 @@ class SearchLoopTest(unittest.TestCase):
             self.assertEqual(len((output / "scores.jsonl").read_text().splitlines()), 6)
             self.assertEqual(subset_builder.call_count, 1)
             self.assertEqual(calls["mutation"], 3)
+            self.assertIn(1024, calls["sandbox_limits"])
+            self.assertIn(8192, calls["sandbox_limits"])
+            runtime_resources = json.loads(
+                (output / "runtime_resources.json").read_text()
+            )
+            self.assertEqual(runtime_resources["sandbox_memory_mb"], 8192)
 
 
 if __name__ == "__main__":

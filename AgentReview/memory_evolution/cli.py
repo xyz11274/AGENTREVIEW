@@ -755,6 +755,15 @@ def _add_search_args(parser):
     parser.add_argument("--selection-top-k", type=int, default=3)
     parser.add_argument("--max-fix-attempts", type=int, default=3)
     parser.add_argument(
+        "--sandbox-memory-mb",
+        type=int,
+        default=1024,
+        help=(
+            "Per-candidate MemoryProgram sandbox address-space limit. This is "
+            "an audited runtime resource and does not alter MSTAR fitness or selection."
+        ),
+    )
+    parser.add_argument(
         "--max-attempts-per-lineage",
         type=int,
         default=None,
@@ -1196,6 +1205,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         mutation_scope=args.mutation_scope,
         write_timeout=args.write_timeout,
         read_timeout=args.read_timeout,
+        sandbox_memory_mb=args.sandbox_memory_mb,
         task_model_name=args.task_model_name,
         reflector_model_name=args.reflector_model_name,
         judge_model_name=args.judge_model_name,

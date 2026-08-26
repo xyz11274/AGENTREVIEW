@@ -222,6 +222,7 @@ def compile_and_smoke_check(
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
+    sandbox_memory_mb: int = 1024,
 ):
     compile_errors: List[str] = []
     smoke_errors: List[str] = []
@@ -232,6 +233,7 @@ def compile_and_smoke_check(
             program_path,
             active_toolkit,
             timeout_seconds=max(import_timeout, write_timeout, read_timeout),
+            memory_mb=sandbox_memory_mb,
             cpu_seconds=max(1, int(max(write_timeout, read_timeout))),
         )
         program = session.program_interface()
@@ -307,6 +309,7 @@ def check_program_path(
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
+    sandbox_memory_mb: int = 1024,
 ) -> QualityResult:
     path = Path(program_path)
     try:
@@ -322,6 +325,7 @@ def check_program_path(
         import_timeout=import_timeout,
         write_timeout=write_timeout,
         read_timeout=read_timeout,
+        sandbox_memory_mb=sandbox_memory_mb,
     )
     return QualityResult(
         passed=not (static_errors or compile_errors or smoke_errors),
@@ -338,6 +342,7 @@ def check_program_code(
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
+    sandbox_memory_mb: int = 1024,
 ) -> QualityResult:
     static_errors = static_check(code, import_whitelist)
     if static_errors:
@@ -351,6 +356,7 @@ def check_program_code(
             import_timeout=import_timeout,
             write_timeout=write_timeout,
             read_timeout=read_timeout,
+            sandbox_memory_mb=sandbox_memory_mb,
         )
     return QualityResult(
         passed=not (static_errors or compile_errors or smoke_errors),

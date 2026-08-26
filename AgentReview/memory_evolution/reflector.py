@@ -390,6 +390,7 @@ def compile_fix_loop(
     llm_client=None,
     constraints: Optional[EvolutionConstraints] = None,
     toolkit=None,
+    sandbox_memory_mb: int = 1024,
 ) -> CompileFixResult:
     constraints = constraints or EvolutionConstraints(task_description="")
     code = mutated_code
@@ -426,6 +427,7 @@ Program:
             import_whitelist=set(constraints.import_whitelist),
             write_timeout=constraints.write_timeout,
             read_timeout=constraints.read_timeout,
+            sandbox_memory_mb=sandbox_memory_mb,
         )
         errors = quality.errors
         if quality.passed:

@@ -44,6 +44,23 @@ class CliModeTest(unittest.TestCase):
         )
         self.assertEqual(args.max_attempts_per_lineage, 9)
 
+    def test_evolution_sandbox_memory_limit_is_explicitly_configurable(self):
+        args = build_parser().parse_args(
+            [
+                "evolve-task",
+                "--task-id",
+                "QUAL",
+                "--data-root",
+                "data/formal",
+                "--output",
+                "runs/formal",
+                "--sandbox-memory-mb",
+                "8192",
+            ]
+        )
+
+        self.assertEqual(args.sandbox_memory_mb, 8192)
+
     def test_selection_and_runtime_embedding_caches_have_distinct_defaults(self):
         args = build_parser().parse_args(
             [

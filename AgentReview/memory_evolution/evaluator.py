@@ -69,6 +69,7 @@ def evaluate_program(
     collect_traces: bool = True,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
+    sandbox_memory_mb: int = 1024,
     require_bubblewrap: bool = True,
     formal: bool = False,
     checkpoint_path: Optional[str] = None,
@@ -103,6 +104,7 @@ def evaluate_program(
             toolkit=toolkit,
             task_agent=task_agent,
             timeout_seconds=max(write_timeout, read_timeout),
+            memory_mb=sandbox_memory_mb,
             cpu_seconds=max(1, int(max(write_timeout, read_timeout))),
             require_bubblewrap=require_bubblewrap,
         )
