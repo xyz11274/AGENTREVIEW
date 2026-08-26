@@ -1,0 +1,44 @@
+cd /data/xyj/shengao/AgentReview_0811/AgentReview
+
+/data/xyj/envs/env_shengao/bin/python - <<'PY'
+import importlib.util
+from pathlib import Path
+
+program_path = Path(
+    "runs/formal_qual_seed0_20260825/"
+    "pool/program_000_seed_vector_search.py"
+)
+
+spec = importlib.util.spec_from_file_location("formal_seed", program_path)
+program = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(program)
+
+print("===== USER MESSAGE TEMPLATE =====")
+print(f"""
+{program.INSTRUCTION_RESPONSE}
+
+Always-on knowledge:
+{program.ALWAYS_ON_KNOWLEDGE}
+
+Original question:
+<CURRENT PAPER: metadata + paper Markdown + source anchors>
+
+Memory context:
+<DYNAMIC TOP-5 RETRIEVED MEMORY, MAXIMUM 3000 CHARACTERS>
+
+Provide the final answer only.
+""".strip())
+PY
+===== USER MESSAGE TEMPLATE =====
+Answer the question using same-dimension memory context when relevant. Do not claim facts unsupported by the retrieved context.
+
+Always-on knowledge:
+Treat retrieved memories as fallible review precedents, never as evidence about the current paper. Verify every judgment against the current paper.
+
+Original question:
+<CURRENT PAPER: metadata + paper Markdown + source anchors>
+
+Memory context:
+<DYNAMIC TOP-5 RETRIEVED MEMORY, MAXIMUM 3000 CHARACTERS>
+
+Provide the final answer only.

@@ -122,7 +122,7 @@ the script. Pilot output is explicitly non-reportable.
 Formal temporal v3 M★ selection requires the frozen Qwen3-Embedding-8B adapter,
 immutable revision, read-only SQLite cache, and cache audit; their hashes and
 complete embedding fingerprint are recorded in every run. See
-`docs/LOCAL_QWEN_OPENAI_ALIGNMENT.md` for local Qwen generation commands.
+`../docs/LOCAL_QWEN_OPENAI_ALIGNMENT.md` for local Qwen generation commands.
 
 Each specialist gets its own pool, scores, lineage, traces and promoted
 `best_program.py`. No program or feedback is shared between dimensions.
@@ -266,11 +266,11 @@ LLM/embedding/vector access.
 python viewer.py --output_dir outputs/reviews --host 127.0.0.1 --port 7861
 ```
 
-See [docs/memory_evolution.md](docs/memory_evolution.md) for the exact search
+See [docs/memory_evolution.md](../docs/memory_evolution.md) for the exact search
 contract, artifacts, ablations and known environment requirements.
 
 The frozen post-evolution three-arm effectiveness screen is documented in
-[docs/effectiveness_screening.md](docs/effectiveness_screening.md). Its
+[docs/effectiveness_screening.md](../docs/effectiveness_screening.md). Its
 `train_clean.jsonl` evaluation is explicitly a CoCo-style proxy and does not
 claim official CoCoReviewBench Correctness.
 

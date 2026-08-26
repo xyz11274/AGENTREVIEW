@@ -115,7 +115,7 @@ AgentReview_0811/
 
 四区身份由冻结 manifest 决定，不靠目录名。`memory_evolution/assets.py:FOUR_ZONES` 是代码侧权威定义；`audit_four_zone_isolation` 强制两两 paper ID / normalized title / family 零重叠，且 `max(A/B/C cutoff) ≤ min(D cutoff)`。
 
-**注意**：canonical 数据（`data/evolution_coco_v2_20260819` 五任务 bundle，已核 SHA）已经冻结——**不要再运行 prepare-specialists 重建**（见 [AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md](AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md)）。
+**注意**：canonical 数据（`data/evolution_coco_v2_20260819` 五任务 bundle，已核 SHA）已经冻结——**不要再运行 prepare-specialists 重建**（见 [CLOUD_FORMAL_ALIGNMENT_20260820.md](../CLOUD_FORMAL_ALIGNMENT_20260820.md)）。
 
 ---
 
@@ -224,7 +224,7 @@ discover_markdown_papers（frozen bundle / manifest+split / 直接 md 路径）
 | `summarize.py` | 汇总分数 + bootstrap CI |
 | `preflight.py` | 运行前审计：端点、四区隔离、冻结 S2 池校验 |
 
-> ⚠️ `AgentReview/docs/effectiveness_screening.md` 的执行流程仍写着已废弃的 Frozen Library 路线（`freeze-memory-library` / `seed_experience` 臂），与其数据面（v2）矛盾，以代码与本节为准。
+> ⚠️ `../effectiveness_screening.md` 的执行流程仍写着已废弃的 Frozen Library 路线（`freeze-memory-library` / `seed_experience` 臂），与其数据面（v2）矛盾，以代码与本节为准。
 
 ---
 
@@ -278,7 +278,7 @@ flowchart LR
 | `python -m evolution_viewer --runs-dir runs` | 进化查看器（:7862） |
 | `python -m unittest discover tests` | 测试（21 个文件） |
 
-云端正式 run 的完整命令、resume 程序与 readiness gate 见 [AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md](AgentReview/docs/CLOUD_FORMAL_ALIGNMENT_20260820.md)（当前最新运行权威；其审计对象为 `30fb8f9`，HEAD `7256ffc` 为其后的路径修复 + embedding cache，无协议变化）。
+云端正式 run 的完整命令、resume 程序与 readiness gate 见 [CLOUD_FORMAL_ALIGNMENT_20260820.md](../CLOUD_FORMAL_ALIGNMENT_20260820.md)（当前最新运行权威；其审计对象为 `30fb8f9`，HEAD `7256ffc` 为其后的路径修复 + embedding cache，无协议变化）。
 
 **已知未修问题**（详见 [docs/RUN_AUDIT_20260818.md](docs/RUN_AUDIT_20260818.md) 与云端审计）：`QUAL_test.sh` / `end2end_smoke.sh` 内**硬编码了真实形态的 API key/base**，需清理；在线管线的 B1（环境变量名分裂）截至 08-20 仍存在。
 

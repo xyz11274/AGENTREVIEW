@@ -1,0 +1,147 @@
+cd /data/xyj/shengao/AgentReview_0811/AgentReview
+
+PAPER_INDEX=14 /data/xyj/envs/env_shengao/bin/python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+paper_index = int(os.environ["PAPER_INDEX"])
+checkpoint = Path(
+    "runs/formal_qual_seed0_20260825/"
+    "checkpoints/program_000_seed_vector_search/search-0.json"
+)
+
+data = json.loads(checkpoint.read_text(encoding="utf-8"))
+records = data["memory_snapshot"]["collections"]["mstar_vector_search"]["records"]
+
+starts = [
+    i for i, record in enumerate(records)
+    if record.get("text", "").startswith("HISTORICAL PAPER TASK")
+]
+
+if paper_index >= len(starts):
+    raise SystemExit(
+        f"paper_index={paper_index} 尚未保存；当前只有 {len(starts)} 篇"
+    )
+
+start = starts[paper_index]
+end = starts[paper_index + 1] if paper_index + 1 < len(starts) else len(records)
+raw_memory = "".join(record.get("text", "") for record in records[start:end])
+
+marker = "SELF-GENERATED REVIEW EXPERIENCE\n"
+if marker not in raw_memory:
+    raise SystemExit("未找到 review marker")
+
+paper_id = data["completed_paper_ids"][paper_index]
+review = raw_memory.split(marker, 1)[1]
+
+print(f"paper_index: {paper_index}")
+print(f"paper_id: {paper_id}")
+print("=" * 80)
+print(review)
+PY
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+paper_index: 14
+paper_id: B1mAJI9gl::QUAL
+================================================================================
+Reviewer dimension: QUAL
+Paper summary: The paper studies the approximate invertibility of CNNs by connecting a simplified CNN layer to model-based compressive sensing. It introduces a block/model-sparse signal model, proves model-RIP conditions for random convolutional filters, and shows that one iteration of model-basedIterative Hard Thresholding corresponds to a CNN layer. The authors then validate the theory on CIFAR-10 random CNNs, synthetic 1D signals, and VGGNet activations on ILSVRC-2012, and report layer-wise reconstruction errors using learned or random filters.
+
+Dimension score (1-10): 7.0
+Confidence (1-5): 4
+
+Opinions:
+- subcategory: QUAL-MET
+  polarity: strength
+  claim: The core methodological framework is well formulated: it defines a model-sparse signal class, a model-RIP condition, and an IHT-based recovery algorithm whose single iteration matches the CNN layer operation.
+  evidence_anchors: ["SRC-005(page=0)", "SRC-013(page=0)", "SRC-018(page=0)", "SRC-024(page=0)", "SRC-026(page=0)"]
+  confidence: 4
+  actionable_suggestion: N/A
+
+- subcategory: QUAL-MET
+  polarity: weakness
+  claim: The theoretical guarantees depend on restrictive assumptions, including Gaussian random filters, exact model-sparsity, no noise or compressibility, and a single-layer/1D simplification, while learned CNNfilters exhibit higher coherence than the idealized model.
+  evidence_anchors: ["SRC-007(page=0)", "SRC-010(page=0)", "SRC-014(page=0)", "SRC-023(page=0)", "SRC-037(page=0)"]
+  confidence: 4
+  actionable_suggestion: Extend the analysis to noisy, compressible, and multi-layer settings, or provide tighter empirical quantification of how far learned filters violate the assumptions.
+
+- subcategory: QUAL-MET
+  polarity: strength
+  claim: The authors are explicit about the gap between the mathematicalmodel and practical trained CNNs, which makes the scope of the claims reasonably honest.
+  evidence_anchors: ["SRC-002(page=0)", "SRC-006(page=0)", "SRC-037(page=0)"]
+  confidence: 4
+  actionable_suggestion: N/A
+
+- subcategory: QUAL-EXP
+  polarity: strength
+  claim: The experimental evaluation is multi-level and relevant: it tests random CNN classification on CIFAR-10, validates model-RIP on synthetic 1D signals, evaluates 2D model-RIP on VGGNet, and measures reconstruction error on ILSVRC-2012activations.
+  evidence_anchors: ["SRC-027(page=0)", "SRC-029(page=0)", "SRC-030(page=0)", "SRC-031(page=0)", "SRC-034(page=0)", "SRC-035(page=0)"]
+  confidence: 4
+  actionable_suggestion: N/A
+
+- subcategory: QUAL-EXP
+  polarity: weakness
+  claim: The experiments do not quantitatively compare the proposed IHT-based reconstruction against the prior inversion methods cited in the introduction, limiting the practical positioning of the method.
+  evidence_anchors: ["SRC-004(page=0)", "SRC-027(page=0)", "SRC-028(page=0)"]
+  confidence: 3
+  actionable_suggestion: Add quantitative comparisons with deconvolutional inversion, what-where decoding, or optimization-based inversion baselines under the same metrics.
+
+- subcategory: QUAL-REP
+  polarity: strength
+  claim: The paper provides useful implementation details, including the use of Caffe and MatConvNet, CIFAR-10 architecture choices, and specific 2D model-RIP parameters such as filter/channel dimensions, pooling size, and the number of sampled sparse maps.
+  evidence_anchors: ["SRC-028(page=0)", "SRC-029(page=0)", "SRC-038(page=0)"]
+  confidence: 4
+  actionable_suggestion: N/A
+
+- subcategory: QUAL-REP
+  polarity: weakness
+  claim: Reproducibility is hindered by missing details such as code availability, the regularization parameter in Algorithm 2, the selection of sparsity k, the number of IHT iterations, and random seeds.
+  evidence_anchors: ["SRC-028(page=0)", "SRC-039(page=0)", "SRC-040(page=0)"]
+  confidence: 4
+  actionable_suggestion: Release code and specify all hyperparameters, including lambda, k, iteration count, and random seeds.
+
+- subcategory: QUAL-CMP
+  polarity: strength
+  claim: The paper situates its contribution relative to relevant prior work on CNN invertibility, random-weight CNNs, and model-based compressive sensing.
+  evidence_anchors: ["SRC-003(page=0)", "SRC-004(page=0)", "SRC-008(page=0)", "SRC-012(page=0)"]
+  confidence: 4
+  actionable_suggestion: N/A
+
+- subcategory: QUAL-CMP
+  polarity: weakness
+  claim: Although the related work is cited, the paper lacks direct empirical comparison with state-of-the-art inversion baselines, so the practical advantage of the proposed framework is not fully established.
+  evidence_anchors: ["SRC-004(page=0)", "SRC-028(page=0)"]
+  confidence: 3
+  actionable_suggestion: Include a benchmark table comparing reconstruction quality against existing inversion methods.
+
+- subcategory: QUAL-STA
+  polarity: weakness
+  claim: The paper reports empirical distributions and point estimates but does not provide confidence intervals, significance tests, or variance across multiple runs, making it difficult to assess the statistical reliability of the model-RIP and reconstruction claims.
+  evidence_anchors: ["SRC-028(page=0)", "SRC-031(page=0)", "SRC-037(page=0)"]
+  confidence: 4
+  actionable_suggestion: Report mean and standard deviation or confidence intervals over multiple image samples, layers, or random initializations.
+
+Key questions for the authors:
+-Can the model-RIP and reconstruction bounds be extended to noisy, compressible, and multi-layer CNNs?
+- How does the proposed IHT reconstruction compare quantitatively with prior inversion methods such as deconvolutional inversion or what-where decoding?
+- What are the exact values and selection rules for lambda, sparsity k, and the number of IHT iterations?
+- Will the authors release code and random seeds to enable full reproduction?
+- What is the variance of the reported model-RIP and reconstruction errors across images, layers, or random filter initializations?
+
+Recommendation: Weak Accept
