@@ -1,5 +1,7 @@
 # Frozen Reviewer Identity + Evolvable Review Harness，Benchmark 居于最外层
 
+> **状态：部分被 ADR-0008 supersede（2026-08-27）。** Frozen Reviewer Identity、Human Reference Boundary 和 Benchmark 外部性仍有效；第 2 条“共享题目、不共享 no-memory AI review”已改为共享冻结 Full Review Corpus。
+
 系统边界的核心定义。
 
 **可进化外围（Review Harness）**：Memory、review workflow、context organization、evidence strategy、retrieval strategy、Semantic Scholar 的使用、review generation / critique / repair strategy 及后续合理组件。**最终评价层**：CoCoReviewBench 为第一个正式 Benchmark，经 Benchmark Adapter 接入，系统 benchmark-agnostic；Reviewer 不应知道自己正被哪个 Benchmark 评分。

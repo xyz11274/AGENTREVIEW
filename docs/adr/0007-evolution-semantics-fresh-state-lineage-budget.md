@@ -1,5 +1,7 @@
 # 进化语义：fresh-state replay、时序协议、code lineage、统一预算上限
 
+> **状态：A 区 replay 语义被 ADR-0008 supersede（2026-08-27）。** 新主线不再让每个 Candidate 从 empty Memory 顺序重放 A 并自产 review；旧 run 仍按本 ADR 解释。Code lineage、反馈边界、资源记录与未被新 ADR 显式取代的公平性约束仍有效。
+
 Evolution 的运行语义固定为：
 
 1. **Empty-state 起始**：每个 Seed / Candidate / Program 从 empty Memory State 开始，在完全相同的 Historical / Experience Set 上按冻结顺序运行。
