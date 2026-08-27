@@ -28,7 +28,7 @@ from .embedding_adapter import (
     QWEN3_MODEL_ID,
     is_immutable_model_revision,
 )
-from .search import EvolutionConfig, resolve_formal_attempt_budget, run_evolution
+from .search import EvolutionConfig, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
     ALL_TASKS,
@@ -517,7 +517,7 @@ def _experiment_kind(args) -> str:
         return "pilot_non_reportable"
     deviations = []
     canonical = {
-        "iterations": 21,
+        "iterations": 20,
         "static_size": 25,
         "rotating_size": 5,
         "temperature": 0.15,
@@ -529,6 +529,37 @@ def _experiment_kind(args) -> str:
         if getattr(args, name) != expected:
             deviations.append(f"{name}={getattr(args, name)}")
     return "formal" if not deviations else "ablation:" + ",".join(deviations)
+
+
+def evolution_protocol_config_identity(args, task_id: str, seed: int):
+    """Build the protocol identity hashed by the formal execution gate."""
+    return {
+        "task_id": task_id,
+        "experiment_seed": seed,
+        "iterations": args.iterations,
+        "static_size": args.static_size,
+        "rotating_size": args.rotating_size,
+        "temperature": args.temperature,
+        "episode_budget": args.episode_budget,
+        "coco_root": str(Path(args.coco_root).expanduser().resolve()),
+        "task_model_name": args.task_model_name,
+        "reflector_model_name": args.reflector_model_name,
+        "judge_model_name": args.judge_model_name,
+        "logical_model_identity": _llm_logical_identity(args),
+        "generation": {
+            "temperature": args.llm_temperature,
+            "max_tokens": args.max_tokens,
+            "retry_max_tokens": args.retry_max_tokens,
+            "reasoning_effort": args.reasoning_effort,
+            "reasoning_effort_supported": args.reasoning_effort_supported,
+        },
+        "runtime_embedding": {
+            "namespace": "candidate_runtime_v1",
+            "local_files_only": True,
+            "model_name": args.embedding_model_name,
+            "model_revision": args.embedding_revision,
+        },
+    }
 
 
 def _is_nonformal(args) -> bool:
@@ -745,7 +776,7 @@ def _add_runtime_args(parser):
 
 
 def _add_search_args(parser):
-    parser.add_argument("--iterations", type=int, default=21)
+    parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--static-size", type=int, default=25)
     parser.add_argument("--rotating-size", type=int, default=5)
     parser.add_argument("--temperature", type=float, default=0.15)
@@ -761,15 +792,6 @@ def _add_search_args(parser):
         help=(
             "Per-candidate MemoryProgram sandbox address-space limit. This is "
             "an audited runtime resource and does not alter MSTAR fitness or selection."
-        ),
-    )
-    parser.add_argument(
-        "--max-attempts-per-lineage",
-        type=int,
-        default=None,
-        help=(
-            "Formal fail-closed attempt cap per seed lineage. Defaults to three "
-            "times the required successful children per lineage. Ignored by smoke."
         ),
     )
     parser.add_argument(
@@ -1026,20 +1048,8 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         args.s2_retrieval_pool = str(
             manifest.get("semantic_scholar_cache") or ""
         )
-    if formal and args.iterations % len(_seed_paths()) != 0:
-        raise SystemExit(
-            "Formal evolution requires equal lineage budgets: --iterations "
-            f"must be divisible by {len(_seed_paths())}."
-        )
     if formal and not getattr(args, "coco_root", ""):
         raise SystemExit("Formal execution requires configured --coco-root")
-    max_attempts_per_lineage = (
-        resolve_formal_attempt_budget(
-            args.iterations, args.max_attempts_per_lineage
-        )
-        if formal
-        else args.max_attempts_per_lineage
-    )
     formal_gate = None
     if formal:
         formal_gate = run_formal_protocol_gate(
@@ -1050,36 +1060,9 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             s2_pool_path=args.s2_retrieval_pool,
             program_paths=_seed_paths(),
             coco_root=args.coco_root,
-            config_identity={
-                "task_id": task_id,
-                "experiment_seed": seed,
-                "iterations": args.iterations,
-                "static_size": args.static_size,
-                "rotating_size": args.rotating_size,
-                "temperature": args.temperature,
-                "episode_budget": args.episode_budget,
-                "max_attempts_per_lineage": max_attempts_per_lineage,
-                "coco_root": str(Path(args.coco_root).expanduser().resolve()),
-                "task_model_name": args.task_model_name,
-                "reflector_model_name": args.reflector_model_name,
-                "judge_model_name": args.judge_model_name,
-                "logical_model_identity": _llm_logical_identity(args),
-                "generation": {
-                    "temperature": args.llm_temperature,
-                    "max_tokens": args.max_tokens,
-                    "retry_max_tokens": args.retry_max_tokens,
-                    "reasoning_effort": args.reasoning_effort,
-                    "reasoning_effort_supported": (
-                        args.reasoning_effort_supported
-                    ),
-                },
-                "runtime_embedding": {
-                    "namespace": "candidate_runtime_v1",
-                    "local_files_only": True,
-                    "model_name": args.embedding_model_name,
-                    "model_revision": args.embedding_revision,
-                },
-            },
+            config_identity=evolution_protocol_config_identity(
+                args, task_id, seed
+            ),
         )
     task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
     selection_embedding = _selection_embedding_client(args)
@@ -1198,7 +1181,6 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         episode_budget=min(args.episode_budget or 10, 10) if args.smoke else args.episode_budget,
         seed=seed,
         max_fix_attempts=args.max_fix_attempts,
-        max_attempts_per_lineage=max_attempts_per_lineage,
         selection_repeats=1 if args.smoke else args.selection_repeats,
         selection_top_k=1 if args.smoke else args.selection_top_k,
         parent_policy=args.parent_policy,

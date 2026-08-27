@@ -28,7 +28,7 @@ class CliModeTest(unittest.TestCase):
         self.assertEqual(args.reflector_model_name, "qwen3.8-27b-fp8")
         self.assertEqual(args.judge_model_name, "qwen3.8-27b-fp8")
 
-    def test_formal_attempt_budget_cli_is_explicitly_configurable(self):
+    def test_formal_cli_defaults_to_the_paper_iteration_budget(self):
         args = build_parser().parse_args(
             [
                 "evolve-task",
@@ -38,11 +38,11 @@ class CliModeTest(unittest.TestCase):
                 "data/formal",
                 "--output",
                 "runs/formal",
-                "--max-attempts-per-lineage",
-                "9",
             ]
         )
-        self.assertEqual(args.max_attempts_per_lineage, 9)
+        self.assertEqual(args.iterations, 20)
+        self.assertFalse(hasattr(args, "max_attempts_per_lineage"))
+        self.assertEqual(_experiment_kind(args), "formal")
 
     def test_evolution_sandbox_memory_limit_is_explicitly_configurable(self):
         args = build_parser().parse_args(

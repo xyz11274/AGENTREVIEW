@@ -31,7 +31,7 @@ from .subset_selection import (
 class EvolutionConfig:
     output_dir: str = "runs/mstar"
     task_description: str = ""
-    iterations: int = 21
+    iterations: int = 20
     static_size: int = 25
     rotating_size: int = 5
     temperature: float = 0.15
@@ -39,7 +39,6 @@ class EvolutionConfig:
     seed: int = 0
     dry_run: bool = False
     max_fix_attempts: int = 3
-    max_attempts_per_lineage: Optional[int] = None
     write_timeout: float = 60.0
     read_timeout: float = 60.0
     sandbox_memory_mb: int = 1024
@@ -127,24 +126,7 @@ class EvolutionResult:
         return asdict(self)
 
 
-SEARCH_STATE_VERSION = "formal-search-controller-checkpoint-v2"
-
-
-def resolve_formal_attempt_budget(
-    iterations: int, configured_max_attempts_per_lineage: Optional[int]
-) -> int:
-    target_successes_per_lineage = int(iterations) // 3
-    resolved = (
-        3 * target_successes_per_lineage
-        if configured_max_attempts_per_lineage is None
-        else int(configured_max_attempts_per_lineage)
-    )
-    if resolved < target_successes_per_lineage:
-        raise ValueError(
-            "Formal max_attempts_per_lineage must be at least the successful "
-            f"target per lineage: max={resolved}, target={target_successes_per_lineage}"
-        )
-    return resolved
+SEARCH_STATE_VERSION = "formal-search-controller-checkpoint-v3"
 
 
 def _canonical_sha256(value: Any) -> str:
@@ -348,6 +330,31 @@ def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def search_controller_identity(
+    config: EvolutionConfig,
+    seed_program_paths,
+    episodes,
+    validation_items,
+) -> str:
+    """Return the stable identity used to admit a formal search checkpoint."""
+    controller_config = asdict(config)
+    # Runtime capacity is audited separately. Excluding it from search-state
+    # identity permits an infrastructure-only increase to resume compatible
+    # checkpoints without changing selection or fitness semantics.
+    controller_config.pop("sandbox_memory_mb", None)
+    return _canonical_sha256(
+        {
+            "config": controller_config,
+            "seed_program_sha256": {
+                Path(path).name: _sha256_file(Path(path))
+                for path in seed_program_paths
+            },
+            "episode_ids": [_item_id(value) for value in episodes],
+            "validation_ids": [_item_id(value) for value in validation_items],
+        }
+    )
+
+
 def _softmax_parent(candidates, temperature: float, rng: random.Random):
     eligible = [
         candidate
@@ -367,14 +374,7 @@ def _select_parent(
     candidates,
     config: EvolutionConfig,
     rng: random.Random,
-    lineage_name: str = "",
 ):
-    if lineage_name:
-        candidates = [
-            candidate
-            for candidate in candidates
-            if candidate.lineage_name == lineage_name
-        ]
     if config.parent_policy == "best":
         eligible = [
             candidate
@@ -396,7 +396,6 @@ def _item_id(item) -> str:
 def _reference_programs(
     candidates: List[ProgramCandidate],
     parent_id: str,
-    lineage_name: str = "",
 ) -> List[str]:
     """Expose scored high/low population designs without validation case content."""
     eligible = [
@@ -405,7 +404,6 @@ def _reference_programs(
         if candidate.quality.passed
         and candidate.completed_evaluation
         and candidate.program_id != parent_id
-        and (not lineage_name or candidate.lineage_name == lineage_name)
     ]
     ordered = sorted(eligible, key=lambda candidate: candidate.static_score)
     selected = []
@@ -437,14 +435,6 @@ def run_evolution(
 ) -> EvolutionResult:
     cfg = EvolutionConfig.from_value(config)
     selection_embedding_client = selection_embedding_client or toolkit
-    if cfg.formal and cfg.iterations % 3 != 0:
-        raise ValueError(
-            "Formal lineage comparison requires iterations divisible by three"
-        )
-    if cfg.formal:
-        cfg.max_attempts_per_lineage = resolve_formal_attempt_budget(
-            cfg.iterations, cfg.max_attempts_per_lineage
-        )
     reflector = reflector_client or toolkit
     print(
         "[MSTAR] Starting evolution: "
@@ -470,21 +460,11 @@ def run_evolution(
     lineage_path = output_dir / "lineage.jsonl"
     candidate_reviews_path = output_dir / "candidate_reviews.jsonl"
     controller_path = output_dir / "search_controller_checkpoint.json"
-    controller_config = asdict(cfg)
-    # Runtime capacity is audited separately. Excluding it from search-state
-    # identity permits an infrastructure-only increase to resume compatible
-    # checkpoints without changing selection or fitness semantics.
-    controller_config.pop("sandbox_memory_mb", None)
-    controller_identity = _canonical_sha256(
-        {
-            "config": controller_config,
-            "seed_program_sha256": {
-                Path(path).name: _sha256_file(Path(path))
-                for path in seed_program_paths
-            },
-            "episode_ids": [value.id for value in episode_values],
-            "validation_ids": [_item_id(value) for value in validation_values],
-        }
+    controller_identity = search_controller_identity(
+        cfg,
+        seed_program_paths,
+        episode_values,
+        validation_values,
     )
     controller = None
     if cfg.formal and controller_path.is_file():
@@ -550,7 +530,6 @@ def run_evolution(
                 "candidates": [],
                 "seed_index": 0,
                 "attempt": 0,
-                "lineage_cursor": 0,
                 "next_index": 0,
                 "successful_by_lineage": {},
                 "attempts_by_lineage": {},
@@ -870,10 +849,6 @@ def run_evolution(
         )
         if any(value < 0 for value in attempts_by_lineage.values()):
             raise RuntimeError("Formal checkpoint has negative lineage attempt counters")
-    target_successes_per_lineage = (
-        cfg.iterations // len(seed_names) if cfg.formal else None
-    )
-
     def admit_child(
         *,
         program_id: str,
@@ -886,7 +861,6 @@ def run_evolution(
         fix_attempts: int,
         static_eval,
         attempt_value: int,
-        cursor_value: int,
         next_index_value: int,
     ) -> ProgramCandidate:
         static_score = static_eval.mean_score if static_eval is not None else 0.0
@@ -905,7 +879,6 @@ def run_evolution(
             program_sha256=_sha256_file(target),
             completed_evaluation=bool(quality.passed and static_eval is not None),
         )
-        candidates.append(candidate)
         _append_jsonl(
             scores_path,
             _candidate_record(
@@ -933,10 +906,10 @@ def run_evolution(
             },
         )
         if candidate.completed_evaluation:
+            candidates.append(candidate)
             successful_by_lineage[candidate.lineage_name] += 1
         commit_controller(
             attempt=attempt_value,
-            lineage_cursor=cursor_value,
             next_index=next_index_value,
             successful_by_lineage=successful_by_lineage,
             attempts_by_lineage=attempts_by_lineage,
@@ -993,59 +966,20 @@ def run_evolution(
             change_log=change_log,
             fix_attempts=int(inflight.get("fix_attempts", 0)),
             static_eval=static_eval,
-            attempt_value=int(controller["attempt"]),
-            cursor_value=int(controller["lineage_cursor"]),
+            attempt_value=int(inflight["iteration"]),
             next_index_value=int(controller["next_index"]),
         )
 
+    attempt = int(controller.get("attempt", 0)) if cfg.formal else 0
     if not cfg.dry_run and (not cfg.formal or controller.get("phase") == "search"):
-        attempt = int(controller.get("attempt", 0)) if cfg.formal else 0
-        lineage_cursor = int(controller.get("lineage_cursor", 0)) if cfg.formal else 0
         while True:
             if cfg.formal:
-                if all(
-                    count == target_successes_per_lineage
-                    for count in successful_by_lineage.values()
-                ):
+                if attempt >= max(0, cfg.iterations):
                     break
-                while (
-                    successful_by_lineage[
-                        f"evolved_from_{seed_names[lineage_cursor % len(seed_names)]}"
-                    ]
-                    >= target_successes_per_lineage
-                ):
-                    lineage_cursor += 1
-                active_lineage = (
-                    f"evolved_from_{seed_names[lineage_cursor % len(seed_names)]}"
-                )
-                lineage_cursor += 1
-                lineage_attempts = attempts_by_lineage[active_lineage]
-                if lineage_attempts >= cfg.max_attempts_per_lineage:
-                    raise RuntimeError(
-                        "Formal lineage attempt budget exhausted: "
-                        f"lineage={active_lineage}, attempts={lineage_attempts}, "
-                        f"successful={successful_by_lineage[active_lineage]}, "
-                        f"target={target_successes_per_lineage}, "
-                        f"max_attempts_per_lineage={cfg.max_attempts_per_lineage}"
-                    )
             else:
                 if attempt >= max(0, cfg.iterations):
                     break
-                active_lineage = (
-                    f"evolved_from_{seed_names[attempt % len(seed_names)]}"
-                )
-            attempt += 1
-            if cfg.formal:
-                attempts_by_lineage[active_lineage] += 1
-                commit_controller(
-                    attempt=attempt,
-                    lineage_cursor=lineage_cursor,
-                    next_index=next_index,
-                    successful_by_lineage=successful_by_lineage,
-                    attempts_by_lineage=attempts_by_lineage,
-                    phase="search",
-                )
-            iteration = attempt
+            iteration = attempt + 1
             program_id = f"program_{next_index:03d}_child"
             target = pool_dir / f"{program_id}.py"
             if cfg.formal:
@@ -1056,7 +990,10 @@ def run_evolution(
                 uncommitted_checkpoints = output_dir / "checkpoints" / program_id
                 if uncommitted_checkpoints.is_dir():
                     shutil.rmtree(uncommitted_checkpoints)
-            parent = _select_parent(candidates, cfg, rng, active_lineage)
+            parent = _select_parent(candidates, cfg, rng)
+            active_lineage = parent.lineage_name
+            if cfg.formal:
+                attempts_by_lineage[active_lineage] += 1
             print(
                 f"[MSTAR] Iteration {iteration}: parent={parent.program_id}, "
                 f"parent_static_score={parent.static_score:.4f}",
@@ -1122,7 +1059,6 @@ def run_evolution(
                     reference_programs=_reference_programs(
                         candidates,
                         parent.program_id,
-                        parent.lineage_name,
                     ),
                 )
                 code = mutation.program_code
@@ -1157,17 +1093,17 @@ def run_evolution(
                         "admitted": False,
                         "error": mutation_error,
                         "lineage": parent.lineage_name,
-                        "completed_budget_consumed": False,
+                        "attempt_budget_consumed": True,
                     },
                 )
                 commit_controller(
-                    attempt=attempt,
-                    lineage_cursor=lineage_cursor,
+                    attempt=iteration,
                     next_index=next_index,
                     successful_by_lineage=successful_by_lineage,
                     attempts_by_lineage=attempts_by_lineage,
                     phase="search",
                 )
+                attempt = iteration
                 continue
             target.write_text(code, encoding="utf-8")
             quality = check_program_path(
@@ -1223,7 +1159,6 @@ def run_evolution(
                 if cfg.formal:
                     commit_controller(
                         attempt=attempt,
-                        lineage_cursor=lineage_cursor,
                         next_index=next_index,
                         successful_by_lineage=successful_by_lineage,
                         attempts_by_lineage=attempts_by_lineage,
@@ -1271,45 +1206,30 @@ def run_evolution(
                 change_log=change_log,
                 fix_attempts=fix_attempts,
                 static_eval=static_eval,
-                attempt_value=attempt,
-                cursor_value=lineage_cursor,
+                attempt_value=iteration,
                 next_index_value=next_index,
             )
+            attempt = iteration
 
     if cfg.formal and controller.get("phase") == "search":
         commit_controller(
             attempt=attempt,
-            lineage_cursor=lineage_cursor,
             next_index=next_index,
             successful_by_lineage=successful_by_lineage,
             attempts_by_lineage=attempts_by_lineage,
             phase="selection",
         )
 
-    if cfg.formal:
-        counts = list(successful_by_lineage.values())
-        if len(set(counts)) != 1 or any(
-            count != target_successes_per_lineage for count in counts
-        ):
-            raise RuntimeError(
-                "Formal lineage comparison requires equal successful candidate "
-                f"evaluations; observed {successful_by_lineage}"
-            )
     _write_json(
-        output_dir / "lineage_budget.json",
+        output_dir / "evolution_budget.json",
         {
-            "budget_unit": "successful_child_candidate_evaluation",
+            "budget_unit": "evolution_attempt",
             "requested_total": cfg.iterations,
-            "target_per_lineage": target_successes_per_lineage,
-            "max_attempts_per_lineage": (
-                cfg.max_attempts_per_lineage if cfg.formal else None
-            ),
+            "attempts_completed": attempt,
+            "successful_children": sum(successful_by_lineage.values()),
+            "failed_attempts": attempt - sum(successful_by_lineage.values()),
             "attempts_by_lineage": attempts_by_lineage if cfg.formal else None,
-            "successful_completed_by_lineage": successful_by_lineage,
-            "equal_completed_budget_required": bool(cfg.formal),
-            "equal_completed_budget_passed": (
-                len(set(successful_by_lineage.values())) == 1 if cfg.formal else None
-            ),
+            "successful_children_by_lineage": successful_by_lineage,
         },
     )
 
@@ -1446,12 +1366,6 @@ def run_evolution(
         "lineage_champions": lineage_champions,
         "lineage_successful_completed_counts": successful_by_lineage,
         "lineage_attempt_counts": attempts_by_lineage if cfg.formal else None,
-        "max_attempts_per_lineage": (
-            cfg.max_attempts_per_lineage if cfg.formal else None
-        ),
-        "lineage_completed_budget_equal": (
-            len(set(successful_by_lineage.values())) == 1 if cfg.formal else None
-        ),
         "quality": best.quality.to_dict(),
         "change_log": asdict(best.change_log),
         "static_validation_ids": sorted(static_ids),

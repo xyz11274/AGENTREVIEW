@@ -65,14 +65,15 @@ results, legacy cache records and partial caches are rejected.
 
 ## Evolve the five specialists
 
-A formal run uses three seed programs and 21 successful child candidate
-evaluations (7 per lineage); failed mutation/guard/compile/evaluation attempts
-do not consume that completed budget. Static
-validation size 25, rotating feedback size 5, train-to-validation budget 5:1,
-parent softmax temperature 0.15, three compile repairs, and one outer Evolution
-seed (`0`) for the current minimal feasibility experiment. The three Seed
-Program lineages remain independent and each receives seven successful child
-evaluations.
+A formal run uses three seed programs followed by 20 evolution attempts, matching
+the MSTAR paper and reference implementation. Each attempt samples its parent
+from the global quality-passing program pool with score-based softmax selection;
+failed mutation/guard/compile/evaluation attempts consume their iteration and are
+not admitted to the pool. Static validation size 25, rotating feedback size 5,
+train-to-validation budget 5:1, parent softmax temperature 0.15, three compile
+repairs, and one outer Evolution seed (`0`) are used for the current minimal
+feasibility experiment. Lineage remains recorded as provenance, but does not
+partition the search budget or parent pool.
 
 ```bash
 python -m memory_evolution.cli evolve-specialists \
