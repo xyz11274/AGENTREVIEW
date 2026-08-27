@@ -1,5 +1,7 @@
 # 实验数据协议：paper-level temporal split + 四区隔离
 
+状态：2026-08-27 由 ADR-0009 进一步细化 B zone：新主线将 B 拆为 paper/family 零重叠的 `B-local` 与 `B-suite`。四区隔离、temporal 约束和 Human Reference Boundary 仍完全有效。
+
 状态：2026-08-18 修订。此前“CoCo 覆盖的 venue-year 全量 `benchmark_reserved`”规则已被本 ADR 明确取代，旧 manifest 只允许分析历史 run，禁止进入新的 formal pipeline。
 
 CoCoReviewBench 的 3900 条 submission records 是只读 benchmark source pool，不等于 3900 个独立研究工作。正式单位是 `1 paper family = 1 representative target`，再通过 frozen manifest 一次性划为四个 family-level 区域：
@@ -16,6 +18,13 @@ CoCoReviewBench 的 3900 条 submission records 是只读 benchmark source pool�
 Semantic Scholar 同样受 cutoff 约束。每个 target 的 frozen entry 必须记录 target identity、pool version、retrieval method/version、paper_review_cutoff、top_k/config、result SHA256；publication date/year 缺失或晚于 cutoff 的结果必须拒绝。formal mode 缺 provenance、缺 target、SHA 不符或发现未来论文时 fail fast。S2 不默认注入，Candidate 只能选择是否读取当前 paper 对应的同一 frozen pool，禁止 live query 和跨 paper 读取。
 
 Human Reference Boundary 对四区均不变：Candidate 只看论文和 candidate-visible metadata；human review、gold、taxonomy、judge rationale/full trace 永远留在 evaluator-only 边界。Reflector 只接收 scalar fitness、安全数值指标、预定义非 gold error category 与资源统计。
+
+新主线的 B zone 内部协议为：
+
+- `B-local` 冻结一个大于单次 evaluation 用量的 paper/family pool。`static=25` 是每次 local evaluation 的固定 static set 规模，`rotating_size=5` 是从其余 frozen rotating pool 中按预注册规则选取的单次规模；二者都不代表 B-local 总容量。
+- `B-suite` 仅用于五条 Specialist Evolution 完成后的 Global CoCo Suite Selection。
+- `B-local` 与 `B-suite` 在 paper ID 和 paper family 层面均零重叠；两者的 manifest 和抽样规则在运行前冻结。
+- C Holdout 不参与 Specialist Evolution、Suite Selection 或任何配置选择，保持完全 untouched。
 
 Formal 启动顺序固定为：Asset Manifest SHA/version 校验 → split v2 的 A/B/C/D paper/title/family + temporal + v1/v2 comparison audit → A/B 数据成员与 canonical preprocessing 校验 → Frozen S2 v2 future-leak + query-integrity audit → PASS 后才允许 Evolution。split v1 / S2 v1 因 `query_title_serialization_contamination` 明确拒绝。D 的正式路径固定为 `Frozen Reviewer → Review → Benchmark Adapter → CoCo evaluator`。
 

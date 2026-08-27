@@ -13,7 +13,7 @@ _Avoid_: 完整冻结的 reviewer prompt
 _Avoid_: Self-Generated Experience、human review library、初始 memory 数据库
 
 **Full Review Record**:
-Full Review Corpus 中一篇完整、不可变且可按内容哈希寻址的 AI review，是所有检索切片的权威原文。
+Full Review Corpus 中某一 A paper × role 的完整、不可变 AI review，是所有检索切片的权威原文。主实验每个 paper × role 只接受一份 canonical record，并保存生成过程的所有 raw attempts。
 _Avoid_: chunk、KnowledgeItem、向量记录
 
 **Retrieval Projection**:
@@ -37,7 +37,7 @@ _Avoid_: Reviewer LLM、Memory Query LLM
 _Avoid_: meta-review、拼接字符串
 
 **Specialist-Local Fitness**:
-只评价一个 Specialist Reviewer 及其 MemoryProgram 的角色内 fitness。每个角色的 evaluator、权重与聚合规则在比较不同 Memory method 前冻结。
+只评价一个 Specialist Reviewer 及其 MemoryProgram 的角色内 fitness。同一 role 的 no-memory、三种 Memory method、所有 Seed 和 Evolved Candidate 共享完全相同的 Evaluator Identity。
 _Avoid_: final CoCo score、Suite fitness
 
 **Specialist Evolution**:
@@ -54,6 +54,18 @@ _Avoid_: Specialist-Local Fitness、META synthesis
 
 **Evaluator Identity**:
 唯一标识 evaluator 语义的冻结身份。比较不同 Memory method 时，任何 evaluator 或权重变更都产生新的 Evaluator Identity，不得与旧分数混合比较。
+
+**B-local**:
+B zone 中专用于 Specialist-Local Evolution 的冻结 paper/family pool。固定 static set 和从其余 frozen rotating pool 中按预注册规则选取的 rotating set 都属于 B-local。
+_Avoid_: static 25、单次 evaluation batch
+
+**B-suite**:
+B zone 中专用于全局 Suite Selection 的冻结 paper/family pool。它与 B-local 在 paper 和 family 层面都零重叠。
+_Avoid_: C Holdout、Specialist-Local Fitness set
+
+**Global CoCo**:
+在 B-suite 或更外层评价完整 Specialist Review Bundle 的统一系统级 CoCo evaluator。它是跨角色 Suite 比较的唯一分数口径。
+_Avoid_: Specialist-Local Fitness
 
 **META-OFF Export**:
 将 Specialist Review Bundle 按冻结角色顺序确定性拼接成单个文本的导出形式，不调用 LLM，也不替代 Bundle 作为权威产物。
