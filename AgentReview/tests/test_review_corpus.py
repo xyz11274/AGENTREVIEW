@@ -78,6 +78,28 @@ class ReviewCorpusTest(unittest.TestCase):
                 request_identity_sha256=DIGEST,
             )
 
+    def test_anchor_ids_are_canonicalized_as_an_unordered_set(self):
+        payload = full_review("QUAL").canonical_payload
+        payload["subdimension_sections"][0]["paper_anchor_ids"] = [
+            "SRC-011",
+            "SRC-002",
+            "SRC-011",
+        ]
+        record = CanonicalFullReviewRecord.from_model_response(
+            json.dumps(payload).encode(),
+            expected_role="QUAL",
+            expected_paper_id="paper-1",
+            paper_identity_sha256=DIGEST,
+            structural_context_sha256=DIGEST,
+            reviewer_identity_sha256=DIGEST,
+            prompt_identity_sha256=DIGEST,
+            request_identity_sha256=DIGEST,
+        )
+        self.assertEqual(
+            record.subdimension_sections[0].paper_anchor_ids,
+            ("SRC-002", "SRC-011"),
+        )
+
     def test_one_paper_all_roles_produces_23_primary_projections(self):
         tokenizer = FrozenTokenizer(list, "char-tokenizer-v1")
         corpus = materialize_corpus(

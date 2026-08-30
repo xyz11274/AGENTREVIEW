@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple
 
 
-CORPUS_SCHEMA_VERSION = "agentreview-full-review-corpus-v1"
+CORPUS_SCHEMA_VERSION = "agentreview-full-review-corpus-v2"
 PROJECTION_SCHEMA_VERSION = "agentreview-review-projection-v1"
 FRAGMENT_SCHEMA_VERSION = "agentreview-review-fragment-v1"
 DEFAULT_MAX_PROJECTION_TOKENS = 2048
@@ -74,12 +74,13 @@ def _strict_object(value: Any, *, fields: set[str], label: str) -> Dict[str, Any
 def _anchor_tuple(values: Any) -> Tuple[str, ...]:
     if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
         raise TypeError("paper_anchor_ids must be a JSON string array")
-    if values != sorted(set(values)):
-        raise ValueError("paper_anchor_ids must already be sorted and deduplicated")
     invalid = [value for value in values if not _ANCHOR_RE.fullmatch(value)]
     if invalid:
         raise ValueError(f"Invalid paper anchor ids: {invalid}")
-    return tuple(values)
+    # Anchor IDs are an unordered evidence set. Canonicalization, rather than
+    # the model's incidental emission order, determines their stored bytes.
+    # The exact raw model output remains immutable in the build audit.
+    return tuple(sorted(set(values)))
 
 
 @dataclass(frozen=True)

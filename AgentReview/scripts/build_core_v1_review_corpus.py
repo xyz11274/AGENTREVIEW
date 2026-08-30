@@ -4,17 +4,17 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
-from agentreview.backends.openai import OpenAIChat
-from agentreview.review_corpus import FrozenTokenizer, canonical_json_bytes
-from agentreview.review_corpus_builder import CorpusPaper, NoMemoryCorpusBuilder
-from memory_evolution.core_scheduler import (
-    GlobalQwenService,
-    ScheduledToolkitProxy,
+from agentreview.corpus_bootstrap import (
+    canonical_context,
+    materialize_corpus_bootstrap,
+    selected_paper_ids,
 )
+from agentreview.corpus_transport import CorpusOpenAICompatibleAdapter
+from agentreview.corpus_checkpoint import run_checkpointed_corpus_build
+from agentreview.review_corpus_builder import CorpusPaper, NoMemoryCorpusBuilder
 
 
 def iter_jsonl(path):
@@ -29,65 +29,58 @@ def iter_jsonl(path):
             yield value
 
 
-def selected_ids(path):
-    value = json.loads(Path(path).read_text(encoding="utf-8"))
-    ids = value.get("selected_episode_ids") or value.get("episode_ids") or value.get("paper_ids")
-    if not isinstance(ids, list):
-        raise ValueError("Selection must contain selected_episode_ids/episode_ids/paper_ids")
-    output = []
-    for value in ids:
-        paper_id = str(value).split("::", 1)[0]
-        if paper_id not in output:
-            output.append(paper_id)
-    return output
-
-
-def canonical_context(episode):
-    text = str(episode.get("text") or "")
-    if "SELF-GENERATED REVIEW EXPERIENCE" in text:
-        raise ValueError("A Corpus input contains old Memory/self-generated experience")
-    marker = "Context protocol:"
-    start = text.find(marker)
-    if start < 0:
-        raise ValueError("A episode lacks canonical paper context")
-    value = text[start:]
-    suffix = "\n\nReturn the complete "
-    if suffix in value:
-        value = value.split(suffix, 1)[0]
-    return value
-
-
-def tokenizer_identity(path):
-    root = Path(path).expanduser().resolve()
-    files = []
-    for name in ("tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"):
-        source = root / name
-        if source.is_file():
-            files.append((name, hashlib.sha256(source.read_bytes()).hexdigest()))
-    if not files:
-        raise FileNotFoundError("Embedding tokenizer manifest files are missing")
-    return "qwen3-embedding-tokenizer-" + hashlib.sha256(canonical_json_bytes(files)).hexdigest()
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--episodes-root", required=True)
     parser.add_argument("--selection", required=True)
+    parser.add_argument("--bootstrap-dir", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--endpoint", required=True)
-    parser.add_argument("--model", required=True)
-    parser.add_argument("--model-revision", required=True)
-    parser.add_argument("--model-artifact-sha256", required=True)
-    parser.add_argument("--embedding-model-path", required=True)
-    parser.add_argument("--max-workers", type=int, choices=(1, 2, 4), required=True)
-    parser.add_argument("--max-tokens", type=int, required=True)
+    parser.add_argument("--model-path", required=True)
     parser.add_argument("--request-timeout", type=float, required=True)
-    parser.add_argument("--max-projection-tokens", type=int, default=2048)
     args = parser.parse_args()
 
-    ids = selected_ids(args.selection)
-    if len(ids) != 125:
-        raise ValueError(f"Frozen A selection must contain 125 papers, got {len(ids)}")
+    bootstrap_dir = Path(args.bootstrap_dir).expanduser().resolve()
+    profile = json.loads(
+        (bootstrap_dir / "corpus_build_runtime_profile.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    request_manifest = json.loads(
+        (bootstrap_dir / "corpus_request_manifest.json").read_text(encoding="utf-8")
+    )
+    if profile.get("profile_name") != "CORPUS_BUILD_RUNTIME_PROFILE":
+        raise ValueError("Corpus bootstrap runtime profile is invalid")
+    if profile.get("max_num_seqs") != 1 or profile.get("tensor_parallel_size") != 4:
+        raise ValueError("Corpus bootstrap requires frozen TP4/max-num-seqs=1")
+    generation = profile["generation_semantics"]
+    model_revision = profile["model_revision"]
+    served_model_name = generation["served_model_name"]
+    output_token_cap = generation["requested_output_token_cap"]
+    model_context_limit = profile["model_context_limit"]
+
+    from transformers import AutoTokenizer
+
+    reviewer_tokenizer = AutoTokenizer.from_pretrained(
+        args.model_path, local_files_only=True, trust_remote_code=False
+    )
+    recomputed = materialize_corpus_bootstrap(
+        episodes_root=args.episodes_root,
+        selection_path=args.selection,
+        model_path=args.model_path,
+        tokenizer=reviewer_tokenizer,
+        output_token_cap=output_token_cap,
+        model_revision=model_revision,
+        served_model_name=served_model_name,
+        model_context_limit=model_context_limit,
+        gpu_memory_utilization=float(profile["gpu_memory_utilization"]),
+    )
+    if recomputed.runtime_profile != profile:
+        raise RuntimeError("Corpus bootstrap runtime profile no longer reproduces")
+    if recomputed.request_manifest != request_manifest:
+        raise RuntimeError("Corpus request materialization no longer reproduces")
+
+    ids = selected_paper_ids(args.selection)
     qual_path = Path(args.episodes_root) / "QUAL" / "episodes.jsonl"
     by_id = {
         str(value.get("id") or "").split("::", 1)[0]: value
@@ -104,67 +97,47 @@ def main():
         )
         for paper_id in ids
     ]
-    generation = {
-        "model": args.model,
-        "revision": args.model_revision,
-        "artifact_sha256": args.model_artifact_sha256,
-        "temperature": 0,
-        "max_tokens": args.max_tokens,
-        "retry_max_tokens": args.max_tokens,
+    generation_sha = request_manifest["generation_identity_sha256"]
+    expected_tokens = {
+        item.messages_sha256: item.prompt_token_count for item in recomputed.requests
     }
-    generation_sha = hashlib.sha256(canonical_json_bytes(generation)).hexdigest()
-    backend = OpenAIChat(
-        model=args.model,
-        max_tokens=args.max_tokens,
-        retry_max_tokens=args.max_tokens,
-        temperature=0,
-        openai_base_url=args.endpoint,
-        openai_client_type="openai",
-        request_timeout_seconds=args.request_timeout,
+    backend = CorpusOpenAICompatibleAdapter(
+        endpoint=args.endpoint,
+        request_config=generation["request_json"],
+        expected_prompt_tokens_by_messages_sha256=expected_tokens,
+        timeout_seconds=args.request_timeout,
+        transport_attempts=2,
     )
-
-    with GlobalQwenService(args.max_workers) as qwen_service:
-        proxies = {
-            role: ScheduledToolkitProxy(backend, qwen_service, role)
-            for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
-        }
-        completions = {
-            role: (
-                lambda messages, proxy=proxy: proxy.llm_completion(
-                    list(messages), agent_name="No-Memory Corpus Reviewer"
-                )
-            )
-            for role, proxy in proxies.items()
-        }
-        builder = NoMemoryCorpusBuilder(
-            complete_by_role=completions,
-            reviewer_identity_sha256=generation_sha,
-            generation_identity_sha256=generation_sha,
-            max_workers=args.max_workers,
-        )
-        result = builder.build(papers, expected_paper_count=125)
+    builder = NoMemoryCorpusBuilder(
+        complete=backend,
+        reviewer_identity_sha256=generation_sha,
+        generation_identity_sha256=generation_sha,
+        max_workers=1,
+    )
     output = Path(args.output).expanduser().resolve()
+    result = run_checkpointed_corpus_build(
+        builder=builder,
+        papers=papers,
+        checkpoint_directory=output / "checkpoint",
+        expected_paper_count=125,
+        progress=lambda completed, total, paper_id, disposition: print(
+            json.dumps(
+                {
+                    "completed": completed,
+                    "total": total,
+                    "paper_id": paper_id,
+                    "disposition": disposition,
+                },
+                ensure_ascii=False,
+            ),
+            flush=True,
+        ),
+    )
     result.write_audit(output)
-
-    from transformers import AutoTokenizer
-
-    frozen = AutoTokenizer.from_pretrained(
-        args.embedding_model_path, local_files_only=True, trust_remote_code=False
-    )
-    tokenizer = FrozenTokenizer(
-        lambda text: frozen.encode(text, add_special_tokens=False),
-        tokenizer_identity(args.embedding_model_path),
-    )
-    materialization = result.materialize(
-        tokenizer=tokenizer,
-        max_projection_tokens=args.max_projection_tokens,
-    )
-    materialization.write(output)
     print(json.dumps({
-        "canonical_reviews": len(materialization.records),
-        "primary_projections": len(materialization.projections),
-        "fragments": len(materialization.fragments),
-        "corpus_manifest_sha256": materialization.manifest["corpus_manifest_sha256"],
+        "canonical_reviews": len(result.records),
+        "raw_attempts": len(result.raw_attempts),
+        "build_manifest_sha256": result.manifest["build_manifest_sha256"],
     }, ensure_ascii=False))
 
 
