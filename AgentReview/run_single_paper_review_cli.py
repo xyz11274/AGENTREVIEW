@@ -344,6 +344,12 @@ def save_structured_outputs(
             "retry_max_tokens": getattr(args, "review_retry_max_tokens", None),
         },
         "reviewer_names": list(reviews.keys()),
+        "expected_reviewer_names": (
+            EXPECTED_REVIEWER_NAMES
+            if getattr(args, "enable_meta", False)
+            else SPECIALIST_REVIEWER_NAMES
+        ),
+        "meta_enabled": bool(getattr(args, "enable_meta", False)),
         "reviewer_memory_contexts": reviewer_memory_contexts or {},
         "memory_retrieval_enabled": (
             not getattr(args, "disable_memory_retrieval", False)
@@ -433,7 +439,8 @@ def validate_generated_outputs(result: Dict[str, str]):
     timing = json.loads((review_dir / "timing.json").read_text(encoding="utf-8"))
     history = json.loads((review_dir / "review_history.json").read_text(encoding="utf-8"))
 
-    missing_reviewers = [name for name in EXPECTED_REVIEWER_NAMES if name not in reviews]
+    expected_reviewers = memory.get("expected_reviewer_names") or EXPECTED_REVIEWER_NAMES
+    missing_reviewers = [name for name in expected_reviewers if name not in reviews]
     if missing_reviewers:
         raise ValueError(f"Incomplete review set for {result['sample_id']}: missing {missing_reviewers}")
 
@@ -511,6 +518,7 @@ EXPECTED_REVIEWER_NAMES = [
     "Reviewer POL",
     "Final Meta-Reviewer",
 ]
+SPECIALIST_REVIEWER_NAMES = [spec["name"] for spec in REVIEWER_SPECS]
 
 STRICT_SOURCE_ANCHOR_PATTERN = re.compile(r"SRC-(\d+)\(page=(\d+)\)")
 SOURCE_ANCHOR_CANDIDATE_PATTERN = re.compile(
@@ -645,6 +653,7 @@ def validate_review_payload(
     extraction_memory: Dict,
     messages: List[Message],
     duration_text: str,
+    expected_reviewer_names: List[str] = None,
 ) -> None:
     """Validate all non-file review state before any final artifact is written."""
     serialized_messages = [
@@ -655,9 +664,8 @@ def validate_review_payload(
         for message in messages
     ]
     reviews = extract_reviews_from_messages(serialized_messages)
-    missing_reviewers = [
-        name for name in EXPECTED_REVIEWER_NAMES if name not in reviews
-    ]
+    expected = list(expected_reviewer_names or EXPECTED_REVIEWER_NAMES)
+    missing_reviewers = [name for name in expected if name not in reviews]
     if missing_reviewers:
         raise ValueError(
             f"Incomplete review set for {sample_id}: missing {missing_reviewers}"
@@ -666,7 +674,7 @@ def validate_review_payload(
     source_anchors = extraction_memory.get("source_anchors", [])
     if not source_anchors:
         raise ValueError(f"Missing source anchors in memory for {sample_id}")
-    for reviewer_name in EXPECTED_REVIEWER_NAMES:
+    for reviewer_name in expected:
         review_text = reviews[reviewer_name]
         has_score = bool(
             re.search(
@@ -1689,6 +1697,8 @@ def build_specialist_resume_command(
         command.append("--disable_memory_retrieval")
     if getattr(args, "disable_memory_writeback", False):
         command.append("--disable_memory_writeback")
+    if getattr(args, "enable_meta", False):
+        command.append("--enable_meta")
     if getattr(args, "s2_retrieval_pool", None):
         command.extend(["--s2_retrieval_pool", args.s2_retrieval_pool])
     if paper_info.get("frozen_context_bundle_path"):
@@ -1795,7 +1805,12 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
     experiment_setting = build_single_paper_experiment_setting()
     players = build_single_paper_players(args)
     extractor = next(player for player in players if player.name == "Paper Extractor")
-    meta_reviewer = next(player for player in players if player.name == META_REVIEWER_NAME)
+    meta_enabled = bool(getattr(args, "enable_meta", False))
+    meta_reviewer = (
+        next(player for player in players if player.name == META_REVIEWER_NAME)
+        if meta_enabled
+        else None
+    )
 
     print(f"Running extractor for {paper_info['sample_id']}")
     extractor_content = extractor([])
@@ -1877,7 +1892,7 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         )
 
     validate_complete_specialist_reviews(specialist_messages, source_anchors)
-    if memory_mode == "mstar_program":
+    if meta_enabled and memory_mode == "mstar_program":
         reviewer_memory_contexts[META_REVIEWER_NAME] = _mstar_meta_memory_context(
             args,
             paper_info,
@@ -1892,56 +1907,66 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         },
         checkpoint_metadata,
     )
-    print("[Review] Starting final meta-reviewer", flush=True)
-    meta_paper_context = Message(
-        agent_name=extractor_message.agent_name,
-        content=clip_context(
-            extractor_message.content.replace(
-                "reviewer_role: SPECIALIST", "reviewer_role: META", 1
+    meta_message = None
+    if meta_enabled:
+        print("[Review] Starting opt-in legacy final meta-reviewer", flush=True)
+        meta_paper_context = Message(
+            agent_name=extractor_message.agent_name,
+            content=clip_context(
+                extractor_message.content.replace(
+                    "reviewer_role: SPECIALIST", "reviewer_role: META", 1
+                ),
+                getattr(
+                    args,
+                    "paper_context_max_chars",
+                    DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+                ),
             ),
-            getattr(
-                args,
-                "paper_context_max_chars",
-                DEFAULT_PAPER_CONTEXT_MAX_CHARS,
-            ),
-        ),
-        turn=extractor_message.turn,
-    )
-    meta_observation = [
-        meta_paper_context,
-        memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
-    ] + specialist_messages
-    try:
+            turn=extractor_message.turn,
+        )
+        meta_observation = [
+            meta_paper_context,
+            memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
+        ] + specialist_messages
         try:
-            meta_content = call_role_with_anchor_repair(
-                meta_reviewer,
-                meta_observation,
-                source_anchors,
-            )
-        except EmptyModelResponseError:
-            print(
-                "[Review] Final Meta-Reviewer: empty response; retrying with "
-                "specialist reviews only",
-                flush=True,
-            )
-            compact_meta_observation = [
-                memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
-            ] + specialist_messages
-            meta_content = call_role_with_anchor_repair(
-                meta_reviewer,
-                compact_meta_observation,
-                source_anchors,
-            )
-    except Exception:
-        raise
-    meta_message = Message(agent_name=META_REVIEWER_NAME, content=meta_content, turn=2)
+            try:
+                meta_content = call_role_with_anchor_repair(
+                    meta_reviewer,
+                    meta_observation,
+                    source_anchors,
+                )
+            except EmptyModelResponseError:
+                print(
+                    "[Review] Final Meta-Reviewer: empty response; retrying with "
+                    "specialist reviews only",
+                    flush=True,
+                )
+                compact_meta_observation = [
+                    memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
+                ] + specialist_messages
+                meta_content = call_role_with_anchor_repair(
+                    meta_reviewer,
+                    compact_meta_observation,
+                    source_anchors,
+                )
+        except Exception:
+            raise
+        meta_message = Message(
+            agent_name=META_REVIEWER_NAME,
+            content=meta_content,
+            turn=2,
+        )
 
     memory_messages = [
         memory_message_for(name, reviewer_memory_contexts)
-        for name in [spec["name"] for spec in REVIEWER_SPECS] + [META_REVIEWER_NAME]
+        for name in (
+            [spec["name"] for spec in REVIEWER_SPECS]
+            + ([META_REVIEWER_NAME] if meta_enabled else [])
+        )
     ]
+    final_messages = specialist_messages + ([meta_message] if meta_message else [])
     all_messages = normalize_review_messages(
-        [extractor_message] + memory_messages + specialist_messages + [meta_message],
+        [extractor_message] + memory_messages + final_messages,
         getattr(extractor, "last_memory", {}).get("source_anchors", []),
     )
 
@@ -1959,6 +1984,7 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         getattr(extractor, "last_memory", {}) or {},
         all_messages,
         duration_text,
+        EXPECTED_REVIEWER_NAMES if meta_enabled else SPECIALIST_REVIEWER_NAMES,
     )
 
     review_history = build_review_history(experiment_setting, all_messages)

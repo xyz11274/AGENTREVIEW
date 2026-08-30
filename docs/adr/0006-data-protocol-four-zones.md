@@ -1,5 +1,7 @@
 # 实验数据协议：paper-level temporal split + 四区隔离
 
+状态：2026-08-28 由 ADR-0010 部分取代。本文中“B 阶段 human reference 仅 evaluator 可见”“B-suite Global CoCo Suite Selection”以及把当前主实验 Official CoCo 放在 D 的条款，不再适用于当前主线；Evolution 必须完全 reference-free，Official CoCo 只在 Final Review Suite 完全冻结后于 untouched C 运行。B-suite 阶段取消，原 B-suite papers/families 保持 reserved，不并入 B-local 或 C。
+
 状态：2026-08-27 由 ADR-0009 进一步细化 B zone：新主线将 B 拆为 paper/family 零重叠的 `B-local` 与 `B-suite`。四区隔离、temporal 约束和 Human Reference Boundary 仍完全有效。
 
 状态：2026-08-18 修订。此前“CoCo 覆盖的 venue-year 全量 `benchmark_reserved`”规则已被本 ADR 明确取代，旧 manifest 只允许分析历史 run，禁止进入新的 formal pipeline。

@@ -1,5 +1,7 @@
 # 五条 Specialist Evolution 独立，以冻结局部 Fitness 进化，再做系统级 Suite Selection
 
+状态：2026-08-29 由ADR-0010及 `shared_qwen_scheduler_and_parallel_pipeline_protocol_20260829.md` 部分取代。本文的Global CoCo Suite Selection、B-suite CoCo evaluator及把CoCo Split/Classify纳入Specialist Evaluator Identity的条款已被拒绝；B-suite取消，五个独立winner按固定顺序直接组成Final Review Suite。Official CoCo只在Suite冻结并授权后部署。五条Evolution独立、同一role Evaluator Identity冻结、公平有界调度和META默认关闭继续有效；capacity候选、scheduler和CoCo部署以新协议为准。
+
 状态：accepted（2026-08-27）。
 
 `QUAL`、`CLAR`、`SIGN`、`ORIG`、`POL` 保留五条独立 Specialist Evolution：每条拥有自己的 Corpus、controller、lineage、checkpoint 和 **Specialist-Local Fitness**，一次 Candidate evaluation 只生成该角色的 review。五个 role 可以分别使用 role-specific evaluator，但同一 role 内的 no-memory、三种 Memory method、所有 Seed 和所有 Evolved Candidate 必须共享完全相同的 **Evaluator Identity**。任何 identity 不一致都在评估前 fail-fast；不得为不同 method 更换 evaluator 或调整权重。
@@ -8,7 +10,7 @@
 
 Specialist Evolution 仅使用 **B-local**。B-local 冻结一个大于单次 evaluation 用量的 paper/family pool：`static=25` 表示每次 local evaluation 的固定 static set 规模，`rotating_size=5` 表示从其余 frozen rotating pool 中按预注册规则选取的单次规模，都不代表 B-local 总容量。B-local、B-suite 的成员与抽样规则在运行前冻结；二者在 paper 和 family 层面均零重叠。C 保持完全 untouched。
 
-实验独立不意味工程上串行。五条 Evolution 可同时向一个全局、有界、公平的 Qwen 队列提交不同角色/论文的请求；不为了评一篇论文强制凑齐五个角色。每条 Evolution 初始最多占用一个 Qwen slot，调度必须防止某一角色饥饿或垄断服务。Qwen 服务的目标 `max-num-seqs` 为 4，实际并发从 2 开始容量验证，通过后再升至 4；CoCo 使用独立有界队列和 backpressure。
+实验独立不意味工程上串行。五条Evolution可同时向一个global、有界、公平的Qwen scheduler提交不同角色/论文的请求；不为了评一篇论文强制凑齐五个角色。Reviewer、Evaluator、Reflector与compile-fix共享同一个sequence budget。Preformal对 `max-num-seqs=1/2/4` 执行mixed-workload gate并冻结最高通过capacity；scheduler固定 `QUAL → CLAR → SIGN → ORIG → POL` round-robin和role内FIFO。Official CoCo在 `OFFICIAL_COCO_AUTHORIZED` 前不得部署。
 
 ## Considered Options
 

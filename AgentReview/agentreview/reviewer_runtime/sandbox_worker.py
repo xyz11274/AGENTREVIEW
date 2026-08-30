@@ -619,8 +619,12 @@ def _load_program(path):
 
 def _run(program_path):
     program = _load_program(program_path)
+    core_v1 = (
+        getattr(program, "MEMORY_PROGRAM_PROTOCOL", "")
+        == "research-validity-core-v1"
+    )
     toolkit = CapabilityToolkit()
-    knowledge_base = program.KnowledgeBase(toolkit)
+    knowledge_base = None if core_v1 else program.KnowledgeBase(toolkit)
     _send({"type": "ready"})
     while True:
         command = _receive()
@@ -630,16 +634,41 @@ def _run(program_path):
             if name == "close":
                 _send({"type": "result", "id": command_id, "ok": True, "value": None})
                 return
-            if name == "write":
+            if name == "core_retrieval_plan":
+                if not core_v1:
+                    raise TypeError("legacy MemoryProgram has no Core v1 retrieval plan")
+                value = program.build_retrieval_plan(
+                    str(command.get("paper_text") or ""),
+                    str(command.get("role") or ""),
+                )
+                # Prove that the capability-free plan is JSON-protocol safe before
+                # returning it to the parent.  No toolkit object is supplied here.
+                value = json.loads(json.dumps(value, ensure_ascii=False))
+            elif name == "write":
+                if core_v1:
+                    raise TypeError("Core v1 Review Memory is immutable")
                 item = program.KnowledgeItem(**dict(command.get("item") or {}))
                 knowledge_base.write(item, str(command.get("raw_text") or ""))
                 value = None
             elif name == "read":
+                if core_v1:
+                    raise TypeError("Core v1 retrieval uses core_retrieval_plan")
                 query = program.Query(**dict(command.get("query") or {}))
                 value = knowledge_base.read(query)
                 if not isinstance(value, str):
                     raise TypeError("KnowledgeBase.read() must return str")
             elif name == "schemas":
+                if core_v1:
+                    value = {
+                        "protocol": "research-validity-core-v1",
+                        "memory_read_mode": str(program.MEMORY_READ_MODE),
+                        "instructions": {
+                            "response": str(program.INSTRUCTION_RESPONSE),
+                            "always_on": str(program.ALWAYS_ON_KNOWLEDGE),
+                        },
+                    }
+                    _send({"type": "result", "id": command_id, "ok": True, "value": value})
+                    continue
                 def schema(dataclass_type):
                     values = []
                     for field in fields(dataclass_type):
@@ -678,13 +707,17 @@ def _run(program_path):
                     },
                 }
             elif name == "snapshot":
-                value = _snapshot_memory(knowledge_base, toolkit)
+                value = {} if core_v1 else _snapshot_memory(knowledge_base, toolkit)
             elif name == "restore":
-                _restore_memory(
-                    knowledge_base,
-                    toolkit,
-                    dict(command.get("snapshot") or {}),
-                )
+                if core_v1:
+                    if dict(command.get("snapshot") or {}):
+                        raise ValueError("Core v1 MemoryProgram has no persistent state")
+                else:
+                    _restore_memory(
+                        knowledge_base,
+                        toolkit,
+                        dict(command.get("snapshot") or {}),
+                    )
                 value = None
             else:
                 raise ValueError(f"unknown sandbox command: {name}")

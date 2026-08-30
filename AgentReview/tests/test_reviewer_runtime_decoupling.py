@@ -60,13 +60,20 @@ class ReviewerRuntimeDecouplingTest(unittest.TestCase):
         )
         return ReviewerEngine(toolkit, require_bubblewrap=False, timeout_seconds=5)
 
-    def test_seed_reviewer_only(self):
+    def test_legacy_seed_reviewer_only(self):
         result = self._engine().review(
             self._request(),
             self.root / "memory_evolution/seeds/vector_search.py",
         )
         self.assertEqual(result.review_text, "deterministic candidate review")
         self.assertEqual(result.memory_program_identity["source_kind"], "seed")
+
+    def test_core_v1_seed_is_not_silently_loaded_by_legacy_engine(self):
+        with self.assertRaisesRegex(ValueError, "CoreV1ReviewerSession"):
+            self._engine().review(
+                self._request(),
+                self.root / "memory_evolution/seeds/vector_search_v2.py",
+            )
 
     def test_existing_best_program_reviewer_only(self):
         result = self._engine().review(
@@ -124,7 +131,7 @@ class KnowledgeBase:
         self.assertEqual(json.loads(completed.stdout), [])
 
     def test_old_evolution_generation_and_core_are_semantically_equal(self):
-        program = self.root / "memory_evolution/seeds/vector_search.py"
+        program = self.root / "runs/pilot_suite/QUAL/best_program.py"
         old_toolkit = MemoryToolkit(
             llm_client=DeterministicReviewerLLM(), llm_model="mock-model"
         )

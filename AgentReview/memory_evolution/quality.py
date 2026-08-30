@@ -37,6 +37,12 @@ REQUIRED_SYMBOLS = {
     "Query",
     "KnowledgeBase",
 }
+CORE_V1_PROTOCOL = "research-validity-core-v1"
+CORE_V1_MODES = {
+    "DIRECT_RETRIEVAL",
+    "POST_RETRIEVAL_LLM_SUMMARY",
+    "STRUCTURED_EXPERIENCE_RECALL",
+}
 FORBIDDEN_CALLS = {
     "open",
     "eval",
@@ -118,15 +124,33 @@ def static_check(
     except SyntaxError as exc:
         return [f"AST parse failed: {exc}"]
 
+    assignments = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant):
+                assignments[target.id] = node.value.value
+    core_v1 = assignments.get("MEMORY_PROGRAM_PROTOCOL") == CORE_V1_PROTOCOL
     top_level_classes = {
         node.name for node in tree.body if isinstance(node, ast.ClassDef)
     }
-    expected_classes = {"KnowledgeItem", "Query", "KnowledgeBase"}
+    expected_classes = set() if core_v1 else {"KnowledgeItem", "Query", "KnowledgeBase"}
     if top_level_classes != expected_classes:
         errors.append(
             "Program must define exactly KnowledgeItem, Query, and KnowledgeBase "
             f"classes; got {sorted(top_level_classes)}"
         )
+    if core_v1:
+        functions = {
+            node.name for node in tree.body if isinstance(node, ast.FunctionDef)
+        }
+        if "build_retrieval_plan" not in functions:
+            errors.append("Core v1 Program must define build_retrieval_plan")
+        if assignments.get("MEMORY_READ_MODE") not in CORE_V1_MODES:
+            errors.append("Core v1 Program has an invalid MEMORY_READ_MODE")
+        for symbol in ("INSTRUCTION_RESPONSE", "ALWAYS_ON_KNOWLEDGE"):
+            if not isinstance(assignments.get(symbol), str):
+                errors.append(f"Core v1 Program must define string {symbol}")
     allowed_field_types = {
         "str",
         "int",
@@ -241,6 +265,29 @@ def compile_and_smoke_check(
         if session is not None:
             session.close(force=True)
         return [f"Program import failed: {type(exc).__name__}: {exc}"], smoke_errors
+
+    if getattr(program, "MEMORY_PROGRAM_PROTOCOL", "") == CORE_V1_PROTOCOL:
+        try:
+            plan = session.core_retrieval_plan(
+                "A benchmark-independent smoke paper about a deterministic method.",
+                "QUAL",
+            )
+            actions = plan.get("actions")
+            if not isinstance(actions, list):
+                smoke_errors.append("Core v1 retrieval plan actions must be a list")
+            elif len(actions) > 32:
+                smoke_errors.append("Core v1 retrieval plan exceeds 32 actions")
+            for action in actions or []:
+                if not isinstance(action, dict):
+                    smoke_errors.append("Core v1 retrieval action must be an object")
+                    break
+        except Exception as exc:
+            smoke_errors.append(
+                f"Core v1 smoke failed: {type(exc).__name__}: {exc}"
+            )
+        finally:
+            session.close(force=bool(smoke_errors))
+        return compile_errors, smoke_errors
 
     missing = sorted(symbol for symbol in REQUIRED_SYMBOLS if not hasattr(program, symbol))
     if missing:

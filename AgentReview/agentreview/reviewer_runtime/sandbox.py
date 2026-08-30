@@ -305,6 +305,15 @@ class SandboxSession:
     def program_interface(self):
         schema = self.schemas()
 
+        if schema.get("protocol") == "research-validity-core-v1":
+            instructions = schema["instructions"]
+            return SimpleNamespace(
+                MEMORY_PROGRAM_PROTOCOL="research-validity-core-v1",
+                MEMORY_READ_MODE=str(schema["memory_read_mode"]),
+                INSTRUCTION_RESPONSE=str(instructions["response"]),
+                ALWAYS_ON_KNOWLEDGE=str(instructions["always_on"]),
+            )
+
         def build(name, values):
             definitions = []
             type_map = {
@@ -377,6 +386,14 @@ class SandboxSession:
         value = self._command("read", query=_value_dict(query))
         if not isinstance(value, str):
             raise SandboxError("KnowledgeBase.read() returned a non-string")
+        return value
+
+    def core_retrieval_plan(self, paper_text: str, role: str) -> Dict[str, Any]:
+        value = self._command(
+            "core_retrieval_plan", paper_text=str(paper_text), role=str(role)
+        )
+        if not isinstance(value, dict):
+            raise SandboxError("Core v1 build_retrieval_plan() must return an object")
         return value
 
     def close(self, force: bool = False):

@@ -1,0 +1,562 @@
+# Formal Controller Journal and Recovery Protocol
+
+状态：frozen semantic contract（2026-08-30），Q136–Q145、Q148–Q149与Q230–Q527已接受。本文冻结domain-separated identity、per-role append-only Controller Journal、durable event commit、resume/recovery、Program dependency closure、attempt terminal disposition、parallel-paper deterministic aggregate及完整目标态audit/recovery语义。首次formal run的阻塞范围由 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md` 决定：CORE_V1必须物化足以重现research decisions的最小append-only/single-writer Journal与fail-stop；mirror、generation replacement、复杂in-place recovery、Reporting/Publication/Archive HA属于HARDENING_V2，不阻塞首次CORE_V1。shared-Qwen DAG/scheduler见 `shared_qwen_scheduler_and_parallel_pipeline_protocol_20260829.md`，suite sealing与Official CoCo授权见 `final_suite_sealing_and_official_coco_authorization_protocol_20260829.md`。
+
+## 1. Domain-Separated Identities
+
+全部formal identities由domain-separated canonical JSON计算，identity object必须显式包含 `identity_type` 与schema version。禁止通过字段缺省表达有语义的null值。
+
+- `attempt_id = "att_" + full_lowercase_sha256(canonical_attempt_identity)`；
+- `canonical_candidate_id = "cand_" + full_lowercase_sha256(canonical_birth_identity)`；
+- `program_identity_sha256` 是不带截断的64位小写SHA256；
+- Candidate deterministic ordering使用完整 `canonical_candidate_id`；
+- initial seed birth identity中的 `parent_candidate_id` 必须显式为JSON `null`。
+
+Hash不得截断，不得由非canonical字符串拼接生成，也不得把execution timestamp、path、PID等provenance混入identity。
+
+## 2. Authoritative Append-Only Journal
+
+Append-only Controller Journal是formal search state的唯一权威历史。Checkpoint只是可由journal完全重建的projection/cache。不得依据以下对象反推事务是否正式提交：
+
+- checkpoint字段或文件是否存在；
+- pool/program/checkpoint目录残留；
+- scores/lineage JSONL行数；
+- stdout、stderr或普通日志；
+- partial JSON、temporary或orphan files。
+
+每个immutable event record至少绑定event schema/version、event ID、previous-event SHA、role/run/controller identity、attempt ID（如适用）、event type、canonical payload与record SHA。通过 `previous_event_sha256` 形成单一完整hash chain。每个attempt必须且只能具有一个terminal disposition。
+
+冻结的主要lifecycle event registry至少包含：
+
+- `ATTEMPT_COMMITTED`；
+- `PARENT_SELECTION_COMMITTED`；
+- `REFLECTOR_FAILED`；
+- `COMPILE_FAILED`；
+- `CANDIDATE_BIRTH_COMMITTED`；
+- `DUPLICATE_PROGRAM_MUTATION`；
+- `STATIC_EVALUATION_STARTED`；
+- `STATIC_EVALUATION_COMMITTED`；
+- `CANDIDATE_ADMITTED`；
+- `CANDIDATE_PROTOCOL_FAILED`；
+- `ATTEMPT_ABORTED_ROLE_FAILURE`；
+- `FINALIST_SET_COMMITTED`；
+- `FULL_POOL_EVALUATION_COMMITTED`；
+- `ROLE_WINNER_COMMITTED`；
+- `ROLE_ARTIFACT_CATALOG_COMMITTED`；
+- `ROLE_FORMAL_FAILED`；
+- `ROLE_SEARCH_COMPLETED`；
+- `SEARCH_COMPLETED`。
+
+Resource/suite authority另使用 `RESOURCE_TOPOLOGY_COMMITTED / EVOLUTION_SERVICES_PREFLIGHTED / EVOLUTION_SERVICES_READY / EVOLUTION_SERVICES_STOPPED / OFFICIAL_SERVICES_PREFLIGHTED / OFFICIAL_SERVICES_READY`，完整规则见 `eight_rtx4090_resource_topology_protocol_20260829.md`。
+
+Embedding Scheduler Journal另冻结`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED / EMBEDDING_BATCH_RESULTS_MATERIALIZATION_FAILED / EMBEDDING_BATCH_RESULTS_MATERIALIZATION_RECOVERED / MATERIALIZATION_EXECUTION_DISPATCHED / MATERIALIZATION_EXECUTION_OUTPUT_COMMITTED / MATERIALIZATION_EXECUTION_ABANDONED / MATERIALIZER_EXECUTION_INFRASTRUCTURE_EXHAUSTED / MATERIALIZER_GLOBAL_PAUSE_COMMITTED / MATERIALIZER_GLOBAL_RECOVERY_PREFLIGHTED / MATERIALIZER_GLOBAL_RECOVERED / ROLE_RUN_SCHEDULER_ADMITTED`及每个`matatt_`的closed terminal disposition records。`BatchContentDedupObservation`不属于event registry或hash chain。
+
+Compatibility使用独立suite-level lifecycle journal：`CATALOG_VALIDATION_STARTED / CATALOG_VALIDATION_EVIDENCE_COMMITTED / CATALOG_VALIDATION_INFRASTRUCTURE_FAILED / CATALOG_VALIDATION_ABANDONED / CATALOG_VALIDATION_INFRASTRUCTURE_PAUSED / CATALOG_VALIDATION_INFRASTRUCTURE_EXHAUSTED / CATALOG_VALIDATION_COMMITTED / COMPATIBILITY_PLAN_COMMITTED / COMPATIBILITY_REPLAY_STARTED / COMPARISON_ATTEMPT_STARTED / COMPARISON_EVIDENCE_COMMITTED / COMPATIBILITY_REPLAY_COMPLETED / COMPATIBILITY_SEMANTIC_EXPOSURE_VIOLATION / COMPATIBILITY_ACCESS_INTEGRITY_FAILED / COMPATIBILITY_REPLAY_ABORTED_INTEGRITY_FAILURE / COMPATIBILITY_CERTIFICATE_PASSED / COMPATIBILITY_CERTIFICATE_FAILED / COMPATIBILITY_AUDIT_QUIESCENCE_COMMITTED / COMPATIBILITY_AUDIT_EXPORT_INPUT_COMMITTED / COMPATIBILITY_AUDIT_EXPORT_STARTED / EXPORT_CANDIDATE_COMMITTED / EXPORT_ACCESS_VALIDATION_STARTED / EXPORT_ACCESS_VALIDATION_EVIDENCE_COMMITTED / EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_FAILED / EXPORT_ACCESS_VALIDATION_ABANDONED / EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_PAUSED / EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_EXHAUSTED / EXPORT_ACCESS_RANGE_VALIDATION_COMMITTED / COMPATIBILITY_AUDIT_EXPORT_MATERIALIZATION_FAILED / COMPATIBILITY_AUDIT_EXPORT_RECOVERED / COMPATIBILITY_AUDIT_EXPORT_FAILED_TERMINAL / COMPATIBILITY_AUDIT_EXPORT_COMMITTED / SUITE_ARTIFACT_CATALOG_COMMITTED`。Semantic access由独立Access Audit Journal记录AUTHORIZATION/COMPLETED/FAILED/STATE_UNRESOLVED及semacc。Raw audit使用`AUDIT_SCOPE_QUIESCENCE_COMMITTED / AUDIT_ASSET_CATALOG_COMMITTED / AUDIT_READINESS_INFRASTRUCTURE_EPOCH_COMMITTED / AUDIT_READINESS_STARTED / AUDIT_READINESS_EVIDENCE_COMMITTED / AUDIT_READINESS_INFRASTRUCTURE_FAILED / AUDIT_READINESS_ABANDONED / AUDIT_READINESS_INFRASTRUCTURE_PAUSED / AUDIT_READINESS_INFRASTRUCTURE_EXHAUSTED / AUDIT_READINESS_COMMITTED / *_AUDIT_NOT_READY`与auditread identities。正常certificate后强制Replay Quiescence、Export terminal及独立Export scope closure/readiness；它们不得进入role search、RNG或Evolution feedback。
+
+Q383–Q461再增加独立single-writer Audit Readiness Infrastructure Journal、Export Access Validation Infrastructure Journal与managed `AUDIT_GATE_CONTROLLER` Infrastructure Journal，以及`finfrajournal_`标识的独立Formal Infrastructure Registry Journal承载的preformal `finfrareg_` root。Registry管理三类`infrajgen_`的admission/replacement/seal；Readiness Infrastructure Journal权威提交epoch、run、attempt、evidence与terminal。所有Readiness projections由suite-level Audit Gate Controller写入Suite Journal closed namespace。Suite lifecycle另注册`FORMAL_INFRASTRUCTURE_REGISTRY_INITIALIZED / INFRASTRUCTURE_JOURNAL_REPLACEMENT_PLAN_COMMITTED / INFRASTRUCTURE_JOURNAL_REPLACEMENT_PLAN_VALIDATED / INFRASTRUCTURE_JOURNAL_GENERATION_ADMITTED / INFRASTRUCTURE_JOURNAL_GENERATION_REPLACED / INFRASTRUCTURE_JOURNAL_GENERATION_SEALED / EVIDENCE_TERMINALIZATION_DECISION_COMMITTED / COMPATIBILITY_BRANCH_COMMITTED / RESOLUTION_ATTEMPT_STARTED / RESOLUTION_EVIDENCE_COMMITTED / RESOLUTION_INFRASTRUCTURE_EXHAUSTED / AUDIT_DEPENDENCY_TRIGGER_RESOLVED / AUDIT_DEPENDENCY_CLOSURE_SET_COMMITTED / OFFICIAL_INTEGRITY_IMPACT_CLASSIFIED / OFFICIAL_INTEGRITY_IMPACT_SET_COMMITTED / OFFICIAL_REPORT_STATUS_COMMITTED / OFFICIAL_STOPPED_REPORT_STATUS_COMMITTED / OFFICIAL_REPORT_MATERIALIZATION_STARTED / OFFICIAL_REPORT_ARTIFACT_COMMITTED / OFFICIAL_REPORT_ARTIFACT_SUPERSEDED / SUITE_RUN_BIRTH_COMMITTED / SUITE_RUN_ABANDONED / OFFICIAL_REQUEST_ABANDONED_AUDIT_BLOCK / OFFICIAL_EXECUTION_BLOCKED_AUDIT_AUTHORITY_INVALID / OFFICIAL_SERVICES_STOPPED_AUDIT_BLOCK / OFFICIAL_POST_FREEZE_AUDIT_AUTHORITY_INVALID / OFFICIAL_EVALUATION_STOPPED_INTEGRITY_FAILURE`及Q420以前的closed events。独立Root Control Journal只承载`FORMAL_ROOT_BIRTH_COMMITTED`、Root Storage Incident事务、Registry mirror authority activation、Shutdown Barrier、critical root dispositions与`FORMAL_ROOT_TERMINAL_COMMITTED`。Top-level control-plane另区分`FORMAL_INFRASTRUCTURE_ROOT_STORAGE_UNAVAILABLE`与`FORMAL_INFRASTRUCTURE_ROOT_INTEGRITY_FAILED`。每个logical lifecycle必须具有冻结唯一terminal语义。
+
+Resource watchdog violation使用 `RESOURCE_EXCLUSIVITY_VIOLATION`。它停止新任务且不自动kill外部进程；active attempt按role-level resource/infrastructure failure终结。违规消失不授权直接resume，影响范围与重新运行规则必须按冻结resource recovery protocol执行。
+
+Qwen request sub-lifecycle使用 `REQUEST_ENQUEUED / REQUEST_DISPATCHED / REQUEST_RESPONSE_COMMITTED / REQUEST_CANONICAL_RESULT_COMMITTED / REQUEST_FAILED`；backend infrastructure lifecycle使用 `SERVICE_FAILURE_DETECTED / SERVICE_RESTARTED`。Raw-response-first、retry identity、timeout与recovery规则见 `qwen_request_transaction_and_recovery_protocol_20260829.md`。
+
+Request-attempt terminal events另包括 `REQUEST_ATTEMPT_TIMED_OUT / REQUEST_ATTEMPT_INVALID`。A区Corpus使用独立journal并在625条完整后提交 `FULL_REVIEW_CORPUS_COMMITTED`；该event之前不得启动Projection/index/Evolution。
+
+Event registry可以在formal前补充必要的infrastructure pause/resume或projection events，但必须发布新journal schema/version并重新执行全部gate；formal期间不得临时扩enum。
+
+## 3. Durable Event Commit
+
+每个formal event使用独立immutable event record，并按以下顺序durable commit：
+
+1. 在目标journal event目录写入唯一temporary file；
+2. flush并 `fsync` 文件；
+3. atomic rename到最终immutable event path；
+4. `fsync` parent directory；
+5. durable commit成功后才更新可重建checkpoint projection。
+
+写入方必须完整执行到第4步。Recovery不尝试从文件内容推断崩溃前directory `fsync` syscall是否已返回，而只采用可观察判定：若final immutable event path存在、record完整通过schema/hash校验，并且其previous-event hash使其恰好成为连续journal chain的下一项，则视为committed；否则不视为committed。Temporary/orphan file只保留审计，永远不能promote、repair或猜测为正式event。Final event path不得覆盖；event sequence、previous-event SHA或record SHA冲突均fail-fast。
+
+## 4. Parent-Selection Transaction and Recovery
+
+每个global attempt的事务顺序为：
+
+1. durable commit `ATTEMPT_COMMITTED`，固定immutable `attempt_id/global_attempt_index`；
+2. 从journal恢复的pre-selection RNG state执行冻结softmax；
+3. durable commit `PARENT_SELECTION_COMMITTED`，其中绑定candidate vector、fitness/weights/probabilities、chosen parent、pre/post RNG state与pool identity；
+4. 之后才允许rotating evaluation、Reflector mutation与compile/fix；
+5. compile/fix成功后提交Program manifest与 `CANDIDATE_BIRTH_COMMITTED`；
+6. dedup、static evaluation与admission按后续events提交。
+
+若 `PARENT_SELECTION_COMMITTED` 未完成durable commit，则selection不属于正式状态，resume必须从已冻结pre-selection RNG state重放；若已完整提交，resume必须直接复用chosen parent与post-selection RNG state，不得重新计算或再次消耗RNG。
+
+## 5. Resume and Projection Rebuild
+
+Resume必须：
+
+1. 按冻结顺序枚举最终event records，忽略但审计temporary/orphan files；
+2. 验证每个record的schema、canonical SHA、sequence与完整previous-event hash chain；
+3. 验证controller/run/role/Evaluator/Program等referenced identities；
+4. 从committed events重建attempt counters、candidate pool、admission order、RNG state与terminal dispositions；
+5. 重新生成checkpoint projection，并验证其与journal-derived state一致；
+6. 只从最后一个合法非terminal state继续。
+
+Journal chain断裂、双terminal disposition、unknown event、identity mismatch、committed pool与重建pool不一致均fail-fast；禁止多数投票、文件时间推断或跳过损坏event继续。
+
+## 6. Journal Topology and Parallel Workers
+
+`QUAL / CLAR / SIGN / ORIG / POL`各自拥有独立authoritative journal与single-writer role controller。五个role允许工程并行，但不建立跨role event全序；各role的candidate state、pool、RNG和journal完全隔离。Shared Reviewer/Evaluator backend与Frozen Evidence Pool只能作为并发只读服务，不得形成shared mutable Candidate state。
+
+Paper/review workers不得追加controller journal，只能生成identity-bound immutable artifacts。Role controller按冻结paper、Candidate和attempt逻辑顺序验证、聚合并提交正式events；worker启动或完成顺序不得影响pool ordering、fitness、softmax或RNG trajectory。
+
+Memory API delivery使用controller-owned、paper-local authoritative transaction chain，而不是Candidate/worker日志。每个call依次提交`MEMORY_API_CALL_INTENT_COMMITTED`、`MEMORY_API_RESPONSE_COMMITTED`与`MEMORY_BUDGET_TRANSITION_COMMITTED`；成功delivery再提交绑定同一response/transition的`MEMORY_LEDGER_OCCURRENCE_COMMITTED`。Success、budget exhaustion与Candidate invalid request产生的预算状态必须先commit，之后结果或错误状态才可对Candidate可见；成功delivery还要求ledger occurrence已经commit。Recovery复用已提交response补完budget/ledger，不重新执行API或重复计费。该paper-local chain必须绑定role journal/run、Candidate、paper、Program与Review Memory API identities，并由最终CanonicalPaperEvaluationRecord引用；workers不得直接写入或修改。
+
+每个正式Memory API response/disposition必须且只能绑定一个budget transition。Success按canonical response成本增加call与delivery计数；非call budget exhaustion仅增加call；Candidate invalid request在call未饱和时仅增加call；call已饱和时提交`pre == post == max`的no-op transition；infrastructure failure不提交正式transition。任何transition都不得使计数超过冻结上限。Response已提交而transition缺失时只补完transition，不重新调用API；已提交transition不得重复计费。
+
+Reviewer enqueue前，controller必须验证authoritative CanonicalReviewerMemoryContext、Reviewer-visible projection、双SHA关系及完整projection token count。Direct/Structured的`REVIEWER_MEMORY_CONTEXT_BUDGET_EXHAUSTED`按Candidate birth/stage分别采用ordinary child consume-and-no-admit、mandatory seed initialization fail-fast或top-3 finalist winner-selection fail-fast；不得提交partial context或Reviewer request。Summary参数无法提供worst-case guarantee、tokenizer/formatter/accounting错误或StructuredViewItem coverage/byte mismatch属于protocol/infrastructure failure，不得降级为Candidate failure或fitness `0`。
+
+每次实际Embedding HTTP/model invocation使用`query_embedding_batch_attempt_id`，绑定有序item attempts、tensor positions、occupancy、padding与Runtime Identity。Raw response先commit，再拆分item records并全批验证。`QUERY_EMBEDDING_BATCH_VALIDATED`后才可确定性生成全部real-item QueryEmbeddingRecords与qemb identities，但仍不可正式使用。Scheduler Journal随后一次性提交self-contained `QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`；canonical payload直接包含完整有序item-attempt IDs、全部QueryEmbeddingRecord objects、canonical vector bytes与qemb identities，不引用外部未授权records。该event使整批内容同时生效；role-local `QUERY_EMBEDDING_RECORD_COMMITTED`只是引用其SHA的可重建terminal projection和workflow visibility barrier。任一validation非法或results event缺失都使整批无正式qemb。VALIDATED与RESULTS之间的temporary/per-item materialization只作audit；crash后从committed validated raw response与validation record重建完整payload，禁止promote orphan。
+
+Canonical vector bytes在event JSON中使用RFC 4648 standard Base64，保留`=`padding，禁止whitespace、URL-safe alphabet、variant与compression。每个record保存`vector_byte_length`及`vector_sha256`；real items严格按real tensor position升序，padding不进入results。Parser解码后重新验证Base64、length、little-endian float32、dimension、SHA与finite values，任一失败使整个batch results非法。
+
+Batch Results Content Identity与Journal Commit Identity分离。`query_embedding_batch_results_id = "qembbatch_" + full domain-separated SHA256(canonical pure-content projection)`；projection绑定schema/version、Embedding Identity，并按real tensor position排序，每个item仅含`real_tensor_position`、`qemb_`及完整canonical QueryEmbeddingRecord。自身ID、batch/request attempts、memqocc、Candidate/paper/role/Program、service epoch、validation SHA与全部Journal/execution字段均排除。Self-contained results event envelope仍保存完整execution bindings并由event SHA/hash chain覆盖；相同内容可共享qembbatch，但每次执行须有独立合法chain，content artifact本身无commit/workflow authority。
+
+相同qembbatch不允许跳过独立results event或复用旧execution chain；projection引用自身确切event SHA。Canonical event/envelope禁止prior-identical lookup。Commit后可生成`dedupobs_ + full SHA256(canonical observation payload)`的non-authoritative `BatchContentDedupObservation`；payload只含schema/version、current event SHA、qembbatch、严格位于current event之前且按authoritative Journal顺序排列的全部prior matching Results event SHAs与observation implementation identity，排除timestamp/path/PID。Prefix cutoff固定为current Results event位置，不依赖observation生成时的Journal head；后续matching events不能修改旧observation。延迟生成/crash重建必须得到同一identity，重复合法；identity/content冲突仅使dedup audit无效。它不进入chain/formal identity/recovery/workflow，缺失/失败无影响。Physical dedup不可见且self-contained event读取恢复不依赖observation/外部metadata。
+
+一个validated batch必须且只能对应一个不可拆分的self-contained results event。Formal禁止拆分Journal event、外置部分vectors、compression或分批授权。Preformal按selected batch size、Embedding dimension、record schema、Base64 expansion与canonical serializer物化最大合法event，重复执行canonical serialize/strict parse、content/event hash、durable atomic write及crash-recovery gate，并冻结最大canonical event byte length、test manifest SHA及基于实测预注册的commit-latency threshold；formal超限为protocol/runtime failure，不得改变representation。
+
+Batch-level schema/mapping错误、query identity mismatch或当前service epoch内两个transport attempts均失败，必须先在独立Embedding Scheduler Journal提交shared Embedding infrastructure failure，立即停止整个Embedding scheduler新dispatch并暂停所有依赖role。`EMBEDDING_INFRASTRUCTURE_FAILURE_COMMITTED`构成唯一global cutoff：只有在cutoff前已经durable完成`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`的整批records继续有效；cutoff前仅有raw response、item projection、partial/full validation或pre-commit qemb materialization但尚未完成batch-results atomic commit的整批结果，以及cutoff后才到达的其他in-flight responses，都只保留audit，不得继续生效或部分采用。只有完全相同Embedding Runtime Identity重启并通过完整preflight后，才可开启新的global service epoch并恢复logical requests。
+
+Batch-results materialization最多一次primary加一次same-implementation deterministic rebuild/commit retry，每次有独立immutable identity与durable disposition。任何失败提交`EMBEDDING_BATCH_RESULTS_MATERIALIZATION_FAILED`，作为区别于Embedding service failure的Scheduler Journal global cutoff，停止新dispatch、results commit及role-local projection；cutoff前committed results有效，raw/validated-only保持pending，cutoff后responses只作audit。第二次重复相同canonical error转Controller/Protocol validity failure；payload一致但storage/I/O再次失败归shared storage unavailable，不误判serializer。Crash只按durable attempt events判定，temporary/partial/log不能证明完成或增加retry。
+
+`matatt_` identity绑定validated batch event SHA、qembbatch、PRIMARY/REBUILD kind、index 0/1、serializer/parser/controller及storage/durability identities，retry另绑primary。Terminal enum固定COMMIT_SUCCEEDED/CANONICAL_VALIDATION_FAILED/STORAGE_IO_FAILED/ABANDONED且每attempt恰好一个。每个Results event唯一绑定commit时存在、匹配、尚未terminal且未消费的`originating_batch_results_materialization_attempt_id`，以及唯一`originating_materialization_execution_id`、其OUTPUT_COMMITTED event SHA与immutable output SHA。Commit前须验证Scheduler为RUNNING、execution已合法OUTPUT terminal、output与validated batch/qembbatch一致且未被其他event消费；execution bindings只进入Journal envelope。一个matatt/output至多对应一个event。Success引用同一唯一event，不能先于commit或授予qemb；不存在、mismatch、failure/abandoned、重复消费或无匹配event的success均为Journal integrity failure。
+
+Results event committed而originating matatt尚未terminal时，只根据event字段验证bindings并补同一attempt的success；不得重materialize/重写event/重Embedding。匹配success复用，失败或abandoned terminal与committed event并存即Journal protocol integrity failure。
+
+事件顺序是primary failure terminal→cutoff→non-formal preflight→RECOVERED→retry；任一时刻最多一个open cutoff。Execution使用`matexec_`，绑定schema/version、matatt、不可复用resume ordinal、immutable input、worker implementation/runtime及Controller Protocol Identity，排除machine-local provenance；每个matatt仅ordinal 0/1。每次execution先DISPATCHED，随后恰一OUTPUT_COMMITTED或ABANDONED。
+
+Canonical decision先生成唯一semantic-level `matdec_`，绑定Protocol Semantic Identity、schema/Failure Registry/stage/interpretation/aggregation semantics、closed outcome及完整decision/failure projection，排除execution与具体implementation。随后execution-scoped `matout_`显式绑定matexec、唯一matdec及逐bytes相同的self-contained projection；validator重算matdec，任一不一致为Protocol/Journal validity failure。多个matout可共享matdec，但每个matout仅一个matdec；raw audit只进event envelope，同matdec不免除implementation Compatibility证明。
+
+Invalid candidate bytes使用RFC4648 padded Base64、length/SHA并重验；JSON位置用RFC6901，不可解析用closed root sentinel，byte位置用integer range。Immutable Failure Registry冻结codes、location、ordering、组合与Storage operation/durability/error classes。Validation按bytes/JSON→schema→referential/semantic stage gate执行；每个进入stage完整收集并排序/精确去重，依赖stage未执行只能记录非failure disposition。Unknown parser/schema/validator condition是Controller/Protocol validity failure，unknown storage/OS condition进入shared infrastructure pause，无法解释Journal状态是Journal integrity failure；不得扩enum或归为Candidate。Failure Evidence非法则无formal output。
+
+两个ordinals均无合法OUTPUT时提交`MATERIALIZER_EXECUTION_INFRASTRUCTURE_EXHAUSTED`，默认owning role fail；否则按冻结条件进入唯一open Global Pause lifecycle。DISPATCHED event一旦commit永久消耗ordinal，global pause停止worker后ABANDON不回滚：ordinal0后只可ordinal1，ordinal1后exhaustion，provenance引用shared/global cause但不改变accounting。Single-batch cutoff与Global Pause可同时open；global只覆盖权限不关闭batch。恢复严格为global preflight/RECOVERED→原batch cutoff→batch preflight/RECOVERED→retry；global未关时batch recovery不授权execution。两套状态完全由Journal推导。
+
+Materialization recovery不改变Embedding service epoch；service process实际restart才提交新epoch。Post-cutoff responses永久audit-only，但actual dispatch accounting保留；request仅可用当前epoch剩余transport slot，需下一epoch仍消耗唯一recovery allowance，第三epoch按owning-role failure。
+
+Shared Embedding scheduler/service拥有独立、single-writer、append-only的Embedding Scheduler Journal，作为logical enqueue、batch/raw/validation/self-contained results、service failure/restart/preflight与`EMBEDDING_SERVICE_EPOCH_COMMITTED`的唯一权威全局顺序。Initial完整preflight后提交epoch 0且`previous_epoch=null`；后续只有完全相同Runtime Identity restart并通过完整preflight，才可提交前一global epoch加一的新event。Event绑定Runtime Identity、preflight event SHA、previous epoch与failure/restart provenance；任何batch dispatch前必须存在当前有效committed epoch，batch/item attempts显式绑定它。Ordinal只由durable epoch event连续消耗：preflight完成但event未commit时epoch不存在，恢复后重新完整preflight并复用next ordinal；event已commit且仅controller/scheduler crash时复用；service进程实际restart必须新preflight/new epoch。Temporary event、stdout/log、PID与preflight临时结果无权消耗或跳过ordinal。Role journals只引用Scheduler Journal event SHA，不形成跨role search全序。
+
+Padding slots使用protocol-generated `embedding_padding_item_id`，绑定冻结payload、tensor position、padding-policy identity及schema/version；不产生memqocc、logical/item attempt、Memory API/budget、ledger、cache或qemb。Controller只用padding response验证batch cardinality/position，随后确定性丢弃。Padding payload/count/placement/order/discard rule必须与Runtime manifest一致。
+
+每个`memqocc_`必须且只能产生一个logical Query Embedding request及独立`query_embedding_request_id`，绑定occurrence、canonical query、paper-local execution scope、Embedding Identity及冻结logical semantics。Role controller在request创建时分配role-local monotonic `query_embedding_logical_sequence`并durable commit。Cache hit保留完整Memory API call/budget/audit chain，不产生transport attempt或scheduler enqueue；controller提交`QUERY_EMBEDDING_CACHE_HIT_RESOLVED` terminal disposition并引用当前paper-local cache内合法、identity匹配的qemb，且不得把cache状态暴露给Candidate。Cache miss必须先durable commit `QUERY_EMBEDDING_ENQUEUED`，scheduler之后才可接收。
+
+每次item transport invocation另生成`query_embedding_request_attempt_id`，并绑定当前committed global `embedding_service_epoch`及epoch-local `transport_attempt_index ∈ {0,1}`。Logical request identity跨restart不变，只在第一次实际dispatch记录`initial_embedding_service_epoch`；仅enqueue/排队不消耗。Request audit保存initial epoch、全部actual-dispatch epochs与recovery allowance状态。Request因自身、同batch其他item或shared service failure在下一epoch重新dispatch时一律消耗唯一recovery allowance，不做fault-attribution豁免；最多两个epochs/四次invocations，需要第三epoch时所属role infrastructure validity fail-fast。
+
+Retry沿用原request identity、logical sequence与role-local FIFO priority，不重新排到后来requests之后；restart恢复后亦保持原unfinished FIFO位置，但不复刻已关闭失败batch的companions、tensor positions、occupancy或padding。Scheduler按冻结role round-robin/FIFO、batch size、`max_batch_wait`与padding policy重新assembly，生成新的batch-attempt identity并关联old/new batch provenance；不得为复制旧batch改变logical queue顺序。Preformal latency statistics按冻结公式导出request timeout；一旦batch timeout/transport failure durable commit，对应batch attempt及其中item attempts永久关闭。其late response只保存raw execution audit，不得验证、canonicalize、生成qemb或与后续attempt竞争。
+
+一个已经在initial epoch实际dispatch的request，若因epoch-local attempts耗尽或shared service restart而需要在后续global epoch再次执行，只能在完全相同的frozen Embedding Runtime Identity完成service restart与完整preflight后进入其唯一recovery epoch。每个logical request最多允许一个recovery epoch，因此最多产生四次实际Embedding transport invocations；若recovery epoch耗尽或还需要进入第三个service epoch，禁止继续扩展request allowance或无限重启，转为role-level Embedding infrastructure validity failure并按冻结影响范围终止受影响formal role。不归因于Candidate，也不消耗Candidate/global attempt或Review Memory budget。Initial epoch、实际使用epoch、service restart/preflight identity与全部attempt provenance必须进入authoritative audit。
+
+Logical request terminal disposition closed set为`QUERY_EMBEDDING_RECORD_COMMITTED / QUERY_EMBEDDING_CACHE_HIT_RESOLVED / QUERY_EMBEDDING_ABANDONED`。每个request必须且只能拥有一个。Attempt timeout/failure或初始epoch耗尽后的infrastructure pause都不是logical terminal；相同identity恢复时继续原request。Recovery epoch耗尽导致role终止时，尚未terminal的requests按冻结关闭规则提交ABANDONED。正常paper只有在全部相关logical requests达到唯一terminal disposition后才可提交paper terminal event。
+
+Batch-results event提交后，当前role workflow仍不得使用qemb，直到role controller durable commit确定性幂等的`QUERY_EMBEDDING_RECORD_COMMITTED`。其canonical projection至少绑定role-run identity、logical request ID、`qembbatch_`、authoritative Scheduler Journal event SHA、实际`qemb_`及role-controller/projection schema identity。同一logical request恰好一个正式projection：匹配则复用，缺失则补交，相同内容不得产生第二terminal；引用不同batch event、qemb或identity时role-level protocol integrity fail-fast。Projection不进入qemb/qembbatch内容身份或跨role顺序。提交后Memory API才可继续；若paper/role已关闭则ABANDONED，既有qemb仅作audit/content用途。
+
+Cross-role batch的role-local terminal projections独立提交，无all-role barrier。Shared failure pause期间禁止新projection；same-Runtime恢复并提交有效epoch后，各role分别补交合法pre-cutoff batch result的projection，不调用Embedding、不消耗recovery allowance、不等待同batch其他role，且不建立跨role search event order。
+
+Shared failure先全局pause/recover，再检查unfinished requests的actual-dispatch epoch history。需要第三epoch的request只使其所属role infrastructure validity fail-fast并关闭该role pending work；其他未超限role恢复，多个超限role分别失败。未失败role的durable state/winner有效；失败role使用新role-run identity从初始化重跑，Final Suite等待五个合法winner。
+
+失败role的新role-run必须等待旧run完成封闭事务：禁止新requests、ABANDON全部未terminal requests、commit `ROLE_FORMAL_FAILED`并seal、scheduler确认drained；之后以`ROLE_RUN_SCHEDULER_ADMITTED`作为唯一admission boundary。Event绑定新run、role、first sequence、current round-robin cursor与Scheduler Runtime Identity；cursor不reset/rollback，新run从下一次正常role轮转参与，不抢占assembled batch或插入committed ordering。新sequence可从0开始但scheduler key绑定run identity；old/new run不得同时active。
+
+Cursor canonical value是冻结QUAL→CLAR→SIGN→ORIG→POL上的`next_role_index`。Assembly从committed cursor环扫；empty-role scan pointer不authoritative。Batch-dispatch durable commit立即更新到最后real item role之后，padding/cache hit/non-enqueued不影响；之后的timeout、validation/infrastructure failure、materialization cutoff或service restart都不回滚。Unfinished requests保留FIFO并从当前committed cursor重组；仅dispatch未commit时使用原cursor。Restart只恢复last committed cursor。
+
+Formal external artifacts使用`artifact_outputs`并进入Artifact Catalog；non-decision raw audits使用closed `audit_outputs`。每个source-event vector occurrence唯一派生`auditentry_`，绑定event SHA、ordinal、auditasset及metadata；同asset重复occurrence保留。Multi-Journal Catalog按slot ordinal→journal-local sequence→audit_outputs ordinal→entry ID排序，禁止跨Journal比较time/worker/SHA/filesystem；source已commit而projection缺失时只补建，event/ordinal冲突是integrity failure。Closed Audit Scope Registry v1至少含CORPUS_BUILD/ROLE_RUN/EMBEDDING_SCHEDULER/COMPATIBILITY，Official scope须formal前注册。
+
+Closed Audit Scope Registry固定七类。每instance `auditscope_`绑定Registry/version、type、owner、ordered source-Journal slots、Requirement Registry与Schema。`auditquiesce_`绑定每slot pre-quiescence head及Registry解释的closure proof；Registry为每scope type冻结唯一quiescence commit slot，event只进入该slot。独立Quiescence Requirement Registry冻结transaction/event types、terminal/ABANDON rules、receiver/capability slots、cardinality/order、no-inflight及late-response rules；未知formal transaction使validation失败。Compatquiesce绑定Replay auditquiesce作specialization。
+
+每scope Quiescence后auditcat永久封闭，并保存与source slots等长的位置对应ranges；每项使用`start_predecessor exclusive → terminal_head inclusive`，起点为显式genesis/null。非commit slot通常止于pre-head；commit slot包含Quiescence event及其预先durable audit outputs。缺失、额外、错位、event归错slot或多slot复制Quiescence event均禁止commit。Requirement/applicability/status规则保持冻结。
+
+Readiness Infrastructure Journal以`auditreadepoch_`权威编号epoch，绑定validator/storage/runtime/preflight、ordinal、previous/recovery，排除process/address/time；epoch 0 previous=null，后继严格+1且无空洞，preflight后未commit即不存在。该Infrastructure Journal是epoch、run admission、attempt、self-contained evidence、PAUSED/EXHAUSTED与唯一run terminal的唯一authority；scope journals只允许提交引用确切authoritative event SHA的确定性幂等Readiness workflow projection，projection不产生新Readiness authority。`auditreadrun_`同Catalog/validator/epoch最多一个；attempt primary+one。Run恰一terminal PASS、FAIL、INFRASTRUCTURE_EXHAUSTED或RUN_ABANDONED；PAUSED非terminal。只有EXHAUSTED可在新epoch成为successor prior；PASS/FAIL/ABANDONED禁止successor，冲突terminal是Infrastructure Journal integrity failure。该Infrastructure全序只描述共享validator执行，不形成Corpus、Role、Scheduler、Compatibility或Official formal decisions之间的顺序。
+
+`auditquiescereg_ + full domain-separated SHA256`是Audit Quiescence Requirement Registry的稳定identity。Canonical Registry artifact绑定scope-type rules、transaction与terminal closed enums、ABANDON条件、source-Journal slot/cardinality/order、receiver/capability closure及no-inflight policies；`auditscope_`与`auditquiesce_`必须绑定同一Registry identity。Formal前使用closed valid/invalid vectors覆盖unknown transaction type、缺失terminal、错误slot及错误cardinality；任一不一致禁止formal。
+
+同一formal Protocol内，EXHAUSTED之后的successor `auditreadepoch_`必须保持validator semantic identity、validator implementation identity、verification policy identity与storage policy identity完全相同；只允许process、connection及其他execution provenance变化。若必须修复validator或policy，必须形成新的Protocol/Controller identity，原Catalog不得沿旧gate path直接重验，影响范围由Audit Dependency Closure Registry及其projection决定。
+
+Quiescence commit前已durable但未获event授权的content-addressed audit bytes，只能从完全相同authoritative closure state重新计算`auditquiesce_`及expected auditasset identities，并逐项验证SHA与length完全一致后复用，再提交原Quiescence event；禁止scan目录发现或吸收未知asset。Quiescence event已commit时直接复用其authority，不重新运行closure。重算产生不同expected bytes属于Quiescence implementation/protocol failure。
+
+Role/Suite继续采用winner→Role Catalog→completion及PASSED→Export→Suite Catalog→Final Suite顺序。`artentry_ / rolecat_ / suitecat_`由covered `artifact_outputs`、无环dependency closure及predecessor covered head构建；Catalog content排除自身commit/completion event。Catalog-first recovery只补completion，commit后scope永久封闭，禁止重建、scan、补造或扩展。
+
+Suite Catalog使用固定typed root vector：五role catalog roots按QUAL→CLAR→SIGN→ORIG→POL，随后Compatibility Lifecycle root与Compatibility Access Audit root；每个role root绑定rolecat及commit event。无需Compatibility时后两root为显式N/A/null，需要时分别绑定PASSED lifecycle head/certificate与decision-boundary audit head。不同Journals的numeric sequences不比较、不flatten；Suite-local artifacts只按Suite Journal本地position登记。
+
+Compatibility正常lifecycle保持PLAN→STARTED→items→COMPLETED→PASSED/FAILED，fatal使用ABORTED→FAILED。Target Controller Implementation冻结code/assets、dependency lock、protocol/state-machine、serializer/parser、scheduler/controller behavior与capability/API client，不含process provenance。Official可以new Runtime/process，但runtime manifest implementation component必须精确等于target并通过Formal Observable Semantics gate；implementation变化禁止静默Official。Plan仍是single-target/direct-source且同composition终身唯一。
+
+PLAN前Catalog Validation每catvalatt恰一EVIDENCE_COMMITTED/INFRASTRUCTURE_FAILED/ABANDONED terminal；logical lifecycle允许PAUSED/EXHAUSTED。Primary加一次retry只用于可信Evidence前infra failure，无terminal crash恢复同attempt。第二attempt也infra failure则EXHAUSTED并永久seal当前validation run，禁止第三attempt/局部新ID；新执行只能新top-level Suite/Compatibility validation run重preflight。EXHAUSTED不等于semantic FAIL且禁止Plan。
+
+`catvalevid_`是绑定catvalatt的execution-scoped self-contained Evidence，含Catalog content/event、composition context、Validation Registry、ordered checks/evidence、observed hashes/lengths及validator semantic/implementation identities，不绑定catval；可内嵌event或绑定单一先durable external artifact。Validation Registry完整非fail-first执行，unknown/illegal result是Protocol failure。Catval表达semantic terminal equivalence，固定Catalog/context/validator仅一terminal，只有PASS可Plan。
+
+Item terminal闭集为MATCH/SEMANTIC_MISMATCH/ARTIFACT_UNAVAILABLE/DECLARED_HASH_MISMATCH/PAYLOAD_PARSE_INVALID/COMPARISON_EVIDENCE_UNTRUSTWORTHY，均不得early-stop。Fatal仅限Journal chain、Plan/compitem identity、冲突terminal、Catalog/Plan自身integrity或唯一lifecycle state不可确定。每item primary加一次retry；`compatatt_`绑定compitem、attempt kind/index、catalog inputs及tool/gate。事务STARTED→EVIDENCE_COMMITTED→item terminal。Evidence使用`compev_` self-contained identity，绑定明确source/target pair、observed hashes/lengths、parse/tool/gate、完整decision operands与canonical comparison output；恢复无需重读source payload或重提取，hash-only不足。Evidence后crash只补result，STARTED无Evidence才恢复同attempt。Preformal冻结最大Evidence event bytes及serialization/strict parse/hash/atomic durability/crash gate。
+
+每个semantic logical access先AUTHORIZATION，实际read后恰一COMPLETED/FAILED/STATE_UNRESOLVED。Confirmed unauthorized exposure提交`COMPATIBILITY_SEMANTIC_EXPOSURE_VIOLATION`；authorized后状态无法确定提交`COMPATIBILITY_ACCESS_INTEGRITY_FAILED`，两者均不含payload且不得混称。Predecision均进入ABORTED→FAILED但reason分离；post-decision不改certificate，只使Export进入integrity/materialization failure。
+
+PASSED/FAILED后提交唯一compatquiesce。任何semantic read和STARTED前，Export Input自包含提交并额外绑定Replay auditready terminal及PASS或FAIL/AUDIT_NOT_READY状态。可信Replay FAIL在semantic objects、quiescence和security boundary完整时仍允许mandatory Export；PAUSED/EXHAUSTED且无可信semantic terminal时禁止启动Export。Exposure/access-integrity或semantic-source损坏走terminal failure。
+
+Export Candidate按artifact-first写入TEB protected immutable storage并验证，`EXPORT_CANDIDATE_COMMITTED`绑定candidate/exec/txn/input、content facts、expected compatexport、protected locator policy及implementation。Candidate不进artifact_outputs/Suite Catalog且不可见；commit后缺失/损坏不得重读semantic source。Candidate前semantic exec primary+one；commit后永久禁止新semantic exec或第二candidate。
+
+Export Access Infrastructure Journal以`exportaccessepoch_`管理validator/backend/runtime/preflight、ordinal、previous和recovery。Process restart或exhausted recovery必须新epoch；run绑定exact txn/heads/vector/policy/validator/epoch且不得跨epoch，同组合最多一个。Run primary+one及self-contained evidence产生唯一PASS/FAIL；FAIL不retry，EXHAUSTED仅新epoch可successor。
+
+Export Access Validation run恰一terminal：`EXPORT_ACCESS_RANGE_VALIDATION_COMMITTED(PASS|FAIL)`、`EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_EXHAUSTED`或`EXPORT_ACCESS_VALIDATION_RUN_ABANDONED`；PAUSED非terminal。只有EXHAUSTED可在新epoch生成successor；PASS/FAIL禁止新run，ABANDONED只用于Export已经被其他冻结终止条件关闭的情形。
+
+Export promotion使用非semantic `exportpromatt_` primary加一次相同candidate/implementation storage retry。Identity绑定exporttxn、exportcand及其commit event、Access PASS、expected compatexport、formal-artifact storage/registration policy、promotion implementation与attempt kind/index。每attempt恰一`EXPORT_PROMOTION_COMMITTED / EXPORT_PROMOTION_STORAGE_FAILED / EXPORT_PROMOTION_ABANDONED` terminal；只允许读取durable candidate并注册同一bytes。Formal bytes已经durable但promotion event未commit时属于原attempt recovery，不消耗retry；第二次storage failure后Export terminal fail，不回candidate或semantic execution阶段。
+
+Exportout closed outcomes新增`EXPORT_CANDIDATE_STORAGE_INTEGRITY_FAILED`，专门表示post-commit Export Candidate missing、length/hash/schema mismatch。暂时读取不可用仍归`EXPORT_STORAGE_IO_FAILED`并遵循冻结storage recovery；确认的candidate identity/integrity mismatch直接terminal，不得借promotion retry、第二candidate或semantic rebuild修复。
+
+无需Compatibility时必须先提交`compatna_ + full domain-separated SHA256`及`COMPATIBILITY_NOT_REQUIRED_COMMITTED`。其identity绑定Proposed Suite Composition、五个winner的Controller implementation identities、Protocol Semantic Identity与冻结N/A eligibility rule；只有机械证明不存在跨implementation preservation需求时才合法，否则必须进入Compatibility Plan，operator不得手工选择N/A。
+
+每slot `auditgateroot_`绑定type、applicability、适用scope/quiesce/Catalog/auditready及events；applicable root还必须显式绑定产生该auditready的`auditreadrun_`、`auditreadepoch_`与epoch commit event SHA，并可沿authoritative references唯一追溯到Evidence、Catalog及epoch，不复制完整Evidence。Compatibility N/A root绑定`compatna_`及其authoritative event，并保持其余closed nulls。`suiteauditgates_`自包含固定九root vector，Final Suite同时内嵌并绑定identity。
+
+Candidate/result-independent Audit Dependency Closure Registry冻结NOT_READY后的保留upstream、失效downstream、new/reusable/forbidden identities。每次具体NOT_READY必须先生成`auditdepclosure_ + full domain-separated SHA256`并提交`AUDIT_DEPENDENCY_CLOSURE_COMMITTED`，绑定触发NOT_READY event、Registry、当前manifest graph及有序`preserved / invalidated / must_rebuild / reusable / forbidden` vectors；replacement或下游terminal前必须存在该projection，operator不得修改。Unknown edge是Protocol failure，禁止人工缩小范围。Official NOT READY只控制report completeness。
+
+Readiness或Export Access Infrastructure Journal integrity failure以首个非法event为cutoff。只有引用cutoff之前完整epoch与terminal chain的结果继续具有gate authority；引用非法event或其后epoch的run全部失去gate authority，但不追溯修改其底层Corpus、winner或Compatibility certificate。恢复必须建立新的Infrastructure Journal identity并对受影响immutable Catalog重新验证；assets完整时不重跑研究过程。Access Journal损坏时受影响Export不得promotion，只能从合法durable candidate和冻结access range在新identity下重新验证，禁止重读Compatibility semantic sources。
+
+Q404进一步冻结scope-local Readiness引用。`auditreadproj_ + full domain-separated SHA256`的canonical projection至少绑定auditscope、immutable auditcat及Catalog commit event、auditreadrun、auditreadepoch及Epoch commit event、authoritative Infrastructure terminal event、closed run terminal disposition和projection schema/protocol identity。Tagged union规定：PASS/FAIL必须绑定唯一`auditready_`及`AUDIT_READINESS_COMMITTED` event；INFRASTRUCTURE_EXHAUSTED/RUN_ABANDONED必须使用closed null `auditready_`且不得伪造semantic result。每个`auditscope × auditreadrun`最多一个`AUDIT_READINESS_RESULT_REFERENCED`；一致则复用、缺失则从Infrastructure terminal确定性补交、冲突则scope Journal integrity failure。Successor runs各自保留projection，历史EXHAUSTED不得覆盖。只有当前gate-authority PASS projection可构造PASS Audit Gate Root；其他projection只进入NOT_READY/dependency-closure workflow。
+
+Q405建立preformal冻结的Formal Infrastructure Journal Registry作为该generation层级的root-of-trust。Registry identity、schema、generation rules、replacement policy及semantic/implementation identity进入Protocol/Controller Identity，但Registry不承载Readiness/Access run、attempt或Evidence。每个managed Journal generation必须由Registry durable admission/replacement record授权；record绑定journal kind、previous generation、旧generation最后一个经过完整hash-chain验证的合法event、observed corruption/cutoff evidence、新generation连续无空洞ordinal/identity、genesis manifest及recovery policy。首个非法event只作observed evidence，不能成为trusted predecessor。新generation在admission/replacement durable commit前不得运行formal preflight result、validation或产生gate authority。Registry不依赖被管理Journal授权自身replacement；其canonical state/hash chain无法验证时属于formal root-integrity failure，当前formal不得创建Registry v2继续混用旧state，修复必须进入新的formal run/Protocol root identity。
+
+Q406规定同一Protocol Semantic Identity的全部pre-freeze Audit Scopes必须使用同一immutable `auditquiescereg_` identity/version。Formal启动后禁止新增closure transaction/request/event type，或修改terminal、ABANDON、receiver/capability slots、cardinality、ordering及Registry版本。任何变化均产生新Protocol Semantic Identity，并由Audit Dependency Closure Registry机械计算影响范围；不允许早期scope使用旧Registry、后续scope使用新版后进入同一Final Suite。`OFFICIAL_POST_FREEZE`的Registry也必须在Official authorization/start前预注册，查看Official结果后不得改变closure semantics。
+
+Q407冻结Export Access ABANDON顺序：停止新dispatch；确认所有active validator/worker停止；逐个未terminal attempt提交唯一`EXPORT_ACCESS_VALIDATION_ABANDONED`；验证run无active/nonterminal attempt；提交唯一`EXPORT_ACCESS_VALIDATION_RUN_ABANDONED`；之后才允许依赖该reason的Export terminal failure。Run引用closed Abandon Reason Registry，v1仅允许Candidate integrity terminal failure、上层logical Export不可恢复terminal、Journal generation replacement导致当前run失去资格及其他预注册上层integrity termination。ABANDON不得绕过semantic FAIL、EXHAUSTED、primary+retry budget或换validator求PASS；run ABANDONED后永久sealed。
+
+Q408规定单一`EXPORT_PROMOTION_COMMITTED`同时是对应`exportpromatt_` terminal success、Candidate bytes首次获得formal Export artifact authority及closed ordered `artifact_outputs` registration的原子边界。Event绑定exportpromatt、exporttxn、durable exportcand、expected compatexport、canonical SHA/length/schema、authoritative exportaccessval PASS及event、READY exportout、promotion implementation/storage identity与artifact registration。Event前bytes仍是TEB-local candidate；event后禁止第二promotion或改变bytes/metadata。`COMPATIBILITY_AUDIT_EXPORT_COMMITTED`仅引用确切promotion event并完成logical lifecycle/seal，不重复registration。Promotion已commit而completion缺失时只补completion，不重新promotion。
+
+Q409建立`exportcandintegrity_ + full domain-separated SHA256` self-contained Evidence与authoritative `EXPORT_CANDIDATE_STORAGE_INTEGRITY_FAILED`。Evidence绑定exportcand、expected locator/storage policy、expected SHA/length/schema/type、observed locator/object及SHA/length/schema/integrity disposition、完整冻结read/verification/recovery attempt vector、storage verification policy与validator identities，不含Compatibility semantic payload。Backend unavailable、timeout与临时不可读只进入STORAGE_IO pause/recovery；只有冻结recovery及合法replica/content-addressed recovery全部结束后仍可信证明missing、identity/length/schema mismatch或wrong immutable object，才可提交Candidate Integrity Failure。成立后禁止重读semantic sources重建candidate。
+
+Q410建立closed `compatnareg_`与composition-specific `compatna_`。V1 N/A predicate要求：五winner Protocol Semantic Identity完全相同；Controller implementation identity去重后恰一；Final Suite target及Official预注册implementation component均等于该唯一identity；当前composition无foreign/旧implementation winner；且不存在本composition未合法terminal或试图绕过的committed FAILED/ABORTED Compatibility lifecycle。Canonical reason为`SINGLE_CONTROLLER_IMPLEMENTATION_NO_PRESERVATION_REQUIRED`。历史其他composition certificate、chaining、人工说明或近似实现不得替代；N/A必须由`COMPATIBILITY_NOT_REQUIRED_COMMITTED`权威提交。
+
+Q411按四个不可改写边界处理gate authority后续失效。Final Suite commit前：阻止Suite/Official，重建合法authority、projection和closure后继续pre-Suite workflow。Suite已commit但Official未授权：旧Suite保留为immutable historical seal但失去execution eligibility；若closure允许保留composition，必须用新suite-run/seal identity和新Audit Gate chain重新提交。Official已授权但尚未STARTED：旧authorization不撤销，追加`OFFICIAL_EXECUTION_BLOCKED_AUDIT_AUTHORITY_INVALID`并禁止启动；重验后仍需新suite-run/seal与新authorization。STARTED后：不得重封、重选、重跑当前Suite或返回Evolution，只提交post-freeze audit/gate-integrity failure；outputs可作为不可反馈的原始报告保留，但不得宣称完整formal-audit。全部阶段禁止读取或利用C/Human/OpenReview/CoCo反馈选择修复。
+
+Q412指定独立suite-level Audit Gate Controller为`AUDIT_DEPENDENCY_CLOSURE_COMMITTED`唯一single writer，并在Suite Journal中提交。Readiness Infrastructure只提供PASS/FAIL/EXHAUSTED/ABANDONED及NOT_READY事实，不能决定winner保留、role重跑、Suite继续或Export/Official失效。`auditdepclosure_`绑定triggering NOT_READY event/projection、Registry、完整frozen manifest graph、closure algorithm、upstream retained set、invalidated downstream set、required new identities/rerun scopes、forbidden reuse set及prerequisites。每个`trigger × manifest graph × Registry`恰一projection；一致复用、缺失补交、冲突为Suite Protocol/Journal integrity failure。计算不得读取quality、fitness、winner优劣、C/Human/CoCo或operator成本偏好。
+
+Q413明确“scope-local”仅描述`auditreadproj_`的identity、eligibility与内容由auditscope局部约束；所有`AUDIT_READINESS_RESULT_REFERENCED`统一由suite-level Audit Gate Controller作为single writer提交到Suite Journal closed Audit Gate namespace。Corpus/Role/Embedding source Journals seal后永久immutable，只作upstream authority。Projection仍绑定auditscope、auditcat、auditreadrun、auditreadepoch和Infrastructure terminal。Recovery缺失时只向Suite Journal确定性补交，不得补写source Journal；projection commit order不重新排序research decisions。
+
+Q414建立独立Formal Infrastructure Registry Journal。`finfrareg_`绑定Registry schema/version、closed managed journal kinds、generation admission/replacement/seal semantics、continuous ordinal/corruption cutoff rules及root Protocol/Controller identity。`infrajgen_`绑定journal kind、finfrareg、连续ordinal、previous generation或initial null、immutable genesis manifest、Journal schema及Protocol identity，排除runtime endpoint、PID、host、dynamic head与time。Initial使用`INFRASTRUCTURE_JOURNAL_GENERATION_ADMITTED`且previous=null；后续单一`...GENERATION_REPLACED`原子关闭旧generation并授权新generation，不重复ADMITTED。Replacement绑定旧generation最后合法event、corruption evidence、新generation/genesis和recovery policy；invalid tail不是trusted predecessor。Registry Journal不属于managed kinds且不能在当前formal自我replace；Registry root损坏要求新顶层formal/Protocol root。
+
+Q415为同一immutable Audit Catalog建立唯一线性Readiness successor chain。Initial prior=null；只有EXHAUSTED run能在新合法epoch拥有至多一个successor；PASS/FAIL/ABANDONED永久封闭；禁止跳过predecessor和branching。Audit Gate Root绑定完整有序auditreadrun/auditreadproj chain及唯一terminal PASS。一个EXHAUSTED存在双successor、两个PASS、跳前驱或terminal后续run均为Readiness Infrastructure/Protocol integrity failure。
+
+Q416规定每个proposed_suite_composition_id必须且只能选择`COMPATIBILITY_NOT_REQUIRED_COMMITTED`或`COMPATIBILITY_PLAN_COMMITTED` lifecycle。N/A提交后禁止Plan；Plan一旦提交，无论PASSED/FAILED/ABORTED/fatal均禁止退回N/A；缺少branch selector不能进入Suite Catalog/Final Suite，同时存在两者为Suite Protocol integrity failure。
+
+Q417规定Official已AUTHORIZED但未STARTED时，`OFFICIAL_EXECUTION_BLOCKED_AUDIT_AUTHORITY_INVALID`立即撤销旧authorization chain的dispatch capability，禁止新enqueue/dispatch并按冻结规则清空或ABANDON pre-start intents。Services已READY时必须完整stop/clear并提交`OFFICIAL_SERVICES_STOPPED_AUDIT_BLOCK`，绑定旧runtime、PREFLIGHTED/READY events、shutdown、queue drain及cache/KV/prefix clearance。旧READY永不恢复authority；新Suite/authorization chain必须fresh启动并重做完整preflight。
+
+Q418建立pre-registered、result-independent Official Integrity Impact Registry，以triggering integrity failure、dependency graph、Official request/model/runtime/evaluator及C/Human access identities分类`AUDIT_AUTHORITY_ONLY`或`OFFICIAL_EXECUTION_INTEGRITY_AFFECTED`，禁止读取CoCo score或结果质量。前者且execution identities完整时，原sealed run按原请求/retry协议继续自然完成，提交`OFFICIAL_POST_FREEZE_AUDIT_AUTHORITY_INVALID`并仅保留audit-invalid report。后者立即停止dispatch、关闭/abandon unfinished work并提交`OFFICIAL_EVALUATION_STOPPED_INTEGRITY_FAILURE`，禁止补跑、重跑、拼接或恢复。两类均禁止反馈Evolution。
+
+Q419保留per-trigger `auditdepclosure_`并建立`auditdepclosureset_ + full domain-separated SHA256`与`AUDIT_DEPENDENCY_CLOSURE_SET_COMMITTED`。NOT_READY从authoritative commit起ACTIVE，直到replacement/revalidation全部满足且Audit Gate Controller提交唯一`AUDIT_DEPENDENCY_TRIGGER_RESOLVED`；resolution绑定trigger、closure、新run/gate/artifact identities、PASS roots或closed evidence及Registry。每次active set变化生成新immutable snapshot，绑定有序active triggers、closures、manifest graph、Registry和merge result。状态优先级为`forbidden reuse > must rebuild > invalidated > reusable > preserved`；仅处理Registry声明可合并关系，未定义冲突为Protocol/Registry validity failure。
+
+Q420规定winner event SHAs、role-run/Candidate/Program/Controller identities及Protocol均不变时，proposed composition不变，但合法re-seal产生新的suite_run_id、final_suite_id和sealing chain，并绑定previous Suite、trigger、new suiteauditgates、auditdepclosure/set及provenance。旧Suite永久失去execution eligibility。相同composition不得创建第二Compatibility Plan；只有closure明确将原Plan/certificate/comparison/Export/Catalog/gates标记reusable时可重封。任何必需Compatibility authority为must-rebuild/invalidated/forbidden时，同composition不能重做Compatibility，必须通过新role-run/winner provenance形成新composition。合法N/A authority同样仅在marked reusable时复用。全程禁止利用C/Human/OpenReview/CoCo结果。
+
+Q421建立`finfrajournal_ + full domain-separated SHA256`，绑定top-level formal root、Protocol root、finfrareg、immutable genesis manifest、Registry Journal schema、serializer、durability/hash-chain policy及Registry Controller implementation，排除dynamic head和runtime provenance。唯一`FORMAL_INFRASTRUCTURE_REGISTRY_INITIALIZED`必须是首个event并绑定finfrajournal/finfrareg。finfrareg是规则content，finfrajournal是root authority chain，infrajgen是managed generation；finfrajournal不在managed kinds且损坏按root-integrity failure处理。
+
+Q422将generation replacement前的runs机械分类。`TERMINAL_PRESERVED`要求完整terminal及Evidence都在最后合法event前；`EVIDENCE_PRESERVED_TERMINAL_MISSING`保留合法prefix中的可信Evidence，新generation只从该Evidence确定性补出PASS/FAIL terminal，不重跑validator、重读inputs或消耗attempt budget；`INVALIDATED_NONTERMINAL`在合法prefix无Evidence，由Registry记录`INVALIDATED_BY_GENERATION_REPLACEMENT`而不向旧Journal补terminal，新generation建立prior_exhausted=null且绑定replacement origin/event的fresh run；`UNTRUSTED_AFTER_CUTOFF`仅作corruption audit。只有旧run合法EXHAUSTED时才沿Q415 successor chain。
+
+Q423建立`compatbranch_`，绑定composition、`NOT_REQUIRED | PLAN_REQUIRED`、selector event、相应compatnareg/N-A或compatplan/Plan event、Protocol与schema；`COMPATIBILITY_BRANCH_COMMITTED`在selector durable后唯一adopt。每composition恰一branch commit；selector合法但commit缺失时补交，冲突/重复或selector不一致为Suite Protocol integrity failure。Suite Catalog、Final Suite和re-seal统一引用branch identity与event，不扫描负事实。
+
+Q424建立`auditdepres_`，绑定trigger、auditdepclosure、Registry、完整required replacement/revalidation、实际新run/scope/gate/artifact identities、required PASS roots、forbidden-reuse验证、resolution validator identities与closed RESOLVED disposition。只有全部prerequisites满足后Audit Gate Controller提交唯一`AUDIT_DEPENDENCY_TRIGGER_RESOLVED`；基础设施失败只pause，不生成伪resolution或移出active set。Resolved后永久不重开，同scope再失败产生新trigger。
+
+Q425要求每次active trigger集合变化都提交新immutable auditdepclosureset，包括显式`active_trigger_vector=[]`。Seal只能引用Suite Journal当前control state的latest empty snapshot，并证明snapshot后无未合并NOT_READY/dependency event且graph/Registry一致；不得以查询不到trigger、历史empty snapshot或filesystem状态代替。
+
+Q426建立`auditdeplattice_`并纳入Dependency Closure Registry与Protocol Semantic Identity。每object class冻结closed states、pairwise merge table、result、invalid-conflict及ordering；合法operator必须满足commutativity、associativity、idempotence。优先级只作部分语义基础，formal执行完整merge table；preformal覆盖状态笛卡尔积与多元素代数性质，INVALID_CONFLICT导致Protocol/Registry validity failure。
+
+Q427建立`officialimpactreg_`、`officialimpact_`及唯一`OFFICIAL_INTEGRITY_IMPACT_CLASSIFIED`。Registry冻结input whitelist、dependency/aggregation rules、closed outcomes及结果信号黑名单；classification绑定Official run、trigger、Registry、完整allowed operands、dependency projection、outcome和classifier identities。同一run×trigger唯一，且先于continue/stop event。多个active triggers采用保守聚合：任一EXECUTION_INTEGRITY_AFFECTED即STOP；只有全部AUDIT_AUTHORITY_ONLY且execution identities完整才可继续report-only。
+
+Q428使`OFFICIAL_COCO_COMPLETED`成为`FORMAL_AUDIT_VALID | AUDIT_INVALID_REPORT_ONLY` tagged terminal。Authority-only failure存在时只能提交后者并绑定classification、invalid event、aggregate state和result manifest；execution integrity affected时不得COMPLETED，只能STOPPED terminal。若FORMAL_AUDIT_VALID完成后才发现未知authority failure，旧completion不可改写，追加classification与invalid event，由reporting/audit projection把effective publication status降级为AUDIT_INVALID_REPORT_ONLY；audit-invalid outputs不得进入正式主结果。
+
+Q429为已获得Official logical identity但尚未formal dispatch的pre-start requests建立唯一`OFFICIAL_REQUEST_ABANDONED_AUDIT_BLOCK`，绑定request、旧authorization、block event、enqueue provenance和closed reason。全部terminal后才能STOPPED_AUDIT_BLOCK。`OFFICIAL_COCO_STARTED`前禁止任何Official evaluation `REQUEST_DISPATCHED`；违反属于lifecycle/protocol integrity failure，不是普通ABANDON。Preflight/smoke使用独立scope；abandoned request的异常response只作raw audit并触发transport integrity检查。
+
+Q430建立`suiterun_`，绑定top-level root、durably allocated deterministic birth ordinal、previous run或null、`INITIAL | RESEAL`、trigger、Suite Controller及Protocol；建立`finalsuite_`，绑定suiterun、composition、compatbranch及commit authority、完整suiteauditgates、latest required empty closure set、previous finalsuite或null、seal protocol及re-seal provenance。Final Suite event SHA不入identity而由envelope反向绑定。Initial双null；re-seal同时引用确切前驱。Birth已分配但seal未commit时恢复同一suiterun/expected finalsuite，不再分配ordinal；只有历史Suite已seal且合法触发RESEAL才新建run。
+
+Q431冻结Root Storage Recovery Policy：authoritative primary、一个逐bytes验证的read-only mirror、locator/replica identities、read/hash/chain verification及bounded infrastructure recovery attempts。Mirror只能提供完全一致的既存authoritative chain副本，不能merge tails、补event、投票、重排或生成authority。Recovery耗尽但没有canonical chain错误证据时只能提交top-level `FORMAL_INFRASTRUCTURE_ROOT_STORAGE_UNAVAILABLE`并fail-stop，禁止误称corruption。只有hash-chain失败、同sequence出现不同canonical bytes、同一committed prefix的primary/mirror不可调和冲突或genesis/Registry binding验证失败等可信证据，才属于`FORMAL_INFRASTRUCTURE_ROOT_INTEGRITY_FAILED`。若finfrajournal不可写或不能可信continuation，root terminal由冻结的top-level formal root/control-plane boundary记录，不创建新Registry Journal generation延续当前root。
+
+Q432为`EVIDENCE_PRESERVED_TERMINAL_MISSING`建立birth kind为`EVIDENCE_TERMINALIZATION_RECOVERY`的新auditreadrun或exportaccessrun。它绑定旧origin run、generation replacement event、preserved Evidence与旧Evidence event SHA、原validator identity、新generation/epoch和terminalization schema；不创建validation attempt、不消耗budget、不重读Catalog/assets/Access vector、不重新执行validator，只从immutable Evidence确定性生成PASS/FAIL。Evidence不足以唯一terminalize即Protocol/Journal replacement validity failure。Gate Root同时绑定旧Evidence authority、replacement provenance、recovery run和new-generation terminal/projection；此路径不伪装成EXHAUSTED successor。
+
+Q433规定单个top-level formal root内每个managed Infrastructure Journal kind最多一次generation replacement，即generation 0与唯一generation 1。计数由finfrajournal authoritative events决定。`INVALIDATED_NONTERMINAL`可在replacement generation获得fresh run自身primary+one infrastructure retry；preserved Evidence recovery没有新validation budget。Replacement generation再次需要replacement时当前root fail-fast，禁止generation 2、ordinal reset或用新local run绕过；未来只能创建新的top-level formal root。
+
+Q434使`COMPATIBILITY_BRANCH_COMMITTED`成为downstream唯一authority barrier。Selector durable后必须立即确定性提交唯一compatbranch；commit前禁止Replay、comparison attempt/evidence、Export、Suite Catalog和Final Suite。Selector后crash只补交相同branch，不重新选择。若branch缺失但已有downstream events，则是Compatibility/Suite Journal protocol integrity failure，不能补branch后接受越权历史。
+
+Q435把`AUDIT_GATE_CONTROLLER`加入finfrareg managed journal kinds并冻结其Infrastructure generation/epoch。每个`auditdepresatt_` resolution run最多primary加一个完全相同trigger、closure、manifest graph、Registry与validator identity的infrastructure retry，采用`RESOLUTION_ATTEMPT_STARTED → RESOLUTION_EVIDENCE_COMMITTED → AUDIT_DEPENDENCY_TRIGGER_RESOLVED`。Evidence已commit只补Resolution；只有Evidence前的storage/process/controller failure可retry。两次无可信Evidence提交`RESOLUTION_INFRASTRUCTURE_EXHAUSTED`，trigger保持ACTIVE并阻止seal；只有基础设施恢复、完整preflight及新authoritative Audit Gate Controller epoch后才可开新resolution run。Semantic prerequisite未满足不是retry理由。
+
+Q436把auditdepclosureset冻结为single-writer连续successor chain。每个snapshot绑定previous或genesis null、恰一`NOT_READY_TRIGGER_COMMITTED | AUDIT_DEPENDENCY_TRIGGER_RESOLVED` delta、完整active-trigger vector/closures、merged state及Registry/Lattice；每个delta恰被一个successor消费。提交active-set delta后必须先提交唯一`AUDIT_DEPENDENCY_CLOSURE_SET_COMMITTED`，才可接受下一delta。Seal只引用terminal head且active vector为空；delta后crash只补该snapshot，禁止并入下一delta、分叉或跳过。
+
+Q437建立cumulative `officialimpactset_`与`OFFICIAL_INTEGRITY_IMPACT_SET_COMMITTED`。每个classification后恰一successor snapshot，绑定previous、new delta、全部已分类trigger/officialimpact、Registry与aggregate。Outcome闭集为`CONTINUE_AUDIT_INVALID | STOP_EXECUTION`；STOP为吸收态，已分类trigger永不删除。存在未完成classification的新trigger时禁止新的Official dispatch，直到classification及successor set commit。
+
+Q438建立append-only `officialreportstatus_ / OFFICIAL_REPORT_STATUS_COMMITTED`。已完成run的closed status为`FORMAL_AUDIT_VALID | AUDIT_INVALID_REPORT_ONLY | EXECUTION_INTEGRITY_INVALID_REPORT_ONLY`，只允许按该顺序单调降级或直接从VALID降至EXECUTION invalid。Completion后发现execution integrity受损时不伪造STOPPED，而追加第三状态并将outputs限制为integrity-invalid diagnostic/raw report，不能进入正式主结果。Completion前STOPPED run不拥有completed-status chain；每次新status绑定previous与impact provenance。
+
+Q439以`SUITE_RUN_BIRTH_COMMITTED`作为suiterun及birth ordinal获得authority的唯一边界，绑定`INITIAL | RESEAL`、previous run/final suite或null、trigger、Controller与Protocol。每个Suite Run恰一terminal：`FINAL_SUITE_COMMITTED | SUITE_RUN_ABANDONED`。Crash不构成ABANDON；birth后恢复继续同一run。只有closed Registry原因如dependency prohibition、root-integrity failure或composition失去资格才可ABANDON，ordinal永久消耗。已FINAL terminal的run不能再ABANDON，后续只走re-seal/block lifecycle。
+
+Q440规定固定composition最多`INITIAL → one RESEAL`。唯一RESEAL若在Official STARTED前再次因Audit Gate authority/infrastructure integrity失去execution eligibility，则composition永久失格且当前top-level formal root closed fail-fast；不得在同一root内通过新Suite ordinal、重跑role或制造新composition重置额度。未来实验必须建立新的top-level formal root；Official STARTED后RESEAL关闭并继续post-freeze规则。
+
+Q441建立`formalroot_`与`formalrootctl_`。formalroot绑定schema/version、Protocol Semantic root、experiment/root manifest、resource/protocol roots及必要run seed/config，不绑定后生Journal head、terminal或runtime provenance。formalrootctl绑定formalroot、immutable genesis、Journal schema、serializer、durability/hash-chain policy及Root Controller implementation。`FORMAL_ROOT_BIRTH_COMMITTED`是二者取得authority的唯一genesis；Journal只承载最小root bindings/dispositions并以`FORMAL_ROOT_TERMINAL_COMMITTED`关闭，不承载普通workflow、不由finfrareg管理且不可replacement。Root control storage/capability与finfrajournal隔离；若自身不能可信continuation，外部预注册witness只能禁止继续，不能repair、replace、reopen或授权原root恢复。
+
+Q442把verified mirror冻结为immutable exact-prefix witness。Snapshot绑定finfrajournal prefix bytes、event count、terminal head SHA、source primary、replication/verification implementation、schema与manifest SHA；创建后不可追加、merge或修补。Lag不是integrity failure，mirror head不能冒充current primary、不能写入或提升为primary，也不能多mirror投票/拼接。Primary恢复后必须完整包含mirror已证明prefix；同sequence conflict升级root integrity failure。即使mirror可读，只要current writable primary未恢复，Formal Registry writes仍禁止并最终进入storage unavailable。
+
+Q443将每个Root Storage Incident预算固定为initial primary read、一次相同locator/authority的primary recovery/read、一次冻结mirror snapshot verification/read，每条路径都有immutable attempt/disposition。Controller restart、重复mount、换path/operator/DNS alias、新mirror或手工复制都不增加额度。三路径后无可信current writable primary即`FORMAL_INFRASTRUCTURE_ROOT_STORAGE_UNAVAILABLE`；期间证明canonical conflict/hash corruption则为`FORMAL_INFRASTRUCTURE_ROOT_INTEGRITY_FAILED`。
+
+Q444建立`infrajreplaceplan_ / INFRASTRUCTURE_JOURNAL_REPLACEMENT_PLAN_COMMITTED`，由finfrajournal/Registry在新generation前提交。Plan一次性绑定old generation、trusted cutoff、corruption evidence、全部可识别run inventory及Q422分类、preserved Evidence、terminalization/fresh runs、forbidden reuse、new genesis inputs与recovery/Registry identity。Trusted prefix覆盖必须完整；commit后禁止追加run、改分类、新增Evidence或缩小forbidden set。遗漏、重复、冲突、越过cutoff均replacement fail-fast；只有合法Plan才能授权replacement。
+
+Q445建立`evidterm_ / EVIDENCE_TERMINALIZATION_DECISION_COMMITTED`。Decision绑定old Evidence及event、原semantic rule、唯一PASS/FAIL、old origin/recovery run、replacement event/Plan、old/new generation和terminalization protocol。它不创建validation operands、不重读input且不冒充Evidence event；new terminal必须引用它。无法唯一得出terminal、需要重读source或存在多解时禁止commit并视为replacement/terminalization validity failure。
+
+Q446对每个active trigger冻结request-relative Audit Gate Controller epoch上限。第一次实际resolution execution所在epoch为initial，仅排队不消耗；最多再用一个recovery epoch。每epoch的run仍为primary+one identical infrastructure retry。Recovery epoch仍exhausted时当前formalroot fail-fast，禁止第三epoch/run或budget reset；排队期间global epoch变化不消耗allowance。
+
+Q447禁止Audit Gate Controller自证恢复。finfrajournal/Registry Controller先依Q414/Q444授权新generation；formalroot/finfrareg预注册且独立的Preflight Validator验证Controller artifact、dependency、Protocol、Suite head、latest closure set、active triggers、recovery inputs与capability/resource，并产生immutable PASS；Registry Controller将PASS绑定generation/epoch后新Controller才可工作。待验证Controller不能签发自身admission/preflight、修改inputs/head或授权replacement。Validator mismatch、无法可信执行或root binding失败进入Infrastructure/root validity failure。
+
+Q448规定v1禁止Cross-Root Winner Preservation。formalroot closed failure后的新root不得导入旧winner、Candidate pool、parent/RNG state、Final Suite或Compatibility certificate，必须从冻结初始化边界重跑五role及所需workflow。旧对象仅作immutable history/audit。未来若需要复用，必须在看到目标旧结果前设计独立预注册Cross-Root Preservation Protocol；v1不提供。
+
+Q449使Official Reporting Authority成为所有report/publication export的强制gate，但completed与stopped run分离。Completed run必须有消费latest officialimpactset且无pending delta的latest `OFFICIAL_REPORT_STATUS_COMMITTED`；VALID才可能进入主结果，两种REPORT_ONLY仅进入明确标注的diagnostic区域。STOPPED run使用独立Stopped-run Reporting Authority/Projection，不伪造COMPLETED status。Impact变化但Reporting未消费时禁止新report。Status降级后生成新artifact并显式supersede旧artifact，禁止原地覆盖；声明完整audit的export还必须满足OFFICIAL_POST_FREEZE Readiness。
+
+Q450建立`suitedispositionreg_`，至少冻结DEPENDENCY_CLOSURE_PROHIBITS_SEAL、ROOT_STORAGE_UNAVAILABLE、ROOT_INTEGRITY_FAILED、COMPOSITION_EXECUTION_INELIGIBLE、RESEAL_ALLOWANCE_EXHAUSTED与SUITE_PROTOCOL_INTEGRITY_FAILED，并为每项冻结predicate、evidence、ABANDON许可、root/dependency consequence及primary priority。SUITE_RUN_ABANDONED绑定suiterun、唯一primary reason、Registry、supporting evidence和root consequence；多原因按Registry优先级选primary。RESEAL再次失效时，先ABANDON已birth未terminal run，再确认无其他待terminal Suite Run，最后FORMAL_ROOT_TERMINAL。若formalrootctl不可写，只能由外部witness证明fail-stop，缺失terminal作为root-control audit incompleteness，不能伪造events。
+
+Q451建立`rootfailwitness_`，closed outcome为`ROOT_CONTROL_UNAVAILABLE_FAIL_STOP | ROOT_CONTROL_INTEGRITY_UNTRUSTED_FAIL_STOP`。Witness只引用formalroot/formalrootctl最后可信head或genesis/null、incident、完整attempt/Evidence、failure classification、mechanism identity及`execution_must_fail_stop=true`。它不是Root terminal，不能授权恢复、新event、rootctl replacement、新finfrajournal或dispatch。Root Control可写时优先正常shutdown/terminal；只有其不可继续时才用external witness。Witness mechanism不可用仍必须fail-stop，缺失只形成audit incompleteness。
+
+Q452建立`formalrootdispositionreg_`，v1至少含COMPLETED、FAILED_ROOT_STORAGE_UNAVAILABLE、FAILED_ROOT_INTEGRITY、FAILED_RESEAL_ALLOWANCE_EXHAUSTED、FAILED_INFRASTRUCTURE_RECOVERY_EXHAUSTED与FAILED_PROTOCOL_VALIDITY。Registry冻结predicate、evidence/witness types、child terminalization、Shutdown要求、primary priority、secondary provenance和consequence。FORMAL_ROOT_TERMINAL绑定formalroot、唯一primary、Registry、evidence vector、Shutdown Barrier及final root-control head；多原因由Registry机械选primary。
+
+Q453建立`formalrootshutdown_ / FORMAL_ROOT_SHUTDOWN_BARRIER_COMMITTED`。可信可写Root依次禁止dispatch、关闭admission、revoke新capability、按各协议terminal/abandon open work、固定可信Journal heads、记录无法terminalize的closed incomplete vector、提交Barrier，最后Root terminal。Barrier绑定root、trigger、closed admission、work vector、head vector、shutdown manifest、no-new-dispatch proof与Protocol。损坏Journal不补写伪terminal；formalrootctl不可写时不伪造Barrier而走external witness。
+
+Q454要求每个finfrajournal authority-changing event先durable存在但处于`PENDING_MIRROR_ACTIVATION`，随后发布包含它的immutable verified prefix；由独立formalrootctl提交authority-activation record，绑定event、snapshot、verified head与Evidence。只有activation后managed workflow才能消费新authority。Activation不写回finfrajournal，避免event→mirror→mirror-event递归。Mirror失败不撤销Registry event，只pause downstream activation；恢复必须验证同一event的相同prefix。
+
+Q455建立由formalrootctl承载的`rootstorincident_ / rootstoratt_`及INCIDENT_COMMITTED、ATTEMPT_STARTED、ATTEMPT_EVIDENCE_COMMITTED、INCIDENT_RECOVERED/TERMINAL。Q443三条路径使用0/1/2固定ordinal并Evidence-first；Evidence已commit只补incident decision。每incident恰一RECOVERED或TERMINAL，后者再区分storage unavailable/canonical integrity failed。formalrootctl不可写时跳过该事务并进入external witness边界。
+
+Q456建立`infrajreplaceplanval_ / INFRASTRUCTURE_JOURNAL_REPLACEMENT_PLAN_VALIDATED(PASS|FAIL)`。Builder只读trusted prefix、closed lifecycle registries、冻结schema和Registry metadata，禁止orphan/log/temp/operator list。Validator独立检查inventory、互斥分类、Evidence cutoff、reuse closure、terminalization/fresh vectors、new genesis和identities。Semantic inconsistency直接FAIL且禁止修Plan；infrastructure failure允许primary+one identical retry，Evidence形成后只补terminal。仅PASS可Generation Replacement。
+
+Q457规定evidterm写入Registry授权的新managed generation。顺序为Replacement Plan PASS、Generation Replacement、新generation recovery run birth、Decision、同一run的PASS/FAIL terminal、Suite Readiness projection。Decision→terminal是per-run causal adjacency而非共享Journal全局相邻；其他run events可交错，但该run不得插attempt/Evidence/revalidation。禁止写回旧generation、只存finfrajournal或terminal前投影。
+
+Q458为每个new Audit Gate Controller generation建立bounded Evidence-first preflight run/attempt/Evidence及PASS/FAIL。只允许primary+one identical infrastructure retry；Evidence后只补terminal。Artifact/dependency/Protocol/Suite head/closure input mismatch直接semantic FAIL且不可retry。两次无Evidence使generation永久不可激活并触发FAILED_INFRASTRUCTURE_RECOVERY_EXHAUSTED Root lifecycle；待验证Controller无第三attempt或input修改权。
+
+Q459建立`officialstoppedreport_ / OFFICIAL_STOPPED_REPORT_STATUS_COMMITTED`，唯一status为`EXECUTION_INTEGRITY_FAILED_INCOMPLETE_REPORT_ONLY`。它绑定Official run、STOPPED terminal、latest impact set、completed/abandoned request vectors、可保留artifact identities及reporting protocol，不内嵌raw payload。它只能进入明确标记的incomplete/integrity-failed diagnostic，不能进入主结果、转换为COMPLETED、加入Completed status chain或升级为valid。
+
+Q460建立status-bound `officialreportartifact_`及MATERIALIZATION_STARTED、ARTIFACT_COMMITTED、ARTIFACT_SUPERSEDED。Started冻结terminal、latest Reporting Authority/status event、impact head、schema/template、source manifest和materializer。Commit前重验authority/current impact/no pending delta；期间出现delta时旧transaction不得commit current，直接ABANDON，物理bytes只作orphan audit。SUPERSEDED只用于曾合法current的artifact后来因单调降级失效；旧artifactimmutable，新artifact显式引用前驱。
+
+Q461规定v1 Cross-Root reuse仅限Formal Root外冻结且identity不依赖旧execution的input-only资产：paper manifests/raw papers、model/tokenizer artifacts、Protocol/Schema/Failure/Requirement registries、Frozen External Evidence raw blobs/manifests及明确注册的content-addressed inputs。旧Root生成的625 Full Reviews、Projections/Fragments、Corpus embeddings/index、query/cache、Candidate/Program selection、fitness、winner、RNG/search、Compatibility、Audit Gate、Suite与Official authority均禁止复用。新root必须重建A区Corpus→Projection/Fragment→Embedding/Index→五Role→Suite；content hash相同也不继承authority。v1无Cross-Root Corpus Preservation。
+
+Q462为formalrootctl预注册独立authoritative primary、read-only byte-verified mirror、locator/capability、durability/hash-chain、replica verification与failure-domain manifest。Root Control与finfrajournal的primary/mirror不得共享已知单一failure domain，preflight机械验证物理隔离；逻辑分Journal不能替代。Root mirror只证明prefix、不可promote/append/merge/恢复write；primary无法恢复时走external witness。
+
+Q463建立`finfraactivation_ / FORMAL_INFRASTRUCTURE_AUTHORITY_ACTIVATED`，绑定确切authority event、kind、verified snapshot/head/count、Evidence、activation implementation、formalroot/rootctl及closed authority kind。每event最多一个activation；完全匹配恢复复用，Evidence成功但activation缺失时补交；冲突snapshot/head/provenance为Root Protocol integrity failure。即使payload相同也不得追加第二authority event。
+
+Q464为每个authority event的mirror publication/verification设置primary+one identical infrastructure retry并Evidence-first。只有SUCCESS Evidence可直接补activation；failure Evidence不能伪造activation。两次无可信snapshot不是corruption或primary unavailable，而是mirror-publication exhaustion，Root以FAILED_INFRASTRUCTURE_RECOVERY_EXHAUSTED收束，禁止无限PENDING、第三attempt或换locator/operator。
+
+Q465规定每finfrajournal最多一个active rootstorincident。Incident后冻结new writes、replacement/admission/seal、未activated authority消费及相关workflow，不得开第二incident。Historical activated authority不撤销但不能产生需要新Registry write的后继。只有RECOVERED解除freeze，且必须证明current primary head、全部mirror prefixes、activation records和authority event inventory一致且无conflict；TERMINAL直接Root fail-stop。
+
+Q466规定已commit Replacement Plan的独立semantic Validation FAIL立即触发FAILED_PROTOCOL_VALIDITY与Root shutdown。Old generation只保留trusted-prefix history；不得改Plan、创建修正版/第二Plan、replacement或退回使用损坏generation。仅Evidence前的validator infrastructure failure可用一次retry。
+
+Q467冻结Replacement authority顺序：Plan commit→Plan PASS→Generation Replacement(PENDING)→exact-prefix mirror→Activation→new generation genesis→terminalization/fresh runs。Activation前new generation不能写任何event。Replacement后crash只恢复同一mirror/activation，不重复replacement/ordinal；activation后genesis前crash创建原generation唯一genesis。
+
+Q468建立`agcpreflightrun_ / agcpreflightatt_ / agcpreflightevidence_`及STARTED、EVIDENCE_COMMITTED、COMMITTED(PASS|FAIL)。Lifecycle由finfrajournal/Registry Controller承载，待验证Controller不能写。STARTED/Evidence不是authority-changing；只有PASS授予epoch资格，必须经mirror publication/activation后才允许epoch ready/admitted。FAIL只保留失败事实并触发Root consequence，不授予capability。
+
+Q469规定每个Official Report Materialization STARTED恰一terminal为ARTIFACT_COMMITTED、MATERIALIZATION_ABANDONED或MATERIALIZATION_INFRASTRUCTURE_EXHAUSTED。Status/Impact变化使用ABANDON且不消耗retry。Storage/process允许primary+one identical retry；两次失败EXHAUSTED，同一Reporting Authority不能借新transaction ID重置预算，只有新Authority/status形成新eligibility。
+
+Q470建立纯content `officialreportcontent_`，只绑定canonical bytes、media type、length/SHA、format/schema及必要的template interpretation identity，排除run/source/authority/impact/execution/supersession。Authority层officialreportartifact绑定content、run/source manifest、Reporting Authority、Impact Set、materialization、status provenance、previous artifact及registration。相同content可物理dedup，但每个Authority必须独立完成execution/verification/commit，authority不可dedup。
+
+Q471规定Reporting Authority降级一commit，旧artifact立即因mismatch失去current资格；SUPERSEDED只是后续显式provenance。恢复先补SUPERSEDED，再materialize/commit新artifact，最后新Current projection。新artifact失败时系统允许无current report，旧artifact不得恢复，Report Status不得回滚。
+
+Q472建立`officialcurrentreport_ / OFFICIAL_CURRENT_REPORT_REFERENCED`，只绑定run、current Reporting Authority/status或Stopped authority、latest impact set、唯一current artifact及projection identity，不复制bytes。每Authority state最多一个projection；状态变化使旧projection仅留历史，新artifact未成功时可无current。REPORT_ONLY/incomplete标签必须原样保留，展示层不得升级。
+
+Q473建立`crossrootinputreg_`，未知class默认CROSS_ROOT_REUSE_FORBIDDEN。每allow class冻结root-independent identity、source manifest、cutoff、byte/hash verification、old-root/execution排除与adoption schema。所有reuse在新Root birth/bootstrap一次性确定并进入immutable input-adoption manifest；逐项重验bytes/SHA/source/cutoff/root independence。Birth后禁止临时追加“input-only”资产。
+
+Q474明确旧Root Corpus build的raw Reviewer responses不可复用。新Root必须重新执行625 requests并建立新logical request、dispatch/attempt、raw-response-first commit、validation、Full Review commit与audit。独立执行后可偶然得到相同pure content identity，但execution/event authority必须新生，禁止引用old response跳过model call。
+
+Q475把Root success拆为`COMPLETED_FORMAL_VALID | COMPLETED_REPORT_ONLY_INVALID`，并增加`FAILED_OFFICIAL_EXECUTION_INTEGRITY`。前者要求完整Official completion、latest FORMAL_AUDIT_VALID Authority、current artifact/projection、无pending impact、全部mandatory readiness PASS、全部workflow terminal、required Journals sealed/registered、合法Shutdown且incomplete empty。REPORT_ONLY completion仍须生命周期完整并拥有对应invalid report artifact/projection。Official STOPPED不得使用COMPLETED；Stopped authority仅作diagnostic。任何不允许的incomplete vector都进入Registry指定FAILED disposition。
+
+Q476将`finfraauthorityreg_`定义为Infrastructure Authority Transition Registry，覆盖grant、seal、replace与revoke。v1注册Registry initialized、Replacement Plan commit/PASS、generation admission/replacement/seal及AGC Preflight PASS，并冻结affected domain、activation prerequisite、capability delta、PENDING hold与next events。Authority event commit后立即进入`PENDING_MIRROR_ACTIVATION / TRANSITION_HOLD`：新authority不可消费，即将被收缩的旧authority也不能继续产生work，只允许mirror/activation与安全closure。Plan commit activation后才validation，PASS activation后才replacement，replacement activation后才new genesis。FAIL/attempt/Evidence/diagnostic不注册。
+
+Q477规定formalrootctl primary durable event即Root authority，不创建Root-Control activation。对Root-authority-changing events，event→exact prefix mirror→byte/head/count verification完成后，才允许下一个改变Root state的event；mirror失败停止新Root authority event并进入Q478，不向同Journal写mirror failure。普通diagnostic是否需mirror-before-next由预注册Root Control Event Registry决定。Root terminal是最后event，其mirror仅作post-terminal archive。
+
+Q478由Root birth/bootstrap绑定的外部Root Watchdog以固定identity、locators、verification与attempt policy执行Root Control三路径：initial primary、一次same-identity primary recovery、一次frozen mirror verify。Attempt/Evidence由external Watchdog/Witness authority记录，不伪造rootctl incident。只有primary重新read/write、chain完整、包含全部verified prefixes且与最后Root state无conflict才可继续；否则生成unavailable或integrity-untrusted rootfailwitness并fail-stop，禁止换watchdog/operator/locator重置额度。
+
+Q479规定Root Control storage topology/failure-domain manifest在同Root不可改变。Device、filesystem authority、primary locator、mirror topology、failure-domain classification、durability/capability topology变化均要求当前Root fail-stop和future new root，即使bytes可复制。仅相同identity内remount/service restart/reconnect并通过验证属于可恢复operation。
+
+Q480建立`reportmatrun_ / reportmatatt_ / reportmatout_`。Run绑定run/Reporting Authority/impact/source/template/materializer/birth kind；attempt绑定run、ordinal、immutable inputs与runtime provenance。每次execution先dispatch后生成closed output，READY需先durable exact bytes并验证SHA/length。Output已commit时禁止重跑，只继续validation/content/artifact；dispatch无output按Q469处理，只有output前infra failure消耗budget。Report content/artifact只从合法READY建立。
+
+Q481规定v1 Report Materializer deterministic、model-free、external-API-free。输入仅限canonical Official manifests、Reporting Authority/Impact Set、frozen template/schema、deterministic formatter/serializer及registered static metadata。禁止Reviewer/Evaluator/CoCo/任何LLM、API、search、网络或动态润色，也禁止timestamp/random/path/PID/unordered iteration。相同inputs逐bytes一致并通过preformal repeatability gate。
+
+Q482建立Report Artifact Storage Integrity lifecycle。Temporary unavailable先bounded recovery；只有确认missing、SHA/length/schema mismatch或locator conflict才提交`OFFICIAL_REPORT_ARTIFACT_STORAGE_INTEGRITY_FAILED`，旧artifact立即失去current。禁止重materialize冒充原execution。若Authority仍current/source完整，可用birth kind `STORAGE_INTEGRITY_REPLACEMENT`新run重建新artifact；每Authority最多一次replacement。Replacement再次损坏进入Reporting infrastructure/root failure；旧artifact不得恢复，系统可无current。
+
+Q483建立独立single-writer Official Reporting Controller/Journal，承载Completed/Stopped Authority、Status、report run/attempt/output、artifact、storage failure、supersession与Current projection。Evaluation workers只提供registered source artifacts，materializer workers只提供outputs，exporter只读Current；均不得写Journal。Journal identity/schema/controller冻结于formalroot且final head进入Shutdown Barrier。v1无Reporting Journal replacement；canonical integrity failure进入Root failure。
+
+Q484建立pure pre-birth `rootinputmanifest_`，绑定crossrootinputreg、ordered adopted inputs、content facts、source/cutoff、root-independence validation与bootstrap identity，排除formalroot/rootctl/Birth/execution。formalroot单向绑定manifest，Birth event同时绑定root、manifest与root control，由envelope建立adoption authority，避免identity cycle。
+
+Q485要求Cross-Root adoption/validation全部在Birth前完成：freeze set→逐项validation→唯一manifest→formalroot calculation→Birth。Semantic/hash/cutoff/root-independence failure使proposed Root不birth；infrastructure允许primary+one identical retry，两次失败bootstrap aborted且无Root authority。Birth后不可追加。
+
+Q486严格限制COMPLETED_REPORT_ONLY_INVALID。仍要求全部workflow合法terminal、Shutdown incomplete empty、无pending impact、latest Reporting terminal、report-only artifact/current projection及required Journal seal。可容纳Official STARTED后才发现且机械判定只降级report authority的pre-freeze authority invalidation，以及OFFICIAL_POST_FREEZE readiness FAIL/NOT_READY。不得容纳在Suite commit或Official authorize/start前已知的Corpus、selected Role、Embedding或required Compatibility readiness FAIL；这些必须阻止启动，不能事后report-only洗白。
+
+Q487规定FAILED_OFFICIAL_EXECUTION_INTEGRITY不等待diagnostic report。顺序为Official STOPPED、revoke dispatch、terminal/abandon work、条件允许则生成Stopped Authority/optional diagnostic，随后Root Shutdown并FAILED terminal。Diagnostic缺失仅记录audit/report incompleteness，FAILED Shutdown Barrier可带解释充分的closed incomplete entry；不得继续services等待报告。
+
+Q488规定FORMAL_ROOT_TERMINAL必须是formalrootctl最后authoritative event及整个Root formal-event freeze boundary。之后禁止Root、finfra、managed、Suite、Role/Corpus/Embedding、Compatibility、Official、Reporting events或新artifact authority。所有Journals在terminal前seal/close或登记可信head/incomplete。Terminal后只允许mirror/cold archive、external publication of already-authorized artifacts及audit，不产生formal authority。Terminal mirror成功后才可声明完整Root history archived；失败不重开或改terminal，只标记archive incomplete。
+
+Q489将Cross-Root input拆为`PRE_FREEZE_VISIBLE_INPUT | SEALED_PROTECTED_OFFICIAL_INPUT`。Visible inputs在Birth前逐bytes/hash/source/cutoff验证；C、Human/OpenReview与CoCo protected assets只在rootinputmanifest绑定sealed descriptor，包括class、manifest/root hash、count/type、locator/capability、access policy、snapshot/version、FORBIDDEN_BEFORE_OFFICIAL_AUTHORIZATION及verification schema，不读raw bytes。Authorization后、STARTED前建立`officialprotectedinput_ / OFFICIAL_PROTECTED_INPUT_PREFLIGHT_COMMITTED(PASS|FAIL)`，绑定root/descriptor、实际bytes验证、observed facts、scope及validator；只有PASS可STARTED，禁止切snapshot/locator/version。
+
+Q490建立`rootctleventreg_`，为每formalrootctl event冻结AUTHORITY_CHANGING、DIAGNOSTIC_NON_AUTHORITY或TERMINAL class、predecessor/successor、mirror-before-next、state/capability、Shutdown/crash补交、Evidence及terminal compatibility。运行时不可临时分类。FORMAL_ROOT_TERMINAL是唯一TERMINAL且无successor；Registry进入formalroot/Protocol identity。
+
+Q491建立external `rootctlmirror_ / rootctlmirrorverify_`，由Root Watchdog在独立audit storage生成，不写rootctl。Snapshot绑定rootctl、exact prefix、count/head、locator及schema；verification绑定snapshot、expected/observed facts、result与watchdog。它们只证明prefix。对Registry要求mirror-before-next的event，下一authority event前必须机械证明前一event有SUCCESS verification。
+
+Q492建立由formalrootctl承载的`finframirroratt_ / finframirrorevidence_`及Attempt Started→snapshot→Evidence→Activation/exhaustion。Evidence不复制完整prefix，只自足保存authority event、expected count/head/digest、snapshot、observed facts、locator、ordinal、implementation与SUCCESS/FAIL，避免O(n²)。SUCCESS后不重复制，crash只补activation。
+
+Q493建立`officialreportjournal_`，绑定formalroot、primary/read-only mirror、schema、serializer/hash-chain、Controller及durability/recovery。v1无replacement。Primary异常使用initial、same-identity recovery、mirror verify三路径；mirror不续写。Current writable primary不可恢复时Root为FAILED_REPORTING_INFRASTRUCTURE；canonical conflict为FAILED_REPORTING_JOURNAL_INTEGRITY；Protocol/schema/state-machine非法仍为FAILED_PROTOCOL_VALIDITY。新dispositions进入Root/Shutdown registries。
+
+Q494允许Report Artifact verified mirror作为read-only delivery source，只要registration合法且bytes/length/SHA/media/schema与report content完全一致。它不改变artifact、locator authority、Reporting Journal或Current projection；delivery记录mirror provenance。任一registered replica可提供合法bytes时不得宣称integrity failure；全部路径失败或确认mismatch后才进入Q482。
+
+Q495规定READY reportmatout以RFC4648 padded Base64 self-contained exact report bytes、media type、length、SHA、disposition、materializer与format identity。禁止变体Base64、compression或external fragments。Preformal冻结max report/event size及atomic write、strict decode/hash recovery gate；commit后content/artifact只从output构造。超限必须formal前改schema，runtime不externalize/split。
+
+Q496建立`reportinghold_`及HOLD_COMMITTED/RELEASED，保持Reporting Controller唯一writer。Integrity monitor先向其提交immutable hold request，Reporting Controller commit HOLD后才允许classification、Impact successor、Status degradation；完成supersession/state update并确认无pending delta后RELEASE。HOLD期间禁止artifact/current/publication commit，worker可ABANDON。每run最多一个active hold，new triggers合并pending set，全部消费后才release。
+
+Q497建立`officialpubrun_`及PUBLICATION_EXPORT_STARTED/COMMITTED/ABANDONED。Started冻结Current projection、artifact、Authority、Status、Impact head、content、schema、destination class与exporter；Commit前重验current、authority/impact不变、无HOLD且bytes合法。变化即ABANDON，temporary bytes无public authority。Publication kind为FORMAL_MAIN_RESULT或DIAGNOSTIC_REPORT_ONLY；仅FORMAL_AUDIT_VALID可main，REPORT_ONLY/Stopped只diagnostic。Root terminal后不能新建transaction，只能external deliver此前已COMMITTED artifact。
+
+Q498建立`rootshutdownreg_`，为每open/incomplete class冻结expected terminal、ABANDON、允许Root dispositions、Evidence、canonical incomplete、completed-empty要求、dependency与ordering。两个COMPLETED都要求empty；FAILED可带Registry允许且有closed Evidence的non-empty entries。Unknown/free-text/无法解释对象使Barrier非法。
+
+Q499建立external non-formal `rootarchive_`，closed status为ARCHIVE_VERIFIED_COMPLETE或ARCHIVE_INCOMPLETE，绑定formalroot、Root terminal或witness、final root mirror verification、Journal heads、cold archive、authorized artifacts、verifier与schema。它不进入formal Journals、不改Root或恢复authority。只有VERIFIED可声明完整归档；失败只影响archive/compliance。
+
+Q500增加FAILED_PROTECTED_OFFICIAL_INPUT_PREFLIGHT。Preflight在AUTHORIZED后STARTED前针对Birth冻结descriptor；infrastructure允许primary+one identical retry，exhaustion或manifest/count/bytes/scope/locator mismatch均以closed subreason进入该Root failure。FAIL后禁止STARTED，停止READY services，不换C/Human/locator、不re-seal、不回Evolution，随后Root Shutdown/terminal。rootctl不可写时走external witness。
+
+Q501建立`opiprun_ / opipatt_ / opipevidence_`及Protected Input STARTED→read/verify→EVIDENCE→PASS/FAIL。Run绑定root、Birth descriptor、AUTHORIZED、validator、policy/capability；每run primary+one identical retry。Evidence self-contained保存expected/observed manifest root、count/type/scope、locator/capability比较、closed codes及validator，禁止protected bytes、摘要、diff或free-text。Evidence后只补terminal，不重读。
+
+Q502为Protected Validator冻结least-privilege capability，限制locator/root、read operation、scope、machine、lifecycle与no-write。禁止写Evolution/Memory/Role/Candidate/Suite、普通日志或非protected storage，禁止泄漏raw/semantic/summary/diff。Canonical Evidence只暴露hash/count/type/scope/codes；raw audit留在protected domain。Terminal后revoke。PASS不授权Evolution/Reviewer，protected bytes仅供合法Official components。
+
+Q503建立`officialinputdelivery_ / OFFICIAL_PROTECTED_INPUT_DELIVERY_COMMITTED`，在Preflight PASS后STARTED前绑定ordered asset identities及content facts、protected root、recipient components/subsets、framing、capabilities、Split/Classify/Human用途与policy。STARTED引用唯一manifest/event。Runtime不能发现foreign assets、换snapshot/version/locator或扩scope。Manifest定义允许delivery，实际reads必须由protected access audit证明asset/recipient/purpose合法，不能以manifest替代read facts。
+
+Q504建立`officialreporteventreg_ / officialreportmirror_ / officialreportmirrorverify_`。Registry冻结Reporting events的authority/diagnostic/terminal class、predecessor/successor、mirror-before-next、capability/current变化和recovery；Authority events至少含Reporting Authority/Status/Hold/artifact/integrity failure/supersession/Current/publication commit。Primary commit即authority，不再自我activation；要求mirror-before-next时必须external SUCCESS后才可下一authority event。Mirror不续写，失败按Q493。
+
+Q505建立`reportctrlreq_` durable single-writer ingress sequence。Hold Request、artifact/current/publication commit intent与release intent都先获唯一ordinal，Reporting Controller严格按序处理。`reportingholdreq_`较早则必须先commit HOLD，后续intents受Hold阻断。Integrity Controller只有收到durable HOLD identity/event后才可提交classification/Impact。竞态由序号而非arrival/thread决定。
+
+Q506建立`reportingholdpending_` append-only ordered pending snapshots。Initial Hold绑定首trigger；active期间新Hold Request按ingress sequence产生新snapshot。Release绑定terminal snapshot并证明每trigger已classified、进入latest impact、被Status/Authority消费且完成supersession/current处理。Release commit前应纳入的request阻止release；release后新trigger开启新Hold，不追溯旧release。最多一个active Hold，无nested。
+
+Q507建立`reportreplacement_ / OFFICIAL_REPORT_STORAGE_REPLACEMENT_AUTHORIZED`，绑定confirmed integrity failure、original artifact、current Authority、source/template、policy、唯一allowance及Controller。每Authority最多一个authorization；只有其后可birth STORAGE_INTEGRITY_REPLACEMENT run。Run再失败无replacement-2。Authority变化使unused authorization失去资格，不能跨Authority复用。
+
+Q508建立private `officialpubcand_`→atomic promotion。Started冻结Current/Authority/Impact/class/destination；candidate只在protected private storage durable保存bytes及facts，禁止public/shared/network。Commit前重验Current、Authority、Impact、无Hold及source bytes；PASS原子promotion并commit。变化则ABANDON且candidate隔离。Promotion exactly-once；candidate已durable时恢复不重新格式化。
+
+Q509建立纯content `officialpubcontent_`，只绑定publication bytes、media、length/SHA、format；建立authority `officialpubartifact_`，绑定content、pubrun、Current、source report artifact、Authority、Impact、class、destination policy、candidate/promotion和registration。相同bytes可content dedup，不同Authority必须独立artifact authority。
+
+Q510要求COMPLETED_FORMAL_VALID至少有Root terminal前commit的FORMAL_MAIN_RESULT pubartifact，绑定latest VALID Current/Authority/Impact与合法transaction；COMPLETED_REPORT_ONLY_INVALID至少有明确DIAGNOSTIC_REPORT_ONLY artifact并绑定对应invalid Authority。Shutdown Barrier绑定required publication与terminal transaction。只有Current Report不足以COMPLETED；publication exhaustion进入FAILED disposition。FAILED_OFFICIAL_EXECUTION_INTEGRITY仍不强制diagnostic publication。
+
+Q511建立external `rootarchiveatt_`，同一Root terminal/inventory最多primary+one identical retry。首次失败可产生永久INCOMPLETE；第二次成功产生新VERIFIED并引用prior INCOMPLETE/attempt，而非改旧status。两次失败最终INCOMPLETE，禁止第三attempt或换locator/verifier。全程post-terminal non-formal。
+
+Q512建立external non-formal `externaldelivery_`，只记录terminal前已授权publication或允许直接delivery的report artifact，绑定source、Root/archive、content SHA、verified replica、destination class、operation与verifier/audit。Operational time可作external provenance但不进入Formal identity。禁止新selection/format/summary/status/authority、candidate合法化或Journal修改。
+
+Q513建立纯semantic `protocolroot_`，绑定全部registries、schemas、serializers、identity domains、state machines、dependency/capability graph及validation algorithm，排除runtime/root/Journal/results。另建`protocolrootval_ / PROTOCOL_ROOT_VALIDATED(PASS|FAIL)`检查唯一writer、terminal closure、refs、domain separation、无未解释cycle、mirror/activation无递归、capability/state/dependency完整、failure successors、protected timing及Root/Reporting terminal可达互斥。只有唯一PASS可bootstrap；formalroot同时绑定protocolroot与PASS authority。任何semantic asset变化产生新root+revalidation，v1不跨Protocol Root保存formal results。
+
+Q514建立CORE_V1 `protocolvalrun_ / protocolvalatt_ / protocolvalevidence_`及STARTED→deterministic validation→EVIDENCE→PASS/FAIL。每protocolroot最多primary+one identical infrastructure retry；semantic FAIL不retry。Evidence self-contained保存cross-registry checks与closed failures，commit后不重跑/重枚举，只补terminal。两次infra failure使proposed Root bootstrap失败。
+
+Q515建立pre-birth one-shot `protocolbootstrap_`承载validation run/attempt/Evidence/唯一terminal。它不依赖Root Journal、不承载research workflow、不replacement、不在PASS后继续validation且不能择优多个envelopes。只有唯一PASS可构造formalroot；formalroot绑定protocolroot、exact bootstrap及PASS authority，缺失/冲突/多PASS禁止Birth。
+
+Q516冻结protocolroot entry为closed category、logical key、schema/version、content identity与ordered dependency vector；category顺序由schema固定，同类按logical key canonical bytes排序。禁止filesystem/JSON input/registration/hash-map顺序。Duplicate/unknown/key conflict/missing dependency/cycle/illegal cross-category dependency使construction FAIL，禁止last-write-wins。
+
+Q517规定CORE_V1 Protocol validation只读registries、schemas、serializers、state machines、dependency graph及synthetic/unit/property fixtures，禁止A/B/C semantic content、Corpus、Candidate/fitness/winner/trajectory、Human/CoCo/Official及historical semantic diff/score。Historical infrastructure categories只可启发预先设计的generic synthetic tests，不允许result-dependent adaptation。
+
+Q518建立CORE_V1 `officialprotectedaccessjournal_ / protectedread_`。每read先有authorization/capability，后恰一COMPLETED/FAILED/STATE_UNRESOLVED；identity绑定Delivery Manifest、asset、recipient、operation、purpose、capability与occurrence，不含semantic bytes。普通Journal只存authority/provenance/closed result，raw audit留protected domain。
+
+Q519严格区分OFFICIAL_PROTECTED_ACCESS_VIOLATION与STATE_UNRESOLVED；前者是manifest/recipient/purpose/locator/capability越权，后者是合法authorization后无法确认状态。CORE_V1二者均hard-stop新Official dispatch、关闭capability、进入execution-integrity failure并禁止formal-valid result，不做result-dependent影响判断。
+
+Q520允许service restart在semantic/execution-contract identities完全一致时复用Delivery Manifest，但新process有新Execution Instance与capability并重做recipient-binding preflight。Model/component/recipient、protected locator/scope/framing/version或Protocol变化使Manifest失效；当前Root不能提交修正版，进入Protected Input/Protocol failure。
+
+Q521–Q525的Reporting ingress terminal、Reporting Journal seal/mirror、Publication attempt/output、candidate promotion crash boundary与publication replica完整目标语义保留，但标记为HARDENING_V2。CORE_V1只实现deterministic single-writer report/result artifact与异常fail-stop，不要求复杂in-place recovery、formal publication transaction、multi-replica durability。Q475/Q510的Formal Publication Artifact硬条件只适用于HARDENING_V2；CORE_V1成功至少要求immutable Official result manifest及deterministic report/result artifact合法commit。
+
+Q526正式选择双实施Profile。`CORE_V1_BLOCKING`覆盖所有会改变数据边界、Reviewer/Candidate/Memory、fitness/search/winner、Final Suite、protected Official inputs或Official evaluation semantics的规则，以及Protocol Root、最小decision lineage Journal、normal-path Evidence与fail-stop。`HARDENING_V2`覆盖mirrors/activation、generation salvage、complex in-place recovery、re-seal availability、Reporting ingress/HA、publication/archive/external delivery等durability/availability。此前条款不删除；v1复杂故障统一`fail-stop current Formal Root`。V2不得改变research-observable semantics，否则必须成为新Protocol Semantic Identity。
+
+Q527按Profile分别冻结性能预算。CORE_V1 preformal测量Journal overhead、625 Corpus、Projection/Embedding/Index、Reviewer/Evaluator、Evolution、Official、total wall-clock/storage及fail-stop detection，并保留non-formal minimal-instrumentation baseline作工程比较。先测量再冻结wall-clock/storage/capacity/timeout budgets，不预设10%阈值；超限只优化I/O batching、serializer、Journal、cache、scheduler与并发，不弱化Core。V2另测mirror/fsync/recovery/Reporting/Publication/archive/replay且不阻塞首次Core。实施顺序为Core Protocol Root→synthetic gates→smoke→performance freeze→formal→V2。
+
+Compatibility证明闭集为：相同冻结输入下旧/新确定性组件逐bytes/decision比较；完整model request/messages/rendered prompt/config比较，且仅在request相同后共用同一authoritative raw response做下游replay；冻结Journal/RNG/input events上的scheduler/controller/state-machine纯simulation。Request不同即不兼容，不能用共同旧response掩盖。无法在不调用生成模型、外部API或C/Human/OpenReview/Official资产下证明的observable不得由certificate覆盖，必须统一重跑。
+
+`qemb_`本身只表示由memqry、Embedding Identity与canonical vector bytes构成的内容身份，不绑定paper、Candidate、role或Program。不同paper的独立合法execution chains可以commit相同qemb值，但一个paper不得以该内容ID或其他paper的commit代替自己的request/raw-response execution proof。Controller恢复与cache validator必须同时校验qemb内容identity和当前paper-local source chain，不能以ID相同推定合法复用。
+
+Recovery以batch-raw-first/item-projection chain为唯一权威：在没有越过infrastructure failure cutoff的前提下，batch raw response已commit但item response/validation/batch-results缺失时，必须复用immutable batch response完成确定性拆分与后续事务，不重新调用Embedding service。Batch dispatch已commit而raw response未commit时，旧batch attempt永久关闭；其中尚未terminal的logical requests保持原role FIFO位置，由恢复scheduler重新assembly，不要求相同ordered companions、tensor positions或padding。`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`已提交时，其整批qemb正式有效；对应role-local terminal projections可由该event重建。Cache复用仍只能发生在同一`Candidate × paper × role × Program`且paper尚未terminal的scope内。
+
+Paper terminal event是cache关闭的唯一authoritative boundary。进入terminal流程后controller首先禁止新Query Embedding intent。正常paper必须等待其全部已提交Embedding transactions进入合法terminal state，且无仍可生成可用qemb的in-flight transaction，才可提交terminal event。Candidate failure、role failure或其他冻结终止条件先关闭paper时，全部未terminal transactions提交`QUERY_EMBEDDING_ABANDONED`；abandoned transaction及其late response永久不得生成qemb、重新激活cache、修改ledger/budget或影响正式结果。Terminal后既有qemb/raw response/provenance只作audit；下一paper即使`memqry_`相同也必须重新执行Embedding事务并产生新的paper-local execution provenance。
+
+Embedding service返回结果后、Memory API response/budget transition提交前，controller必须基于已提交raw response验证`observed_query_sha256`等于committed canonical query SHA。Mismatch时durable记录`EMBEDDING_QUERY_IDENTITY_MISMATCH`，暂停全部依赖该共享Embedding service的受影响role；该故障不消耗Candidate/global attempt、Memory API call或delivery budget。清理服务后只允许以完全相同Embedding Runtime Identity重启并通过query-identity preflight，再从原immutable call intent/pre-budget state重放相同canonical query。其他identity匹配、已经durable commit且paper cache capability仍开放的records可复用。无法恢复相同identity时受影响role按infrastructure validity规则fail-fast，不得改判Candidate failure。
+
+## 7. Program Dependency Closure
+
+Formal Program只能访问显式声明的behavior dependency closure。以下behavior-relevant assets必须存在于Program/dependency manifests并在preflight验证：
+
+- local imports与exact code assets；
+- prompts、schemas、registries与MemoryProgram assets；
+- toolkits、API clients与allowed capability manifests；
+- dependency lock及实际安装artifact identity；
+- Reviewer behavior-relevant model/config identities。
+
+禁止未声明dynamic import、任意文件读取、行为相关环境变量输入与未授权网络访问。Python/runtime环境属于Controller Runtime Identity，但Program identity绑定冻结dependency-lock SHA。Runtime检测到加载未声明behavior asset时，产生Candidate-originated protocol failure；不得运行后补manifest、改变identity或将其归为低fitness。
+
+CUDA、driver、GPU、max-num-seqs等纯执行环境仍属于runtime/execution identity，不因dependency closure进入Program identity。
+
+## 8. Parallel Paper Evaluation and Aggregate Commit
+
+每个paper evaluation独立生成immutable canonical record，并绑定Candidate、paper、role、stage、Evaluator Identity与全部相关protocol identities。Workers可按冻结capacity并行运行，但controller必须：
+
+1. 等待并验证完整冻结paper set；
+2. 按冻结paper order组装canonical record vector；
+3. 验证applicability/exclusion set、denominator与identity一致性；
+4. 一次性提交 `STATIC_EVALUATION_COMMITTED` 或 `FULL_POOL_EVALUATION_COMMITTED`。
+
+Worker完成顺序不得影响aggregate。Infrastructure resume可以复用identity完全匹配且已经durable commit的单篇canonical records；partial/inflight records必须重跑。Candidate-originated failure终止该Candidate流程，已经完成的paper records只保留审计，不得形成partial fitness、partial admission或partial winner decision。
+
+上述Candidate-originated failure后继续下一global attempt只适用于普通search-stage child。Mandatory initial seed failure触发initialization fail-fast；global top-3 finalist在full-pool reevaluation发生Candidate-originated failure触发winner-selection fail-fast且不得递补。Role-level failure后停止派发并取消未开始任务；in-flight请求可以结束并保存raw audit，但不得再提交canonical或aggregate decisions。
+
+## 9. Attempt Terminal Disposition and Failure Ownership
+
+每个attempt只能有以下一种terminal outcome语义：
+
+- Reflector最终失败：消耗attempt，无Candidate birth；
+- compile/fix最终失败：消耗attempt，无Candidate birth；
+- duplicate Program：消耗attempt，有immutable Candidate birth/provenance，不进入pool；
+- Candidate code/runtime或Evidence API protocol violation：消耗attempt，不得admission；
+- 合法完成static canonical evaluation：Candidate必须admission，即使fitness为 `0.000000000000`。
+
+以下是role-level validity failure，立即fail-fast，不得降级为Candidate failure后继续：
+
+- Evaluator两次均非法；
+- `APPLICABILITY_INCONSISTENCY`；
+- Evaluator Identity mismatch；
+- journal/controller identity或formal validity contract failure。
+
+若role-level validity failure发生在 `ATTEMPT_COMMITTED` 之后且active attempt尚无terminal disposition，必须先提交 `ATTEMPT_ABORTED_ROLE_FAILURE`，再提交 `ROLE_FORMAL_FAILED`。该aborted disposition不计入20个正常consumed evolution slots。若failure发生在任何attempt开始前，只提交 `ROLE_FORMAL_FAILED`。任何attempt仍必须恰有一个terminal disposition。
+
+Reviewer/Evaluator backend、Evidence Pool、controller/orchestrator等infrastructure failure停止并恢复同一attempt slot，不消耗attempt。无法可靠归因时按infrastructure failure保守停止。
+
+## 10. Required Gates
+
+Formal前至少验证：
+
+- domain separation、显式null、完整hash与Candidate ordering vectors；
+- journal append、hash-chain、unknown event、chain break与double-terminal rejection；
+- 每个durable-commit步骤前后的crash/restart matrix；
+- parent selection commit前后RNG replay；
+- observable final-event recovery与directory-fsync边界crash vectors；
+- journal-to-checkpoint、journal-to-pool与admission-order deterministic rebuild；
+- per-role single-writer isolation、worker completion permutation与fixed-order aggregate vectors；
+- paper-local Memory API transaction chain、response-to-ledger recovery、visibility barrier与no-double-delivery/no-double-charge；
+- Query Embedding dispatch/raw-response/item projection/VALIDATED/BATCH_RESULTS/role-terminal事件链、response-first recovery、invalid-response no-qemb及Memory-budget-before boundary；
+- batch-attempt/item-attempt hierarchy、ordered tensor slice projection、batch raw-response authority与timeout item fan-out；
+- all-or-none batch validation、VALIDATED/self-contained-results双barrier、embedded records/vector bytes、atomic ordered qemb vector、role workflow visibility与orphan non-promotion；
+- RFC4648 padded Base64/no-compression、real tensor ordering、padding exclusion与strict vector decode validation；
+- `qembbatch_` tensor-position/qemb/canonical-record-only projection、execution-binding exclusion、JOURNAL commit separation与continuous-chain-only authorization；
+- same-qembbatch independent event/execution chain、exact-event terminal projection、formal-dedup denial与physical-storage-only dedup；
+- prior-identical event-field denial、current-event prefix cutoff、delayed/rebuilt `dedupobs_` stable identity、observation non-journal/non-authority/conflict-neutrality与recovery independence；
+- one-batch/one-unsplittable-event、max bytes/test manifest、durable/crash gate及measured commit-latency threshold；
+- primary+one-retry materialization transactions、failure global cutoff/recovered barrier、post-cutoff denial、I/O-versus-canonical-error ownership、new-identity protocol repair与committed-invalid-event chain rejection；
+- `matatt_` canonical identity、retry-parent binding、closed one-terminal enum、Results event唯一originating matatt/execution/output bindings、RUNNING/unconsumed-output preconditions、success-after-results-chain requirement与actual-dispatch/epoch preservation；
+- committed-event/missing-success projection、singleton cutoff pairing、`matexec_` fields/ordinal 0-1、DISPATCHED→OUTPUT-or-ABANDONED、`matout_` closed outcomes、target-storage/control-plane split、committed-output reuse、late-output denial、execution exhaustion owning-role failure与replacement preflight；
+- Query Embedding logical/transport-attempt identity、committed global epoch/first-dispatch initial epoch、actual-dispatch/no-fault-exemption accounting、单一request recovery epoch/最多四次invocation、late-response arbitration与third-epoch role failure；
+- one-memqocc/one-request cardinality、cache-hit terminal resolution、no-transport path与budget/audit continuity；
+- role-local logical sequence、durable enqueue/no-enqueue cache path、retry original FIFO position、recovery reassembly/no old-batch constraint与old/new batch linkage；
+- logical request closed terminal set、exactly-one terminal invariant与infrastructure-pause nonterminal recovery；
+- shared Embedding failure global pause、failure-event response cutoff与same-Runtime recovery preflight；
+- deterministic padding identity/manifest validation、validation-only output与formal-domain isolation；
+- 独立single-writer Embedding Scheduler Journal、唯一failure cutoff、role-journal SHA reference与跨role search-order denial；
+- `EMBEDDING_SERVICE_EPOCH_COMMITTED` initial/restart lifecycle、preflight binding与dispatch-before-epoch denial；
+- epoch ordinal durable-only/no-gap recovery、controller-only crash reuse、service-restart forced increment与non-authoritative-state denial；
+- cross-role projection independence、pause/recovery projection gating及owning-role-only third-epoch failure/new-role-run suite barrier；
+- role-local projection deterministic/idempotent identity、conflict fail-fast、old-role-run seal/scheduler drain及new-run current-epoch admission preconditions；
+- `ROLE_RUN_SCHEDULER_ADMITTED` authoritative event、cursor/no-reset、next-turn/no-preemption及run-keyed sequence；
+- next-role-index mapping、temporary scan/no mutation、last-real-item dispatch update、post-dispatch failure no-rollback、padding/cache exclusion与restart reconstruction；
+- role/suite catalog exact boundary/reverse binding、fixed-role-vector composition、compatplan/compitem non-cyclic identity、authorized transitive dependency closure/topological order、pre-diff frozen observables/rules、no-model proof-method闭集与Protocol-affecting five-role rerun；
+- Compatibility normal COMPLETED versus fatal ABORTED lifecycle、closed item/fatal registries、`compatatt_`/self-sufficient Evidence transaction、primary+one retry、semantic mismatch no-early-stop、complete ordered vector、capability/access audit、semantic-exposure abort/permanent closure、pre-decision hiding与COMPLETED-to-decision recovery；
+- cutoff前atomic batch-results commit有效条件，以及raw/item/full-validation/pre-commit materialization在cutoff后整批无效；
+- 全部合法real-item occupancy、padding count/position及cold/warm条件下真实query vector byte equality；padding output仅要求cardinality/mapping/dtype/dimension/finite并确定性丢弃；
+- qemb content identity versus paper-local execution proof、same-ID independent commits与cross-paper inference denial；
+- paper terminal/role failure cache closure、audit-only retention与cross-paper forced re-execution；
+- normal paper transaction-drain barrier、failure-path `QUERY_EMBEDDING_ABANDONED`与post-close immutability；
+- partial/inflight paper rejection和committed paper reuse vectors；
+- declared/undeclared import、file、environment与network capability gates；
+- 全部Candidate/infrastructure/role-level failure ownership vectors；
+- zero-fitness valid admission与duplicate-born non-admission vectors。
+
+任一gate未通过，禁止启动formal Evolution。

@@ -1,0 +1,764 @@
+# Formal Memory Seed and Read-Mode Protocol
+
+状态：frozen through Q527（2026-08-30）。本文冻结三个initial seed、Memory read modes、paper isolation、Review Memory budgets/ledger/context及Query Embedding的完整目标语义。首次formal必须实现的CORE_V1范围与后续HARDENING_V2恢复/HA范围见 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md`。旧seed code和旧run只作historical provenance，不得进入新formal authority。
+
+## 1. New Formal Seed Versions
+
+三个canonical seed key仅用于固定birth ordering与historical provenance：
+
+```text
+vector_search → llm_summarizer → experience_learner
+```
+
+新formal必须发布新的code/assets/Program manifests并生成全新Program identities：
+
+### 1.1 Vector Search v2
+
+- 使用model-free deterministic query construction；
+- 调用统一Review Memory API执行exact-flat retrieval；
+- 直接向Reviewer交付合法retrieved fragments，或按确定性Program策略hydrate并交付Full Review Records；
+- 不执行LLM query、rerank、filter、summary或semantic post-processing。
+
+### 1.2 LLM Summarizer v2
+
+- 使用与其他Program完全相同的deterministic Review Memory API与budget；
+- retrieval/hydration结束后先durable commit `RetrievalResultManifest`；
+- 每个`Candidate × paper × role`最多执行一次注册的post-retrieval query-focused summary/condensation；
+- Summary只能消费manifest绑定的delivered Memory，不得改变retrieval集合、顺序、similarity、filter或top-k。
+
+### 1.3 Experience Learner v2 / Structured Experience Recall
+
+- 删除旧`KnowledgeItem.lesson_learned/fact_to_remember`及其生成式write-time extraction；
+- 只处理已合法召回的sections/fragments；
+- 按subdimension、source Full Review Record与anchor metadata进行确定性分组和结构化呈现；
+- 原始review文本保持逐bytes不改写，不生成lesson/fact，不调用LLM；
+- 不创建Candidate-private corpus、projection、index或跨paper learned state。
+
+旧`Vector Search / LLM Summarizer / Experience Learner` Program identity、fitness、checkpoint、Memory snapshot或seed artifact不得与v2 formal混用。新旧结果只能分别报告。
+
+## 2. Closed Program-Level Read Mode
+
+每个Program manifest必须显式包含且只包含一个：
+
+```text
+memory_read_mode ∈ {
+  DIRECT_RETRIEVAL,
+  POST_RETRIEVAL_LLM_SUMMARY,
+  STRUCTURED_EXPERIENCE_RECALL
+}
+```
+
+`memory_read_mode`属于Program behavior identity，不属于lineage identity。所有Candidate共享同一个closed allowed-mode registry；controller根据已提交Program manifest机械授予最小capability：
+
+- `DIRECT_RETRIEVAL`：Review Memory API only；
+- `POST_RETRIEVAL_LLM_SUMMARY`：Review Memory API加受限post-retrieval Summarizer scheduler capability；
+- `STRUCTURED_EXPERIENCE_RECALL`：Review Memory API加确定性grouping/formatting toolkit，不含LLM。
+
+Sandbox不得再向全部MemoryProgram暴露通用`llm_completion()`。只有`POST_RETRIEVAL_LLM_SUMMARY`可以提交冻结Summary request；该capability不能用于query construction、search、filter、top-k、hydration decision或rerank。
+
+Reflector可以产生改变mode的child，但mode变化必须出现在child Program manifest中，产生新的`program_identity_sha256`，并重新通过capability、dependency、compile、runtime、paper-isolation与mixed-capacity gates。Candidate不能在runtime自改mode、请求额外capability或从parent session继承未声明权限。
+
+## 3. Strict Paper Isolation
+
+每个`Candidate × paper × role`必须从相同immutable Corpus/Projection/Index和fresh Review Memory/Summarizer session开始。以下均为paper-local state，paper结束后丢弃：
+
+- query与query cache；
+- Memory API budget counters；
+- append-only `RetrievedMemoryLedger`；
+- `RetrievalResultManifest`；
+- hydrated context与delivery framing；
+- Summary request/result；
+- 其他retrieval/summary/runtime derived state。
+
+唯一允许跨paper长期存在的是冻结Corpus、Projection、Index、其immutable embedding assets，以及Program code/identity。B paper不得写回或修改Review Memory；static、rotating与full-pool evaluation都使用同一隔离规则。Resume只能复用当前paper identity完全匹配且已durable commit的paper-local artifacts，不能把它们迁移到另一paper。
+
+## 4. Atomic Review Memory Budget
+
+每个`Candidate × paper × role`共享冻结的：
+
+- `max_memory_api_calls`；
+- `max_delivered_fragments`；
+- `max_full_record_hydrations`；
+- `max_delivered_tokens`；
+- `max_top_k`。
+- `max_memory_query_tokens_per_call`。
+
+全部Programs使用相同`max_memory_query_tokens_per_call`。Program query必须通过byte-preserving UTF-8 validation only：输入必须是合法、非空UTF-8；不得执行Unicode normalization、line-ending normalization、whitespace trimming、case folding、summary、paraphrase、semantic normalization或任何其他rewriting。通过validation的exact UTF-8 bytes定义唯一`canonical_query_bytes`；合法输入的Program raw query bytes与canonical bytes必须逐bytes相同。Validation失败是Candidate invalid request，不执行Embedding/index search或delivery。
+
+每个`vector_search` query在API执行、Embedding或index access前使用冻结Qwen3-Embedding-8B tokenizer计数；超过`max_memory_query_tokens_per_call`同样是Candidate invalid request，并按Q202 invalid-request budget transition与failure ownership处理。同一`canonical_query_bytes`还必须使用冻结Summarizer Qwen tokenizer独立计算token IDs/count，供`max_summarizer_query_tokens_total`与Summary input gate使用。Audit同时保存Program raw bytes、canonical bytes/SHA、两套token IDs/count及各自tokenizer identity；禁止用一套token count替代另一套。Embedding tokenizer identity进入Review Memory API Identity，Summarizer tokenizer identity进入Summarizer Protocol/Runtime Identity。
+
+完全相同的`canonical_query_bytes`必须发送给Embedding service，并在eligible时逐bytes写入SummarizerVisibleInputProjection。禁止检索时发送短版而Summary使用扩展版，也禁止Summary侧重新生成、补充或改写query。
+
+`canonical_query_bytes`表示Program逻辑query string经strict UTF-8 encoding得到的内容bytes，不表示HTTP/JSON wire representation。JSON escaping、object field order、transport serializer与wire bytes只作execution provenance，不进入query content identity。Embedding service在JSON decode后必须对实际收到的query string重新strict UTF-8 encode，并返回或记录`observed_query_sha256`。Memory API只有在该SHA与已durable commit的canonical query SHA完全相等时才可接受embedding/vector result；不等或缺失属于infrastructure/protocol failure，不得生成Candidate-visible response、budget transition或delivery。Summarizer直接读取已提交canonical bytes，禁止从HTTP log、provider request或transport payload重建。
+
+Query使用两层domain-separated identity：
+
+- `memory_query_id = "memqry_" + full lowercase SHA256(canonical identity object)`，identity只绑定query identity schema/version、`canonical_query_bytes`及其UTF-8 byte length；完全相同bytes确定性共享同一content identity；
+- `memory_query_occurrence_id = "memqocc_" + full lowercase SHA256(canonical identity object)`，绑定对应`memqry_`、原Memory API call identity、Candidate/paper/role/Program identities及committed call ordinal；相同query的独立calls具有不同occurrence identities。
+
+Authoritative Memory API、RetrievalResultManifest与CanonicalSummarizerInputRecord同时保存两层identity，用于重复调用、budget与recovery audit。Reviewer/Summarizer visible projection只显示冻结ordinal与canonical query bytes，不得暴露`memqry_`、`memqocc_`或call/request identity。
+
+每次canonical query embedding形成immutable `QueryEmbeddingRecord`：
+
+```text
+query_embedding_id = "qemb_" + full lowercase SHA256(domain-separated canonical identity object)
+```
+
+Identity绑定对应`memqry_`、Embedding Semantic/Runtime Identity、tokenizer、pooling、normalization、dtype、dimension、canonical little-endian IEEE-754 float32 vector bytes/SHA、`observed_query_sha256`、record schema及serializer version。`qemb_`是canonical vector内容身份，不包含paper、Candidate、role或Program identity；两个独立paper-local executions对相同query产生完全相同vector bytes时可以得到相同`qemb_`。每个`memqocc_`必须通过自己的logical request execution chain引用实际使用的`qemb_`；相同`qemb_`本身既不证明也不允许cross-paper cache reuse。任何vector bytes、Embedding identity或observed-query identity不一致均禁止复用。
+
+Embedding transport采用batch-level network invocation与item-level request attempt两层事务。每个logical request仍产生独立`query_embedding_request_attempt_id`，表示该item在当前transport attempt中的事务身份；一次实际承载一个或多个items的HTTP/model invocation另生成`query_embedding_batch_attempt_id`。Batch identity绑定有序item request-attempt IDs、每个item的tensor position、batch occupancy、padding policy及完整Embedding Runtime Identity。
+
+Raw-response-first顺序固定为：
+
+1. durable commit `QUERY_EMBEDDING_BATCH_DISPATCHED`及各item dispatch bindings；
+2. service返回后首先durable commit完整batch raw response、provider provenance及batch execution metadata；
+3. 按冻结response schema与tensor position确定性拆分item-level `QUERY_EMBEDDING_RESPONSE_COMMITTED` records，每个item record引用batch raw-response identity及对应vector slice；
+4. 对完整batch统一验证response cardinality、tensor-position mapping与batch schema，并对每个真实item验证`observed_query_sha256`、dtype、dimension、finite-value及其他冻结Embedding约束；padding positions按冻结padding schema验证；
+5. 仅当全部mapping、真实items和padding positions均合法时，durable commit `QUERY_EMBEDDING_BATCH_VALIDATED`；
+6. 只有该barrier已commit后，才允许确定性生成该batch全部真实items的canonical QueryEmbeddingRecords与`qemb_` identities；此时全部item结果仍不可作为正式qemb使用；
+7. Embedding Scheduler Journal一次性durable commit self-contained `QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`；其canonical payload直接内嵌完整有序的real-item request-attempt IDs与全部QueryEmbeddingRecord objects，包括canonical vector bytes、相关identities及`qemb_` identities，不得只引用外部路径或未授权record文件；该event是整批qemb首次正式生效的唯一authoritative boundary；
+8. event commit后，各role controller才可生成引用该batch result event SHA的`QUERY_EMBEDDING_RECORD_COMMITTED` terminal projection；该role-local event可由Scheduler Journal重建，不得被解释为qemb首次生效点，也必须在当前Memory workflow使用qemb之前durable commit。
+
+Self-contained results payload中的canonical little-endian float32 vector bytes必须使用RFC 4648 standard Base64字符串：保留`=`padding，禁止换行、空格、URL-safe alphabet或其他variant；v1禁止compression。每个record同时保存`vector_byte_length`与`vector_sha256`。真实items严格按real tensor position升序排列，padding items不得进入payload。Parser必须strict解码并重新验证Base64、byte length、little-endian float32格式、dimension、SHA256与全部finite-value约束；任一失败使整个batch results非法。
+
+Batch Results Content Identity与Journal Commit Identity严格分离。Canonical pure-content projection使用`query_embedding_batch_results_id = "qembbatch_" + full domain-separated SHA256(payload)`；payload绑定identity schema/version、Embedding Identity，并按real tensor position排序。每个real item只含`real_tensor_position`、对应`qemb_`及完整canonical `QueryEmbeddingRecord`。Payload不得包含自身ID、batch/request-attempt ID、`memqocc_`、Candidate/paper/role/Program、service epoch、validation event SHA、journal sequence/location、previous-event SHA、timestamp、path、PID或其他execution bindings。Self-contained `QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED` event envelope仍保存完整execution bindings并由event SHA/hash chain覆盖。相同纯内容可得到相同`qembbatch_`，但每次独立执行都必须有自己的合法execution/commit chain；content artifact本身不能证明commit、恢复workflow或交付Candidate。
+
+相同`qembbatch_`不得触发formal dedup。每次独立batch execution仍提交自己的完整self-contained results event；不得跳过commit、复用旧execution chain、提前terminal logical request或直接生成projection。每个role-local projection引用自身execution对应的确切Scheduler Journal event SHA，不能只引用content ID。Canonical results event及其envelope完全禁止prior-identical lookup结果。Event commit后可生成独立、audit-only、non-authoritative `BatchContentDedupObservation`；其identity为`dedupobs_ + full SHA256(domain-separated canonical payload)`，payload只绑定schema/version、current Results event SHA、`qembbatch_`、严格位于current event之前且按authoritative Journal顺序排列的全部prior matching Results event SHAs及observation implementation identity，排除timestamp/path/PID。Prefix cutoff永久固定在current Results event位置，不以observation生成时的Journal head为准；更晚matching events不能修改旧observation。延迟生成、crash重建或Journal推进后补建必须得到相同payload/identity。重复生成合法；identity/content冲突只使dedup audit无效。Observation不进入event chain、formal identity、projection、recovery、scheduler、budget、Candidate input或decision，缺失/失败不影响formal。Physical content dedup不可见且self-contained event读取/恢复不得依赖observation或外部dedup metadata。
+
+一个validated batch必须且只能由一个不可拆分的`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED` event原子授权。Formal runtime禁止拆分event、外置部分vectors、compression或分批生效。Preformal按selected batch size、Embedding dimension、record schema、Base64 expansion与canonical serializer物化最大合法event，并重复验证canonical serialization/strict parse、content/event hashes、durable atomic write及crash recovery；冻结最大合法canonical event byte length、测试manifest SHA与基于实测预注册的commit-latency threshold。Formal超限属于protocol/runtime failure，不得切换representation。
+
+Batch validation与qemb生效都采用all-or-none语义。任一item、padding position、cardinality或mapping非法时，当前batch attempt不得产生任何可用`qemb_`；不得选择性接受其他看似合法的items。即使batch已validated并已生成全部canonical records，只要`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`尚未durable commit，整批仍视为没有正式qemb。VALIDATED之后、BATCH_RESULTS之前产生的temporary/per-item materialization不得作为正式存在依据或被promote，只保留temporary/audit provenance。若该窗口崩溃，必须从已经durable commit的validated batch raw response与validation record重新确定性构造完整self-contained canonical payload，再执行单一atomic event commit。Batch raw response已commit而item response/validation尚未commit，只复用该raw response完成确定性拆分与验证，不重新调用service；batch dispatch已commit而raw response未commit时，原batch attempt关闭后按冻结recovery scheduler语义重新执行。Batch timeout/transport failure首先关闭batch及其中全部item attempts；late response只作raw audit。
+
+Batch Results materialization最多一次primary attempt与一次在完全相同serializer/controller implementation identity下的deterministic rebuild/commit retry；每次具有独立immutable identity与durable disposition。Commit前Base64、length、SHA、dimension、finite、serializer/parser或storage检查失败时提交`EMBEDDING_BATCH_RESULTS_MATERIALIZATION_FAILED`，它在Embedding Scheduler Journal中形成区别于`EMBEDDING_INFRASTRUCTURE_FAILURE_COMMITTED`的global cutoff：停止新Embedding dispatch、results commit及role-local projection，整批无qemb，且不重调Embedding或消耗request recovery allowance、Memory budget、Evolution attempt。Cutoff前已commit results有效；仅raw/validated者pending且不部分生效；cutoff后到达response只作raw audit。
+
+每个attempt使用`batch_results_materialization_attempt_id = "matatt_" + full domain-separated SHA256(identity object)`，绑定validated batch event SHA、`qembbatch_`、`PRIMARY / DETERMINISTIC_REBUILD_RETRY`、index `0/1`、serializer/parser/controller implementation identity、durability/storage policy identity，retry还绑定primary attempt ID。Terminal disposition closed enum为`MATERIALIZATION_COMMIT_SUCCEEDED / MATERIALIZATION_CANONICAL_VALIDATION_FAILED / MATERIALIZATION_STORAGE_IO_FAILED / MATERIALIZATION_ABANDONED`，每attempt恰好一个。每个Results event必须唯一绑定`originating_batch_results_materialization_attempt_id`、`originating_materialization_execution_id`、对应`MATERIALIZATION_EXECUTION_OUTPUT_COMMITTED` event SHA及immutable output SHA。Commit前机械验证Scheduler为RUNNING、matatt合法匹配且未terminal、execution已合法OUTPUT_COMMITTED、output SHA及validated batch/qembbatch bindings匹配、output未被其他Results event消费。上述execution bindings只进入Journal envelope，不进入`qembbatch_`。一个event恰一originating attempt/execution output，一个attempt/output至多对应一个event。Succeeded必须引用已durable进入authoritative chain的唯一匹配results event SHA，不能先于该event或自行授予qemb；反向缺失、冲突、已failure/abandoned或重复消费均为Journal integrity failure。
+
+若results event已进入连续authoritative chain而originating matatt尚无terminal disposition，qemb已正式生效；recovery根据event中的originating字段验证validated batch、qembbatch、serializer/controller identity后，只补交同一attempt的确定性`MATERIALIZATION_COMMIT_SUCCEEDED`，不得重新materialize、写第二results event或调用Embedding。匹配success已存在则复用；若同attempt已存在validation/storage/abandoned terminal却又发现对应results event committed，或success没有唯一匹配event，则Journal protocol integrity failure。
+
+失败与retry顺序固定：primary先提交失败terminal，再提交`EMBEDDING_BATCH_RESULTS_MATERIALIZATION_FAILED` cutoff；任一时刻最多一个open cutoff，其event SHA即当前cutoff identity。Cutoff内只执行不产生formal results/projection/Candidate output的storage/materialization preflight；继续失败只记audit/infrastructure attempts，不创建嵌套cutoff。`EMBEDDING_BATCH_RESULTS_MATERIALIZATION_RECOVERED`必须引用当前唯一open failure event SHA及对应preflight event SHA，一个RECOVERED只关闭该cutoff；无open cutoff时禁止提交。Recovered durable commit后恢复RUNNING，之后才创建/执行DETERMINISTIC_REBUILD_RETRY。Retry成功先commit results event、后commit success disposition；retry失败先commit失败disposition、再创建新的后继cutoff，并进入Protocol validity或storage unavailable。Journal必须可机械推导`RUNNING / MATERIALIZATION_PAUSED`；RECOVERED仅恢复formal commit权限，不表示失败batch已成功。
+
+第二次attempt再次出现相同canonical serialization/validation错误时转为Controller/Protocol validity failure；canonical payload确定性一致但storage/I/O再次失败时归为shared storage infrastructure unavailable并保持formal暂停，不误判serializer。Crash边界只按durable materialization-attempt events恢复，temporary/partial/log不能证明成功或增加retry。Protocol validity failure不得提交recovered event，依赖缺陷identity且未在boundary前独立完成的roles fail-fast，修复后新Controller/Protocol Identity重gate并新run。Authoritative chain内已commit results event非法仍是不可跳过、原地修复或继续后续chain的Journal integrity failure。
+
+Shared cutoff时，其他非故障来源且尚未terminal的materialization attempts保持non-terminal paused，不ABANDON matatt也不消耗retry。Execution identity为`matexec_ + full domain-separated SHA256(canonical object)`，绑定schema/version、matatt、严格单调且不复用的resume ordinal、immutable input SHA、worker implementation/runtime及Controller Protocol Identity，排除PID/host/path/time等provenance；每个DISPATCHED绑定完整matexec。每个matatt最多ordinal 0 initial与ordinal 1唯一resume，禁止第三个execution。
+
+每个execution先DISPATCHED，随后恰一OUTPUT_COMMITTED或ABANDONED。每个合法decision必须先构造唯一canonical decision/failure projection并计算`matdec_ = full domain-separated SHA256(projection)`；projection绑定Protocol Semantic Identity、decision/failure schema semantic version、Failure Registry、canonical interpretation/normalization/validation-stage/aggregation semantics、closed outcome及完整decision payload或Failure Evidence，明确排除matexec/matatt/ordinal、具体Parser/Validator/Controller executable与library/runtime、raw audit及Journal bindings。任一semantic rule变化必须改变semantic identity及matdec。matdec只用于内容等价、audit及Compatibility，不授予OUTPUT/Results authority、不terminal workflow；即使两个implementation得到同一matdec，仍不得跳过预注册implementation Compatibility证明。
+
+随后构造raw-noise-independent、execution-scoped、self-contained的`matout_ + full SHA256(canonical execution-scoped decision payload)`，显式绑定唯一matexec、唯一matdec、与matdec计算逐bytes相同的完整projection及execution-scoped schema/implementation bindings。Validator必须从内嵌projection重算matdec并验证三者完全一致；不同matexec的matout可共享同一matdec，但一个matout只能绑定一个matdec，任一不一致均为Protocol/Journal validity failure。OUTPUT_COMMITTED envelope另绑定immutable raw-audit assets与execution provenance；必要raw decision input必须提升进入canonical projection。Results event只从committed matout构造并再次self-contained保存projection，同时绑定matout与matdec。
+
+`CANONICAL_VALIDATION_FAILED` Evidence把exact original candidate bytes以RFC4648 padded Base64保存，禁止whitespace、URL-safe alphabet与compression，并保存byte length/SHA且decode后重验。可解析JSON使用RFC6901 JSON Pointer；不可解析使用closed `<ROOT_UNPARSED_PAYLOAD>` sentinel；byte location使用冻结integer offset/range。Formal前冻结immutable Failure Registry并纳入Parser/Validator/Storage Protocol Identity：Validation codes定义适用schema、location、priority与组合/互斥；canonical vector按failure code→pointer/sentinel→byte location排序并仅精确去重。Storage registry冻结operation、durability stage、closed error class及合法状态组合；OS errno只可映射到closed class。Python exception、third-party traversal/order、raw message、path/host/locale不得进入identity。
+
+Validation采用stage-gated complete collection：至少按bytes/encoding/UTF-8/JSON prerequisite→schema/structural→referential/semantic顺序冻结进入条件。每个实际进入stage必须收集全部可确定failures并canonical排序/精确去重；前置失败时依赖下游不得执行或虚构failure，stage disposition必须机械区分`EXECUTED_NO_FAILURE / EXECUTED_WITH_FAILURES / NOT_EXECUTED_DUE_TO_PREREQUISITE_FAILURE`，最后一种不进入failure vector。Failure Registry不能表达的parser/schema/validator condition是Controller/Protocol validity failure且不生成Candidate-attributable matout、不消耗Candidate/Evolution budget；未知storage/OS condition进入shared storage/materializer infrastructure pause；无法解释的authoritative Journal状态是Journal integrity failure。禁止`OTHER/UNKNOWN_CANDIDATE_ERROR`、runtime扩enum、exception class或自由文本降级；影响多个role时按冻结dependency/runtime scope确定影响面。修改registry/Protocol semantics产生新Protocol Semantic Identity，纯implementation缺陷遵循Q269。Failure Evidence非法时execution无formal output；preformal冻结最大event及serialization/strict parse/hash/atomic-write/crash gate。
+
+OUTPUT_COMMITTED在crash recovery中直接复用，Results未commit也不得重跑worker。只有DISPATCHED无terminal时，确认旧worker停止、提交ABANDONED后才可使用下一且唯一ordinal。两个ordinals均无合法OUTPUT时提交`MATERIALIZER_EXECUTION_INFRASTRUCTURE_EXHAUSTED`，不消耗Candidate/Evolution/Memory/Embedding allowance，默认只隔离owning role-run；旧run停止创建work、ABANDON pending、提交`ROLE_FORMAL_FAILED`并seal。其他roles仅在shared health invariants通过且failure可可靠归因单一role时继续。若恢复需要restart/replace/change共享materializer runtime、同类/不可区分故障跨role出现、control-plane/Journal/storage/runtime健康不可证明或归因不确定，则升级独立authoritative lifecycle：`MATERIALIZER_GLOBAL_PAUSE_COMMITTED → MATERIALIZER_GLOBAL_RECOVERY_PREFLIGHTED → MATERIALIZER_GLOBAL_RECOVERED`。任一时刻最多一个open global pause；PAUSE绑定触发failure/provenance、Materializer Runtime/Implementation、storage/control-plane identity与Scheduler Journal cutoff，PREFLIGHTED绑定冻结检查和完整结果，RECOVERED必须引用该唯一pause及通过的preflight且只关闭它。该lifecycle与单batch MATERIALIZATION_FAILED/RECOVERED严格分离，不能由memory flag、PID或log替代。
+
+Global pause cutoff只按PAUSE event commit position裁决。Cutoff前合法OUTPUT继续有效，但open pause期间不得提交新OUTPUT、Batch Results或workflow projection；RECOVERED后直接复用原output继续原matatt。Cutoff前合法Batch Results永久有效。PAUSE时仅有DISPATCHED而无OUTPUT terminal的workers必须停止并ABANDON；pause后late output只作raw audit。DISPATCHED一经commit即永久消耗resume ordinal：ordinal0被shared pause中止后仅可用ordinal1，ordinal1再次中止则禁止ordinal2并触发owning-role exhaustion。ABANDONED/exhaustion必须引用shared/global cause event SHA，但归因不改变accounting。Replacement role前执行冻结preflight；所有前后关系只看Journal order。
+
+Single-batch materialization cutoff与global pause允许同时open并显式嵌套。Global pause不关闭、改名或重置batch cutoff，只提供更强的全局dispatch/OUTPUT/Results/projection禁止。组合恢复顺序固定为global preflight→GLOBAL_RECOVERED→回到仍open batch cutoff→batch-specific preflight→BATCH MATERIALIZATION_RECOVERED→deterministic retry；Global RECOVERED不得关闭batch cutoff，global pause未关闭时Batch RECOVERED不得授予execution permission。组合状态必须完全由两套Journal lifecycle机械推导。
+
+Materialization/storage/controller recovery本身不改变`embedding_service_epoch`，也不增加logical request epoch history；只有Embedding service process实际restart才按Q258重preflight并提交新epoch。Cutoff后到达的Embedding response永久raw-audit-only，但其actual dispatch、epoch与transport index永久计入历史。恢复后request只能使用当前epoch剩余transport slot；不得创建隐藏attempt。Slots耗尽而需下一service epoch时仍消耗唯一recovery epoch，需要第三epoch则owning role fail-fast。Q266的不消耗allowance仅指deterministic materialization retry不产生inference，不恢复被cutoff request的transport配额。
+
+Batch-level schema/mapping错误、query identity mismatch或epoch内两个transport attempts均失败属于shared Embedding infrastructure failure。故障提交后立即停止整个共享Embedding scheduler的新dispatch，并暂停所有依赖该service的未完成role。只有故障cutoff前已经durable commit `QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`的整批records继续有效；仅完成raw response、item projection、partial/full validation或pre-commit qemb materialization而未完成batch-results atomic commit的整批结果，不得在故障后继续生效或被部分采用，只保留audit；故障事件之后才到达的所有其他in-flight responses同样只保存raw audit。只有以完全相同Embedding Runtime Identity恢复service并重新通过preflight后，才可按journal和冻结scheduler规则恢复受影响logical requests。
+
+共享Embedding scheduler/service的唯一权威执行全序由独立、single-writer、append-only `Embedding Scheduler Journal`保存。该journal记录logical enqueue references、batch assembly、dispatch、batch raw response、batch validation、atomic batch-results commit、service failure、service restart/preflight及`EMBEDDING_SERVICE_EPOCH_COMMITTED`。Initial service完成artifact/runtime/resource/query-identity preflight后提交global epoch `0`且`previous_epoch=null`；之后只有完全相同frozen Runtime Identity重启并通过完整preflight，才可提交前一global epoch加一的新event。Event绑定Runtime Identity、preflight event SHA、previous epoch与failure/restart provenance；任何batch dispatch前必须存在当前有效且durable committed epoch，batch/item attempts显式绑定它。Epoch ordinal只由durable event消耗且必须连续无空洞：preflight完成但event未commit时formal epoch不存在，恢复后重新完整preflight并使用原next ordinal；event已commit而仅scheduler/controller崩溃时复用该epoch；service进程实际restart则必须重新preflight并提交新epoch。Temporary event、logs、PID或preflight临时结果均不能消耗或跳过ordinal。`EMBEDDING_INFRASTRUCTURE_FAILURE_COMMITTED`形成唯一global cutoff。Role journals只引用Scheduler Journal event SHA，不建立跨role search全序。
+
+Deterministic padding slots是纯runtime batching构件，不属于真实Memory/query事务。每个padding slot使用protocol-generated `embedding_padding_item_id`，绑定padding identity schema/version、冻结padding payload、tensor position及batch/padding policy identity。Padding slot不拥有`memqocc_`、logical request、request-attempt、Memory API call、Candidate budget、RetrievedMemoryLedger、cache或`qemb_`。Padding payload、数量、插入位置、tensor ordering及output discard规则进入Embedding Runtime Identity。Padding response只参与batch cardinality/tensor-position validation，随后确定性丢弃，不进入vector search、retrieval、Candidate输入、budget或fitness。
+
+Query Embedding identity分为logical request与实际transport attempt两层：
+
+- 每个`memqocc_`必须且只能产生一个独立`query_embedding_request_id`；request identity绑定domain-separated schema/version、该occurrence、canonical query及其`memqry_`、Candidate/paper/role/Program scope、Embedding Semantic/Runtime Identity与冻结logical request semantics；
+- `query_embedding_request_attempt_id`额外绑定对应logical request identity、`embedding_service_epoch`与epoch-local `transport_attempt_index ∈ {0,1}`，每次实际网络调用都必须具有不同的attempt identity；
+- `query_embedding_batch_attempt_id`绑定本次实际batch invocation及其有序item-attempt vector，不能代替或合并item identities；
+- provider request ID、socket/connection、PID、port与timestamp只作execution provenance，不进入上述formal identities。
+
+Logical request不能因cache hit而省略。若当前paper-local cache存在合法且identity完全匹配的`qemb_`，request不产生transport attempt，而是durable commit terminal disposition `QUERY_EMBEDDING_CACHE_HIT_RESOLVED`并引用该`qemb_`及其合法paper-local source execution chain。Cache resolution不得省略`memqocc_`、Memory API call/budget、request或audit记录，不得向Candidate暴露，也不得改变RetrievedMemoryLedger、result ordering或fitness语义。
+
+Logical request由对应role controller在创建时分配role-local monotonic `query_embedding_logical_sequence`并durable commit。Cache hit直接terminal且不进入Embedding scheduler；cache miss必须先durable commit `QUERY_EMBEDDING_ENQUEUED`，global Embedding scheduler之后才可接收。Transport retry沿用原request identity、logical sequence及role-local FIFO priority，不生成新sequence，也不得排到后来requests之后。Service restart/recovery后，未完成request继续占据当前role unfinished FIFO中的原逻辑位置，但不要求复刻已经关闭的失败batch：原companions、tensor positions、occupancy与padding layout均不构成后续约束。Scheduler必须按冻结role round-robin/FIFO、batch size、`max_batch_wait`与padding policy重新assembly，产生新的`query_embedding_batch_attempt_id`并在authoritative provenance中关联原失败batch与新recovery batch；禁止为了复刻旧batch改变logical queue顺序。
+
+`embedding_service_epoch`由committed `EMBEDDING_SERVICE_EPOCH_COMMITTED`给出，是共享service的全局单调递增execution epoch。每个logical request只在第一次实际dispatch时记录`initial_embedding_service_epoch`；仅enqueue或排队而从未dispatch不固定也不消耗initial epoch。Service restart后新创建、或此前仅排队而首次在当前epoch dispatch的request，以当前global epoch作为自己的initial epoch。Request audit必须显式保存initial epoch、实际dispatch过的service epochs及唯一recovery allowance是否已消耗。
+
+每个Embedding service epoch内，同一logical request最多进行两次完全相同canonical query与Embedding Identity的transport attempts；logical request identity跨epoch保持不变。每个request最多在两个不同global service epochs中实际执行：自己的initial epoch与至多一个后续recovery epoch。Embedding request timeout必须根据benchmark-independent preformal latency statistics按冻结公式预注册；timeout event durable commit后对应attempt永久关闭。关闭后到达的late response只能保存raw execution audit，不得进入validation/canonicalization、生成`qemb_`或与新attempt竞争canonical result。Canonical QueryEmbeddingRecord只能来自事务状态机中首个仍有效且已经durable commit、验证合法的response，不能由wall-clock最早network packet决定。
+
+一个已经在initial epoch实际dispatch的request，若因自身epoch-local attempt耗尽、同batch其他item或任何shared service failure而需要在后续global epoch再次dispatch，该后续epoch一律消耗其唯一recovery allowance；不根据fault attribution提供豁免。每个logical request最多一个recovery epoch、最多四次actual invocations。若还需进入第三个service epoch，产生其所属role的Embedding infrastructure validity failure/fail-fast；不增加allowance，也不计Candidate/global evolution attempt或Review Memory budget。
+
+Logical Query Embedding request的合法terminal dispositions为且仅为：
+
+- `QUERY_EMBEDDING_RECORD_COMMITTED`：role-local logical request terminal projection，引用已由`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`原子生效的canonical `qemb_`；
+- `QUERY_EMBEDDING_CACHE_HIT_RESOLVED`：由Q227允许的合法paper-local cache直接解决；
+- `QUERY_EMBEDDING_ABANDONED`：paper/role因冻结终止条件关闭，请求永久不得再产生正式结果。
+
+每个logical request必须且只能具有一个terminal disposition。Transport-attempt timeout、single transport failure或初始epoch两次attempt耗尽只形成attempt-level/infrastructure state并暂停原logical request，不属于logical terminal disposition。Embedding infrastructure以完全相同identity恢复时继续原request；recovery epoch耗尽导致role终止或其他冻结条件关闭paper/role时，再提交`QUERY_EMBEDDING_ABANDONED`。正常paper只有在全部相关logical requests达到唯一合法terminal disposition后，才可提交paper terminal event。
+
+`QUERY_EMBEDDING_BATCH_RESULTS_COMMITTED`只使共享canonical qemb内容正式存在，不授权当前paper workflow立即使用。Role controller必须先提交确定性幂等的`QUERY_EMBEDDING_RECORD_COMMITTED` terminal projection，canonical object至少绑定role-run identity、logical request ID、`qembbatch_`、对应authoritative Scheduler Journal event SHA、实际`qemb_`及role-controller/projection schema identity，之后Memory API才可继续response、budget transition、retrieval或delivery。同一logical request必须且只能有一个正式projection：resume发现完全匹配者直接复用，缺失则补交相同projection，内容相同不得形成第二个terminal event；若引用不同batch event、qemb或identity则role-level protocol integrity failure。Projection不进入qemb/qembbatch内容身份，也不建立跨role顺序。若paper/role已合法关闭，则request转为ABANDONED，既有qemb仅保留audit/content用途。
+
+一个cross-role batch的role-local terminal projections彼此独立，不增加all-role projection barrier。Shared infrastructure failure pause期间禁止提交新workflow projections；完全相同Runtime Identity恢复且有效service epoch提交后，各role可以分别补交引用合法pre-cutoff batch-results event的projection，不重新Embedding、不消耗request recovery allowance，也不等待同batch其他role。Projection完成顺序不建立跨role Candidate/search event全序。
+
+Shared service failure始终先全局暂停scheduler并完成统一recovery/preflight。恢复后逐个unfinished request检查actual-dispatch epoch history：若继续执行需要第三个不同epoch，仅该request所属role发生Embedding infrastructure validity fail-fast并关闭该role pending work；其他未超限role恢复。多个role存在超限request时分别失败。未失败role的durable search state/winner保持有效；失败role必须以新role-run identity从初始化重跑，Final Suite仍须等待五个合法winner。
+
+失败role的新role-run只有在旧run完全terminal/sealed后才可加入当前合法global Embedding service epoch。冻结顺序是：禁止旧run创建新Memory/Embedding requests；将全部未terminal logical requests提交ABANDONED；durable commit `ROLE_FORMAL_FAILED`并永久seal旧role journal；scheduler验证旧run不存在dispatchable/pending request；之后提交唯一authoritative `ROLE_RUN_SCHEDULER_ADMITTED`，绑定新role-run、role、首个合法sequence、当前global round-robin cursor与Scheduler Runtime Identity。新run从event后下一次正常轮转到该role时参与，不抢占已assembly batch或插入已commit ordering；cursor不reset/rollback。新run创建全部role state且sequence可从0开始，但scheduler key至少绑定`role_run_identity + logical_sequence`；round-robin公平单元仍是role名称，old/new run不能同时占位。新request首次dispatch以current committed epoch为initial，不要求service restart或epoch reset。
+
+Authoritative cursor定义为`next_role_index ∈ {0..4}`，按QUAL→CLAR→SIGN→ORIG→POL。Assembly从committed cursor环扫eligible requests；空role只被temporary scan pointer跳过，不提交cursor mutation。`QUERY_EMBEDDING_BATCH_DISPATCHED` durable commit立即更新cursor，新值为batch最后一个real item所属role的下一个role；padding/cache hit/non-enqueued request不参与。其后的transport timeout、validation failure、Embedding infrastructure failure、materialization cutoff或service restart均不得回滚cursor；unfinished requests保留role FIFO，并在恢复后从当前committed cursor重新assembly。只有dispatch event未commit时才可从原cursor重组。Admission记录current cursor，若正指向新role可在下一正常assembly参与。Restart只恢复最后committed cursor，不使用partial assembly、temporary pointer或wall clock。
+
+故障前winner能否与新run winner组成Final Suite取决于Formal Observable Semantics compatibility。若Protocol Semantic Identity不变且仅Controller/execution implementation artifact变化，必须在读取任何旧formal replay diff前先durable冻结dependency analysis/affected boundary、observable清单、replay vectors、comparison algorithm、exact equality rules、certificate schema及gate identity；之后只读重放拟保留role的authoritative journals、requests、records、RNG、Memory transitions与formal outputs，不调用生成模型，不读取C/Human/OpenReview/Official CoCo。允许的证明仅有三类：相同冻结输入下旧/新确定性materializer/parser/formatter逐bytes/decision比较；model request的完整request/messages/rendered prompt/config bytes比较，并仅在request完全相同时让旧/新下游共同读取同一authoritative raw model response；使用冻结Journal/RNG/input events对scheduler/controller/state machine作无副作用确定性simulation。Request不同即observable incompatibility，不能用同一旧response掩盖。任何observable无法在无生成模型、外部API和禁用资产下证明时不得纳入certificate，composition统一重跑。所有预注册items仍必须完整运行，semantic mismatch不得early-stop；最终FAILED后修复形成新implementation identity且五role统一重跑。通过时Suite manifest保存冻结计划/时间身份、dependency graph、全部inputs/results/disposition、certificate SHA、新旧implementation identities与role provenance。Protocol变化、可能影响Candidate/search/fitness/final decision或无法证明时同样五role重跑；不确定按Protocol-affecting处理，并继续要求Runtime/epoch合法及Official CoCo/C/Human未访问。
+
+Role顺序固定为全部formal artifacts（含`ROLE_WINNER_COMMITTED`）→`ROLE_ARTIFACT_CATALOG_COMMITTED`→`ROLE_SEARCH_COMPLETED`。Suite顺序为五role composition准备完成且Compatibility PASSED或无需Compatibility→`SUITE_ARTIFACT_CATALOG_COMMITTED`→`FINAL_SUITE_COMMITTED`。Formal external artifacts在source event前durable写入/验证并由closed ordered `artifact_outputs`登记。明确不参与formal decision的raw audits使用closed ordered `audit_outputs`。`auditasset_ + full domain-separated SHA256(exact immutable bytes + audit content schema/domain)`表示内容；source event先绑定auditasset及closed metadata。其commit后，每个audit_outputs occurrence必须且只能派生一个`auditentry_`，identity绑定source event SHA、vector ordinal、auditasset及occurrence schema/metadata；同asset的不同occurrence不得隐藏去重。Multi-Journal Catalog ordering固定为`source_journal_slot_ordinal → journal-local authoritative event sequence → audit_outputs ordinal → auditentry_id`，不得比较不同Journals的时间、worker顺序、event SHA、filesystem或host/process sequence。Source event已commit而projection缺失时只从vector补建；完全匹配复用，同一event/ordinal冲突entry是protocol/audit integrity failure。
+
+Formal前冻结closed Audit Scope Registry，v1仅含`CORPUS_BUILD / ROLE_RUN / EMBEDDING_SCHEDULER / COMPATIBILITY_REPLAY / COMPATIBILITY_EXPORT / OFFICIAL_POST_FREEZE / OPERATIONS_POST_CLOSURE`，runtime不得扩enum。每个instance使用`auditscope_ + full domain-separated SHA256(canonical identity)`，绑定Registry identity/version、closed type、owning top-level formal identity、由Registry按type冻结slot/order的authoritative source-Journal vector、Audit Requirement Registry及Audit Schema；排除covered range/head、entries、Catalog/readiness与runtime provenance。每个audit_outputs occurrence显式绑定唯一auditscope且须满足source-event/type关系。OPERATIONS_POST_CLOSURE另绑定originating formal auditscope及其closure/quiescence event，避免混淆。
+
+`COMPATIBILITY_AUDIT_QUIESCENCE_COMMITTED`只封闭Replay scope；其后唯一EXPORT_ONLY capability产生的raw execution/access provenance/materialization audit全部进入独立Export scope，不得回填Replay Catalog。Export COMMITTED或FAILED_TERMINAL后，Export scope再执行AUDIT_SCOPE_QUIESCENCE→AUDIT_ASSET_CATALOG→AUDIT_READINESS。OPERATIONS_POST_CLOSURE只收storage health、backup verification、receiver-drain等非formal operational audit，不改变已seal Catalog/readiness。
+
+每个需要seal的scope在Catalog前提交`AUDIT_SCOPE_QUIESCENCE_COMMITTED`。`auditquiesce_`绑定auditscope、Quiescence Protocol、每slot `pre_quiescence_head`、Registry解释的全部transaction closure/terminal vector、receiver/capability/transport/late-response closure、no-inflight proof及validator；排除Catalog/Readiness、commit event SHA与runtime provenance。Audit Scope Registry为每类冻结唯一`quiescence_commit_journal_slot`。Quiescence event只进入该slot并绑定auditquiesce及已预先durable的closed audit_outputs；其他slot不伪造同一event。`compatquiesce_`显式绑定Replay auditquiesce作specialization，两者均先于event SHA计算。
+
+独立Audit Quiescence Requirement Registry按scope type冻结必须收束的request/transaction/event类型、合法terminal、ABANDON条件、receiver/capability及source-Journal slots、cardinality derivation、closure ordering、no-inflight与late-response规则。其稳定identity为`auditquiescereg_ + full domain-separated SHA256`，canonical artifact绑定上述全部scope rules、closed enums和policies；`auditscope_`与`auditquiesce_`必须绑定同一Registry identity。Validator只读取Registry、authoritative journals和冻结capability/runtime state；未知但可能属于scope的formal transaction类型是Validator/Protocol validity failure。Formal前以closed valid/invalid vectors覆盖unknown type、缺失terminal、错误slot与错误cardinality。Registry semantic identity进入Protocol Semantic Identity。
+
+Scope-specific `auditcat_`与`AUDIT_ASSET_CATALOG_COMMITTED`绑定scope、auditquiesce、ordered entries及Requirement/Schema，并保存与source slots等长的位置对应covered-range vector。每range为`start_predecessor exclusive → terminal_head inclusive`，Journal起点用显式genesis/null sentinel；非Quiescence slot通常止于pre-head，quiescence commit slot推进并包含Quiescence event及其audit outputs。缺失、额外、错位slot、错误event归属或要求同一Quiescence event存在于多slot均禁止commit。Catalog commit后range永久封闭。
+
+Formal前Audit Requirement Registry为每项冻结fully-qualified key、applicable scope type、source event type、audit_outputs kind、Candidate/result-independent applicability predicate、expected cardinality/rule、MANDATORY/OPTIONAL、expected type/schema、verification policy及occurrence ordering。Applicability为APPLICABLE/NOT_APPLICABLE；N/A不构造asset。Occurrence status闭集为PRESENT_VERIFIED/MISSING/HASH_MISMATCH/LENGTH_MISMATCH/TYPE_MISMATCH/SCHEMA_MISMATCH/UNAVAILABLE，其中UNAVAILABLE只在冻结read/recovery policy结束且known identity仍无足够bytes时使用，临时infra故障不得提前转换。Duplicate/conflicting registration或同occurrence冲突identity是protocol integrity failure。Overall PASS要求全部APPLICABLE+MANDATORY occurrences PRESENT_VERIFIED；optional完整记录但不改outcome。
+
+独立single-writer Audit Readiness Infrastructure Journal是共享validator/storage执行生命周期唯一authority。`auditreadepoch_ + full domain-separated SHA256`绑定schema、validator artifact/implementation、storage/read backend、behavior runtime、完整preflight、global ordinal、previous epoch与recovery provenance，排除自身event SHA及process/address/time。Initial preflight提交epoch 0和explicit previous=null；后继ordinal严格+1且仅由durable `AUDIT_READINESS_INFRASTRUCTURE_EPOCH_COMMITTED`消耗，无空洞。Preflight后未commit即crash则epoch不存在，恢复重preflight并复用next ordinal。Epoch、run admission、attempt、self-contained evidence、pause/exhaustion与run terminal全部由该Infrastructure Journal权威提交；formal scope journals不得复制这些events或重新授权结果，只能提交引用确切Infrastructure event SHA的确定性幂等Readiness workflow projection。该execution全序不建立不同scope formal decisions之间的顺序；冲突run terminal属于Infrastructure Journal integrity failure。
+
+每个`auditreadrun_ + full domain-separated SHA256`绑定scope、immutable Catalog/commit、Requirement/Schema、validator semantic/implementation identities、auditreadepoch及可选prior exhausted run；同一Catalog/validator/epoch最多一个run。
+
+同一formal Protocol下，successor epoch必须与prior exhausted epoch保持validator semantic identity、validator implementation identity、verification policy identity和storage policy identity完全相同；只允许process、connection及其他execution provenance变化。修复validator或policy必须形成新的Protocol/Controller identity，原Catalog不能沿旧gate path直接重验，影响范围按Audit Dependency Closure Registry和对应projection执行。
+
+每run使用auditreadatt/auditreadyevid，attempt恰一EVIDENCE_COMMITTED/INFRASTRUCTURE_FAILED/ABANDONED。Run恰一terminal：`AUDIT_READINESS_COMMITTED(PASS|FAIL) / AUDIT_READINESS_INFRASTRUCTURE_EXHAUSTED / AUDIT_READINESS_RUN_ABANDONED`；PAUSED非terminal。Primary加一次retry，第二infra failure使run EXHAUSTED；只有它可在新epoch成为successor的prior。PASS/FAIL后禁止attempt或successor；RUN_ABANDONED仅用于owning scope关闭或上层冻结终止，不得绕过budget。冲突terminal是Readiness Infrastructure Journal integrity failure。
+
+若immutable auditcat与registered assets仍合法，Readiness infra EXHAUSTED不要求重跑role/corpus/scope；新epoch中的后继auditreadrun只能重验同一Catalog且不得修改Registry或formal result。只有Catalog、mandatory bytes或scope本身不可恢复时才按Q344新run/scope。Readiness不改decision/winner；Final Suite要求所有pre-freeze mandatory scope PASS。Sealed Suite/Official前后corruption继续按Q344处理。
+
+Artifact bytes durable而source event未commit时只是physical orphan：不入Registry/Catalog，不得scan/glob/mtime/filename发现后promote。Recovery从原authoritative inputs重新确定性计算expected identity/SHA；仅在content-addressed immutable storage且协议已有明确locator时，可验证现存length/SHA后复用bytes作为I/O优化，再由新的/恢复中的source event首次登记获得authority。不得从filesystem反推expected identity。同一formal或audit artifact冲突registration是integrity failure。
+
+Quiescence自身的crash recovery采用更窄的同源规则：若expected closed audit bytes已durable但Quiescence event未commit，只能从完全相同authoritative closure state重算`auditquiesce_`与expected auditasset identities，并逐SHA/length验证完全一致后复用；不得scan目录吸收未知assets。Quiescence event已commit则直接复用，不重新执行closure。重算expected bytes不一致属于Quiescence implementation/protocol failure。
+
+每个entry绑定artifact identity、实际验证content SHA、byte length/type、source authoritative event SHA、完整dependency entry IDs及artifact schema/serializer identity；dependency closure自底向上、无环构造。Role Catalog entries按本role source Journal位置后artifact ID排序；`covered_head_sha`固定为Catalog commit之前相应scope的直接covered predecessor/head，content不含Catalog commit或completion event SHA。Catalog commit envelope绑定content ID，completion再反向绑定content/event SHA。所有authoritative event引用但未self-contained其中的formal artifacts必须入Catalog；self-contained event payload与Journal event本身不重复作entry。未知/缺失/foreign entry、dependency冲突/缺失/cycle或coverage不一致均禁止commit；Official outputs不得回写。
+
+Catalog-first recovery固定：Catalog已commit而completion缺失时，只验证immutable Catalog、coverage/head与scope closure并确定性补completion，不重建、重扫或产生v2；completion引用缺失、非连续chain、SHA/structure/scope非法Catalog时是Journal integrity failure，禁止事后补造。Catalog commit后covered scope永久封闭，不得再追加本应属于该scope的新formal artifact；发生则原completion路径失效，不能扩Catalog或覆盖identity。失败且无合法winner/completion的role-run不伪造成功Catalog。Suite Catalog跨Journal使用固定typed dependency-root vector：五个role roots按QUAL→CLAR→SIGN→ORIG→POL，各绑定rolecat及commit event SHA；随后是`COMPATIBILITY_LIFECYCLE_ROOT`与`COMPATIBILITY_ACCESS_AUDIT_ROOT`。无需Compatibility时两个root使用冻结显式N/A/null且vector长度不变；需要时分别绑定PASSED Plan的lifecycle head/certificate event与decision boundary上的Access Audit head。不同Journal numeric sequences不得混排或flatten；suite-local external artifacts只按Suite Journal本地position登记。
+
+Compatibility使用独立suite-level append-only lifecycle。`proposed_suite_composition_id`固定五role winner/source vector。Plan唯一冻结`target_controller_implementation_identity`，包括exact Controller code/assets、dependency lock、protocol/state-machine、serializer/parser、scheduler/controller deterministic behavior、capability/API client及其他behavior-relevant implementation assets；排除PID、endpoint、host、GPU ordinal、start time等execution provenance。每个retained source必须直接比较target，禁止chaining/history certificate/multi-target。Official可强制restart并使用新的Runtime Identity/provenance，但runtime manifest的implementation component必须精确等于target，且preflight证明新resource/process config不改变Formal Observable Semantics；若implementation component需变更则不能静默继续Official。同一composition终身最多一个Plan。
+
+Plan content identity为`compatplan_ + full SHA256(domain-separated canonical Plan payload)`；payload含完整有序item specs、dependency analysis、observable keys、algorithms/equality rules，但不含派生compitem IDs。Plan先冻结允许的authoritative catalog集合及root artifacts，再物化完整transitive dependency closure；每个dependency须在授权catalog中唯一解析，missing/foreign/conflict/cycle禁止PLAN。Closure按确定性topological order，同层以完整artifact ID tie-break，root/closure/order/graph identity全部进入Plan，STARTED后不得新增替换。Plan identity确定后，每项`compitem_ = full hash(compatplan + ordinal + canonical spec)`；PLAN event绑定完整ordered vector，避免自引用。COMPLETED必须按Plan顺序绑定全部且仅全部compitems、各唯一terminal disposition/result SHA，缺失/额外/重复/order/identity错误均禁止。
+
+Comparison item terminal闭集为`MATCH / SEMANTIC_MISMATCH / ARTIFACT_UNAVAILABLE / DECLARED_HASH_MISMATCH / PAYLOAD_PARSE_INVALID / COMPARISON_EVIDENCE_UNTRUSTWORTHY`；这些都必须完成其他items。Fatal early abort仅限Journal chain损坏、Plan/compitem identity冲突、同item冲突terminal、Catalog/Plan自身结构/hash无效或无法确定唯一Plan state。
+
+每item固定primary加至多一次相同input/tool identity infra retry。`compatatt_`绑定compitem、attempt kind/index、catalog inputs及tool/gate identity；事务为`COMPARISON_ATTEMPT_STARTED → COMPARISON_EVIDENCE_COMMITTED → item terminal`。Self-contained Evidence identity为`compev_ + full domain-separated SHA256`，绑定compatatt、compitem、明确source/target pair、observed authoritative hashes/lengths、parse disposition、comparison tool/gate、equality rule实际消费的全部canonical operands及canonical comparison output。恢复必须无需重开source payload、mutable blob或重做input extraction；decision-relevant operand只存SHA不充分。STARTED无Evidence时恢复同attempt，不偷换retry；Evidence已有而item terminal缺失时只从Evidence/rule补交。Preformal冻结最大Evidence event bytes及serializer/strict-parse/hash/atomic-durability/crash gate；formal超限不得外置、压缩或拆分。
+
+正常路径严格为PLAN→STARTED→全部items terminal→COMPLETED→恰一PASSED/FAILED；PASSED要求全部MATCH，normal FAILED要求至少一个non-MATCH。Fatal路径严格为PLAN→STARTED→fatal integrity violation→ABORTED_INTEGRITY_FAILURE→FAILED，不提交COMPLETED。COMPLETED与ABORTED、PASSED与FAILED各自互斥，decision必须引用正确predecessor；ABORTED后禁止新attempt/evidence/item terminal，冲突视为Suite Journal integrity failure。
+
+Decision前authoritative Compatibility lifecycle Journal、self-contained compev、semantic item records与diff只存于TEB保护目录，并仅对预注册machine identities可见；single-writer Controller仍是唯一授权者/Journal writer，deterministic worker只获当前item最小scope capability且结束即撤销。Operator closed projection只含counts、non-semantic stage、liveness和infrastructure code；任何semantic泄漏触发fatal path。所有semantic request/use进入独立append-only Compatibility Access Audit Journal；`semacc_ + full domain-separated SHA256`是logical access identity，绑定schema/version、accessor/capability、Plan、item/object scope、operation、policy及allowed limits，不含payload/diff/disposition/statistics。Authorization/terminal events引用同一semacc与monotonic audit sequence；timestamp/PID仅作provenance。Unrecorded success、chain gap/rollback、sequence冲突、scope mismatch或未注册identity成功读取均触发EXPOSURE→ABORTED→FAILED。
+
+PASSED与FAILED均必须在Quiescence后执行唯一logical Audit Export。任何EXPORT_ONLY semantic read及STARTED前，由`COMPATIBILITY_AUDIT_EXPORT_INPUT_COMMITTED` self-contained提交唯一exportinput；每个Plan/certificate/compatquiesce恰一。除既有decision/source objects外，exportinput必须显式绑定Replay `auditready_`、terminal event SHA及PASS或FAIL/`COMPATIBILITY_REPLAY_AUDIT_NOT_READY`状态。External/temp/uncommitted或STARTED后manifest无authority；跨合法leases重复read不改变semantic set。
+
+v1 `compatexport_ + full domain-separated SHA256(canonical self-contained Export payload)`物理表示固定为单一、未压缩canonical UTF-8 JSON external artifact；它self-contained保存全部decision semantics，不依赖其他semantic payload文件。Raw audit只以auditasset/auditcat references表示。COMMITTED只绑定compatexport、SHA/length、schema/serializer、registration及access/quiescence provenance。Preformal物化最大合法Export并通过serialize/strict UTF-8 JSON parse/hash/atomic durable write/crash gate；formal不得拆分、多文件、压缩或externalize semantic records。
+
+Export lifecycle闭集保持STARTED/MATERIALIZATION_FAILED/RECOVERED/FAILED_TERMINAL/COMMITTED。Identity分为exporttxn、exportexec、execution-scoped exportcand、exportout及pure-content compatexport。Candidate materialization按artifact-first写入TEB immutable/content-addressed protected storage并验证SHA/length/schema/expected compatexport，随后`EXPORT_CANDIDATE_COMMITTED`绑定exportcand/exec/txn/input、content facts、protected locator policy与implementation。Event不复制整份bytes；durable protected bytes与record共同自足。Candidate不入artifact_outputs/Suite Catalog、不向operator暴露且无Export authority；commit后bytes缺失/损坏不得重读semantic sources，只能进入storage/integrity failure。
+
+Export两阶段授权固定为：合法lease读取→durable Candidate→关闭lease/冻结terminal head→Access Validation→PASS后promotion→READY/COMMITTED。只有COMMITTED首次将完全相同bytes/compatexport注册为formal artifact。READY绑定candidate与Access PASS；candidate已commit恢复必须复用，candidate前crash才可合法重读。相同exportinput产生不同candidate bytes即implementation/protocol validity failure。
+
+Export预算分三层。Candidate前semantic `exportexec_`最多primary加一次deterministic rebuild；candidate commit后永久禁止新semantic execution、第二candidate、source reread或改变compatexport。Access Validation使用独立run/attempt/epoch。Promotion使用非semantic `exportpromatt_`，最多primary加一次相同candidate/implementation storage retry；只读durable candidate并注册同一bytes，artifact bytes已durable而event缺失时验证复用。两次promotion失败进入terminal storage failure，不返回candidate阶段。
+
+每个`exportaccessrun_`恰一terminal：`EXPORT_ACCESS_RANGE_VALIDATION_COMMITTED(PASS|FAIL)`、`EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_EXHAUSTED`或`EXPORT_ACCESS_VALIDATION_RUN_ABANDONED`；PAUSED非terminal。只有EXHAUSTED可以在新epoch建立successor；PASS/FAIL禁止新run，ABANDONED只用于Export已由其他冻结终止条件关闭。
+
+`exportpromatt_`绑定exporttxn、exportcand及commit event、Access PASS、expected compatexport、formal artifact storage/registration policy、promotion implementation与attempt kind/index。每attempt恰一`EXPORT_PROMOTION_COMMITTED / EXPORT_PROMOTION_STORAGE_FAILED / EXPORT_PROMOTION_ABANDONED`。Formal bytes已durable而event未commit属于同attempt recovery，不消耗retry；第二次storage failure使Export terminal fail。
+
+V1 exportout outcome严格为`EXPORT_ARTIFACT_READY / EXPORT_CANONICAL_VALIDATION_FAILED / EXPORT_STORAGE_IO_FAILED / EXPORT_CANDIDATE_STORAGE_INTEGRITY_FAILED / EXPORT_SEMANTIC_INPUT_MISMATCH / EXPORT_ACCESS_INTEGRITY_FAILED / EXPORT_IMPLEMENTATION_VALIDITY_FAILED / EXPORT_PROTOCOL_VALIDITY_FAILED`。`EXPORT_CANDIDATE_STORAGE_INTEGRITY_FAILED`覆盖post-commit candidate missing、length/hash/schema mismatch；确认integrity mismatch不得promotion retry、semantic rebuild或产生第二candidate，暂时storage不可读仍按`EXPORT_STORAGE_IO_FAILED`处理。Export Failure Registry冻结stage、prerequisite、location、operands、self-contained evidence、retry、consequence与identity；raw exception不入identity，unknown不得OTHER。仅STORAGE_IO_FAILED通常可进入相应层的bounded recovery，其余直接terminal。
+
+Export采用artifact-first single-authoritative-commit：先durable写入并验证SHA/length，再提交唯一COMMITTED event；event前文件仍是无authority orphan，只能重算expected identity并验证复用known content-addressed bytes或重新物化完全相同bytes。PASSED Export作为pre-freeze formal Compatibility artifact由Suite Catalog覆盖；FAILED Export同样由Export source event的artifact_outputs/专属Compatibility formal scope登记，绝非raw Audit Asset。PASSED发生terminal Export failure时composition永久不得进入Suite Catalog/Final Suite；FAILED certificate保持FAILED但audit lifecycle为terminal-incomplete/failed。Operator只读Export，不获TEB Journal权限；Export不改certificate。
+
+Plan commit前每个input Catalog必须完成logical transaction：`CATALOG_VALIDATION_STARTED → CATALOG_VALIDATION_EVIDENCE_COMMITTED → CATALOG_VALIDATION_COMMITTED(PASS|FAIL)`。每次execution具有独立`catvalatt_`并恰一terminal `CATALOG_VALIDATION_EVIDENCE_COMMITTED / CATALOG_VALIDATION_INFRASTRUCTURE_FAILED / CATALOG_VALIDATION_ABANDONED`。Primary加至多一次retry只用于可信Evidence前的infra failure；无durable disposition的crash恢复同attempt。Evidence已commit只补terminal，不重读Catalog/重跑validator；FAIL不是retry。Logical state可为INFRASTRUCTURE_PAUSED/EXHAUSTED；第二execution也durable infra failure时EXHAUSTED，当前validation run永久封闭且不得第三attempt/new local ID绕过。重新验证只能以新的top-level Suite/Compatibility validation run identity并重preflight；EXHAUSTED不生成伪catval FAIL且期间不得Plan。
+
+独立Catalog Validation Registry为每个check冻结canonical key、适用Catalog/scope、prerequisite、`PASS / FAIL / NOT_APPLICABLE`、canonical evidence schema、deterministic ordering及semantic version。所有prerequisite满足的applicable checks必须完整非fail-first执行并按Registry顺序保存；overall PASS要求全部applicable PASS。`catvalevid_ + full domain-separated SHA256`是execution-scoped self-contained Evidence，绑定catvalatt、Catalog content/commit event、composition context、Registry、完整ordered result/evidence、observed hashes/lengths及validator semantic/implementation identities，不绑定最终catval。Evidence可内嵌event或作为单一先durable并验证SHA/length的external artifact；不同attempt相同semantics可有不同catvalevid。未知check/result、无法映射condition或非法evidence是Validator/Protocol validity failure。`catval_`表达semantic terminal equivalence；固定Catalog/context/validator只能一terminal，只有PASS可Plan。
+
+每个logical semantic access使用`AUTHORIZATION → actual scoped read → exactly one of COMPLETED / FAILED / STATE_UNRESOLVED`。Authorization先于payload暴露；只有authoritative backend/capability audit可证明完整暴露或暴露前失败，无法判定只能UNRESOLVED。已证实未经合法authorization暴露使用`COMPATIBILITY_SEMANTIC_EXPOSURE_VIOLATION`；合法authorization后状态无法确定使用`COMPATIBILITY_ACCESS_INTEGRITY_FAILED`，两者只含closed原因、access/capability identity及nonsemantic provenance，不含payload。Predecision二者均使Semantic Hiding不可证明并进入ABORTED→CERTIFICATE_FAILED，但reason保持不同；post-decision不追溯certificate，只使Export进入相应integrity/materialization failure。任何无先行Authorization的实际暴露直接EXPOSURE。
+
+Certificate terminal后关闭新comparison/replay/request与普通semantic capabilities，等待全部predecision事务terminal，登记late raw audit并完成receiver closure，再生成`compatquiesce_ + full domain-separated SHA256(canonical quiescence payload)`并提交每Plan唯一`COMPATIBILITY_AUDIT_QUIESCENCE_COMMITTED`。Payload绑定Plan、terminal certificate event、decision-boundary lifecycle/access heads、按冻结顺序的predecision request/access closure vector、late-audit closure、revoked capability manifest、receiver closure、`no_in_flight_predecision_work`结果及validator。Commit后comparison/replay capability永久不可重开。
+
+Quiescence后每Plan只有一个logical `exportcap_`，绑定Plan、compatquiesce、EXPORT_ONLY operations/object scope、least-privilege与Access Audit policy。Runtime lease使用递增ordinal，任一时刻最多一个active；crash后必须由authoritative backend与Access Audit证明并提交旧lease撤销/过期/不可读，才可创建同scope新lease；无法证明则ACCESS_INTEGRITY_FAILED。从Quiescence到semantic reads结束的完整range中，所有semantic authorizations/terminals必须绑定该exportcap、当时唯一active lease、合法operation与exact allowed object；允许nonsemantic lease/liveness记录，禁止comparison/operator/old lease/foreign identity/out-of-scope read。Foreign semantic access触发ACCESS_INTEGRITY_FAILED，confirmed unauthorized exposure另记录EXPOSURE。
+
+独立single-writer Export Access Validation Infrastructure Journal管理`exportaccessepoch_`与`EXPORT_ACCESS_VALIDATION_INFRASTRUCTURE_EPOCH_COMMITTED`。Epoch绑定validator semantic/implementation、Access Audit backend、behavior runtime、preflight、global ordinal、previous epoch及recovery；实际process restart或exhausted后的恢复均需完整preflight与新epoch。`exportaccessrun_`绑定exact txn/heads/access vector/policy/validator/epoch且同组合最多一run，不得跨epoch继续；旧run在epoch失效时按abandon规则关闭。Run内primary+one、self-contained evidence及唯一PASS/FAIL语义保持；EXHAUSTED后仅新epoch可successor。
+
+Audit gate顺序冻结。无需Compatibility时先生成`compatna_ + full domain-separated SHA256`并提交`COMPATIBILITY_NOT_REQUIRED_COMMITTED`，绑定Proposed Suite Composition、五个winner Controller implementation identities、Protocol Semantic Identity与冻结N/A eligibility rule；只有机械证明无跨implementation preservation需求时合法，否则必须进入Compatibility Plan。
+
+每slot `auditgateroot_`绑定slot type、APPLICABLE/NOT_APPLICABLE、适用时scope/quiesce及event、Catalog及event、auditready PASS及event和Gate Protocol。Applicable root还显式绑定`auditreadrun_`、`auditreadepoch_`及epoch commit event SHA，并可唯一追溯Evidence；无需复制Evidence。Compatibility N/A root绑定`compatna_`及其event，其余字段使用closed nulls。`suiteauditgates_`按Corpus、QUAL、CLAR、SIGN、ORIG、POL、Scheduler、Replay、Export保存九个roots。`FINAL_SUITE_COMMITTED`同时内嵌完整vector并绑定其identity，机械重验；不得只引用external vector。
+
+Post-decision FAIL使用closed `*_AUDIT_NOT_READY`，不得改写既有formal result。Candidate/result-independent Audit Dependency Closure Registry按scope冻结保留upstream、失效direct/transitive downstream、必须新建/可复用/禁止复用identities、replacement prerequisites、Official/seal限制及canonical projection。每次具体failure建立`auditdepclosure_ + full domain-separated SHA256`并提交`AUDIT_DEPENDENCY_CLOSURE_COMMITTED`，绑定NOT_READY event、Registry、当前manifest graph及有序`preserved / invalidated / must_rebuild / reusable / forbidden` vectors；replacement或下游terminal之前必须存在该不可修改projection。未知edge是Protocol/dependency validity failure，禁止operator按quality/cost/winner缩小范围。
+
+Readiness或Export Access Infrastructure Journal自身integrity failure以首个非法event为cutoff。只有引用cutoff前完整epoch与terminal chain的结果保留gate authority；非法event或其后epoch的runs失去authority，但不改写底层Corpus、winner或certificate。恢复使用新的Infrastructure Journal identity重验受影响immutable Catalog，assets完整时不重跑研究过程。Access Journal损坏时不得promotion受影响Export，只能从合法durable candidate与冻结access range重新验证，禁止重读semantic sources。
+
+Q404–Q412进一步冻结Audit/Export recovery authority。Scope-local `auditreadproj_`通过`AUDIT_READINESS_RESULT_REFERENCED`幂等引用Infrastructure terminal；PASS/FAIL绑定真实auditready，EXHAUSTED/ABANDONED使用closed null。只有当前PASS projection能进入Audit Gate Root。Preformal Formal Infrastructure Journal Registry作为generation root-of-trust，权威管理Readiness/Export Access Journal admission、replacement与seal；trusted predecessor是旧generation最后合法event，Registry自身损坏会终结当前formal root而不能递归创建Registry v2。全部pre-freeze及预注册Official scopes在同一Protocol Semantic Identity下共享唯一immutable auditquiescereg。
+
+Export Access ABANDON固定为停止dispatch→终结全部attempt→验证无active attempt→run ABANDONED→Export terminal，且只允许closed reasons。单一`EXPORT_PROMOTION_COMMITTED`同时是promotion attempt success、formal Export artifact首次authority与artifact_outputs registration；Compatibility Export completion只引用它。`exportcandintegrity_`仅在完整storage recovery后证明已提交candidate missing或SHA/length/schema/locator mismatch，不含semantic payload且成立后禁止重读semantic source。
+
+Compatibility N/A使用closed compatnareg和composition-specific compatna：五winner Protocol相同、Controller implementation去重恰一、Suite target和Official component均等于它、无foreign winner、无未合法terminal或被绕过的Compatibility lifecycle。Gate authority失效按Final Suite、Authorization、STARTED四阶段处理；已提交event不撤销。Authorization后STARTED前使用`OFFICIAL_EXECUTION_BLOCKED_AUDIT_AUTHORITY_INVALID`阻止执行；STARTED后仅记录post-freeze audit failure，不重封、重选或反馈。`AUDIT_DEPENDENCY_CLOSURE_COMMITTED`只由suite-level Audit Gate Controller在Suite Journal提交，Readiness Infrastructure不得决定winner/role/Suite/Official影响范围。
+
+Q413–Q420继续冻结control-plane位置与恢复。Readiness projection按auditscope约束但统一写入Suite Journal Audit Gate namespace，sealed source Journals不重开。独立Formal Infrastructure Registry Journal承载finfrareg/infrajgen generations；Registry不自管理，replacement同时关闭旧generation并授权新generation，trusted cutoff为最后合法event。每Catalog Readiness successor chain只允许EXHAUSTED产生唯一successor，Gate Root绑定完整chain与唯一PASS。每composition的Compatibility N/A和Plan分支exactly-one且不可切换。
+
+AUTHORIZED后STARTED前的Audit invalid会撤销dispatch capability；READY services必须stop/clear，旧READY不复用。STARTED后由result-independent Official Integrity Impact Registry分类：audit-authority-only可按原协议完成但仅作audit-invalid report，execution-integrity-affected立即停止且不得补跑/拼接。多NOT_READY使用per-trigger closure、explicit RESOLVED和immutable active closure-set snapshots。Winner provenance完全不变时composition可保持而Suite/run identity重封；相同composition不得生成第二Compatibility Plan，仅能复用closure明确允许的既有Compatibility/N/A authority。
+
+Q421–Q430补齐finfrajournal root、generation Evidence-first replacement、compatbranch adoption、auditdepres/explicit empty closure set/auditdeplattice、officialimpact classification及suiterun/finalsuite identities。可信prefix中已有Evidence但缺terminal时不得重跑semantic validation；Compatibility branch必须显式commit；Official STARTED前禁止evaluation dispatch；Official completion区分FORMAL_AUDIT_VALID与AUDIT_INVALID_REPORT_ONLY。Re-seal crash恢复复用已分配Suite birth，不产生平行Suite。
+
+Q431–Q440进一步冻结root availability/integrity互斥分类、read-only verified mirror、每managed kind最多一次generation replacement、Evidence-only terminalization recovery、compatbranch authority barrier、managed Audit Gate Controller epoch与bounded resolution、连续closure-set chain、cumulative Official Impact Set、三态completed Report Status以及Suite Run唯一birth/terminal。固定composition最多一次RESEAL；其再次pre-STARTED失效会关闭当前top-level formal root，不能靠新composition或role rerun重置。
+
+Q441–Q450补齐Formal Root最小authority chain、immutable mirror prefix witness、Root Storage Incident三路径上限、replacement plan与Evidence terminalization identity、每trigger最多两个Controller execution epochs、独立Controller recovery preflight、v1 cross-root no-preservation、completed/stopped reporting gates及Suite abandonment Registry。任何root failure后的新实验均从冻结初始化边界重跑，旧Memory/search authority不得跨root导入。
+
+Q451–Q461进一步冻结Root fail-stop witness/terminal/shutdown、mirror activation、Root Storage Incident、Replacement Plan validation与Controller preflight事务；并明确v1新Root必须重新生成625条A区Canonical Full Reviews及Projection、Fragment、Corpus embeddings和Review Memory indices。只有root-independent input assets可复用，旧Root Memory资产即使bytes相同也不携带新Root authority。
+
+Q462–Q475补齐Root Control独立failure domain、Registry authority activation、mirror/incident/replacement/preflight预算与顺序，以及Official report content/artifact/current projection分层。Cross-Root input allowlist在Root birth冻结；旧Corpus raw responses同样禁止复用，新Root必须重新调用Reviewer构建625条记录。Root完成态区分formal-valid与report-only invalid，Official中途停止属于独立失败终态。
+
+Q476–Q488进一步冻结finfra transition hold、Root Control non-recursive mirror/watchdog、不可变storage topology、Report materialization与storage-integrity replacement、Reporting Journal及Root input manifest。REPORT_ONLY completion不能绕过任何pre-start known readiness FAIL；Root terminal后所有Memory/Corpus/Embedding authority永久冻结，post-terminal mirror只作外部归档。
+
+Q489–Q500解决C/Human protected input与pre-birth reuse冲突：Birth只冻结sealed commitment，Official authorization后才验证bytes。Reporting Hold、publication export、Shutdown Registry与post-terminal archive均不向Evolution/Memory泄漏protected信息；protected preflight失败关闭Root，不重封Suite或重用旧Memory路径。
+
+Q501–Q513将Protected Official bytes封闭在专用preflight/access/delivery域，Reporting Hold通过durable ingress sequence串行化，publication以private candidate原子promotion。统一Protocol Root与PASS validation authority绑定全部Memory、Evaluator、Journal和access registries，Protocol变化不得混用旧Memory/search authority。
+
+Q514–Q520将Protocol Root Validation与Protected Actual Read明确列为CORE_V1：validation完全benchmark-independent，protected violation/unresolved均hard-stop。Q521–Q525的复杂Reporting/Publication recovery归HARDENING_V2。Q526–Q527不允许Profile split弱化Memory query无LLM、Candidate-visible bytes、Embedding determinism、M★ RNG/search或Human/CoCo隔离；这些仍是首次formal blocker，并须纳入Core性能预算。
+
+Replay Readiness PASS正常Export；可信FAIL与REPLAY_AUDIT_NOT_READY在certificate、compatquiesce、semantic objects和安全边界仍完整时仍必须Export，且PASSED composition永久不能Suite。PAUSED/EXHAUSTED但无可信PASS/FAIL时不得启动Export，必须先恢复Readiness；若缺失/损坏破坏semantic source、quiescence或出现exposure/access-integrity fatal，则走Export/Compatibility terminal failure。原则是semantic audit FAIL不改certificate且仍记录真实Export，未知Readiness不能伪装FAIL越过gate。
+
+Query-embedding cache严格限定在同一`Candidate × paper × role × Program`执行范围：
+
+- 同paper session内相同`memqry_`可复用已durable commit且Embedding Semantic/Runtime Identity完全相同的QueryEmbeddingRecord；
+- resume仅在Candidate、paper、role、Program及两层Embedding Identity全部匹配时复用；
+- 禁止跨paper、Candidate或role复用，即使canonical bytes与`memqry_`相同；
+- cache hit不改变Memory API call计费、`memqocc_`、RetrievedMemoryLedger、retrieval result、budget transition或任何visible projection；
+- cache hit/miss只作execution provenance，不向Candidate暴露，不得影响scheduler priority、fitness、parent selection或其他formal decision。
+
+Cache capability的生命周期以paper evaluation terminal event为唯一authoritative boundary，不建立可独立漂移的cache-close状态。Paper进入terminal流程后首先禁止创建新的Query Embedding intent：
+
+- 正常完成时，必须等待该paper关联的全部已提交Embedding transactions进入合法terminal state，且不存在仍可能生成可用`qemb_`的in-flight transaction，之后才可提交paper terminal event；
+- Candidate failure、role failure或其他冻结终止条件先关闭paper时，所有尚未terminal的Embedding transactions必须提交`QUERY_EMBEDDING_ABANDONED`；abandoned transaction永久不得生成canonical `qemb_`；
+- abandonment或paper terminal之后到达的late response只保存raw execution audit，不得重新激活cache、修改RetrievedMemoryLedger/budget或影响正式结果。
+
+Terminal commit完成后，该cache capability立即关闭。既有`qemb_`、raw Embedding responses和execution provenance继续作为immutable audit artifacts保存，但转为audit-only，不得被下一paper、其他Candidate或其他role作为execution cache读取。新paper即使出现完全相同的`memqry_`也必须重新执行上述Query Embedding事务并产生该paper自己的execution provenance。
+
+Formal Embedding Runtime必须通过canonical vector byte-stability gate。同一canonical真实query在formal scheduler允许出现的全部合法real-item occupancy、padding数量、padding tensor positions、partial/full batch、cold/warm状态以及每项within-capacity三次重复中，最终canonical little-endian IEEE-754 float32 vector bytes必须逐bytes完全相同。Gate按`batch_size=8 → 4 → 1`顺序选择最高通过配置；任一多query batch若不能满足byte equality，则继续降级，必要时formal固定`batch_size=1`。允许使用冻结、可审计的deterministic padding/full-batch策略，但其算法、padding payload、batch assembly和实现版本必须进入Embedding Runtime Identity并通过同一gate。Padding output自身不要求跨运行byte-identical，但每次必须满足cardinality、tensor-position mapping、dtype、dimension与finite-value约束并确定性丢弃。任一padding/occupancy/cache状态改变真实query vector bytes，即使top-k不变也使配置失败；`1e-6`最大绝对误差与top-k/ranking一致性只作诊断。
+
+Embedding使用独立scheduler与queue，不计入Qwen request queue。Scheduler固定按`QUAL → CLAR → SIGN → ORIG → POL` role round-robin，role内严格按照committed logical sequence FIFO；按该顺序装配至selected batch size。未达到full batch时，只能在冻结`max_batch_wait`后dispatch partial batch。禁止按query长度/内容、cache hit/miss、Candidate identity、fitness或预计运行时间重排。
+
+`max_batch_wait`计时起点固定为第一个dispatch-eligible Query Embedding request进入当前空batch assembly buffer的时刻，终点为`QUERY_EMBEDDING_BATCH_DISPATCHED` durable commit。Clock implementation、unit、rounding与`max_batch_wait`数值必须在preformal冻结并进入Embedding Scheduler Runtime Identity。Scheduler restart后，从journal恢复出的、故障前已经等待但尚未dispatch的requests统一视为wait已到期；Embedding service/runtime preflight通过后，按冻结role round-robin与role-local FIFO立即重新assembly/dispatch，不重新等待完整`max_batch_wait`。完整保存enqueue/dispatch provenance、batch membership、tensor position/order、occupancy、padding policy及selected Runtime Identity。实际enqueue/restart时序可以改变occupancy，但不得借此改变canonical vector bytes或formal decision。
+
+每次API调用在执行前确定性计算完整call、fragment、hydration与token成本。任一非call budget不足时，整次请求返回`REVIEW_MEMORY_BUDGET_EXHAUSTED`：
+
+- 不partial delivery；
+- 不缩小top-k；
+- 不runtime truncation；
+- 不消耗fragment/hydration/token delivery额度；
+- 正常消耗一次Memory API call。
+
+达到`max_memory_api_calls`后，后续调用直接返回相同deterministic exhausted disposition，不产生delivery，也不扩增其他budget。非法role/filter/ID是Candidate-originated protocol failure，不等同budget exhaustion。具体整数在Corpus/Projection materialization、token statistics与mixed gate完成后预注册，对全部initial seeds与descendants一致。
+
+## 5. Retrieved Memory Ledger and Manifest
+
+每个paper session维护append-only `RetrievedMemoryLedger`。每次成功Memory delivery按实际call order追加一个不可变occurrence，绑定call ID、projection/full-record identity、canonical delivered bytes、token cost与budget pre/post state。重复读取保留为不同occurrences并重复计费；不得hidden dedup、重排或合并。
+
+### 5.1 Transactional Delivery Visibility
+
+每次Memory API调用依次使用以下paper-local authoritative transaction records：
+
+1. `MEMORY_API_CALL_INTENT_COMMITTED`：绑定immutable call identity、exact request与pre-budget state；
+2. `MEMORY_API_RESPONSE_COMMITTED`：绑定完整deterministic response/disposition及其SHA；
+3. `MEMORY_BUDGET_TRANSITION_COMMITTED`：绑定response identity、完整pre/post budget state及各预算维度的确定性delta；
+4. 成功delivery时提交`MEMORY_LEDGER_OCCURRENCE_COMMITTED`，绑定ledger occurrence、response与对应budget transition。
+
+预算状态本身属于Memory API事务边界。成功delivery、`REVIEW_MEMORY_BUDGET_EXHAUSTED`或Candidate invalid request只要按照冻结协议产生预算转换，都必须先durable commit完整response/disposition及对应`MEMORY_BUDGET_TRANSITION_COMMITTED`，之后才允许向Candidate暴露结果或错误状态；无内容delivery不能跳过预算事务。成功delivery还必须完成ledger occurrence commit，才能进入下一步Program逻辑、Reviewer context或Summary manifest。API在worker内已经计算或返回不构成正式delivery。
+
+`REVIEW_MEMORY_BUDGET_EXHAUSTED`继续消耗一次Memory API call，但不消耗fragment、hydration或token delivery额度。若call counter已经达到冻结上限，后续deterministic exhausted call的budget transition显式记录saturated `pre == post`，不得越过上限。Candidate invalid request按冻结failure ownership终止相应Candidate流程；其预算转换仍按同一事务规则提交，不能通过错误状态绕过call accounting。
+
+冻结budget transition truth table如下：
+
+| Response/disposition | `api_calls` | `delivered_fragments` | `full_record_hydrations` | `delivered_tokens` | 后续处理 |
+|---|---:|---:|---:|---:|---|
+| success | `+1` | 按canonical response实际成本增加 | 按canonical response实际成本增加 | 按canonical response实际成本增加 | 提交ledger occurrence后才可见 |
+| 非call budget不足，返回`REVIEW_MEMORY_BUDGET_EXHAUSTED` | `+1` | `+0` | `+0` | `+0` | 正常返回exhausted disposition |
+| Candidate invalid request且pre-state call count未达上限 | `+1` | `+0` | `+0` | `+0` | Candidate-originated protocol failure，无delivery |
+| pre-state call count已达上限 | saturated `pre == post == max` | `+0` | `+0` | `+0` | deterministic `REVIEW_MEMORY_BUDGET_EXHAUSTED` |
+| infrastructure failure | 无正式transition | 无正式transition | 无正式transition | 无正式transition | 保持原pre-state并按冻结规则重放 |
+
+每个正式`MEMORY_API_RESPONSE_COMMITTED`或disposition必须且只能绑定唯一一个`MEMORY_BUDGET_TRANSITION_COMMITTED`。Transition identity绑定response identity和pre/post state；禁止同一response重复提交transition、重复计费，或由多个response共享一个transition。Infrastructure failure没有正式response/disposition时不得伪造budget transition。
+
+Recovery固定为：
+
+- response与budget transition均已commit：直接复用，不重新执行API；成功delivery尚缺ledger occurrence时，只根据已提交response/transition补完ledger append，之后才能暴露；
+- response已commit而budget transition尚未commit：基于同一immutable response补完确定性budget transition，不重新执行API；成功delivery随后按该transition完成ledger append；
+- call intent已commit而response未commit：从同一pre-budget state确定性重放exact request；
+- 只有stdout/log、Candidate process memory、partial/temporary/orphan file：不构成delivery，不影响budget、ledger或Summary input；
+- budget transition或ledger occurrence已commit：不得重复转换、append、计费或重新执行API。
+
+Candidate/worker不得直接写authoritative ledger transaction。Paper-local transaction writer必须由controller拥有并使用冻结schema/hash/durability protocol；并行worker完成顺序不得改变同一paper的committed call order。
+
+`POST_RETRIEVAL_LLM_SUMMARY`在唯一一次Summary enqueue前，根据ledger当前全部成功delivery occurrences按原call/occurrence order生成并durable commit `RetrievalResultManifest`。Manifest必须包含所有occurrences，包括重复项。Summary不能选择manifest外Memory、重新检索、隐式删除重复项或改变顺序。
+
+没有Summary调用时不生成虚假Summary manifest，也不占用Summarizer Qwen budget；普通retrieval ledger及Reviewer-visible Memory audit仍按统一API协议保存。
+
+## 6. Single Summary Call and Token Budget
+
+每个`Candidate × paper × role`最多一次post-retrieval Summary model invocation logical request；transport attempts仍按统一request transaction protocol处理，不增加Summary call count。
+
+### 6.1 Canonical Summarizer Input Record and Visible Projection
+
+Summary request必须由strict `CanonicalSummarizerInputRecord`及其唯一`SummarizerVisibleInputProjection`确定：
+
+- authoritative payload绑定RetrievalResultManifest SHA、Program/Candidate/paper/role、RetrievedMemoryLedger、budget、formatter/framing、tokenizer、ordered query/delivery occurrences及其他完整audit identities，但不包含自身SHA；
+- 对domain-separated authoritative payload计算`suminput_ + full lowercase SHA256` identity并由record envelope保存；
+- `SummarizerVisibleInputProjection`独立canonicalize并计算完整`summarizer_visible_projection_sha256`；
+- Summary request metadata同时绑定并验证`suminput_` record identity与visible projection SHA，实际model prompt只能注入verified visible projection bytes；
+- Candidate ID、内部SHA、budget/runtime/audit字段不得通过envelope或framing泄漏给Summarizer。
+
+`CanonicalSummarizerInputProjection`不再是合法machine type/schema；只允许在historical documentation或migration alias registry中引用。新formal不得生成、接受、解析或回退到该旧类型。
+
+`SummarizerVisibleInputProjection`字段闭集只允许：
+
+1. 冻结role/Summary framing；
+2. 按committed Memory API call顺序排列、且对应调用产生至少一个正式RetrievedMemoryLedger delivery occurrence的成功`vector_search` query exact bytes，重复成功query逐项保留；
+3. 按RetrievedMemoryLedger occurrence顺序排列的全部已成功delivery canonical Memory bytes，重复delivery逐项保留；
+4. 每个delivery允许的最小content-kind、subdimension与anchor provenance。
+
+每个满足Q216、产生至少一个正式delivery occurrence的成功`vector_search` call恰好生成一个visible query occurrence：
+
+- 一次call返回多个fragments时query仍只出现一次；
+- 后续`get_projection`或`get_full_review_record`不得复制或重新引入query；
+- 两个独立成功calls即使canonical bytes完全相同，仍按committed call order形成两个occurrences并分别计入累计query budget；
+- authoritative record分别绑定原始vector-search call identities，visible projection只展示deterministic query occurrence ordinal与canonical query bytes，不暴露call/request ID。
+
+禁止注入retrieval query之外的paper正文/STRUCTURAL context通道、Frozen External Evidence、similarity、rank/`top_k`、budget state、Candidate ID、内部SHA或其他未经过Review Memory retrieval取得的信息。实际已提交给vector index的query exact bytes即使包含由冻结deterministic MemoryProgram构造的paper-derived文本，仍是合法输入；但Visible Projection中的query bytes必须与index request逐bytes相同，不得扩展、改写、重新生成或补充。Authoritative manifest可保存完整API audit，但它不是model prompt。
+
+Canonical queries与retrieved Review Memory在Summarizer prompt中必须使用冻结framing作为untrusted quoted data封装。System/Summary instructions必须明确这些data不能覆盖任务定义、system/rubric、message boundary、framing，或请求额外Memory、paper/context、External Evidence或capability。Candidate不能控制system role、message boundary、delimiter、length field或framing；这些schema/bytes/implementation identity全部进入Summarizer Protocol Identity。
+
+Untrusted data采用byte-preserving length-prefixed framing。每个query与Memory payload由冻结ASCII header声明deterministic ordinal、content kind及UTF-8 byte length；materializer/parser严格按byte length读取payload，不通过搜索结束delimiter判断边界。Byte length针对canonical UTF-8 encoded payload计算，不得使用Unicode code-point或character count代替。System instructions与untrusted data保持独立、冻结的message-role boundary。
+
+Header语法、ASCII fields、空格与换行bytes、ordinal/length整数格式、content-kind encoding、message layout及parser/materializer版本全部冻结并进入Summarizer Protocol Identity。Boundary gate覆盖delimiter-like payload、多语言UTF-8、CRLF及协议允许的合法control characters。无法唯一解析、declared/actual length mismatch、payload byte变化或role-boundary变化均formatter/materialization protocol failure。
+
+Formal Summarizer chat request固定为且只能为：
+
+1. 一个immutable `system` message，包含Summary任务、当前role约束、允许信息边界及untrusted-data/instruction-isolation规则；
+2. 一个`user` message，只包含冻结length-prefixed `SummarizerVisibleInputProjection`；
+3. 冻结chat template确定性追加的generation prompt。
+
+禁止developer/tool messages、assistant history、assistant prefill、额外user message、Candidate控制的system字段或message boundary。完整messages JSON、system prompt SHA、chat-template SHA、rendered prompt bytes及generation config进入Summarizer Semantic Identity；实际model-visible input必须能从这些冻结资产确定性重建。
+
+为保持byte-preserving语义，不对query执行instruction stripping、semantic filtering、删除或改写。Query文本对condensation行为的影响属于显式Program行为，但不能授予额外Qwen invocation、独立paper通道、未召回Memory访问、外部信息或其他capability。Untrusted framing不得在runtime根据query内容自适应变化。
+
+Budget-exhausted、Candidate-invalid、infrastructure-failed及合法零delivery的`vector_search` query不得进入visible projection。`get_projection`和`get_full_review_record`没有独立retrieval query，不生成虚假query occurrence；它们成功delivery的Memory bytes仍按ledger顺序进入Summary input。Visible projection不得选择、删除、改写、重排或hidden-dedup任何eligible query或delivery occurrence。
+
+### 6.2 Two Independent Summary Token Gates
+
+Summarizer-input gate与Reviewer-memory gate是两个独立gate、两个独立token count和两个独立budget identity，不得混用或以一方剩余额度补另一方。
+
+Summarizer-input gate必须在Corpus materialization statistics和mixed-capacity gate后预注册`max_summarizer_input_tokens`及统一`max_summarizer_query_tokens_total`。所有Programs的capability manifest共享相同query limits，但累计Summary-query limit只在`POST_RETRIEVAL_LLM_SUMMARY` materialization中生效；Direct/Structured不执行Summarizer，不因该累计limit失败。根据`max_memory_api_calls`、`max_delivered_fragments`、`max_full_record_hydrations`、实际Memory delivery/token budget，以及query/provenance schema字段格式与最大长度，构造最坏合法`SummarizerVisibleInputProjection`。Materialization使用冻结Summarizer Qwen tokenizer累加全部eligible成功query occurrences，包括重复项；超过`max_summarizer_query_tokens_total`时产生`SUMMARY_INPUT_BUDGET_EXHAUSTED`。随后再计算完整Summary framing、全部eligible queries、全部retrieved Memory bytes及source provenance，验证`max_summarizer_input_tokens`及Qwen request context。任一Summary gate超限时：
+
+- 返回冻结`SUMMARY_INPUT_BUDGET_EXHAUSTED` disposition；
+- 不dispatch model request；
+- 不runtime truncation、删除retrieved items或改变manifest；
+- 不扩大input/output budget；
+- 不执行第二次Summary调用；
+- 不fallback为unsummarized Memory。
+
+累计query超限时不得删除较早query、只保留最后query、hidden dedup、截断、扩大budget、切换mode或fallback；完整成功retrieval历史及两套query token audit仍保留。Failure ownership继续按Q195：ordinary child consume-and-no-admit、mandatory seed initialization fail-fast、top-3 finalist winner-selection fail-fast。
+
+Reviewer-memory gate不读取或计入Summarizer input中的retrieval queries及原始retrieved Memory，因为Summary mode Reviewer看不到它们。该gate使用冻结Summary `max_output_tokens`作为summary text最坏上限，加上Reviewer-visible source provenance和Memory framing，必须在preformal证明所有最坏合法输出始终不超过统一`max_reviewer_memory_context_tokens`。
+
+Manifest ID、role、content kind、subdimension、anchor ID及其他可见provenance字段必须冻结格式与最大长度。Boundary test vectors使用最大合法occurrence数量、最大合法query/provenance长度、最大Memory delivery与Summary max-output分别覆盖两个gate。若任一gate不能满足，只能在preformal调整对所有Programs统一的Memory API/Summary budget，形成新的Protocol/Runtime Identity并重新执行相关gate；formal期间禁止截短query/provenance、隐藏重复occurrence、runtime truncation、降低Summary output budget或动态扩容。
+
+合法Summary继续遵守non-empty raw UTF-8 canonicalization、`stop/length`接受、within-capacity exact stability、raw-response-first与no-silent-fallback规则。
+
+`SUMMARY_INPUT_BUDGET_EXHAUSTED`属于Candidate-originated runtime/protocol failure，不是正常Memory API budget exhaustion，也不得转为fitness `0`：
+
+- ordinary search-stage child：终止其剩余paper evaluation，消耗当前global attempt且Candidate不admit；
+- mandatory initial seed：initialization fail-fast；
+- global top-3 finalist：winner-selection fail-fast且不得递补；
+- 禁止改为空Memory、direct retrieval、unsummarized Memory、runtime truncation或额外Summary调用。
+
+若ledger没有任何成功delivery occurrence，则是合法`EMPTY_LEDGER`状态：不调用Summarizer、不生成虚假Summary manifest、不占Qwen budget，生成显式empty `CanonicalReviewerMemoryContext`并正常进入Reviewer generation。
+
+## 7. Canonical Reviewer Memory Context
+
+Reviewer Memory context严格拆分为authoritative closed-schema record与由它确定性投影的Reviewer-visible projection。Program不得自行拼接Reviewer Memory prompt、delimiter、source ordering，或在delivery后进行未注册的二次选择。Authoritative record通过冻结canonical serializer计算SHA；Reviewer request metadata必须显式绑定该authoritative context SHA，但实际prompt只能注入其冻结visible projection。
+
+Authoritative `CanonicalReviewerMemoryContext`使用payload/envelope两层，避免self-hash：
+
+1. strict closed-schema authoritative payload保存全部正式字段，但禁止包含其自身SHA；
+2. 对domain-separated canonical payload计算`canonical_reviewer_memory_context_sha256`；
+3. record envelope保存authoritative payload及其SHA；
+4. Reviewer-visible projection作为独立closed projection生成并计算`reviewer_visible_projection_sha256`；
+5. authoritative payload绑定该visible projection SHA，envelope同时保存projection bytes及其SHA。
+
+Authoritative payload固定包含：
+
+- schema/protocol identity与`context_status ∈ {NON_EMPTY, EMPTY_LEDGER}`；
+- `memory_read_mode`；
+- Program、Candidate、paper与role identities；
+- `retrieved_memory_ledger_sha256`；
+- 适用时的`retrieval_result_sha256`，否则显式`null`；
+- ordered source occurrence identities；
+- 完整final Memory budget state及其canonical identity；
+- canonical context text bytes/SHA；
+- 适用时的canonical summary SHA，否则显式`null`；
+- formatter/framing identity；
+- 使用冻结Reviewer tokenizer计算的context token count；
+- `reviewer_visible_projection_sha256`。
+
+Envelope中的`canonical_reviewer_memory_context_sha256`不进入authoritative payload hash projection；禁止任何self-referential hash placeholder、二次迭代hash或实现相关省略规则。相同payload必须产生相同完整小写SHA256。
+
+Reviewer-visible projection是authoritative record的冻结确定性投影，只能包含：
+
+1. 冻结framing；
+2. 必要的非语义source provenance；
+3. 最终`context_text`。
+
+每个visible source occurrence的provenance字段闭集为：
+
+- occurrence ordinal；
+- source A-paper manifest ID；
+- role；
+- content kind；
+- 对应subdimension ID，或固定`ROLE_OVERALL_ASSESSMENT`；
+- 排序、去重后的paper anchor IDs。
+
+Visible provenance中的`content kind`必须来自同一个冻结closed enum：
+
+```text
+PROJECTION_FRAGMENT
+PRIMARY_PROJECTION
+FULL_REVIEW_RECORD
+FULL_REVIEW_SECTION
+FULL_REVIEW_OVERALL_ASSESSMENT
+```
+
+`FULL_REVIEW_RECORD`只用于`DIRECT_RETRIEVAL`与`POST_RETRIEVAL_LLM_SUMMARY`中的hydration occurrence级provenance。`FULL_REVIEW_SECTION`与`FULL_REVIEW_OVERALL_ASSESSMENT`只用于`STRUCTURED_EXPERIENCE_RECALL`的StructuredViewItem展示投影。一个Full Review hydration始终保持一个ledger/delivery occurrence和一次计费，不得为了provenance或formatting拆成多个delivery occurrences。
+
+Anchor映射固定为：
+
+- `PROJECTION_FRAGMENT`只展示确定性parser生成的`explicit_fragment_anchor_ids`；`inherited_section_anchor_ids`只保存在authoritative audit中，不得作为fragment-level grounding展示；
+- `PRIMARY_PROJECTION`与`FULL_REVIEW_SECTION`展示完整、排序去重后的`section_paper_anchor_ids`；
+- `FULL_REVIEW_OVERALL_ASSESSMENT`展示空anchor集合；
+- 禁止把section-level anchors机械复制给fragment visible provenance。
+
+重复delivery occurrences必须分别保留其visible provenance，不得因内容、source paper、subdimension或anchor集合相同而隐藏、合并或去重。
+
+Similarity score、retrieval query、`top_k`、Memory budget state/counters、ledger/call/request ID、Candidate ID、Program/Candidate内部identity，以及Full Review/Projection/Fragment/Context等任何内部SHA或audit identity不得出现在Reviewer-visible projection。Projection不得增加authoritative context不存在的Memory内容或语义标签。Reviewer request的prompt bytes必须能够由authoritative record、formatter/framing identity与projection规则唯一重建。
+
+Reviewer request metadata必须同时绑定`canonical_reviewer_memory_context_sha256`与`reviewer_visible_projection_sha256`并验证二者关系；实际model prompt只能注入已验证的Reviewer-visible projection bytes，不能注入authoritative payload/envelope。
+
+Mode-specific authority固定为：
+
+- `DIRECT_RETRIEVAL`：context包含ledger中全部成功delivery occurrences，严格保持call/occurrence order与重复项，只使用冻结framing；不得再次选择、删除、重排或隐藏；
+- `STRUCTURED_EXPERIENCE_RECALL`：同样消费全部occurrences；首先按当前role registry的canonical subdimension顺序分组，同一subdimension内按Full Review Record在ledger中的首次出现顺序排列，同一record内保持原始ledger occurrence顺序。重复delivery occurrences逐项保留，不做hidden dedup。Anchor metadata只按冻结规则排序去重并作为非语义source provenance展示，不得复制内容、筛选occurrence、改变分组权重或触发semantic dedup。该mode只允许确定性重排与framing，不得改写、总结或选择性删除原始retrieved review bytes；
+- `POST_RETRIEVAL_LLM_SUMMARY`：Reviewer只接收canonical summary text及冻结的非语义source provenance，不同时接收原始retrieved Memory text。Visible provenance严格按原始RetrievedMemoryLedger顺序为每个成功delivery occurrence保留一项，重复occurrence逐项保留；fragment、primary projection和Full Review hydration分别使用`PROJECTION_FRAGMENT`、`PRIMARY_PROJECTION`和`FULL_REVIEW_RECORD`，不展开为StructuredViewItems。该provenance只声明这些occurrences构成Summarizer冻结输入集合，不得表述或暗示Summary完整覆盖、逐项评价或保留了每个source的全部信息。Summary不合法或未形成canonical result时不得构建nonempty Reviewer context。
+
+CanonicalReviewerMemoryContext不得包含Evaluator score/reasoning、formal applicability、Human/OpenReview/CoCo信息、Frozen External Evidence内容或Program未通过正式delivery取得的Memory。
+
+### 7.1 Hydrated Full Review Record Section Projection
+
+一个hydrated Full Review Record在`RetrievedMemoryLedger`中始终只对应一个hydration occurrence及一次既定delivery/accounting。Structured formatter的后续展示不得产生新retrieval、delivery、ledger occurrence、token delivery charge或hydration count。
+
+Structured formatter对该occurrence执行确定性section projection：
+
+- 每个既有subdimension section的原始`review_text` UTF-8 bytes恰好展示一次，并置于对应canonical role subdimension group；
+- 不复制、删除、总结、重新生成、重新序列化或语义改写section内容；
+- 若Full Review Record包含`overall_assessment`，在全部subdimension groups之后以冻结role-level block恰好展示一次，不得省略、复制或改写；
+- section projection只改变外层framing与placement，不创建新的Retrieval Projection/Fragment或内容identity；
+- 同一Full Review Record被不同API calls重复delivery时，各ledger occurrence仍分别按Q199保留和展示；“每个section恰好一次”针对单个hydration occurrence，不跨occurrence去重。
+
+### 7.2 Reviewer Memory Context Token Gate
+
+在Corpus/Projection materialization statistics和mixed-capacity gate完成后，必须预注册跨role、paper、Candidate和mode统一的全局`max_reviewer_memory_context_tokens`。Formal期间不得按paper、role、Candidate或mode动态放宽或缩小。该上限使用冻结Reviewer tokenizer对完整Reviewer-visible projection计数，必须包含全部Memory framing、每个visible source provenance字段及最终context text；不得只计算retrieved/summary正文。
+
+Formal前对每个合法formal `paper × role` Reviewer request计算：
+
+```text
+available_memory_tokens =
+  max_model_len
+  - complete_non_memory_input_tokens
+  - reviewer_max_output_tokens
+  - frozen_safety_reserve
+```
+
+`complete_non_memory_input_tokens`必须使用冻结Reviewer tokenizer对完整非Memory request materialization计数，包括chat template、special tokens、system/role prompt、paper、STRUCTURAL context、schema/request instructions及所有位于Reviewer-visible Memory projection之外的冻结Reviewer framing。Memory projection内部framing只在Memory context token count中计算一次，不得重复扣除。统一全局cap取所有formal `paper × role`的最小`available_memory_tokens`，并连同输入manifest/token counts、Reviewer tokenizer、max model length、output budget与safety reserve identity在formal前冻结。
+
+`frozen_safety_reserve`暂不凭经验指定。它必须在完整formal request materialization、冻结tokenizer accounting和benchmark-independent near-max capacity gate完成后预注册为非负整数。它是显式运行技术余量，不是token-count mismatch的容忍区间。本地冻结Reviewer tokenizer对完整request的token count必须在冻结测试向量上满足正式backend/provider prompt-token accounting的一致性要求；不一致时preformal gate失败，必须修复tokenizer、chat-template、request materialization或accounting identity，禁止通过增大reserve掩盖。
+
+Token-accounting consistency gate采用严格整数相等。每个冻结test vector的local完整rendered request token count必须与backend/provider正式报告的`prompt_tokens`完全相同，覆盖short、typical、near-max、五role、cold/warm prefix-cache状态且每项重复3次。任一usage缺失、差异无法解释或整数不等均preformal fail；禁止数值容差、平均、投票或reserve抵消。Audit保存完整rendered request bytes、local token IDs/count、provider usage及token-accounting identity。
+
+最终reserve manifest必须冻结具体整数、制定依据、全部测试向量、local/backend token accounting结果、serializer/tool versions及manifest SHA，并进入对应Runtime/Protocol Identity。Formal开始后不得根据paper、role、Candidate、mode、实际显存或运行结果修改reserve。
+
+这里的minimum Memory requirement只表示协议/技术上必须容纳的合法empty/nonempty Memory framing或其他预注册payload边界，不表示Candidate必须执行最低次数retrieval、hydrate记录或消费非空Memory。`EMPTY_LEDGER`始终合法。若统一cap不能满足最小技术可执行边界，则preformal fail；只能通过新的Runtime/Protocol Identity修改参数并重新执行全部相关gate，禁止runtime truncation、per-paper adjustment或动态扩大。
+
+`DIRECT_RETRIEVAL`或`STRUCTURED_EXPERIENCE_RECALL`中，若Candidate的retrieval/hydration行为使最终visible projection超过该上限，则产生`REVIEWER_MEMORY_CONTEXT_BUDGET_EXHAUSTED`，不构建合法nonempty context且不dispatch Reviewer：
+
+- ordinary search-stage child：终止剩余paper evaluation、消耗当前global attempt且Candidate不admit；
+- mandatory initial seed：initialization fail-fast；
+- global top-3 finalist：winner-selection fail-fast且不得递补。
+
+禁止runtime裁剪occurrence、删除section/overall、缩短provenance、切换mode、fallback、扩大预算或提交另一context。该状态不得转为fitness `0`。
+
+`POST_RETRIEVAL_LLM_SUMMARY`的冻结Summary max-output、最大合法visible provenance与framing必须在preformal gate中证明其最坏合法输出始终不超过`max_reviewer_memory_context_tokens`。若冻结协议参数不能保证这一点，属于protocol/runtime gate failure，不得启动formal，也不得在formal中归为Candidate failure。Tokenizer、formatter或token-accounting实现错误导致的误算属于infrastructure/protocol failure。合法`EMPTY_LEDGER`仍生成冻结empty visible projection并正常进入Reviewer。
+
+### 7.3 Audit-Only Structured View Items
+
+`STRUCTURED_EXPERIENCE_RECALL`为每个应展示内容生成audit-only `StructuredViewItem`。每个identity使用：
+
+```text
+viewitem_ + full lowercase SHA256(domain-separated canonical identity object)
+```
+
+Canonical identity object绑定：
+
+- identity type与schema/version；
+- formatter/framing identity；
+- source ledger occurrence identity；
+- section/overall content type；
+- 对应subdimension，overall时使用冻结role-level表示；
+- 原始内容的精确UTF-8 byte range及content SHA；
+- deterministic display ordinal。
+
+`source_content_kind`使用以下closed registry，并与Reviewer-visible provenance共用同一identity/version：
+
+```text
+PROJECTION_FRAGMENT
+PRIMARY_PROJECTION
+FULL_REVIEW_RECORD
+FULL_REVIEW_SECTION
+FULL_REVIEW_OVERALL_ASSESSMENT
+```
+
+`FULL_REVIEW_RECORD`不是StructuredViewItem合法类型；它仅属于Direct/Summary occurrence-level provenance。Structured formatter不得为完整record额外生成该类型view item，只能为其sections及可选overall生成对应items。
+
+Occurrence-to-view-item映射固定为：
+
+- 一个fragment delivery occurrence生成一个`PROJECTION_FRAGMENT` view item；
+- 一个primary projection delivery occurrence生成一个`PRIMARY_PROJECTION` view item；
+- 一个Full Review hydration occurrence为其全部固定subdimension sections各生成一个`FULL_REVIEW_SECTION` view item；
+- 同一Full Review occurrence存在`overall_assessment`时额外生成恰好一个`FULL_REVIEW_OVERALL_ASSESSMENT` view item，不存在时不得生成；
+- unknown content kind、数量不一致、错误映射、遗漏或重复均为formatter/protocol failure。
+
+StructuredViewItem只证明formatter展示完整性。它不是Corpus asset、Full Review Record、Primary Projection、Fragment、RetrievalResultManifest item、新delivery或新Memory内容，不得产生额外API call、record、hydration、token delivery计费或Reviewer-visible internal SHA。
+
+Formatter gate必须机械验证：每个应展示section及可选overall恰好对应一个StructuredViewItem；所有原始bytes与source occurrence完全一致；没有遗漏、重复、额外生成、重新计费或内容改写。任一不一致均为formatter/protocol failure，不归因于Candidate review质量，也不得继续formal。
+
+## 8. Program Identity and Admission
+
+Program identity必须绑定：
+
+- formal seed/read-mode protocol identity；
+- 唯一`memory_read_mode`；
+- exact code与behavior assets；
+- Review Memory API/toolkit capability manifest；
+- 若为Summary mode，则绑定Summarizer prompt/config/request/input-output budget identities；
+- CanonicalSummarizerInputRecord `suminput_` schema/serializer、SummarizerVisibleInputProjection SHA、formatter/framing、query/provenance boundaries及两个独立token-gate identities；
+- QueryEmbeddingRecord `qemb_` schema/vector serializer、Embedding Semantic/Runtime bindings与paper-local cache capability identity；
+- Query Embedding raw-response-first transaction schema、三个commit event identities、validation/recovery rules与invalid-response no-`qemb_` boundary；
+- batch-level invocation/item-level attempt identity、ordered tensor mapping、batch-raw-first/item projection与recovery identity；
+- all-or-none batch validation、VALIDATED与self-contained BATCH_RESULTS双barrier、embedded full records/vector bytes、ordered all-item qemb vector、partial visibility denial与role-local workflow terminal projection；
+- Query Embedding logical-request/transport-attempt identity schemas、per-service-epoch two-attempt ceiling、timeout/late-response closure与canonical winner arbitration；
+- `EMBEDDING_SERVICE_EPOCH_COMMITTED` epoch0/restart lifecycle、global monotonic epoch、first-dispatch initial epoch、actual-dispatch/no-fault-exemption recovery accounting、request-relative one-recovery-epoch/four-invocation bound与third-epoch role failure；
+- one-`memqocc_`/one-logical-request cardinality、cache-hit terminal resolution、no-transport semantics与hidden-cache neutrality；
+- role-local logical sequence、durable enqueue barrier、cache-hit no-enqueue与retry original-FIFO preservation；
+- closed logical terminal disposition registry、exactly-one invariant及infrastructure-pause nonterminal semantics；
+- content-level `qemb_` versus paper-local execution provenance、scope-field exclusion与same-ID/non-reuse distinction；
+- paper-terminal/role-failure cache closure、audit-only transition与new-paper forced re-execution policy identity；
+- Embedding batch occupancy/cold-warm/repeat byte-stability gate、8→4→1 selection与可选deterministic padding/full-batch identity；
+- independent Embedding scheduler role-round-robin/FIFO、recovery reassembly/no old-batch constraint、new/old batch provenance、partial-batch wait/clock及provenance identity；
+- shared infrastructure failure global scheduler/role pause、failure-event response cutoff、same-runtime recovery/preflight identity；
+- independent Embedding Scheduler Journal schema/hash chain/global cutoff、role-journal SHA reference与no cross-role search ordering；
+- padding-item identity/schema/payload/position/discard policy与non-Candidate/non-budget/non-qemb boundary；
+- real-query byte-stability across all legal occupancy/padding/cold-warm combinations与padding-output structural-only gate；
+- `max_batch_wait` exact start/end/clock/unit/rounding、`QUERY_EMBEDDING_BATCH_DISPATCHED` barrier及restart wait-expiry semantics；
+- `max_memory_query_tokens_per_call`与`max_summarizer_query_tokens_total`、对应tokenizer/count identities及all-Program equality；
+- byte-preserving nonempty UTF-8 query validation、raw/canonical byte equality、no normalization/rewriting及invalid-request behavior；
+- Embedding/Summarizer双tokenizer IDs/count、same canonical bytes、identity separation与no count substitution；
+- logical UTF-8 content versus JSON wire provenance、Embedding observed-query SHA handshake与mismatch infrastructure failure；
+- `memqry_` content identity、`memqocc_` call identity、same-content/different-occurrence semantics及visible-ID denial；
+- 若为Structured Experience mode，则绑定grouping keys、ordering、framing与formatter identity；
+- `max_reviewer_memory_context_tokens`、Reviewer tokenizer与context token-accounting identity；
+- StructuredViewItem schema、serializer与coverage-validator identity；
+- paper-isolation、ledger/manifest schema与budget policy identities。
+- CanonicalReviewerMemoryContext schema、serializer、mode-specific formatter与framing identities。
+
+Initial seeds必须分别声明三个不同mode并通过strict Program identity non-duplication gate。Child在compile成功后、birth/admission前验证mode与实际capability usage一致；undeclared `llm_completion`、mode mismatch或capability escalation属于Candidate-originated protocol failure。
+
+## 9. Required Gates
+
+Formal前至少验证：
+
+- 三个v2 seed的exact code/assets/manifests与全新Program identities；
+- canonical seed key/birth order保持不变但旧identity/fitness/checkpoint拒绝混用；
+- closed mode enum、exactly-one mode与unknown/multiple/missing rejection；
+- per-mode least privilege及generic `llm_completion()` denial；
+- Reflector mode-change child产生新Program identity并重新gate；
+- Experience Learner v2无KnowledgeItem generation、无text rewrite且deterministic grouping；
+- paper-to-paper cache/ledger/summary/write-back denial及resume scope；
+- atomic budget cost、failed-probe call charging、no-partial/no-truncation与call-budget terminal behavior；
+- ledger append order、duplicate occurrence preservation与manifest completeness；
+- zero/one Summary call、input budget preflight、no-dispatch exhaustion与no-fallback；
+- CanonicalSummarizerInputRecord/Visible Projection separation、`suminput_`/visible-SHA request binding、allowed input closed fields与forbidden independent paper/external/internal fields；
+- exact index-query bytes equality、successful-delivery-only query eligibility、failed/zero-delivery exclusion与get/hydrate no-fake-query；
+- one eligible vector-search call/one query occurrence cardinality、multi-fragment no-copy与repeated-call duplicate preservation；
+- frozen untrusted-query/Memory framing、Candidate message-boundary denial、no semantic stripping与no capability escalation；
+- byte-length parsing、header/message-role identity、delimiter-collision/control-character vectors与length/byte mismatch rejection；
+- `qemb_` vector/observed-query identity、memqocc reference、same-paper resume reuse与cross-paper/Candidate/role denial；
+- `QUERY_EMBEDDING_BATCH_DISPATCHED → batch raw response → item response → BATCH_VALIDATED → BATCH_RESULTS_COMMITTED → role terminal projection`顺序、raw-response-first crash matrix及invalid response no-`qemb_`；
+- self-contained batch-results canonical payload、完整ordered QueryEmbeddingRecords/vector bytes、temporary/orphan non-promotion与validated-source deterministic rebuild；
+- RFC4648 padded Base64/no-whitespace/no-URL-safe/no-compression、real tensor-position ordering、padding exclusion及decode/length/dtype/dimension/SHA/finite validation；
+- `qembbatch_` item closed projection（tensor position/qemb/canonical record only）、all execution-binding exclusion、Journal event/envelope separation、orphan-content no-authority与continuous-chain-only authorization；
+- same-qembbatch independent execution/event requirement、exact-event projection binding、no formal dedup/early terminal与physical-dedup invisibility；
+- canonical event prior-identical-field denial、current-event-fixed prefix cutoff、delayed-rebuild-stable `dedupobs_` identity、observation non-authority/conflict-neutrality与self-contained recovery independence；
+- one-validated-batch/one-unsplittable-event、max canonical event bytes/test-manifest、durable atomic write/crash recovery及measured commit-latency gate；
+- primary+one-retry materialization attempt identity/disposition、`EMBEDDING_BATCH_RESULTS_MATERIALIZATION_FAILED` independent cutoff、post-cutoff dispatch/results/projection denial、transient-I/O versus repeated-canonical-error ownership、`MATERIALIZATION_RECOVERED` preflight barrier与committed-invalid-event Journal integrity failure；
+- `matatt_` field binding、PRIMARY/REBUILD index/parent、closed one-terminal dispositions、Results-event/originating-attempt/execution/output唯一映射、RUNNING/output-unconsumed commit preconditions及success-after-results-event/no independent qemb authority；
+- results-event-without-terminal recovery-only-success、matching reuse与failure/abandoned-plus-event integrity rejection；
+- primary-failure→singleton cutoff→preflight→paired RECOVERED→retry strict order、nested-cutoff denial、retry event/disposition order与RECOVERED non-success semantics；
+- noncausal materialization attempt、semantic-first唯一`matdec_`→execution-scoped self-contained `matout_`派生与重算校验、raw-audit separation、invalid-bytes Base64/length/SHA/JSON-pointer/root-sentinel gate、stage-gated complete Failure Registry collection/unknown-condition trust-boundary归责、ordinal actual-dispatch consumption、batch/global cutoff combined-state recovery与shared-cause provenance；
+- materializer recovery no-service-epoch mutation、post-cutoff response permanent audit-only、actual-dispatch/transport-slot accounting与no materialization exemption；
+- batch content authority versus role-local workflow visibility、projection-only crash recovery与pre-projection ABANDONED/no-delivery/no-charge；
+- role-local projection deterministic identity、one-terminal idempotency、conflicting-reference fail-fast与no qemb/qembbatch/cross-role identity leakage；
+- cross-role projection independence、failure-pause no-projection、post-recovery projection-only completion与no cross-role event order；
+- batch dispatch/raw response先于item response/qemb、ordered slice binding、batch timeout item closure与no response race；
+- batch cardinality/mapping/all-item/padding validation、VALIDATED/results双commit barrier、one-invalid-invalidates-all与no partial qemb visibility；
+- logical request versus transport attempt identities、每service epoch两次attempt、timeout committed closure、late-response audit-only与no wall-clock race；
+- global service epoch/request first-dispatch initial epoch、epoch-local attempt indices、same logical request across restart、single recovery epoch、max-four invocation与exhaustion role failure；
+- `EMBEDDING_SERVICE_EPOCH_COMMITTED` epoch0/previous-null与restart increment、same-Runtime/preflight/provenance binding、dispatch-before-epoch rejection及shared-fault no-attribution exemption denial；
+- epoch ordinal durable-consumption/no-gap、preflight-without-event replay、controller-only crash reuse、service-restart forced-new-epoch及non-authoritative-state denial；
+- third-epoch owning-role-only failure、other-role continuation、multi-role failure set与failed-role new-run/final-suite barrier；
+- failed-role old-run request stop/ABANDON/failure/seal/scheduler-drain sequence、role-run-keyed sequence、current-epoch admission及Runtime/C-Human/Official preconditions；
+- `ROLE_RUN_SCHEDULER_ADMITTED` identity、current-cursor binding、next-normal-role-turn semantics、no cursor reset/batch preemption/order insertion；
+- `next_role_index` five-role mapping、temporary empty-role scan、dispatch-only cursor mutation、last-real-item rule、post-dispatch failure no-rollback与restart recovery；
+- Protocol Semantic Identity versus implementation、formal/raw audit split、`auditscope_ / auditquiesce_` pre-head与唯一commit slot、closed Quiescence Requirement Registry、multi-Journal inclusive ranges、七类Audit Scope、occurrence-preserving identities、`auditreadepoch_` single-writer journal、closed-terminal auditreadrun/attempt/evidence/ready、formal catalogs/typed roots与Catalog Validation；
+- suite Compatibility lifecycle、comparison/access integrity、compatquiesce、authority-committed exportinput、TEB-protected exportcand、`exportaccessepoch_` journal、exportaccess run/attempt/evidence/val、nonsemantic exportpromatt、closed Export Failure Registry、`auditgateroot_ / suiteauditgates_`、Audit Dependency Closure Registry、trusted Replay FAIL versus unknown Readiness gate及Replay/Export stage ordering；
+- `memqocc_`与logical request一一对应、cache-hit no-attempt terminal disposition及完整budget/audit preservation；
+- role-controller sequence commit、`QUERY_EMBEDDING_ENQUEUED` barrier、retry no-resequence/no-tail-requeue与restart FIFO restoration；
+- RECORD/CACHE_HIT/ABANDONED closed terminal set、one-terminal-only与attempt/infrastructure nonterminal distinction；
+- cross-paper independent executions可共享content-level `qemb_`值但必须具有不同合法execution chains；
+- paper terminal与role failure后的cache capability关闭、audit-only retention及同`memqry_`跨paper强制重算；
+- normal-terminal drain barrier、failure-path `QUERY_EMBEDDING_ABANDONED`及post-close no-qemb/no-ledger-mutation；
+- batch 8/4/1在全部合法occupancy、cold/warm和三次重复上的canonical float32 byte equality，deterministic padding/full-batch审计，以及`1e-6`/ranking仅诊断；
+- Embedding scheduler五role round-robin/role FIFO、recovery重新assembly且不复刻old batch、new/old batch linkage、forbidden content-aware reorder、partial batch max-wait clock与batch/tensor provenance；
+- shared failure停止全scheduler、pre-cutoff atomic batch results保留、validated-but-uncommitted整批无效、post-event response audit-only与same-identity preflight recovery；
+- Scheduler Journal unique cutoff、pre-cutoff incomplete batch audit-only、role journal reference及Candidate/search ordering isolation；
+- padding item closed identity、frozen payload/position/order、validation-only discard及Memory/Candidate/budget isolation；
+- all legal real occupancy/padding positions/cold-warm stability matrix、real-vector exact bytes与padding-vector no-byte-identity requirement；
+- batch-wait first-eligible start、dispatch-commit stop、frozen monotonic semantics与restart recovered-wait immediate dispatch；
+- cache-hit semantic neutrality、Candidate invisibility与scheduler/fitness isolation；
+- exact one-system/one-user/generation-prompt message layout、forbidden roles/history/prefill及rendered reconstruction；
+- per-call invalid versus Summary-materialization cumulative exhaustion、Direct/Structured exemption及Q195 stage ownership；
+- old CanonicalSummarizerInputProjection machine type rejection/migration-alias-only；
+- query-call order、ledger-delivery order、duplicate preservation、all-delivery coverage与no selection/rewrite/reorder/dedup；
+- independent Summarizer-input/Reviewer-memory gates、worst-case field/occurrence vectors、`max_summarizer_input_tokens`、query per-call/total limits与no cross-budget substitution；
+- call-intent/response/ledger-budget三阶段crash matrix、visibility barrier、replay/no-double-charge；
+- `MEMORY_BUDGET_TRANSITION_COMMITTED`对success/exhausted/invalid request的覆盖、无delivery事务、saturated call state与response-before-transition recovery；
+- Memory budget truth table、response-to-transition一对一、infrastructure no-transition与所有计数边界；
+- `SUMMARY_INPUT_BUDGET_EXHAUSTED`在ordinary child/mandatory seed/finalist的failure ownership；
+- 合法empty-ledger context versus forbidden Summary fallback；
+- CanonicalReviewerMemoryContext authoritative closed schema、visible projection字段隔离、Reviewer request SHA binding、all-occurrence inclusion与mode-specific content rules；
+- payload/envelope non-self-hash、authoritative/visible双SHA、关系验证及prompt只注入visible bytes；
+- visible source provenance closed fields、forbidden retrieval/audit metadata与duplicate occurrence preservation；
+- shared `source_content_kind` closed enum、occurrence-to-view-item cardinality与unknown/mismatch rejection；
+- `FULL_REVIEW_RECORD` Direct/Summary-only、Structured section/overall-only mode-kind legality matrix；
+- fragment explicit-only、projection/section complete与overall-empty visible anchor mapping；
+- Structured Experience的role-subdimension/source-first-seen/ledger-occurrence三级顺序、重复保留、anchor provenance-only与no-rewrite/no-selection；
+- hydrated Full Review单occurrence/单计费、逐section恰好一次、optional overall恰好一次与跨重复occurrence保留；
+- Reviewer Memory context完整token accounting、Direct/Structured overflow failure ownership、Summary worst-case preflight与empty-ledger validity；
+- global cap minimum-headroom derivation、chat/special-token完整计数、technical-minimum-only语义与no dynamic per-paper/role/mode adjustment；
+- safety reserve deferred measurement、nonnegative frozen manifest、token-account mismatch fail-fast与no mismatch masking；
+- exact local/backend `prompt_tokens` equality、3-repeat short/typical/near-max five-role cold/warm coverage及complete token audit；
+- Summary ledger-order occurrence provenance、duplicate preservation、no Structured expansion及input-set-only semantics；
+- `viewitem_` domain-separated identity、audit-only/non-billable boundary及section/overall exact coverage/no-rewrite validator；
+- all modes使用相同Review Memory API capability/budget并遵守相同reference-free/Human-CoCo boundary。
+
+任一gate未通过，不得启动formal Corpus-backed Evolution。

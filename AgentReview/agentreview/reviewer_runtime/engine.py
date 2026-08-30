@@ -62,6 +62,14 @@ class ReviewerSession:
             require_bubblewrap=require_bubblewrap,
         )
         self.program = self.sandbox.program_interface()
+        if (
+            getattr(self.program, "MEMORY_PROGRAM_PROTOCOL", None)
+            == "research-validity-core-v1"
+        ):
+            self.close(force=True)
+            raise ValueError(
+                "Research Validity Core v1 Programs require CoreV1ReviewerSession"
+            )
 
     def snapshot(self) -> Dict[str, Any]:
         return self.sandbox.snapshot()

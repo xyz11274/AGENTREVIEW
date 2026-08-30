@@ -170,8 +170,16 @@ def parse_args():
     )
 
     parser.add_argument(
-    "--disable_memory_writeback", action="store_true",
-    help="Do not append completed target reviews to memory_library.jsonl."
+        "--disable_memory_writeback", action="store_true",
+        help="Do not append completed target reviews to memory_library.jsonl."
+    )
+
+    parser.add_argument(
+        "--enable_meta", action="store_true",
+        help=(
+            "Opt in to the legacy Final Meta-Reviewer. Research Validity Core v1 "
+            "defaults to META off and directly preserves the five specialists."
+        ),
     )
 
     parser.add_argument(
