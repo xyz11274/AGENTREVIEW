@@ -5,7 +5,7 @@
 ## A. 文件树概览
 
 ```
-AgentReview/
+AgentReview/  
 ├── run_single_paper_review_cli.py   (1970行) 评审系统主入口：单篇/批量论文评审 CLI
 ├── run.sh                           在线评审启动脚本（mstar_program 记忆模式）
 ├── pilot_full.sh                    M★ 演化端到端 pilot 流水线脚本
@@ -48,20 +48,20 @@ AgentReview/
 
 ### B1. Shell → Python 入口
 
-|脚本|调用|用途|
-|---|---|---|
-|[run.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/run.sh)|`run_single_paper_review_cli.py --memory_mode mstar_program ...`|在线批量评审（带演化记忆）|
-|[pilot_full.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/pilot_full.sh)|`memory_evolution.cli prepare-specialists → evolve-specialists → cache-meta-inputs → prepare-meta → evolve-meta` → `pilot_report`|M★ pilot 全流程|
-|[end2end_smoke.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/end2end_smoke.sh)|`memory_evolution.cli evolve-specialists --smoke`|结构冒烟|
+| 脚本                                                                                                                                   | 调用                                                                                                                                         | 用途                       |
+| -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| [run.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/run.sh)                     | `run_single_paper_review_cli.py --memory_mode mstar_program ...`                                                                           | 在线批量评审（带演化记忆） |
+| [pilot_full.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/pilot_full.sh)       | `memory_evolution.cli prepare-specialists → evolve-specialists → cache-meta-inputs → prepare-meta → evolve-meta` → `pilot_report` | M★ pilot 全流程           |
+| [end2end_smoke.sh](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/end2end_smoke.sh) | `memory_evolution.cli evolve-specialists --smoke`                                                                                          | 结构冒烟                   |
 
 ### B2. `run_single_paper_review_cli.py` 执行流程（评审主链路）
 
 1. **参数解析**：[arguments.py:10](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/agentreview/arguments.py#L10) `parse_args` — `--memory_mode {none,existing,mstar_program}`、`--memory_program_dir`、`--memory_knowledge_cache_dir`、`--reviewer_workers=5` 等
 2. **论文发现**：[run_single_paper_review_cli.py:154](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/run_single_paper_review_cli.py#L154) `discover_markdown_papers` — 三种模式（单篇+冻结 bundle 校验 / manifest 批量冻结 / 目录 glob）
 3. **构建玩家** `build_single_paper_players`(:81)：
-    - `MarkdownPaperExtractorPlayer`（提取器）
-    - 5 个 `Reviewer`（配置来自 [single_paper_review_roles.py:164](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/agentreview/single_paper_review_roles.py#L164)，rubric 先经 SHA-256 校验）
-    - 1 个 META `Player`
+   - `MarkdownPaperExtractorPlayer`（提取器）
+   - 5 个 `Reviewer`（配置来自 [single_paper_review_roles.py:164](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/agentreview/single_paper_review_roles.py#L164)，rubric 先经 SHA-256 校验）
+   - 1 个 META `Player`
 4. **论文提取**：[paper_review_player_md.py:88](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/agentreview/paper_review_player_md.py#L88) `act()` — 读 Markdown → `source_map` 生成 SRC 锚点 → [use_search_apis.py:96](vscode-webview://03g1k5je2q5mtu004qc7uh87tejeht7ildogphm5fg3uhiest648/AgentReview_0722/AgentReview/agentreview/openscholar_bridge/src/use_search_apis.py#L96) `search_paper_via_query` 调 Semantic Scholar 检索相关工作 → 组装单条大消息
 5. **记忆上下文** `build_reviewer_memory_contexts`(:1072) → `_mstar_memory_contexts`(:810)：定位 `<dir>/<TASK>/best_program.py` → 优先加载预编译知识缓存，否则 `verify_promoted_program` 校验后构造 `MemoryHarnessAdapter`（沙箱 write/read）→ 拼成 `EVOLVED MEMORY PROGRAM CONTEXT` 段
 6. **专科并行评审** `run_parallel_reviews`(:1208)：`ThreadPoolExecutor` 并行 5 个专科 → `call_role_with_anchor_repair`(:1151) → `Player.act` → `backend.query`；锚点校验失败自动重试一次；每个写 `specialist_checkpoint.json` 支持断点续跑
