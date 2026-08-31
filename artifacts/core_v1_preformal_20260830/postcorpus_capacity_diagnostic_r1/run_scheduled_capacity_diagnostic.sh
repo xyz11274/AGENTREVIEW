@@ -105,21 +105,22 @@ while true; do
   esac
 done
 
-# This diagnostic obeys the exclusive-resource boundary. It never kills a
-# foreign process; it waits up to 12 hours and then stops blocked.
-write_status WAITING_FOR_EXCLUSIVE_GPU_RESOURCE ""
+# This diagnostic only uses the Qwen TP island on GPU0-3. Processes on GPU4-7
+# are outside its execution scope and do not block it. The watcher never kills
+# another process; it waits for the target island and then stops blocked.
+write_status WAITING_FOR_TARGET_GPU_ISLAND "GPU0-3"
 while true; do
-  compute=$(nvidia-smi --query-compute-apps=pid,process_name --format=csv,noheader,nounits 2>/dev/null || true)
+  compute=$(nvidia-smi -i 0,1,2,3 --query-compute-apps=pid,process_name --format=csv,noheader,nounits 2>/dev/null || true)
   if [[ -z "${compute//[[:space:]]/}" ]]; then
     break
   fi
   if (( $(date +%s) >= RESOURCE_WAIT_DEADLINE )); then
     printf '%s\n' "$compute" > "$OUT/compute_processes_at_resource_timeout.txt"
-    write_status BLOCKED "exclusive GPU resource unavailable"
-    log "BLOCKED: exclusive GPU resource unavailable"
+    write_status BLOCKED "target GPU0-3 island unavailable"
+    log "BLOCKED: target GPU0-3 island unavailable"
     exit 13
   fi
-  log "GPU compute processes still present; waiting without killing them"
+  log "GPU0-3 compute processes still present; waiting without killing them"
   sleep 300
 done
 

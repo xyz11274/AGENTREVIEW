@@ -3,7 +3,7 @@
   "diagnostic_only": true,
   "state": "SCHEDULED",
   "detail": "earliest_start=2026-08-31T17:40:00+08:00",
-  "updated_at": "2026-08-31T15:31:56.344526+08:00",
+  "updated_at": "2026-08-31T16:30:09.089810+08:00",
   "main_formal_runtime_profile_frozen": false,
   "formal_started": false
 }
