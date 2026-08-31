@@ -1,5 +1,5 @@
-import json
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -49,7 +49,9 @@ class AgentReviewDataTest(unittest.TestCase):
                     "venue": "iclr",
                     "year": 2024 if zone == "held_out_benchmark_test" else 2023,
                     "paper_review_cutoff": (
-                        "2023-12-31" if zone == "held_out_benchmark_test" else "2022-12-31"
+                        "2023-12-31"
+                        if zone == "held_out_benchmark_test"
+                        else "2022-12-31"
                     ),
                     "zone": zone,
                     "source_asset": source_asset,
@@ -108,9 +110,7 @@ class AgentReviewDataTest(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "test.jsonl").write_text(
-                json.dumps(
-                    self._record("test-version", "Different title", "same-work")
-                )
+                json.dumps(self._record("test-version", "Different title", "same-work"))
                 + "\n",
                 encoding="utf-8",
             )
@@ -118,7 +118,11 @@ class AgentReviewDataTest(unittest.TestCase):
             manifest = prepare_openreview_data(
                 str(root),
                 str(root / "prepared"),
-                str(self._temporal_manifest(root, ["p1"], ["p2", "p3"], [], ["test-version"])),
+                str(
+                    self._temporal_manifest(
+                        root, ["p1"], ["p2", "p3"], [], ["test-version"]
+                    )
+                ),
                 validation_families=1,
                 meta_validation_families=1,
                 max_train_families=1,
@@ -131,10 +135,9 @@ class AgentReviewDataTest(unittest.TestCase):
                 task = manifest["tasks"][task_id]
                 self.assertEqual(task["episode_count"], 1)
                 self.assertEqual(task["validation_count"], 1)
-                combined = (
-                    Path(task["episodes"]).read_text(encoding="utf-8")
-                    + Path(task["validation"]).read_text(encoding="utf-8")
-                )
+                combined = Path(task["episodes"]).read_text(encoding="utf-8") + Path(
+                    task["validation"]
+                ).read_text(encoding="utf-8")
                 self.assertNotIn('"paper_id": "p0"', combined)
                 self.assertNotIn('"paper_id": "p0-title-link"', combined)
 
@@ -235,14 +238,14 @@ class AgentReviewDataTest(unittest.TestCase):
         splits = {}
         for task_id in SPECIALIST_TASKS:
             for name in ("episodes", "validation", "queries"):
-                for line in Path(manifest["tasks"][task_id][name]).read_text(
-                    encoding="utf-8"
-                ).splitlines():
+                for line in (
+                    Path(manifest["tasks"][task_id][name])
+                    .read_text(encoding="utf-8")
+                    .splitlines()
+                ):
                     item = json.loads(line)
                     paper_id = item["metadata"]["paper_id"]
-                    splits.setdefault(paper_id, set()).add(
-                        item["metadata"]["split"]
-                    )
+                    splits.setdefault(paper_id, set()).add(item["metadata"]["split"])
         return splits
 
     def test_meta_validation_defaults_to_remaining_b_families(self):
@@ -339,7 +342,9 @@ class AgentReviewDataTest(unittest.TestCase):
             for record in records:
                 paper_dir = root / record["MD_path"]
                 paper_dir.mkdir(parents=True)
-                (paper_dir / "md_content.md").write_text("# Paper\nMethod", encoding="utf-8")
+                (paper_dir / "md_content.md").write_text(
+                    "# Paper\nMethod", encoding="utf-8"
+                )
             (root / "train_clean.jsonl").write_text(
                 "\n".join(json.dumps(value) for value in records) + "\n",
                 encoding="utf-8",
@@ -475,11 +480,7 @@ class AgentReviewDataTest(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "Human Reference leak gate failed"):
             assert_no_human_reference_leak(
-                {
-                    "validation": [
-                        {"id": "b0::QUAL", "notes": reference["answer"]}
-                    ]
-                },
+                {"validation": [{"id": "b0::QUAL", "notes": reference["answer"]}]},
                 [reference],
             )
 
@@ -510,16 +511,13 @@ class AgentReviewDataTest(unittest.TestCase):
                 meta_validation_families=0,
             )
             episode = json.loads(
-                Path(manifest["tasks"]["QUAL"]["episodes"])
-                .read_text()
-                .splitlines()[0]
+                Path(manifest["tasks"]["QUAL"]["episodes"]).read_text().splitlines()[0]
             )
             self.assertEqual(
                 episode["metadata"]["paper_title"], "Canonical Manifest Title"
             )
             self.assertIn("Canonical Manifest Title", episode["text"])
             self.assertNotIn("{'value':", episode["text"])
-
 
     def test_official_coco_reference_projection_does_not_repeat_selection_logic(self):
         reference, categories = _official_task_reference(
@@ -645,8 +643,7 @@ class AgentReviewDataTest(unittest.TestCase):
                 "requested_paper_count": 1,
             }
             with patch(
-                "memory_evolution.agentreview_data."
-                "load_official_coco_human_references",
+                "memory_evolution.agentreview_data.load_official_coco_human_references",
                 return_value=(official, provenance),
             ) as loader:
                 prepared = prepare_openreview_data(

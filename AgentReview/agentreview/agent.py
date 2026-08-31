@@ -1,16 +1,17 @@
-#AgentReview/agentreview/agent.py
+# AgentReview/agentreview/agent.py
 import logging
 import re
 import uuid
 from abc import abstractmethod
 from argparse import Namespace
-from typing import List, Union
 
 from tenacity import RetryError
 
 from .backends import IntelligenceBackend, load_backend
 from .config import AgentConfig, BackendConfig, Configurable
 from .message import SYSTEM_NAME, Message
+
+logger = logging.getLogger(__name__)
 
 # A special signal sent by the player to indicate that it is not possible to continue the conversation, and it requests to end the conversation.
 # It contains a random UUID string to avoid being exploited by any of the players.
@@ -52,7 +53,7 @@ class Player(Agent):
         self,
         name: str,
         role_desc: str,
-        backend: Union[BackendConfig, IntelligenceBackend],
+        backend: BackendConfig | IntelligenceBackend,
         global_prompt: str = None,
         args: Namespace = None,
         **kwargs,
@@ -70,10 +71,9 @@ class Player(Agent):
         self.data_dir = kwargs.pop("data_dir", None)
         self.args = args
 
-
         if isinstance(backend, BackendConfig):
             backend_config = backend
-            backend_config['openai_client_type'] = args.openai_client_type
+            backend_config["openai_client_type"] = args.openai_client_type
             backend = load_backend(backend_config)
         elif isinstance(backend, IntelligenceBackend):
             backend_config = backend.to_config()
@@ -82,9 +82,9 @@ class Player(Agent):
                 f"backend must be a BackendConfig or an IntelligenceBackend, but got {type(backend)}"
             )
 
-        assert (
-            name != SYSTEM_NAME
-        ), f"Player name cannot be {SYSTEM_NAME}, which is reserved for the system."
+        assert name != SYSTEM_NAME, (
+            f"Player name cannot be {SYSTEM_NAME}, which is reserved for the system."
+        )
 
         # Register the fields in the _config
         super().__init__(
@@ -105,7 +105,7 @@ class Player(Agent):
             global_prompt=self.global_prompt,
         )
 
-    def act(self, observation: List[Message]) -> str:
+    def act(self, observation: list[Message]) -> str:
         """
         Take an action based on the observation (Generate a response), which can later be parsed to actual actions that affect the game dynamics.
 
@@ -125,15 +125,15 @@ class Player(Agent):
             )
         except RetryError as e:
             err_msg = f"Agent {self.name} failed to generate a response. Error: {e.last_attempt.exception()}. Sending signal to end the conversation."
-            logging.warning(err_msg)
+            logger.warning(err_msg)
             response = SIGNAL_END_OF_CONVERSATION + err_msg
 
         return response
 
-    def __call__(self, observation: List[Message]) -> str:
+    def __call__(self, observation: list[Message]) -> str:
         return self.act(observation)
 
-    async def async_act(self, observation: List[Message]) -> str:
+    async def async_act(self, observation: list[Message]) -> str:
         """
         Async version of act().
 
@@ -155,7 +155,7 @@ class Player(Agent):
             )
         except RetryError as e:
             err_msg = f"Agent {self.name} failed to generate a response. Error: {e.last_attempt.exception()}. Sending signal to end the conversation."
-            logging.warning(err_msg)
+            logger.warning(err_msg)
             response = SIGNAL_END_OF_CONVERSATION + err_msg
 
         return response
@@ -179,7 +179,7 @@ class Moderator(Player):
     def __init__(
         self,
         role_desc: str,
-        backend: Union[BackendConfig, IntelligenceBackend],
+        backend: BackendConfig | IntelligenceBackend,
         terminal_condition: str,
         global_prompt: str = None,
         **kwargs,
@@ -213,7 +213,7 @@ class Moderator(Player):
             global_prompt=self.global_prompt,
         )
 
-    def is_terminal(self, history: List[Message], *args, **kwargs) -> bool:
+    def is_terminal(self, history: list[Message], *args, **kwargs) -> bool:
         """
         Check whether an episode is terminated based on the terminal condition.
 
@@ -241,7 +241,7 @@ class Moderator(Player):
                 **kwargs,
             )
         except RetryError as e:
-            logging.warning(
+            logger.warning(
                 f"Agent {self.name} failed to generate a response. "
                 f"Error: {e.last_attempt.exception()}."
             )

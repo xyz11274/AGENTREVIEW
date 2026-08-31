@@ -1,12 +1,14 @@
 """Benchmark-agnostic construction of canonical single-task review requests."""
 
-from typing import Any, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 from agentreview.paper_context import (
     DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     candidate_visible_metadata,
     format_canonical_paper_context,
 )
+from agentreview.reviewer_identity import SPECIALIST_REQUEST_TEMPLATE
 
 
 def build_review_question(
@@ -33,9 +35,9 @@ def build_review_question(
         source_anchors,
         max_chars=max_paper_chars,
     )
-    return (
-        f"Review task: {task_id}\n\n{context}\n\n"
-        f"Return the complete {task_id} specialist review using the frozen output protocol."
+    return SPECIALIST_REQUEST_TEMPLATE.format(
+        task_id=task_id,
+        paper_context=context,
     )
 
 

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
-
-JSON_OBJECT = Dict[str, Any]
+JSON_OBJECT = dict[str, Any]
 
 
 def _is_within(path: Path, root: Path) -> bool:
@@ -18,7 +18,7 @@ def _is_within(path: Path, root: Path) -> bool:
         return False
 
 
-def _read_json(path: Path, root: Path) -> Tuple[JSON_OBJECT, List[str]]:
+def _read_json(path: Path, root: Path) -> tuple[JSON_OBJECT, list[str]]:
     if not _is_within(path, root) or not path.is_file():
         return {}, []
     try:
@@ -30,9 +30,9 @@ def _read_json(path: Path, root: Path) -> Tuple[JSON_OBJECT, List[str]]:
     return value, []
 
 
-def _read_jsonl(path: Path, root: Path) -> Tuple[List[JSON_OBJECT], List[str]]:
-    values: List[JSON_OBJECT] = []
-    errors: List[str] = []
+def _read_jsonl(path: Path, root: Path) -> tuple[list[JSON_OBJECT], list[str]]:
+    values: list[JSON_OBJECT] = []
+    errors: list[str] = []
     if not _is_within(path, root) or not path.is_file():
         return values, errors
     try:
@@ -48,15 +48,13 @@ def _read_jsonl(path: Path, root: Path) -> Tuple[List[JSON_OBJECT], List[str]]:
                 if isinstance(value, dict):
                     values.append(value)
                 else:
-                    errors.append(
-                        f"{path.name}:{line_number}: expected a JSON object"
-                    )
+                    errors.append(f"{path.name}:{line_number}: expected a JSON object")
     except (OSError, UnicodeError) as exc:
         errors.append(f"{path.name}: {type(exc).__name__}: {exc}")
     return values, errors
 
 
-def _read_text(path: Path, root: Path) -> Tuple[str, List[str]]:
+def _read_text(path: Path, root: Path) -> tuple[str, list[str]]:
     if not _is_within(path, root) or not path.is_file():
         return "", []
     try:
@@ -91,7 +89,7 @@ def _run_identity(runs_root: Path, run_path: Path, config: JSON_OBJECT) -> JSON_
         "suite": suite,
         "task": task,
         "run": run_name,
-        "label": " / ".join([suite, task, run_name]),
+        "label": f"{suite} / {task} / {run_name}",
     }
 
 
@@ -144,7 +142,7 @@ def resolve_run_path(runs_dir: str, run_id: str) -> Path:
     return candidate
 
 
-def _score_key(record: JSON_OBJECT) -> Tuple[Any, Any]:
+def _score_key(record: JSON_OBJECT) -> tuple[Any, Any]:
     return record.get("program_id"), record.get("iteration")
 
 
@@ -155,7 +153,7 @@ def _first_dict(*values: Any) -> JSON_OBJECT:
     return {}
 
 
-def _first_list(*values: Any) -> List[Any]:
+def _first_list(*values: Any) -> list[Any]:
     for value in values:
         if isinstance(value, list):
             return value
@@ -163,18 +161,22 @@ def _first_list(*values: Any) -> List[Any]:
 
 
 def _program_source(
-    run_path: Path, runs_root: Path, program_id: Optional[str]
-) -> Tuple[str, Optional[str], List[str]]:
+    run_path: Path, runs_root: Path, program_id: str | None
+) -> tuple[str, str | None, list[str]]:
     if not program_id:
         return "", None, []
     path = run_path / "pool" / f"{program_id}.py"
     source, errors = _read_text(path, runs_root)
-    return source, str(path) if path.is_file() and _is_within(path, runs_root) else None, errors
+    return (
+        source,
+        str(path) if path.is_file() and _is_within(path, runs_root) else None,
+        errors,
+    )
 
 
 def _best_program_id(
     best_report: JSON_OBJECT, score_records: Iterable[JSON_OBJECT]
-) -> Optional[str]:
+) -> str | None:
     explicit = best_report.get("program_id")
     if explicit:
         return str(explicit)
@@ -182,12 +184,14 @@ def _best_program_id(
         item
         for item in score_records
         if item.get("program_id")
-        and item.get("quality_passed") is not False
+        and item.get("quality_passed") in (None, True)
         and isinstance(item.get("static_score"), (int, float))
     ]
     if not eligible:
         return None
-    return str(max(eligible, key=lambda item: float(item["static_score"]))["program_id"])
+    return str(
+        max(eligible, key=lambda item: float(item["static_score"]))["program_id"]
+    )
 
 
 def load_run(runs_dir: str, run_id: str) -> JSON_OBJECT:
@@ -195,7 +199,7 @@ def load_run(runs_dir: str, run_id: str) -> JSON_OBJECT:
 
     root = Path(runs_dir).expanduser().resolve()
     run_path = resolve_run_path(runs_dir, run_id)
-    warnings: List[str] = []
+    warnings: list[str] = []
 
     config, errors = _read_json(run_path / "config.json", root)
     warnings.extend(errors)
@@ -213,15 +217,15 @@ def load_run(runs_dir: str, run_id: str) -> JSON_OBJECT:
     if not (run_path / "scores.jsonl").is_file():
         warnings.append("缺少 scores.jsonl")
 
-    score_records: Dict[Tuple[Any, Any], List[JSON_OBJECT]] = {}
-    score_by_program: Dict[str, JSON_OBJECT] = {}
+    score_records: dict[tuple[Any, Any], list[JSON_OBJECT]] = {}
+    score_by_program: dict[str, JSON_OBJECT] = {}
     for score in scores:
         score_records.setdefault(_score_key(score), []).append(score)
         if score.get("program_id"):
             score_by_program[str(score["program_id"])] = score
 
-    transformations: List[JSON_OBJECT] = []
-    programs: Dict[str, JSON_OBJECT] = {}
+    transformations: list[JSON_OBJECT] = []
+    programs: dict[str, JSON_OBJECT] = {}
     failed_index = 0
     for index, lineage_item in enumerate(lineage):
         item = dict(lineage_item)
@@ -279,9 +283,13 @@ def load_run(runs_dir: str, run_id: str) -> JSON_OBJECT:
         rotating_score = item.get("rotating_score", score.get("rotating_score"))
         parent_static_score = item.get("parent_static_score")
         if parent_static_score is None and parent_id:
-            parent_static_score = score_by_program.get(parent_id, {}).get("static_score")
+            parent_static_score = score_by_program.get(parent_id, {}).get(
+                "static_score"
+            )
 
-        trace_path = run_path / "traces" / f"iter_{int(iteration or 0):03d}_rotating.jsonl"
+        trace_path = (
+            run_path / "traces" / f"iter_{int(iteration or 0):03d}_rotating.jsonl"
+        )
         record: JSON_OBJECT = {
             "uid": uid,
             "index": index,
@@ -413,10 +421,10 @@ def load_trace_diagnostics(
         return empty
 
     records, warnings = _read_jsonl(trace_path, root)
-    rows: List[JSON_OBJECT] = []
-    failures: List[JSON_OBJECT] = []
-    counts: Dict[str, int] = {}
-    raw_values: List[JSON_OBJECT] = []
+    rows: list[JSON_OBJECT] = []
+    failures: list[JSON_OBJECT] = []
+    counts: dict[str, int] = {}
+    raw_values: list[JSON_OBJECT] = []
     long_fields = {
         "raw_text",
         "question",
@@ -445,7 +453,11 @@ def load_trace_diagnostics(
 
         shortened: JSON_OBJECT = {}
         for key, value in record.items():
-            if key in long_fields and isinstance(value, str) and len(value) > preview_chars:
+            if (
+                key in long_fields
+                and isinstance(value, str)
+                and len(value) > preview_chars
+            ):
                 shortened[key] = (
                     value[:preview_chars]
                     + f"\n… [已截断 {len(value) - preview_chars} 个字符]"
@@ -469,7 +481,7 @@ def load_trace_diagnostics(
     }
 
 
-def ancestor_root(programs: JSON_OBJECT, program_id: Optional[str]) -> Optional[str]:
+def ancestor_root(programs: JSON_OBJECT, program_id: str | None) -> str | None:
     """Return the oldest available ancestor for a candidate."""
 
     current = program_id

@@ -13,8 +13,8 @@ from run_single_paper_review_cli import (
     clip_context,
     load_specialist_checkpoint,
     normalize_source_anchors,
-    run_parallel_reviews,
     run_one_paper,
+    run_parallel_reviews,
     specialist_checkpoint_path,
     validate_review_source_anchors,
 )
@@ -84,8 +84,7 @@ class ReviewContextTest(unittest.TestCase):
                         "model_name": "gpt-5",
                         "reviews": {
                             "Reviewer QUAL": (
-                                "Dimension score (1-10): 8\n"
-                                "Evidence: SRC-001(page=1)"
+                                "Dimension score (1-10): 8\nEvidence: SRC-001(page=1)"
                             )
                         },
                     }
@@ -110,10 +109,7 @@ class ReviewContextTest(unittest.TestCase):
 
             def __call__(self, observation):
                 observations.append(observation)
-                return (
-                    "Dimension score (1-10): 8\n"
-                    "Evidence: SRC-001(page=1)"
-                )
+                return "Dimension score (1-10): 8\nEvidence: SRC-001(page=1)"
 
         messages = run_parallel_reviews(
             [FakeReviewer()],
@@ -138,10 +134,7 @@ class ReviewContextTest(unittest.TestCase):
             name = "Reviewer QUAL"
 
             def __call__(self, observation):
-                return (
-                    "Dimension score (1-10): 8\n"
-                    "Evidence: SRC-001(page=1)"
-                )
+                return "Dimension score (1-10): 8\nEvidence: SRC-001(page=1)"
 
         class FailedReviewer:
             name = "Reviewer CLAR"
@@ -152,9 +145,10 @@ class ReviewContextTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             checkpoint = Path(directory) / "specialist_checkpoint.json"
             output = io.StringIO()
-            with self.assertRaisesRegex(
-                RuntimeError, "Reviewer CLAR"
-            ), redirect_stdout(output):
+            with (
+                self.assertRaisesRegex(RuntimeError, "Reviewer CLAR"),
+                redirect_stdout(output),
+            ):
                 run_parallel_reviews(
                     [GoodReviewer(), FailedReviewer()],
                     Message(
@@ -232,7 +226,9 @@ class ReviewContextTest(unittest.TestCase):
         )
 
         self.assertEqual(len(observations), 2)
-        self.assertIn("Preserve the original review conclusions", observations[1][-1].content)
+        self.assertIn(
+            "Preserve the original review conclusions", observations[1][-1].content
+        )
         self.assertIn("SRC-003(page=0)", messages[0].content)
 
     def test_repair_still_invalid_marks_reviewer_failed(self):
@@ -295,14 +291,8 @@ class ReviewContextTest(unittest.TestCase):
             def __call__(self, observation):
                 self.calls += 1
                 if self.name == "Reviewer SIGN":
-                    return (
-                        "Dimension score (1-10): 7\n"
-                        "Evidence: SRC-ABST(page=1)"
-                    )
-                return (
-                    "Dimension score (1-10): 8\n"
-                    "Evidence: SRC-001(page=1)"
-                )
+                    return "Dimension score (1-10): 7\nEvidence: SRC-ABST(page=1)"
+                return "Dimension score (1-10): 8\nEvidence: SRC-001(page=1)"
 
         class FakeMetaReviewer:
             name = "Final Meta-Reviewer"
@@ -342,19 +332,18 @@ class ReviewContextTest(unittest.TestCase):
             reviewers = [FakeReviewer(name) for name in reviewer_names]
             meta = FakeMetaReviewer()
 
-            with patch(
-                "run_single_paper_review_cli.build_single_paper_players",
-                return_value=[extractor, *reviewers, meta],
-            ), self.assertRaisesRegex(RuntimeError, "Reviewer SIGN"):
+            with (
+                patch(
+                    "run_single_paper_review_cli.build_single_paper_players",
+                    return_value=[extractor, *reviewers, meta],
+                ),
+                self.assertRaisesRegex(RuntimeError, "Reviewer SIGN"),
+            ):
                 run_one_paper(args, paper_info)
 
-            review_dir = (
-                Path(directory) / "single_paper_review" / "paper-1"
-            )
+            review_dir = Path(directory) / "single_paper_review" / "paper-1"
             checkpoint = json.loads(
-                (review_dir / "specialist_checkpoint.json").read_text(
-                    encoding="utf-8"
-                )
+                (review_dir / "specialist_checkpoint.json").read_text(encoding="utf-8")
             )
             self.assertEqual(len(checkpoint["reviews"]), 4)
             self.assertIn("Reviewer SIGN", checkpoint["failures"])
@@ -367,7 +356,9 @@ class ReviewContextTest(unittest.TestCase):
             ):
                 self.assertFalse((review_dir / final_name).exists())
             self.assertFalse(
-                (Path(directory) / "single_paper_review" / "memory_library.jsonl").exists()
+                (
+                    Path(directory) / "single_paper_review" / "memory_library.jsonl"
+                ).exists()
             )
             self.assertFalse(
                 (Path(directory) / "single_paper_review" / "memory_index.json").exists()

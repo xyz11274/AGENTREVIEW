@@ -2,16 +2,16 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import List
 
 from agentreview.agent import Player
 from agentreview.message import Message
 
-# 🔹 新增：引入我们写的 OpenScholar wrapper
+# Canonical paper context and source anchors are the extractor interface.
 from agentreview.paper_context import (
     CANONICAL_PAPER_CONTEXT_VERSION,
     DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     build_canonical_paper_context,
+    require_human_review_free,
 )
 from agentreview.source_map import extract_title_from_content_list, load_content_list
 
@@ -85,16 +85,16 @@ class MarkdownPaperExtractorPlayer(Player):
         self.paper_md_path = paper_md_path
         self.last_memory = None
 
-    def act(self, observation: List[Message]) -> str:
+    def act(self, observation: list[Message]) -> str:
         p = Path(self.paper_md_path)
         frozen_bundle_path = getattr(self.args, "frozen_context_bundle_path", None)
         if frozen_bundle_path:
             bundle_path = Path(frozen_bundle_path).expanduser().resolve()
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
-            if bundle.get("contains_human_review_data") is not False:
-                raise RuntimeError(
-                    f"Frozen context bundle is not marked human-review-free: {bundle_path}"
-                )
+            require_human_review_free(
+                bundle,
+                source=f"Frozen context bundle {bundle_path}",
+            )
             expected_path = (
                 bundle_path.parent / bundle["paper_markdown_relative_path"]
             ).resolve()
@@ -116,8 +116,12 @@ class MarkdownPaperExtractorPlayer(Player):
             visible = dict(bundle.get("candidate_visible_metadata") or {})
             canonical = build_canonical_paper_context(
                 str(p),
-                paper_id=str(bundle.get("paper_id") or visible.get("paper_id") or p.stem),
-                title=str(visible.get("title") or self.last_memory.get("paper_title") or ""),
+                paper_id=str(
+                    bundle.get("paper_id") or visible.get("paper_id") or p.stem
+                ),
+                title=str(
+                    visible.get("title") or self.last_memory.get("paper_title") or ""
+                ),
                 venue=str(visible.get("venue") or ""),
                 year=visible.get("year") or "",
                 reviewer_role="SPECIALIST",
@@ -132,7 +136,9 @@ class MarkdownPaperExtractorPlayer(Player):
                 },
             )
             self.last_memory["source_anchors"] = canonical.source_anchors
-            self.last_memory["candidate_visible_metadata"] = canonical.candidate_metadata
+            self.last_memory["candidate_visible_metadata"] = (
+                canonical.candidate_metadata
+            )
             self.last_memory["paper_context_version"] = canonical.version
             return canonical.text
 
@@ -140,7 +146,9 @@ class MarkdownPaperExtractorPlayer(Player):
         content_list = load_content_list(str(p))
 
         # ① 提取一个 query（标题）
-        title = extract_title_from_content_list(content_list) or extract_title_from_md(text)
+        title = extract_title_from_content_list(content_list) or extract_title_from_md(
+            text
+        )
         paper_id = str(getattr(self.args, "paper_id", "") or p.parent.name or p.stem)
         canonical = build_canonical_paper_context(
             str(p),

@@ -7,8 +7,7 @@ from evolution_viewer.code_analysis import (
     word_diff,
 )
 
-
-BEFORE = '''
+BEFORE = """
 from dataclasses import dataclass
 
 INSTRUCTION_KNOWLEDGE_ITEM = "Store a concise fact."
@@ -33,10 +32,10 @@ class KnowledgeBase:
 
     def read(self, query: Query) -> str:
         return "\\n".join(self.items)
-'''
+"""
 
 
-AFTER = '''
+AFTER = """
 import re
 from dataclasses import dataclass, field
 
@@ -69,7 +68,7 @@ class KnowledgeBase:
         if not query.query_text:
             return ""
         return "\\n".join(self.items)
-'''
+"""
 
 
 class CodeAnalysisTest(unittest.TestCase):
@@ -86,7 +85,9 @@ class CodeAnalysisTest(unittest.TestCase):
     def test_comparison_is_categorized(self):
         value = compare_programs(BEFORE, AFTER, before_name="a.py", after_name="b.py")
 
-        self.assertEqual(changed_sections(value), ["Prompt", "Schema", "Write", "Read", "辅助代码"])
+        self.assertEqual(
+            changed_sections(value), ["Prompt", "Schema", "Write", "Read", "辅助代码"]
+        )
         self.assertTrue(all(item["status"] == "modified" for item in value["prompts"]))
         self.assertEqual(value["schema"][0]["field"], "signals")
         self.assertIn("self._extract", value["write"][0]["calls"]["added"])

@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Protocol
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True)
 class ReviewSubmission:
     paper_id: str
     review: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class BenchmarkAdapter(Protocol):
@@ -18,14 +19,13 @@ class BenchmarkAdapter(Protocol):
 
     name: str
 
-    def evaluate(self, submission: ReviewSubmission) -> Dict[str, Any]:
-        ...
+    def evaluate(self, submission: ReviewSubmission) -> dict[str, Any]: ...
 
 
 def evaluate_frozen_review(
     adapter: BenchmarkAdapter,
     submission: ReviewSubmission,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     if not submission.paper_id or not submission.review.strip():
         raise ValueError("A benchmark submission requires paper_id and review text")
     result = adapter.evaluate(submission)
@@ -49,7 +49,7 @@ class CoCoMetricBenchmarkAdapter:
         self.gold = str(gold)
         self.item = item
 
-    def evaluate(self, submission: ReviewSubmission) -> Dict[str, Any]:
+    def evaluate(self, submission: ReviewSubmission) -> dict[str, Any]:
         try:
             score = self.metric(
                 submission.review,
@@ -60,8 +60,6 @@ class CoCoMetricBenchmarkAdapter:
             score = self.metric(submission.review, self.gold)
         return {
             "score": max(0.0, min(1.0, float(score))),
-            "structured_metrics": dict(
-                getattr(self.metric, "last_details", {}) or {}
-            ),
+            "structured_metrics": dict(getattr(self.metric, "last_details", {}) or {}),
             "evaluator_only_reference_used": True,
         }

@@ -1,13 +1,27 @@
-#AgentReview/agentreview/backends/__init__.py
+# AgentReview/agentreview/backends/__init__.py
 
 from ..config import BackendConfig
 from .anthropic import Claude
 from .base import IntelligenceBackend
 from .cohere import CohereAIChat
+from .dummy import Dummy
 from .hf_transformers import TransformersConversational
 from .human import Human
 from .openai import OpenAIChat
-from .dummy import Dummy
+
+__all__ = [
+    "ALL_BACKENDS",
+    "BACKEND_REGISTRY",
+    "BackendConfig",
+    "Claude",
+    "CohereAIChat",
+    "Dummy",
+    "Human",
+    "IntelligenceBackend",
+    "OpenAIChat",
+    "TransformersConversational",
+    "load_backend",
+]
 
 ALL_BACKENDS = [
     Human,

@@ -5,11 +5,11 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-from run_single_paper_review_cli import discover_markdown_papers
 from effectiveness_screening.run_matrix import (
     historical_library_command,
     matrix_commands,
 )
+from run_single_paper_review_cli import discover_markdown_papers
 
 
 class EffectivenessRuntimeTest(unittest.TestCase):
@@ -56,9 +56,7 @@ class EffectivenessRuntimeTest(unittest.TestCase):
             )
             papers = discover_markdown_papers(args)
             self.assertEqual(papers[0]["sample_id"], "paper-1")
-            self.assertEqual(
-                papers[0]["frozen_context_bundle_path"], str(bundle_path)
-            )
+            self.assertEqual(papers[0]["frozen_context_bundle_path"], str(bundle_path))
 
             markdown.write_text("# Tampered\n", encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "checksum"):
@@ -67,6 +65,15 @@ class EffectivenessRuntimeTest(unittest.TestCase):
     def test_matrix_enforces_fresh_replay_and_no_writeback(self):
         config = {
             "output_root": "/tmp/effectiveness",
+            "frozen_s2_pool": "/tmp/frozen_s2_temporal_v2.jsonl",
+            "frozen_s2_pool_version": "frozen-s2-temporal-v2",
+            "memory_embedding": {
+                "mode": "frozen",
+                "adapter": "memory_evolution.embedding_adapter:create_qwen3_embedding",
+                "model_name": "Qwen/Qwen3-Embedding-8B",
+                "revision": "revision-1",
+                "fingerprint": "fingerprint-1",
+            },
             "generation": {
                 "model": "gpt-5-mini",
                 "temperature": 0.3,
@@ -78,22 +85,44 @@ class EffectivenessRuntimeTest(unittest.TestCase):
                 "meta_paper_max_chars": 30000,
             },
             "experiment": {
-                "arms": ["no_memory", "seed_experience", "evolved"],
+                "arms": ["no_memory", "seed", "evolved"],
+                "lineages": [
+                    "vector_search",
+                    "llm_summarizer",
+                    "experience_learner",
+                ],
                 "replicates": [1, 2],
                 "replicate_run_seeds": {"1": 101, "2": 202},
             },
         }
         commands = matrix_commands(config)
-        self.assertEqual(len(commands), 6)
+        self.assertEqual(len(commands), 14)
+        expected_arm_ids = {
+            "no_memory",
+            "seed_vector_search",
+            "seed_llm_summarizer",
+            "seed_experience_learner",
+            "evolved_from_vector_search",
+            "evolved_from_llm_summarizer",
+            "evolved_from_experience_learner",
+        }
+        self.assertEqual({cell["arm_id"] for cell in commands}, expected_arm_ids)
         for cell in commands:
             command = cell["command"]
             self.assertIn("--disable_memory_writeback", command)
-            if cell["arm"] == "no_memory":
+            self.assertIn(cell["arm_kind"], {"no_memory", "seed", "evolved"})
+            if cell["arm_id"] == "no_memory":
                 self.assertNotIn("--memory_knowledge_cache_dir", command)
             else:
                 self.assertNotIn("--memory_knowledge_cache_dir", command)
                 self.assertIn("--memory_source_output_dir", command)
-                self.assertIn("deterministic_hash", command)
+                self.assertIn(f"/programs/{cell['arm_id']}", " ".join(command))
+                self.assertIn("--memory_embedding_adapter", command)
+                self.assertIn("--memory_embedding_revision", command)
+                self.assertIn("revision-1", command)
+                self.assertIn("frozen", command)
+            self.assertIn("/tmp/frozen_s2_temporal_v2.jsonl", command)
+            self.assertEqual(cell["execution_seam"], "external_process_runner")
         history = historical_library_command(config)
         self.assertNotIn("--disable_memory_writeback", history)
         self.assertIn("none", history)

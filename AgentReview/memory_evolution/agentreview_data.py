@@ -4,41 +4,49 @@ import hashlib
 import json
 import random
 import re
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any
 
-from agentreview.memory_library import infer_reviewer_dimension
 from agentreview.paper_context import (
     CANONICAL_PAPER_CONTEXT_VERSION,
     DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     candidate_visible_metadata,
     format_canonical_paper_context,
 )
+from agentreview.reviewer_identity import (
+    META_REQUEST_PROTOCOL_VERSION,
+    build_meta_review_question,
+    load_reviewer_suite,
+)
+from agentreview.reviewer_runtime.program_loader import record_manifest_path
+from agentreview.reviewer_runtime.requests import (
+    build_review_question,
+    fallback_source_anchors,
+)
 from agentreview.source_map import (
     build_source_anchors,
     format_source_anchors,
     load_content_list,
 )
-from agentreview.reviewer_runtime.episodes import build_reviewer_memory_episode_text
-from agentreview.reviewer_runtime.requests import build_review_question
 
-from .tasks import META_TASK, SPECIALIST_TASKS
-from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
 from .assets import (
     FOUR_ZONES,
     TEMPORAL_SPLIT_VERSION,
     load_temporal_split_manifest,
     sha256_file,
 )
-from .toolkit import validate_frozen_s2_pool
 from .coco_reference import load_official_coco_human_references
+from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
+from .tasks import META_TASK, SPECIALIST_TASKS
+from .toolkit import validate_frozen_s2_pool
 
 
 def normalize_title(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
 
 
-def work_family_identifiers(record: Dict[str, Any]) -> set:
+def work_family_identifiers(record: dict[str, Any]) -> set:
     """Return every stable identifier that can connect two versions of a work."""
     content = record.get("content") or {}
     identifiers = set()
@@ -53,7 +61,7 @@ def work_family_identifiers(record: Dict[str, Any]) -> set:
     return identifiers
 
 
-def work_family_key(record: Dict[str, Any]) -> str:
+def work_family_key(record: dict[str, Any]) -> str:
     """Return an assigned component key or a deterministic single-record key."""
     assigned = record.get("_mstar_work_family")
     if assigned:
@@ -62,7 +70,7 @@ def work_family_key(record: Dict[str, Any]) -> str:
     return hashlib.sha256(stable.encode("utf-8")).hexdigest()
 
 
-def _assign_work_families(records: Sequence[Dict[str, Any]]) -> List[str]:
+def _assign_work_families(records: Sequence[dict[str, Any]]) -> list[str]:
     """Union records sharing either paperhash or normalized title."""
     parents = list(range(len(records)))
 
@@ -78,7 +86,7 @@ def _assign_work_families(records: Sequence[Dict[str, Any]]) -> List[str]:
         if left_root != right_root:
             parents[right_root] = left_root
 
-    owner: Dict[str, int] = {}
+    owner: dict[str, int] = {}
     identifiers_by_record = []
     for index, record in enumerate(records):
         identifiers = work_family_identifiers(record)
@@ -89,13 +97,11 @@ def _assign_work_families(records: Sequence[Dict[str, Any]]) -> List[str]:
             else:
                 owner[identifier] = index
 
-    component_identifiers: Dict[int, set] = {}
+    component_identifiers: dict[int, set] = {}
     for index, identifiers in enumerate(identifiers_by_record):
         component_identifiers.setdefault(find(index), set()).update(identifiers)
     component_keys = {
-        root: hashlib.sha256(
-            "\n".join(sorted(identifiers)).encode("utf-8")
-        ).hexdigest()
+        root: hashlib.sha256("\n".join(sorted(identifiers)).encode("utf-8")).hexdigest()
         for root, identifiers in component_identifiers.items()
     }
     return [component_keys[find(index)] for index in range(len(records))]
@@ -109,16 +115,18 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _load_s2_cache(path: Optional[str]) -> Tuple[Dict[str, List[Dict[str, Any]]], Optional[str]]:
+def _load_s2_cache(
+    path: str | None,
+) -> tuple[dict[str, list[dict[str, Any]]], str | None]:
     """Load a frozen Semantic Scholar cache without prescribing one exporter."""
     if not path:
         return {}, None
     source = Path(path).expanduser().resolve()
     if not source.is_file():
         raise FileNotFoundError(f"Semantic Scholar cache not found: {source}")
-    cache: Dict[str, List[Dict[str, Any]]] = {}
+    cache: dict[str, list[dict[str, Any]]] = {}
 
-    def add(value: Dict[str, Any], fallback_id: str = "") -> None:
+    def add(value: dict[str, Any], fallback_id: str = "") -> None:
         paper_id = str(
             value.get("paper_id")
             or value.get("id")
@@ -156,7 +164,7 @@ def _load_s2_cache(path: Optional[str]) -> Tuple[Dict[str, List[Dict[str, Any]]]
     return cache, _sha256_file(source)
 
 
-def _format_related_work(papers: Sequence[Dict[str, Any]]) -> str:
+def _format_related_work(papers: Sequence[dict[str, Any]]) -> str:
     blocks = []
     for index, paper in enumerate(papers[:10], start=1):
         title = str(paper.get("title") or "").strip()
@@ -172,7 +180,7 @@ def _format_related_work(papers: Sequence[Dict[str, Any]]) -> str:
     return "\n\n".join(blocks) or "(no cached related work)"
 
 
-def _iter_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
+def _iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
@@ -180,17 +188,19 @@ def _iter_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
             try:
                 yield json.loads(line)
             except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSONL at {path}:{line_number}: {exc}") from exc
+                raise ValueError(
+                    f"Invalid JSONL at {path}:{line_number}: {exc}"
+                ) from exc
 
 
-def _write_jsonl(path: Path, values: Sequence[Dict[str, Any]]) -> None:
+def _write_jsonl(path: Path, values: Sequence[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for value in values:
             handle.write(json.dumps(value, ensure_ascii=False) + "\n")
 
 
-def _resolve_markdown(openreview_root: Path, record: Dict[str, Any]) -> Optional[Path]:
+def _resolve_markdown(openreview_root: Path, record: dict[str, Any]) -> Path | None:
     raw = str(record.get("MD_path") or "")
     candidates = []
     if raw:
@@ -220,17 +230,21 @@ def _resolve_markdown(openreview_root: Path, record: Dict[str, Any]) -> Optional
     return None
 
 
-def _category_reference(record: Dict[str, Any], task_id: str) -> Tuple[str, List[str]]:
+def _category_reference(record: dict[str, Any], task_id: str) -> tuple[str, list[str]]:
     """Read the legacy supervised/pilot category-reference schema."""
     by_category = record.get("opinions_md_by_category_dict") or {}
-    selected: List[Tuple[str, str]] = []
+    selected: list[tuple[str, str]] = []
     for category, value in sorted(by_category.items()):
         if not str(category).startswith(f"{task_id}-"):
             continue
         text = ""
         if isinstance(value, list):
             text = next(
-                (str(item).strip() for item in reversed(value) if isinstance(item, str) and item.strip()),
+                (
+                    str(item).strip()
+                    for item in reversed(value)
+                    if isinstance(item, str) and item.strip()
+                ),
                 "",
             )
         elif isinstance(value, str):
@@ -241,14 +255,14 @@ def _category_reference(record: Dict[str, Any], task_id: str) -> Tuple[str, List
     return reference, [category for category, _ in selected]
 
 
-def _sentence_id_values(value: Any) -> List[int]:
+def _sentence_id_values(value: Any) -> list[int]:
     """Return sentence ids from CoCo's list or nested score-bearing forms."""
     if isinstance(value, bool):
         return []
     if isinstance(value, int):
         return [value]
     if isinstance(value, (list, tuple)):
-        output: List[int] = []
+        output: list[int] = []
         for item in value:
             output.extend(_sentence_id_values(item))
         return output
@@ -263,15 +277,15 @@ def _sentence_id_values(value: Any) -> List[int]:
 
 
 def build_coco_evaluator_reference(
-    record: Dict[str, Any], task_id: str
-) -> Tuple[str, List[str]]:
+    record: dict[str, Any], task_id: str
+) -> tuple[str, list[str]]:
     """Legacy fixture adapter; formal CoCo data uses the official program."""
     sentence_texts = record.get("sentence_texts") or []
     opinions = record.get("opinions") or []
     if not isinstance(sentence_texts, list) or not isinstance(opinions, list):
         return "", []
-    blocks: List[Tuple[Tuple[str, ...], str]] = []
-    categories_seen: List[str] = []
+    blocks: list[tuple[tuple[str, ...], str]] = []
+    categories_seen: list[str] = []
     for opinion in opinions:
         if not isinstance(opinion, dict):
             continue
@@ -285,7 +299,7 @@ def build_coco_evaluator_reference(
         )
         if not categories:
             continue
-        sentence_ids: List[int] = []
+        sentence_ids: list[int] = []
         for turn in opinion.get("data") or []:
             if not isinstance(turn, dict):
                 continue
@@ -311,9 +325,7 @@ def build_coco_evaluator_reference(
     return reference, categories_seen
 
 
-def _evaluator_reference(
-    record: Dict[str, Any], task_id: str
-) -> Tuple[str, List[str]]:
+def _evaluator_reference(record: dict[str, Any], task_id: str) -> tuple[str, list[str]]:
     """Compatibility path for legacy pilot/fixture records without CoCo root."""
     if "opinions" in record or "sentence_texts" in record:
         return build_coco_evaluator_reference(record, task_id)
@@ -321,11 +333,11 @@ def _evaluator_reference(
 
 
 def _official_task_reference(
-    paper_reference: Dict[str, Any], task_id: str
-) -> Tuple[str, List[str]]:
+    paper_reference: dict[str, Any], task_id: str
+) -> tuple[str, list[str]]:
     """Project CoCo's official precomputed category map to one specialist."""
     by_category = paper_reference.get("category_correct") or {}
-    selected: List[Tuple[str, str]] = []
+    selected: list[tuple[str, str]] = []
     for category, texts in sorted(by_category.items()):
         if not str(category).startswith(f"{task_id}-"):
             continue
@@ -360,10 +372,10 @@ def _normalized_field_name(value: Any) -> str:
 
 
 def audit_candidate_visible_artifacts(
-    artifacts: Dict[str, Sequence[Dict[str, Any]]],
-    evaluator_references: Sequence[Dict[str, Any]] = (),
-    authorized_fragments_by_paper: Optional[Dict[str, Set[str]]] = None,
-) -> Dict[str, Any]:
+    artifacts: dict[str, Sequence[dict[str, Any]]],
+    evaluator_references: Sequence[dict[str, Any]] = (),
+    authorized_fragments_by_paper: dict[str, set[str]] | None = None,
+) -> dict[str, Any]:
     """Fail-closed structural and same-paper text audit for Candidate data.
 
     Candidate artifacts are an allowlisted projection of CoCo paper Markdown,
@@ -372,23 +384,19 @@ def audit_candidate_visible_artifacts(
     already present in that paper's legitimate Markdown input.
     """
     authorized_by_paper = authorized_fragments_by_paper or {}
-    field_leaks: List[Dict[str, str]] = []
-    text_leaks: List[Dict[str, str]] = []
+    field_leaks: list[dict[str, str]] = []
+    text_leaks: list[dict[str, str]] = []
 
-    def paper_id(value: Dict[str, Any]) -> str:
+    def paper_id(value: dict[str, Any]) -> str:
         metadata = value.get("metadata") or {}
-        return str(metadata.get("paper_id") or value.get("id") or "").split(
-            "::", 1
-        )[0]
+        return str(metadata.get("paper_id") or value.get("id") or "").split("::", 1)[0]
 
     def visit(value: Any, artifact: str, path: str) -> Iterable[str]:
         if isinstance(value, dict):
             for key, item in value.items():
                 child_path = f"{path}.{key}" if path else str(key)
                 if _normalized_field_name(key) in _HUMAN_REFERENCE_FIELDS:
-                    field_leaks.append(
-                        {"artifact": artifact, "path": child_path}
-                    )
+                    field_leaks.append({"artifact": artifact, "path": child_path})
                 yield from visit(item, artifact, child_path)
         elif isinstance(value, (list, tuple)):
             for index, item in enumerate(value):
@@ -396,7 +404,7 @@ def audit_candidate_visible_artifacts(
         elif isinstance(value, str):
             yield value
 
-    reference_fragments_by_paper: Dict[str, Dict[str, set]] = {}
+    reference_fragments_by_paper: dict[str, dict[str, set]] = {}
     for value in evaluator_references:
         reference_paper_id = paper_id(value)
         authorized = authorized_by_paper.get(reference_paper_id, set())
@@ -415,9 +423,7 @@ def audit_candidate_visible_artifacts(
     for artifact, values in artifacts.items():
         for index, value in enumerate(values):
             candidate_strings = list(visit(value, artifact, f"[{index}]"))
-            reference_fragments = reference_fragments_by_paper.get(
-                paper_id(value), {}
-            )
+            reference_fragments = reference_fragments_by_paper.get(paper_id(value), {})
             reference_fragment_set = set(reference_fragments)
             for candidate_text in candidate_strings:
                 candidate_fragments = {
@@ -441,12 +447,10 @@ def audit_candidate_visible_artifacts(
         "human_reference_text_leaks": text_leaks,
         "leakage_count": len(field_leaks) + len(text_leaks),
         "historical_leakage_count": sum(
-            "episodes" in value["artifact"]
-            for value in [*field_leaks, *text_leaks]
+            "episodes" in value["artifact"] for value in [*field_leaks, *text_leaks]
         ),
         "validation_leakage_count": sum(
-            "validation" in value["artifact"]
-            for value in [*field_leaks, *text_leaks]
+            "validation" in value["artifact"] for value in [*field_leaks, *text_leaks]
         ),
         "formal_ready": not field_leaks and not text_leaks,
         "passed": not field_leaks and not text_leaks,
@@ -454,10 +458,10 @@ def audit_candidate_visible_artifacts(
 
 
 def assert_no_human_reference_leak(
-    artifacts: Dict[str, Sequence[Dict[str, Any]]],
-    evaluator_references: Sequence[Dict[str, Any]] = (),
-    authorized_fragments_by_paper: Optional[Dict[str, Set[str]]] = None,
-) -> Dict[str, Any]:
+    artifacts: dict[str, Sequence[dict[str, Any]]],
+    evaluator_references: Sequence[dict[str, Any]] = (),
+    authorized_fragments_by_paper: dict[str, set[str]] | None = None,
+) -> dict[str, Any]:
     report = audit_candidate_visible_artifacts(
         artifacts,
         evaluator_references,
@@ -468,8 +472,8 @@ def assert_no_human_reference_leak(
     return report
 
 
-def _meta_reference(record: Dict[str, Any]) -> str:
-    blocks: List[str] = []
+def _meta_reference(record: dict[str, Any]) -> str:
+    blocks: list[str] = []
     for group in record.get("metareview") or []:
         for item in group if isinstance(group, list) else []:
             if not isinstance(item, (list, tuple)) or len(item) < 2:
@@ -494,15 +498,12 @@ def _paper_question(
     title: str,
     paper_text: str,
     source_anchor_text: str,
-    related_work_text: str = "",
     *,
     paper_id: str = "",
     venue: str = "",
     year: Any = "",
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
 ) -> str:
-    # ``related_work_text`` remains in the signature for legacy callers.
-    del related_work_text
     anchors = []
     for line in str(source_anchor_text or "").splitlines():
         match = re.match(
@@ -536,32 +537,25 @@ def _paper_question(
     )
 
 
-def _training_episode(question: str, reference: str = "") -> str:
-    """Return a candidate-visible historical task with no evaluator reference.
-
-    ``reference`` is accepted only for source compatibility with old callers;
-    using it in the returned episode would violate the Human Reference Boundary.
-    """
-    del reference
+def _training_episode(question: str) -> str:
+    """Return a candidate-visible historical task envelope."""
     return "HISTORICAL REVIEW TASK\n" + str(question)
 
 
 def _select_families(
-    records: List[Dict[str, Any]],
+    records: list[dict[str, Any]],
     validation_families: int,
     meta_validation_families: int,
-    max_train_families: Optional[int],
+    max_train_families: int | None,
     seed: int,
-) -> Tuple[set, set, set]:
-    by_family: Dict[str, List[Dict[str, Any]]] = {}
+) -> tuple[set, set, set]:
+    by_family: dict[str, list[dict[str, Any]]] = {}
     for record in records:
         by_family.setdefault(work_family_key(record), []).append(record)
     families = sorted(by_family)
     rng = random.Random(seed)
     rng.shuffle(families)
-    held_out_count = max(0, validation_families) + max(
-        0, meta_validation_families
-    )
+    held_out_count = max(0, validation_families) + max(0, meta_validation_families)
     if len(families) <= held_out_count:
         raise ValueError(
             f"Need more than {held_out_count} work families, found {len(families)}"
@@ -580,27 +574,25 @@ def prepare_openreview_data(
     openreview_root: str,
     output_dir: str,
     temporal_split_manifest: str,
-    coco_root: Optional[str] = None,
+    coco_root: str | None = None,
     validation_families: int = 150,
-    meta_validation_families: Optional[int] = None,
-    max_train_families: Optional[int] = None,
+    meta_validation_families: int | None = None,
+    max_train_families: int | None = None,
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     seed: int = 0,
-    s2_cache_path: Optional[str] = None,
-) -> Dict[str, Any]:
+    s2_cache_path: str | None = None,
+) -> dict[str, Any]:
     """Create A/B specialist data from the frozen temporal paper manifest."""
     source_root = Path(openreview_root).expanduser().resolve()
-    markdown_root = (
-        Path(coco_root).expanduser().resolve() if coco_root else source_root
-    )
+    markdown_root = Path(coco_root).expanduser().resolve() if coco_root else source_root
     train_path = source_root / "train_clean.jsonl"
     test_path = source_root / "test.jsonl"
     if coco_root:
         # Formal CoCo already owns both the paper Markdown and evaluator
         # annotations. Do not load the duplicated 2GB OpenReview export only to
         # overwrite the same paper ids below.
-        train_records: List[Dict[str, Any]] = []
-        test_records: List[Dict[str, Any]] = []
+        train_records: list[dict[str, Any]] = []
+        test_records: list[dict[str, Any]] = []
     else:
         if not train_path.is_file() or not test_path.is_file():
             raise FileNotFoundError(
@@ -621,7 +613,7 @@ def prepare_openreview_data(
         str(record.get("id") or ""): record
         for record in [*train_records, *test_records]
     }
-    benchmark_source_paths: List[Path] = []
+    benchmark_source_paths: list[Path] = []
     if coco_root:
         source_files = {
             str(value.get("source_asset") or "").rsplit("/", 1)[-1]
@@ -664,9 +656,7 @@ def prepare_openreview_data(
             f"but frozen B contains {len(b_families)}"
         )
     validation_family_set = set(b_families[:validation_families])
-    meta_validation_family_set = set(
-        b_families[validation_families:requested_b]
-    )
+    meta_validation_family_set = set(b_families[validation_families:requested_b])
     source_records = []
     for entry in [*a_entries, *b_entries]:
         family = str(entry["paper_family"])
@@ -685,10 +675,12 @@ def prepare_openreview_data(
         train_families | validation_family_set | meta_validation_family_set
     )
     records = [
-        record for record in source_records if work_family_key(record) in allowed_families
+        record
+        for record in source_records
+        if work_family_key(record) in allowed_families
     ]
-    official_references: Optional[Dict[str, Dict[str, Any]]] = None
-    official_reference_provenance: Dict[str, Any] = {
+    official_references: dict[str, dict[str, Any]] | None = None
+    official_reference_provenance: dict[str, Any] = {
         "implementation": "legacy fixture adapter",
         "requested_paper_count": 0,
     }
@@ -740,7 +732,7 @@ def prepare_openreview_data(
         }
     )
 
-    per_task: Dict[str, Dict[str, List[Dict[str, Any]]]] = {
+    per_task: dict[str, dict[str, list[dict[str, Any]]]] = {
         task_id: {
             "episodes": [],
             "validation": [],
@@ -750,11 +742,11 @@ def prepare_openreview_data(
         for task_id in SPECIALIST_TASKS
     }
     missing_markdown = 0
-    missing_markdown_ids: List[str] = []
+    missing_markdown_ids: list[str] = []
     # CoCo's own reviewer-generation path consumes paper Markdown. Keep the
     # same paper-only source boundary instead of stripping fields from a
     # benchmark record and then attempting to prove they were removed.
-    authorized_fragments_by_paper: Dict[str, Set[str]] = {}
+    authorized_fragments_by_paper: dict[str, set[str]] = {}
     for record in records:
         markdown_path = _resolve_markdown(markdown_root, record)
         if markdown_path is None:
@@ -764,9 +756,7 @@ def prepare_openreview_data(
         paper_text = markdown_path.read_text(encoding="utf-8", errors="ignore")
         paper_id = str(record.get("id") or "")
         authorized_fragments_by_paper[paper_id] = {
-            line.strip()
-            for line in paper_text.splitlines()
-            if len(line.strip()) >= 20
+            line.strip() for line in paper_text.splitlines() if len(line.strip()) >= 20
         }
         anchors = build_source_anchors(load_content_list(str(markdown_path)))
         if not anchors:
@@ -777,7 +767,9 @@ def prepare_openreview_data(
                     "type": "text",
                     "text": paper_text[start : start + 500].replace("\n", " "),
                 }
-                for index, start in enumerate(range(0, min(len(paper_text), 40000), 1000))
+                for index, start in enumerate(
+                    range(0, min(len(paper_text), 40000), 1000)
+                )
                 if paper_text[start : start + 500].strip()
             ][:40]
         source_anchor_text = format_source_anchors(anchors)
@@ -879,12 +871,8 @@ def prepare_openreview_data(
                             "paper_review_cutoff": str(
                                 record.get("_paper_review_cutoff") or ""
                             ),
-                            "temporal_zone": str(
-                                record.get("_temporal_zone") or ""
-                            ),
-                            "paper_context_version": (
-                                CANONICAL_PAPER_CONTEXT_VERSION
-                            ),
+                            "temporal_zone": str(record.get("_temporal_zone") or ""),
+                            "paper_context_version": (CANONICAL_PAPER_CONTEXT_VERSION),
                         },
                         "access": {
                             "evaluator_only": True,
@@ -931,17 +919,12 @@ def prepare_openreview_data(
         validation_path = task_root / "validation.jsonl"
         queries_path = task_root / "queries.jsonl"
         evaluator_references_path = (
-            output_root
-            / "evaluator_only"
-            / task_id
-            / "validation_references.jsonl"
+            output_root / "evaluator_only" / task_id / "validation_references.jsonl"
         )
         _write_jsonl(episodes_path, values["episodes"])
         _write_jsonl(validation_path, values["validation"])
         _write_jsonl(queries_path, values["queries"])
-        _write_jsonl(
-            evaluator_references_path, values["evaluator_references"]
-        )
+        _write_jsonl(evaluator_references_path, values["evaluator_references"])
         task_manifest[task_id] = {
             "episodes": str(episodes_path),
             "validation": str(validation_path),
@@ -1039,16 +1022,16 @@ def prepare_meta_data(
     openreview_root: str,
     specialist_outputs_path: str,
     output_dir: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build the sixth task from cached outputs of the five frozen specialists."""
     source_root = Path(openreview_root).expanduser().resolve()
     records = {
         str(record.get("id")): record
         for record in _iter_jsonl(source_root / "train_clean.jsonl")
     }
-    episodes: List[Dict[str, Any]] = []
-    validation: List[Dict[str, Any]] = []
-    validation_references: List[Dict[str, Any]] = []
+    episodes: list[dict[str, Any]] = []
+    validation: list[dict[str, Any]] = []
+    validation_references: list[dict[str, Any]] = []
     families_by_split = {"train": set(), "validation": set()}
     for cached in _iter_jsonl(Path(specialist_outputs_path).expanduser().resolve()):
         paper_id = str(cached.get("id") or "")
@@ -1057,15 +1040,33 @@ def prepare_meta_data(
             continue
         specialists = cached.get("specialists") or {}
         if set(specialists) != set(SPECIALIST_TASKS):
-            raise ValueError(f"Meta cache for {paper_id} must contain all five specialists")
-        reference = _meta_reference(record)
-        question = (
-            f"Review task: {META_TASK}\nPaper id: {paper_id}\n\n"
-            + "\n\n".join(
-                f"=== {task_id} ===\n{specialists[task_id]}"
-                for task_id in SPECIALIST_TASKS
+            raise ValueError(
+                f"Meta cache for {paper_id} must contain all five specialists"
             )
-            + "\n\nReturn the complete final meta-review."
+        reference = _meta_reference(record)
+        markdown_path = _resolve_markdown(source_root, record)
+        if markdown_path is None:
+            raise FileNotFoundError(f"META paper Markdown is required for {paper_id}")
+        paper_text = markdown_path.read_text(encoding="utf-8", errors="ignore")
+        anchors = build_source_anchors(load_content_list(str(markdown_path)))
+        if not anchors:
+            anchors = fallback_source_anchors(paper_text)
+        visible_metadata = candidate_visible_metadata(
+            paper_id=paper_id,
+            title=str(cached.get("paper_title") or paper_id),
+            venue=str(record.get("conference") or ""),
+            year=str(record.get("year") or ""),
+            reviewer_role=META_TASK,
+        )
+        paper_context = format_canonical_paper_context(
+            paper_text,
+            visible_metadata,
+            anchors,
+        )
+        question = build_meta_review_question(
+            paper_id=paper_id,
+            specialist_reviews=specialists,
+            paper_context=paper_context,
         )
         split = str(cached.get("split") or "")
         if split not in families_by_split:
@@ -1078,13 +1079,7 @@ def prepare_meta_data(
             "work_family": family,
             "task_id": META_TASK,
             "split": split,
-            "candidate_visible": {
-                "paper_id": paper_id,
-                "title": str(cached.get("paper_title") or paper_id),
-                "venue": str(record.get("conference") or ""),
-                "year": str(record.get("year") or ""),
-                "reviewer_role": META_TASK,
-            },
+            "candidate_visible": visible_metadata,
             "internal_provenance": {
                 "work_family": family,
                 "split": split,
@@ -1099,7 +1094,7 @@ def prepare_meta_data(
             episodes.append(
                 {
                     "id": f"{paper_id}::{META_TASK}",
-                    "text": _training_episode(question, reference),
+                    "text": _training_episode(question),
                     "metadata": {
                         **metadata,
                         "experience_protocol": EXPERIENCE_PROTOCOL,
@@ -1150,6 +1145,8 @@ def prepare_meta_data(
     _write_jsonl(evaluator_references_path, validation_references)
     manifest = {
         "task_id": META_TASK,
+        "reviewer_suite_identity_sha256": (load_reviewer_suite().suite_identity_sha256),
+        "meta_request_protocol_version": META_REQUEST_PROTOCOL_VERSION,
         "episodes": str(output_root / "episodes.jsonl"),
         "validation": str(output_root / "validation.jsonl"),
         "evaluator_references": str(evaluator_references_path),
@@ -1181,7 +1178,7 @@ def prepare_held_out_test_data(
     s2_cache_path: str,
     temporal_split_manifest: str,
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Materialize only D from the frozen held-out CoCo paper manifest."""
     source_root = Path(coco_root).expanduser().resolve()
     split_summary, zones = load_temporal_split_manifest(temporal_split_manifest)
@@ -1222,10 +1219,7 @@ def prepare_held_out_test_data(
             else "frozen-s2-temporal-v1"
         ),
         expected_queries=(
-            {
-                str(value["paper_id"]): str(value["title"])
-                for value in d_entries
-            }
+            {str(value["paper_id"]): str(value["title"]) for value in d_entries}
             if split_summary.get("version") == TEMPORAL_SPLIT_VERSION
             else None
         ),
@@ -1235,6 +1229,7 @@ def prepare_held_out_test_data(
 
     per_task = {task_id: [] for task_id in SPECIALIST_TASKS}
     meta_references = []
+    meta_contexts = []
     missing_markdown = 0
     for record, family in zip(records, family_keys):
         markdown_path = _resolve_markdown(source_root, record)
@@ -1257,9 +1252,7 @@ def prepare_held_out_test_data(
                 if paper_text[start : start + 500].strip()
             ][:40]
         title = str(
-            (record.get("content") or {}).get("title")
-            or record.get("id")
-            or ""
+            (record.get("content") or {}).get("title") or record.get("id") or ""
         )
         source_anchor_text = format_source_anchors(anchors)
         paper_id = str(record.get("id") or "")
@@ -1291,7 +1284,9 @@ def prepare_held_out_test_data(
                         "task_id": task_id,
                         "categories": categories,
                         "split": "test",
-                        "paper_review_cutoff": str(record.get("_paper_review_cutoff") or ""),
+                        "paper_review_cutoff": str(
+                            record.get("_paper_review_cutoff") or ""
+                        ),
                         "temporal_zone": FOUR_ZONES[3],
                         "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
                     },
@@ -1299,6 +1294,36 @@ def prepare_held_out_test_data(
             )
         meta_reference = _meta_reference(record)
         if meta_reference:
+            meta_visible_metadata = candidate_visible_metadata(
+                paper_id=paper_id,
+                title=title,
+                venue=venue,
+                year=year,
+                reviewer_role=META_TASK,
+            )
+            meta_contexts.append(
+                {
+                    "id": f"{paper_id}::{META_TASK}",
+                    "paper_context": format_canonical_paper_context(
+                        paper_text,
+                        meta_visible_metadata,
+                        anchors,
+                        max_chars=max_paper_chars,
+                    ),
+                    "metadata": {
+                        "paper_id": paper_id,
+                        "paper_title": title,
+                        "work_family": family,
+                        "task_id": META_TASK,
+                        "split": "test",
+                        "paper_review_cutoff": str(
+                            record.get("_paper_review_cutoff") or ""
+                        ),
+                        "temporal_zone": FOUR_ZONES[3],
+                        "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
+                    },
+                }
+            )
             meta_references.append(
                 {
                     "id": f"{paper_id}::{META_TASK}",
@@ -1309,7 +1334,9 @@ def prepare_held_out_test_data(
                         "work_family": family,
                         "task_id": META_TASK,
                         "split": "test",
-                        "paper_review_cutoff": str(record.get("_paper_review_cutoff") or ""),
+                        "paper_review_cutoff": str(
+                            record.get("_paper_review_cutoff") or ""
+                        ),
                         "temporal_zone": FOUR_ZONES[3],
                         "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
                     },
@@ -1322,16 +1349,21 @@ def prepare_held_out_test_data(
         destination = output_root / task_id / "test.jsonl"
         _write_jsonl(destination, values)
         tasks[task_id] = {
-            "path": str(destination),
+            "path": record_manifest_path(destination, output_root),
             "sha256": _sha256_file(destination),
             "count": len(values),
         }
     meta_path = output_root / META_TASK / "references.jsonl"
+    meta_context_path = output_root / META_TASK / "contexts.jsonl"
     _write_jsonl(meta_path, meta_references)
+    _write_jsonl(meta_context_path, meta_contexts)
     tasks[META_TASK] = {
-        "path": str(meta_path),
+        "path": record_manifest_path(meta_path, output_root),
         "sha256": _sha256_file(meta_path),
         "count": len(meta_references),
+        "context_path": record_manifest_path(meta_context_path, output_root),
+        "context_sha256": _sha256_file(meta_context_path),
+        "context_count": len(meta_contexts),
     }
     manifest = {
         "source": "external://cocoreviewbench/benchmark",
@@ -1346,20 +1378,18 @@ def prepare_held_out_test_data(
         "semantic_scholar_usage": "optional frozen capability",
         "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
         "paper_context_max_chars": int(max_paper_chars),
+        "reviewer_suite_identity_sha256": (load_reviewer_suite().suite_identity_sha256),
+        "meta_request_protocol_version": META_REQUEST_PROTOCOL_VERSION,
         "work_family_identity": "transitive union by paperhash OR normalized title",
         "paper_count": len(records),
         "paper_ids_sha256": hashlib.sha256(
             "\n".join(str(value["paper_id"]) for value in d_entries).encode("utf-8")
         ).hexdigest(),
         "benchmark_source_pool_count": int(
-            split_summary.get(
-                "source_record_count", split_summary["source_pool_count"]
-            )
+            split_summary.get("source_record_count", split_summary["source_pool_count"])
         ),
         "formal_target_count": int(
-            split_summary.get(
-                "formal_target_count", split_summary["source_pool_count"]
-            )
+            split_summary.get("formal_target_count", split_summary["source_pool_count"])
         ),
         "missing_markdown": missing_markdown,
         "sealed_test_feedback": False,

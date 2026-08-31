@@ -1,288 +1,233 @@
 # AgentReview M★
 
-This repository implements one review architecture:
+AgentReview 对论文执行五个独立 Specialist Review，再由 Final Meta-Reviewer 汇总：
 
 ```text
-Paper → five independent specialist reviewers → final meta-reviewer
-          QUAL  CLAR  SIGN  ORIG  POL             META
-            └──── one independent M★ MemoryProgram per task ────┘
+Markdown paper
+  → Canonical Paper Context
+  → QUAL ┐
+    CLAR │
+    SIGN ├─ Specialist Review Bundle → META → final review
+    ORIG │
+    POL  ┘
 ```
 
-The five reviewer definitions and their 23 subcategories come only from
-`REVIEW_Request.md`. Its SHA-256 is checked at runtime:
+每个任务绑定一个独立 M★ MemoryProgram。`agentreview/reviewer_identity.py` 从 [REVIEW_Request.md](REVIEW_Request.md) 的六个有序章节渲染统一 Frozen Reviewer Identity，并用 [configs/frozen_reviewer_identity_v2.json](configs/frozen_reviewer_identity_v2.json) 校验语义 manifest。当前身份版本为 `frozen-reviewer-identity-v2`：
 
 ```text
-609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42
+source SHA256: ecd42d44c1df2cb27f606c48cb5071eea844e9dc93a7b8a36bb78352806d148d
+semantic manifest SHA256: a480246958ec0371e577c89a946ddf1e92bad766a076ec55201cbe1c111f7cf2
+suite SHA256:  84d1bab744e2d63f4d2168b5c0bd8d9a3bdf3543b69bd11ad5e81d931a3acaa4
+Specialist protocol/template SHA256: specialist-review-request-v1 / 3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5
+META protocol/template SHA256: meta-synthesis-request-v2 / 85263700054ef329e55bf103bba66d93b6537263ec867ea9d6c304e079257502
 ```
 
-M★ evolves executable memory schemas, write/read logic, and program
-instructions. It does not mutate the reviewer definitions, Task Agent, evaluator,
-model weights, or five-specialist-then-Meta topology.
+META v2 请求包含同一论文的 Canonical Paper Context（正文与 Source Anchors）以及按 `QUAL/CLAR/SIGN/ORIG/POL` 排列的五份 Specialist Review。
 
-## Install and test
+## 文档入口
+
+- [完整代码架构](../docs/ARCHITECTURE.md)：模块边界、执行流、数据流、产物、配置和接口状态。
+- [领域术语](../CONTEXT.md)：Reviewer、MemoryProgram、Evolution、四区数据与评测术语。
+- [文档索引](../docs/DOCUMENT_INDEX.md)：当前说明文件及其所有权。
+- [Evolution Viewer](evolution_viewer/README.md)：演化 lineage、分数、源码 diff 与 trace 查看器。
+- [Seed Programs](memory_evolution/seeds/README.md)：三个初始 MemoryProgram 的设计。
+
+## 环境
+
+所有命令从本目录执行。当前验证解释器为：
+
+```text
+/data0/xyj/miniconda3/envs/env_shengao/bin/python
+```
+
+安装正式运行依赖：
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
+
+`requirements.txt` 是 `requirements-runtime.txt` 的兼容入口。Viewer、注册的可选 provider、保留的 OpenScholar 快照、OpenReview 数据导入和开发工具使用：
+
+```bash
+python -m pip install -r requirements-optional.txt
+```
+
+运行测试：
+
+```bash
 python -m unittest discover -s tests -v
+python -m unittest discover -s evolution_viewer/tests -v
 ```
 
-Run all commands from this directory. The tested project interpreter is:
+## 三条执行面
+
+| 执行面 | 入口 | 用途 | 主要产物 |
+|---|---|---|---|
+| 部署审稿 | `run_single_paper_review_cli.py` / `run.sh` | Markdown 抽取、五 Specialist 并发、META、checkpoint、在线 writeback | `reviews.json`、`candidate_reviews.jsonl`、`memory.json`、`review_history.json`、`timing.json` |
+| Reviewer Core | `python -m agentreview.cli review` | 直接执行一个 MemoryProgram 的完整 review/write/query/read/response 协议 | 严格 `candidate_reviews.jsonl` |
+| M★ Evolution | `python -m memory_evolution.cli` | 数据准备、六任务演化、META cache、评估、正式套件评测 | program pool、lineage、scores、trace、promoted program、report |
+
+部署编排把 MemoryProgram 用作检索上下文提供者，并由 `Player` backend 生成最终文本。Reviewer Core CLI 由 MemoryProgram 与固定 TaskAgent 共同完成完整评审协议。两条链路共享 Program 协议、sandbox、toolkit 和 provenance。
+
+## 运行完整审稿
+
+准备六个已提升 Program：
 
 ```text
-/data0/xyj/miniconda3/envs/env_shengao/bin/python
+<program-root>/
+  suite_manifest.json
+  meta_manifest.json
+  QUAL/
+    best_program.py
+    seed_<n>/
+      config.json
+      selection.json
+  CLAR/ ...
+  SIGN/ ...
+  ORIG/ ...
+  POL/ ...
+  META/
+    best_program.py
+    seed_<n>/
+      config.json
+      selection.json
+  lineages/<lineage>/<TASK>/best_program.py
 ```
 
-## Prepare specialist evolution data
+`suite_manifest.json` 与 `meta_manifest.json` 的 `program`、`source_run` 记录套件根相对路径；resolver 以 manifest 所在目录定位 Program 与 `<source_run>/config.json`，并校验源码和 embedding provenance。
 
-The frozen CoCo temporal manifest supplies family-level target membership.
-The 3900 read-only submission records are canonicalized and clustered, then one
-deterministic score/review-independent representative is selected per family.
-The resulting 3889 targets use A/B/C/D counts 2391/299/300/899.
+部署审稿与 Reviewer Core 写出的候选记录采用 `agentreview-candidate-review-v2`。记录同时绑定 task prompt SHA、request template SHA 与 composite suite SHA，读取端按当前 Frozen Reviewer Identity 严格校验完整任务身份。
+
+配置 OpenAI-compatible 模型与 embedding 身份后运行：
 
 ```bash
-python -m memory_evolution.cli prepare-specialists \
-  --openreview-root "$OPENREVIEW_ROOT" \
-  --coco-root "$COCOREVIEWBENCH_ROOT" \
-  --output-dir data/evolution \
-  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
-  --s2-cache configs/frozen_s2_temporal_v2.jsonl
+export OPENAI_API_KEY=dummy
+export OPENAI_BASE_URL=http://127.0.0.1:8000/v1
+export MSTAR_PROGRAM_DIR=/absolute/path/to/program-root
+export MSTAR_EMBEDDING_REVISION=1d8ad4ca9b3dd8059ad90a75d4983776a23d44af
+export PAPER_MD_DIR=/absolute/path/to/papers
+export REVIEW_OUTPUT_DIR=/absolute/path/to/output
+bash run.sh
 ```
 
-This creates independent `QUAL`, `CLAR`, `SIGN`, `ORIG`, and `POL` datasets.
-No test records are written into the evolution directory. Formal evolution
-rejects datasets prepared without a frozen, checksummed S2 cache.
-All counts are resolved from the split manifest at prepare time: train uses
-every A family (currently 2391), specialist validation keeps priority with
-`--validation-families 150` frozen B families, and META validation receives
-the remaining B families by default (currently 299 - 150 = 149). The two
-validation partitions are disjoint slices of the same deterministic B order,
-so they can never overlap. It also reserves a third, family-disjoint
-`meta_validation` partition that the specialist evolution never evaluates;
-only this partition validates META.
-The cache must contain every selected paper ID plus target cutoff,
-retrieval method/version/config and result SHA. Unknown-date or post-cutoff
-results, legacy cache records and partial caches are rejected.
+本地 vLLM 可以使用任意非空 API key。远程服务使用服务方签发的 key。凭据通过环境变量或对应入口的显式 CLI 参数进入进程。
 
-## Evolve the five specialists
-
-A formal run uses three seed programs followed by 20 evolution attempts, matching
-the MSTAR paper and reference implementation. Each attempt samples its parent
-from the global quality-passing program pool with score-based softmax selection;
-failed mutation/guard/compile/evaluation attempts consume their iteration and are
-not admitted to the pool. Static validation size 25, rotating feedback size 5,
-train-to-validation budget 5:1, parent softmax temperature 0.15, three compile
-repairs, and one outer Evolution seed (`0`) are used for the current minimal
-feasibility experiment. Lineage remains recorded as provenance, but does not
-partition the search budget or parent pool.
+结果查看器：
 
 ```bash
-python -m memory_evolution.cli evolve-specialists \
-  --data-root data/evolution \
-  --output runs/formal \
-  --experiment-seeds 0 \
-  --primary-seed 0 \
-  --asset-manifest configs/asset_manifest_v2.json \
-  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
-  --coco-root "$COCOREVIEWBENCH_ROOT" \
-  --openai-base-url http://127.0.0.1:8000/v1 \
-  --generation-model-source "$QWEN_MODEL_SOURCE" \
-  --generation-model-revision "$QWEN_MODEL_REVISION" \
-  --vllm-version "$VLLM_VERSION" \
-  --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
-  --review-split-revision <immutable-ReviewSplit-commit> \
-  --review-classify-revision <immutable-ReviewClassify-commit> \
-  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
-  --embedding-model-name Qwen/Qwen3-Embedding-8B \
-  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
-  --embedding-cache cache/qwen3_embedding_8b_cache.sqlite3 \
-  --embedding-cache-audit cache/qwen3_embedding_8b_cache.audit.json
+python viewer.py --output_dir /absolute/path/to/output --host 127.0.0.1 --port 7861
 ```
 
-The bundled classifier adapter verifies the pinned CoCoReviewBench commit and
-reuses its official split/classify prompts, cleanup rules and parsers. It expects
-the repository's ReviewSplit and ReviewClassify vLLM services at their documented
-ports (13099 and 13098).
+## M★ 演化
 
-Formal specialist selection refuses to run without that adapter. `--smoke`
-permits a non-reportable explicit-label fallback and reduces the search.
-`--pilot` permits the same non-formal classifier and deterministic embedding
-fallbacks but does not reduce the requested iterations, validation sizes or
-selection repeats. It is intended for a complete small-data pipeline test:
+当前演化协议包含三个 Seed Program 和 20 个 Evolution Attempts：
+
+- `vector_search`：lossless write 与向量检索；
+- `llm_summarizer`：lossless write 与 query-focused read compression；
+- `experience_learner`：write-time abstraction 与结构化 recall；
+- 父代从通过质量门禁且完成 Static Evaluation 的全局候选池按分数 softmax 选择；
+- 变异、门禁、编译与评估的每次结果均消费一个 attempt；
+- Lineage 记录来源并支持各 lineage champion；
+- 当前默认 Static Selection 为 25，Rotating Selection 为 5，parent temperature 为 `0.15`；
+- 默认历史 Episode 预算为 `5 × Static Selection = 125`，每个候选从空状态按同一冻结顺序 replay 该子集。
+
+验证端到端小规模流程：
 
 ```bash
-# OPENAI_API_KEY plus OPENAI_BASE_URL (or legacy OPENAI_API_BASE) must be exported.
-./pilot_full.sh
+export OPENAI_API_KEY=dummy
+export OPENAI_BASE_URL=http://127.0.0.1:8000/v1
+export OPENREVIEW_ROOT=/absolute/path/to/OpenReview
+export COCOREVIEWBENCH_ROOT=/absolute/path/to/CoCoReviewBench
+bash pilot_full.sh
 ```
 
-The default pilot prepares 30 training, 20 specialist-validation and 6
-Meta-validation work families; performs two mutations for each of the five
-specialists and META; and prints a seed-versus-evolved score table. Override
-settings with `PILOT_ITERATIONS`, `PILOT_STATIC_SIZE`,
-`PILOT_ROTATING_SIZE`, `PILOT_RUN_ROOT` and the other variables at the top of
-the script. Pilot output is explicitly non-reportable.
-Formal temporal v3 M★ selection requires the frozen Qwen3-Embedding-8B adapter,
-immutable revision, read-only SQLite cache, and cache audit; their hashes and
-complete embedding fingerprint are recorded in every run. See
-`../docs/LOCAL_QWEN_OPENAI_ALIGNMENT.md` for local Qwen generation commands.
-
-Each specialist gets its own pool, scores, lineage, traces and promoted
-`best_program.py`. No program or feedback is shared between dimensions.
-Outer seed 0 is the current minimal feasibility run. One or more outer seeds are
-accepted in formal mode; for example `0,1,2,3,4` remains available as a future
-stability/robustness experiment, but those repeats are not required for the
-current QUAL feasibility question. Outer seeds are distinct from the three Seed
-Program lineages inside every Evolution run. `--primary-seed` must name one of
-the configured outer seeds.
-
-## Evolve Meta after specialists are frozen
-
-Meta inputs are generated from the five promoted specialists. Training papers use
-out-of-fold generation so a paper's human target is never present in the memory
-used to generate its specialist outputs.
+查看演化结果：
 
 ```bash
-python -m memory_evolution.cli cache-meta-inputs \
-  --data-root data/evolution \
-  --program-root runs/formal \
-  --output data/evolution/meta_inputs.jsonl \
-  --openai-base-url http://127.0.0.1:8000/v1 \
-  --generation-model-source "$QWEN_MODEL_SOURCE" \
-  --generation-model-revision "$QWEN_MODEL_REVISION" \
-  --vllm-version "$VLLM_VERSION" \
-  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
-  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af
-
-python -m memory_evolution.cli prepare-meta \
-  --openreview-root "$OPENREVIEW_ROOT" \
-  --specialist-outputs data/evolution/meta_inputs.jsonl \
-  --output-dir data/evolution
-
-python -m memory_evolution.cli evolve-meta \
-  --data-root data/evolution \
-  --output runs/formal \
-  --openai-base-url http://127.0.0.1:8000/v1 \
-  --generation-model-source "$QWEN_MODEL_SOURCE" \
-  --generation-model-revision "$QWEN_MODEL_REVISION" \
-  --vllm-version "$VLLM_VERSION" \
-  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
-  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af
-```
-
-For a non-reportable end-to-end pilot, `cache-meta-inputs --pilot` permits the
-same deterministic hash-embedding fallback without reducing search iterations.
-
-## Run the complete review system
-
-The program root must contain:
-
-```text
-runs/formal/
-  QUAL/best_program.py
-  CLAR/best_program.py
-  SIGN/best_program.py
-  ORIG/best_program.py
-  POL/best_program.py
-  META/best_program.py
-```
-
-```bash
-python run_single_paper_review_cli.py \
-  --paper_md_dir /path/to/papers \
-  --output_dir outputs/reviews \
-  --model_name qwen3.8-27b-fp8 \
-  --memory_mode mstar_program \
-  --memory_program_dir runs/formal \
-  --memory_embedding_adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
-  --memory_embedding_revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
-  --overwrite
-```
-
-Five specialists run independently and can execute concurrently. Only the final
-Meta reviewer sees all five outputs. Online runs append completed reviews to the
-memory library; executable programs change only through a new offline M★ run.
-
-## Evaluation
-
-Specialist fitness is the harmonic mean of:
-
-1. the mean of alignment, completeness, grounding, verifiability and clarity;
-2. bounded category recall
-   `|AI categories ∩ human categories| / |human categories|`.
-
-Candidate-supplied category labels are ignored. Formal labels come from the
-frozen classifier adapter. Meta fitness is the harmonic mean of adjudication,
-human-reference agreement, and decision/calibration groups.
-
-Materialize only the frozen D manifest from the CoCo source pool:
-
-```bash
-python -m memory_evolution.cli prepare-test \
-  --coco-root "$COCOREVIEWBENCH_ROOT" \
-  --output-dir data/sealed_test \
-  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
-  --s2-cache configs/frozen_s2_temporal_v2.jsonl
-```
-
-The formal suite command executes every test specialist exactly once, constructs
-META inputs from those five frozen outputs, evaluates META once, and refuses to
-overwrite its report:
-
-```bash
-python -m memory_evolution.cli final-evaluate-suite \
-  --data-root data/evolution \
-  --test-data-root data/sealed_test \
-  --program-root runs/formal \
-  --output runs/formal/final_suite_test.json \
-  --asset-manifest configs/asset_manifest_v2.json \
-  --temporal-split-manifest configs/coco_temporal_split_v2/manifest.json \
-  --coco-root "$COCOREVIEWBENCH_ROOT" \
-  --openai-base-url http://127.0.0.1:8000/v1 \
-  --generation-model-source "$QWEN_MODEL_SOURCE" \
-  --generation-model-revision "$QWEN_MODEL_REVISION" \
-  --vllm-version "$VLLM_VERSION" \
-  --classifier-adapter memory_evolution.coco_adapter:create_frozen_coco_adapter \
-  --review-split-revision <same-ReviewSplit-commit> \
-  --review-classify-revision <same-ReviewClassify-commit> \
-  --embedding-adapter memory_evolution.embedding_adapter:create_qwen3_embedding \
-  --embedding-revision 1d8ad4ca9b3dd8059ad90a75d4983776a23d44af \
-  --embedding-cache cache/qwen3_embedding_8b_cache.sqlite3
-```
-
-The lower-level `evaluate` command remains available for development single-task
-evaluation or ablation. `evaluate --final-test` is always rejected and cannot
-produce a formal report. The only legal D/Test entry is
-`final-evaluate-suite → formal gate → CoCoMetricBenchmarkAdapter`.
-
-CoCoReviewBench is used as an opinion-taxonomy and metric-design reference. Its
-benchmark construction and left-out-reviewer workflow are not part of the M★
-search architecture.
-
-## Audit and viewer
-
-Candidates execute in isolated processes with bubblewrap, cleared environments,
-resource limits, restricted imports, in-memory SQLite, and capability-based
-LLM/embedding/vector access.
-
-```bash
-python viewer.py --output_dir outputs/reviews --host 127.0.0.1 --port 7861
-```
-
-See [docs/memory_evolution.md](../docs/memory_evolution.md) for the exact search
-contract, artifacts, ablations and known environment requirements.
-
-The frozen post-evolution three-arm effectiveness screen is documented in
-[docs/effectiveness_screening.md](../docs/effectiveness_screening.md). Its
-`train_clean.jsonl` evaluation is explicitly a CoCo-style proxy and does not
-claim official CoCoReviewBench Correctness.
-
-/data0/xyj/miniconda3/envs/env_shengao/bin/python
-  viewer.py
-  --output_dir outputs
-  --host 0.0.0.0
-  --port 7861
-
-/data0/xyj/miniconda3/envs/env_shengao/bin/python
-  -m evolution_viewer.app
-  --runs-dir runs/pilot_full_iter5_202607300117
-  --host 0.0.0.0
+python -m evolution_viewer.app \
+  --runs-dir /absolute/path/to/runs \
+  --host 127.0.0.1 \
   --port 7862
+```
+
+Specialist Evolution 结构冒烟入口：
+
+```bash
+export OPENREVIEW_ROOT=/absolute/path/to/OpenReview
+export COCOREVIEWBENCH_ROOT=/absolute/path/to/CoCoReviewBench
+bash end2end_smoke.sh
+```
+
+该脚本先在 `data/specialist_smoke` 准备 temporal v2 小样本，再执行
+`evolve-specialists --smoke`。产物写入 `runs/specialist_smoke`，身份为
+`smoke_non_reportable`。
+
+列出全部演化子命令与参数：
+
+```bash
+python -m memory_evolution.cli --help
+python -m memory_evolution.cli evolve-task --help
+python -m memory_evolution.cli final-evaluate-suite --help
+```
+
+## 正式数据与资产
+
+当前权威数据协议是 family-deduplicated temporal v2：
+
+| Zone | 语义 | Family targets |
+|---|---|---:|
+| A | Historical Experience | 2391 |
+| B | Evolution Validation | 299 |
+| C | Effectiveness Holdout | 300 |
+| D | Held-out Benchmark Test | 899 |
+
+3900 条 CoCo source records 归并为 3889 个 Paper Families。每个 Specialist task bundle 包含 2391 个 A 区 Episode 和 150 个 B 区 Validation；其余 149 个 B 区 family 保留给 META Validation。Frozen S2 v2 覆盖全部 3889 个 target。
+
+`configs/asset_manifest_v2.json` 绑定 Frozen Reviewer Identity v2、temporal split、Frozen S2、三个 Seed Program 和 Qwen3 embedding fingerprint。该 manifest 的 `formal_ready` 范围覆盖 pre-evolution assets 与 A/B task bundles。当前 Qwen3 selection cache audit 记录 12,705 个 4096 维向量，截断数量为 0。
+
+`configs/formal_temporal_v3_qwen3e8b.json` 将 selection assets 标记为 `regeneration_required`；完成正式演化前需要生成 specialist/META selections、rotating metadata、embedding cache 与 readiness manifest。
+
+Frozen S2 完整性核验：
+
+```bash
+python scripts/build_frozen_s2_pool_v2.py --check-only
+```
+
+密封 D 区六任务测量通过：
+
+```bash
+python -m memory_evolution.cli final-evaluate-suite --help
+```
+
+该入口执行 formal protocol gate，在每份 Review 生成后通过 `CoCoMetricBenchmarkAdapter` 与 `CoCoReviewFitness` 内联计分，最终持久化紧凑的 `sealed_d_coco_style` 套件报告。`evaluate` 服务单任务开发评估。
+
+CoCoReviewBench 自带的 split、classify、evaluation 三阶段由独立官方 Adapter 执行：
+
+```bash
+python -m agentreview.coco_eval --help
+```
+
+该入口消费已持久化的 `candidate_reviews.jsonl`，依次持久化 split、classify、reviewer selection、protocol identity 与 evaluation 产物，输出 official CoCo evaluation 身份。两类结果使用独立 metric identity。
+
+## 接口状态
+
+当前主执行面包括 OpenAI-compatible backend、Azure OpenAI 鉴权、部署审稿 CLI、Reviewer Core CLI、M★ CLI、CoCo Adapter 和两个只读 Viewer。Backend registry 同时注册 Anthropic、Cohere、Transformers、Human 与 Dummy Adapter，安装可选依赖并提供凭据后即可选择。
+
+仓库保留以下暂未启用接口：
+
+- ChatArena 与 Supabase 快照；
+- Bard 与 LangChain provider Interface；
+- OpenScholar core/API 字符串快照；其 Semantic Scholar search helper 继续服务 legacy retrieval Interface；
+- BGE-M3 embedding Adapter，当前正式配置选择 Qwen3-Embedding-8B；
+- OpenReview 数据下载和整理 CLI；
+- Effectiveness Screening 的 C 区三类基础 arm 与 lineage-expanded Program arm。
+
+Effectiveness Screening 配置明确记录激活所需的 evolution data、六任务 promoted programs 和 C 区 materialized context。现行设计选择 20 个 A 区历史目标与 20 个 C 区评测目标，执行 7 arms × 2 replicates，形成 280 个目标审稿包和 12 条 Program 历史 replay 命令。
+
+## 生成目录
+
+`runs/`、`outputs*/`、embedding SQLite、Frozen S2 work checkpoint、Viewer runtime 和日志属于可再生运行产物，Git 通过 `.gitignore` 管理这些路径。正式结果通过外部归档和 manifest/hash 保存身份。
+
+## License
+
+见 [LICENSE](LICENSE)。

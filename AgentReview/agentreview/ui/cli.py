@@ -1,30 +1,37 @@
-#AgentReview/agentreview/ui/cli.py
+# AgentReview/agentreview/ui/cli.py
 
 import logging
 import os
 import os.path as osp
-from typing import Union
 
-from colorama import Fore
-from colorama import Style as CRStyle
+try:
+    from colorama import Fore
+    from colorama import Style as CRStyle
+except ImportError as exc:
+    raise ImportError("Please install colorama: `pip install colorama`") from exc
+
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from agentreview.utility.utils import get_rebuttal_dir, load_llm_ac_decisions, \
-    save_llm_ac_decisions
+from agentreview.utility.utils import (
+    get_rebuttal_dir,
+    load_llm_ac_decisions,
+    save_llm_ac_decisions,
+)
+
 from ..arena import Arena, TooManyInvalidActions
 from ..backends.human import HumanBackendError
-from ..const import AGENTREVIEW_LOGO
-from ..environments import PaperReview, PaperDecision
+from ..environments import PaperDecision, PaperReview
+
+logger = logging.getLogger(__name__)
 
 # Get the ASCII art from https://patorjk.com/software/taag/#p=display&f=Big&t=Chat%20Arena
 
 color_dict = {
     "red": Fore.RED,
     "green": Fore.GREEN,
-
     "blue": Fore.BLUE,  # Paper Extractor
     "light_red": Fore.LIGHTRED_EX,  # AC
     "light_green": Fore.LIGHTGREEN_EX,  # Author
@@ -33,14 +40,12 @@ color_dict = {
     "cyan": Fore.CYAN,
     "white": Fore.WHITE,
     "black": Fore.BLACK,
-
     "light_yellow": Fore.LIGHTYELLOW_EX,
     "light_blue": Fore.LIGHTBLUE_EX,
     "light_magenta": Fore.LIGHTMAGENTA_EX,
     "light_cyan": Fore.LIGHTCYAN_EX,
     "light_white": Fore.LIGHTWHITE_EX,
     "light_black": Fore.LIGHTBLACK_EX,
-
 }
 
 visible_colors = [
@@ -48,13 +53,6 @@ visible_colors = [
     for color in color_dict  # ANSI_COLOR_NAMES.keys()
     if color not in ["black", "white", "red", "green"] and "grey" not in color
 ]
-
-try:
-    import colorama
-except ImportError:
-    raise ImportError(
-        "Please install colorama: `pip install colorama`"
-    )
 
 MAX_STEPS = 20  # We should not need this parameter for paper reviews anyway
 
@@ -69,7 +67,6 @@ class ArenaCLI:
         self.arena = arena
         self.args = arena.args
 
-
     def launch(self, max_steps: int = None, interactive: bool = True):
         """Run the CLI."""
 
@@ -83,12 +80,14 @@ class ArenaCLI:
         timestep = self.arena.reset()
         console.print("🎓AgentReview Initialized!", style="bold green")
 
-        env: Union[PaperReview, PaperDecision] = self.arena.environment
+        env: PaperReview | PaperDecision = self.arena.environment
         players = self.arena.players
 
         env_desc = self.arena.global_prompt
         num_players = env.num_players
-        player_colors = visible_colors[:num_players]  # sample different colors for players
+        player_colors = visible_colors[
+            :num_players
+        ]  # sample different colors for players
         name_to_color = dict(zip(env.player_names, player_colors))
 
         print("name_to_color: ", name_to_color)
@@ -102,20 +101,32 @@ class ArenaCLI:
 
         # Print the player name, role_desc and backend_type
         for i, player in enumerate(players):
-            player_name_str = f"[{player.name} ({player.backend.type_name})] Role Description:"
+            player_name_str = (
+                f"[{player.name} ({player.backend.type_name})] Role Description:"
+            )
             # player_name = Text(player_name_str)
             # player_name.stylize(f"bold {name_to_color[player.name]} underline")
             # console.print(player_name)
             # console.print(player.role_desc)
 
-            logging.info(color_dict[name_to_color[player.name]] + player_name_str + CRStyle.RESET_ALL)
-            logging.info(color_dict[name_to_color[player.name]] + player.role_desc + CRStyle.RESET_ALL)
+            logger.info(
+                color_dict[name_to_color[player.name]]
+                + player_name_str
+                + CRStyle.RESET_ALL
+            )
+            logger.info(
+                color_dict[name_to_color[player.name]]
+                + player.role_desc
+                + CRStyle.RESET_ALL
+            )
 
-        console.print(Fore.GREEN + "\n========= Arena Start! ==========\n" + CRStyle.RESET_ALL)
+        console.print(
+            Fore.GREEN + "\n========= Arena Start! ==========\n" + CRStyle.RESET_ALL
+        )
 
         step = 0
         while not timestep.terminal:
-            if env.type_name in ["paper_review","single_paper_review"]:
+            if env.type_name in ["paper_review", "single_paper_review"]:
                 if env.phase_index > 4:
                     break
 
@@ -201,7 +212,7 @@ class ArenaCLI:
                     timestep = env.step(human_player_name, human_input)
                 else:
                     raise e  # cannot recover from this error in non-interactive mode
-            except TooManyInvalidActions as e:
+            except TooManyInvalidActions:
                 # Print the error message
                 # console.print(f"Too many invalid actions: {e}", style="bold red")
                 print(Fore.RED + "This will be red text" + CRStyle.RESET_ALL)
@@ -213,8 +224,12 @@ class ArenaCLI:
             # Print the new messages
             for msg in messages:
                 message_str = f"[{msg.agent_name}->{msg.visible_to}]: {msg.content}"
-                if  self.args.skip_logging:
-                    console.print(color_dict[name_to_color[msg.agent_name]] + message_str + CRStyle.RESET_ALL)
+                if self.args.skip_logging:
+                    console.print(
+                        color_dict[name_to_color[msg.agent_name]]
+                        + message_str
+                        + CRStyle.RESET_ALL
+                    )
                 msg.logged = True
 
             step += 1
@@ -224,41 +239,47 @@ class ArenaCLI:
         console.print("\n========= Arena Ended! ==========\n", style="bold red")
 
         if env.type_name == "paper_review":
-
             paper_id = self.arena.environment.paper_id
-            rebuttal_dir = get_rebuttal_dir(output_dir=self.args.output_dir,
-                                            paper_id=paper_id,
-                                            experiment_name=self.args.experiment_name,
-                                            model_name=self.args.model_name,
-                                            conference=self.args.conference)
+            rebuttal_dir = get_rebuttal_dir(
+                output_dir=self.args.output_dir,
+                paper_id=paper_id,
+                experiment_name=self.args.experiment_name,
+                model_name=self.args.model_name,
+                conference=self.args.conference,
+            )
 
             os.makedirs(rebuttal_dir, exist_ok=True)
 
             path_review_history = f"{rebuttal_dir}/{paper_id}.json"
 
             if osp.exists(path_review_history):
-                raise Exception(f"History already exists!! ({path_review_history}). There must be something wrong with "
-                                f"the path to save the history ")
+                raise Exception(
+                    f"History already exists!! ({path_review_history}). There must be something wrong with "
+                    f"the path to save the history "
+                )
 
             self.arena.save_history(path_review_history)
 
         elif env.type_name == "paper_decision":
-            ac_decisions = load_llm_ac_decisions(output_dir=args.output_dir,
-                                                            conference=args.conference,
-                                                            model_name=args.model_name,
-                                                            ac_scoring_method=args.ac_scoring_method,
-                                                            experiment_name=args.experiment_name,
-                                                            num_papers_per_area_chair=args.num_papers_per_area_chair)
-
+            ac_decisions = load_llm_ac_decisions(
+                output_dir=args.output_dir,
+                conference=args.conference,
+                model_name=args.model_name,
+                ac_scoring_method=args.ac_scoring_method,
+                experiment_name=args.experiment_name,
+                num_papers_per_area_chair=args.num_papers_per_area_chair,
+            )
 
             ac_decisions += [env.ac_decisions]
 
-            save_llm_ac_decisions(ac_decisions,
-                                 output_dir=args.output_dir,
-                                 conference=args.conference,
-                                 model_name=args.model_name,
-                                 ac_scoring_method=args.ac_scoring_method,
-                                 experiment_name=args.experiment_name)
+            save_llm_ac_decisions(
+                ac_decisions,
+                output_dir=args.output_dir,
+                conference=args.conference,
+                model_name=args.model_name,
+                ac_scoring_method=args.ac_scoring_method,
+                experiment_name=args.experiment_name,
+            )
         elif env.type_name == "single_paper_review":
             sample_name = getattr(self.args, "paper_md_output_name", None)
             if not sample_name:
@@ -270,7 +291,9 @@ class ArenaCLI:
             path_review_history = osp.join(out_dir, "review_history.json")
 
             if osp.exists(path_review_history) and (not self.args.overwrite):
-                raise Exception(f"History already exists: {path_review_history} (use --overwrite to replace)")
+                raise Exception(
+                    f"History already exists: {path_review_history} (use --overwrite to replace)"
+                )
 
             self.arena.save_history(path_review_history)
             console.print(f"Saved history to {path_review_history}", style="bold green")

@@ -1,26 +1,30 @@
-#AgentReview/agentreview/arena.py
+# AgentReview/agentreview/arena.py
 import csv
 import json
 import logging
 import uuid
-from typing import Dict, List, Union
 
 from .agent import Player
 from .backends import Human
 from .config import ArenaConfig
 from .environments import Environment, TimeStep, load_environment
 
+logger = logging.getLogger(__name__)
+
 
 class TooManyInvalidActions(Exception):
     pass
-
 
 
 class Arena:
     """Utility class that manages the game environment and players."""
 
     def __init__(
-        self, players: List[Player], environment: Environment, args,  global_prompt: str = None
+        self,
+        players: list[Player],
+        environment: Environment,
+        args,
+        global_prompt: str = None,
     ):
         # Create a container for the players and environment and reset the game
         self.players = players
@@ -37,7 +41,7 @@ class Arena:
         return self.environment.num_players
 
     @property
-    def name_to_player(self) -> Dict[str, Player]:
+    def name_to_player(self) -> dict[str, Player]:
         return {player.name: player for player in self.players}
 
     def reset(self) -> TimeStep:
@@ -69,14 +73,14 @@ class Arena:
                 )  # update the environment
                 break
             else:  # action is invalid
-                logging.warning(f"{player_name} made an invalid action {action}")
+                logger.warning(f"{player_name} made an invalid action {action}")
                 continue
 
         if (
             timestep is None
         ):  # if the player made invalid actions for too many times, terminate the game
             warning_msg = f"{player_name} has made invalid actions for {self.invalid_actions_retry} times. Terminating the game."
-            logging.warning(warning_msg)
+            logger.warning(warning_msg)
             raise TooManyInvalidActions(warning_msg)
 
         return timestep
@@ -95,7 +99,7 @@ class Arena:
                 break
 
     @classmethod
-    def from_config(cls, config: Union[str, ArenaConfig]):
+    def from_config(cls, config: str | ArenaConfig):
         """Create an arena from a config."""
         # If config is a path, load the config
         if isinstance(config, str):
@@ -115,14 +119,14 @@ class Arena:
 
         # Check that the player names are unique
         player_names = [player.name for player in players]
-        assert len(player_names) == len(
-            set(player_names)
-        ), "Player names must be unique"
+        assert len(player_names) == len(set(player_names)), (
+            "Player names must be unique"
+        )
 
         # Create the environment
-        config.environment[
-            "player_names"
-        ] = player_names  # add the player names to the environment config
+        config.environment["player_names"] = (
+            player_names  # add the player names to the environment config
+        )
         env = load_environment(config.environment)
 
         return cls(players, env, global_prompt=global_prompt)

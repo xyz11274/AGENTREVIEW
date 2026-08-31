@@ -5,10 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
-
+from typing import Any
 
 CHECKPOINT_VERSION = "historical-replay-checkpoint-v1"
 REQUIRED_IDENTITY_FIELDS = (
@@ -30,7 +30,7 @@ def canonical_sha256(value: Any) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def validate_run_identity(identity: Dict[str, Any]) -> None:
+def validate_run_identity(identity: dict[str, Any]) -> None:
     missing = [name for name in REQUIRED_IDENTITY_FIELDS if not identity.get(name)]
     if missing:
         raise ValueError(f"Checkpoint run identity is incomplete: {missing}")
@@ -40,7 +40,9 @@ def validate_run_identity(identity: Dict[str, Any]) -> None:
         raise ValueError("Checkpoint identity requires seed_control_available")
 
 
-def validate_completed_prefix(completed_ids: Sequence[str], frozen_ids: Sequence[str]) -> None:
+def validate_completed_prefix(
+    completed_ids: Sequence[str], frozen_ids: Sequence[str]
+) -> None:
     completed = [str(value) for value in completed_ids]
     frozen = [str(value) for value in frozen_ids]
     if completed != frozen[: len(completed)]:
@@ -66,7 +68,7 @@ def audit_history_records(
     *,
     allow_adjacent_uncommitted: bool = False,
     clean_adjacent_uncommitted: bool = False,
-) -> List[str]:
+) -> list[str]:
     """Audit committed sidecars and optionally discard one crash-window record.
 
     A sidecar becomes committed only when the identity-bound checkpoint advances.
@@ -79,8 +81,7 @@ def audit_history_records(
     if not directory.exists():
         return []
     allowed = {
-        _record_name(index, paper_id)
-        for index, paper_id in enumerate(completed_ids)
+        _record_name(index, paper_id) for index, paper_id in enumerate(completed_ids)
     }
     actual = {path.name for path in directory.glob("*.json")}
     unexpected = actual - allowed
@@ -122,9 +123,12 @@ def _audit_no_checkpoint_residue(path: Path) -> None:
     residue = []
     for name in ("memory_library.jsonl", "history_records.jsonl", "memory_library"):
         candidate = path.parent / name
-        if candidate.is_file() and candidate.stat().st_size:
-            residue.append(str(candidate))
-        elif candidate.is_dir() and any(candidate.iterdir()):
+        if (
+            candidate.is_file()
+            and candidate.stat().st_size
+            or candidate.is_dir()
+            and any(candidate.iterdir())
+        ):
             residue.append(str(candidate))
     if residue:
         raise ValueError(
@@ -136,9 +140,9 @@ def _audit_no_checkpoint_residue(path: Path) -> None:
 def load_checkpoint(
     checkpoint_path: str,
     *,
-    expected_identity: Dict[str, Any],
+    expected_identity: dict[str, Any],
     frozen_ids: Sequence[str],
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     path = Path(checkpoint_path).expanduser().resolve()
     validate_run_identity(expected_identity)
     if not path.is_file():
@@ -174,12 +178,12 @@ def load_checkpoint(
 def save_checkpoint(
     checkpoint_path: str,
     *,
-    run_identity: Dict[str, Any],
+    run_identity: dict[str, Any],
     frozen_ids: Sequence[str],
     completed_ids: Sequence[str],
-    memory_snapshot: Dict[str, Any],
-    paper_record: Dict[str, Any],
-) -> Dict[str, Any]:
+    memory_snapshot: dict[str, Any],
+    paper_record: dict[str, Any],
+) -> dict[str, Any]:
     validate_run_identity(run_identity)
     validate_completed_prefix(completed_ids, frozen_ids)
     path = Path(checkpoint_path).expanduser().resolve()

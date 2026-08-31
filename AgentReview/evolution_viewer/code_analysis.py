@@ -5,8 +5,8 @@ from __future__ import annotations
 import ast
 import difflib
 import re
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
-
+from collections.abc import Iterable
+from typing import Any
 
 PROMPT_NAMES = (
     "INSTRUCTION_KNOWLEDGE_ITEM",
@@ -18,7 +18,7 @@ SCHEMA_NAMES = ("KnowledgeItem", "Query")
 CORE_METHODS = ("write", "read")
 
 
-def _unparse(node: Optional[ast.AST]) -> str:
+def _unparse(node: ast.AST | None) -> str:
     if node is None:
         return ""
     try:
@@ -39,7 +39,7 @@ def _source_segment(source: str, node: ast.AST) -> str:
 
 def _call_name(node: ast.Call) -> str:
     value = node.func
-    parts: List[str] = []
+    parts: list[str] = []
     while isinstance(value, ast.Attribute):
         parts.append(value.attr)
         value = value.value
@@ -48,15 +48,17 @@ def _call_name(node: ast.Call) -> str:
     return ".".join(reversed(parts))
 
 
-def _calls(node: ast.AST) -> Set[str]:
+def _calls(node: ast.AST) -> set[str]:
     return {
         name
-        for name in (_call_name(value) for value in ast.walk(node) if isinstance(value, ast.Call))
+        for name in (
+            _call_name(value) for value in ast.walk(node) if isinstance(value, ast.Call)
+        )
         if name
     }
 
 
-def _branch_counts(node: ast.AST) -> Dict[str, int]:
+def _branch_counts(node: ast.AST) -> dict[str, int]:
     types = {
         "if": ast.If,
         "for": (ast.For, ast.AsyncFor),
@@ -83,8 +85,8 @@ def _field_value(node: ast.AST) -> str:
     return _unparse(node)
 
 
-def _class_fields(node: ast.ClassDef) -> Dict[str, Dict[str, str]]:
-    fields: Dict[str, Dict[str, str]] = {}
+def _class_fields(node: ast.ClassDef) -> dict[str, dict[str, str]]:
+    fields: dict[str, dict[str, str]] = {}
     for item in node.body:
         if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
             fields[item.target.id] = {
@@ -103,23 +105,21 @@ def _class_fields(node: ast.ClassDef) -> Dict[str, Dict[str, str]]:
     return fields
 
 
-def _imports(tree: ast.Module) -> Set[str]:
+def _imports(tree: ast.Module) -> set[str]:
     values = set()
     for node in tree.body:
         if isinstance(node, ast.Import):
             values.update(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
-            values.update(
-                f"{module}.{alias.name}".strip(".") for alias in node.names
-            )
+            values.update(f"{module}.{alias.name}".strip(".") for alias in node.names)
     return values
 
 
-def analyze_program(source: str) -> Dict[str, Any]:
+def analyze_program(source: str) -> dict[str, Any]:
     """Extract structural facts from a Python candidate without executing it."""
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "parse_error": None,
         "prompts": {},
         "schemas": {},
@@ -135,12 +135,10 @@ def analyze_program(source: str) -> Dict[str, Any]:
         )
         return result
 
-    classes = {
-        node.name: node for node in tree.body if isinstance(node, ast.ClassDef)
-    }
+    classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
     for node in tree.body:
-        name: Optional[str] = None
-        value: Optional[ast.AST] = None
+        name: str | None = None
+        value: ast.AST | None = None
         if isinstance(node, ast.Assign) and len(node.targets) == 1:
             target = node.targets[0]
             if isinstance(target, ast.Name):
@@ -198,7 +196,7 @@ def _status(before: Any, after: Any) -> str:
     return "unchanged" if before == after else "modified"
 
 
-def _set_delta(before: Iterable[str], after: Iterable[str]) -> Dict[str, List[str]]:
+def _set_delta(before: Iterable[str], after: Iterable[str]) -> dict[str, list[str]]:
     before_set, after_set = set(before), set(after)
     return {
         "added": sorted(after_set - before_set),
@@ -207,9 +205,9 @@ def _set_delta(before: Iterable[str], after: Iterable[str]) -> Dict[str, List[st
 
 
 def _schema_changes(
-    before: Dict[str, Any], after: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    changes: List[Dict[str, Any]] = []
+    before: dict[str, Any], after: dict[str, Any]
+) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
     class_names = sorted(set(before) | set(after))
     for class_name in class_names:
         before_fields = before.get(class_name, {})
@@ -232,8 +230,8 @@ def _schema_changes(
 
 
 def _function_change(
-    name: str, before: Optional[Dict[str, Any]], after: Optional[Dict[str, Any]]
-) -> Dict[str, Any]:
+    name: str, before: dict[str, Any] | None, after: dict[str, Any] | None
+) -> dict[str, Any]:
     status = _status(
         before.get("source") if before else None,
         after.get("source") if after else None,
@@ -255,8 +253,8 @@ def _function_change(
 
 
 def _function_changes(
-    before: Dict[str, Any], after: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+    before: dict[str, Any], after: dict[str, Any]
+) -> list[dict[str, Any]]:
     values = []
     for name in sorted(set(before) | set(after)):
         change = _function_change(name, before.get(name), after.get(name))
@@ -283,7 +281,7 @@ def compare_programs(
     *,
     before_name: str = "before.py",
     after_name: str = "after.py",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Compare two candidates using AST facts plus a complete text diff."""
 
     before = analyze_program(before_source)
@@ -324,14 +322,10 @@ def compare_programs(
         "prompts": prompts,
         "schema": _schema_changes(before["schemas"], after["schemas"]),
         "write": [
-            change
-            for change in core_methods
-            if change["name"] == "KnowledgeBase.write"
+            change for change in core_methods if change["name"] == "KnowledgeBase.write"
         ],
         "read": [
-            change
-            for change in core_methods
-            if change["name"] == "KnowledgeBase.read"
+            change for change in core_methods if change["name"] == "KnowledgeBase.read"
         ],
         "helpers": helper_changes,
         "imports": import_changes,
@@ -339,10 +333,10 @@ def compare_programs(
     }
 
 
-def changed_sections(comparison: Dict[str, Any]) -> List[str]:
+def changed_sections(comparison: dict[str, Any]) -> list[str]:
     """Return stable Chinese labels for sections containing actual changes."""
 
-    labels: List[str] = []
+    labels: list[str] = []
     if any(item["status"] != "unchanged" for item in comparison.get("prompts", [])):
         labels.append("Prompt")
     if comparison.get("schema"):
@@ -359,29 +353,43 @@ def changed_sections(comparison: Dict[str, Any]) -> List[str]:
     return labels
 
 
-def tokenize_for_diff(text: str) -> List[str]:
+def tokenize_for_diff(text: str) -> list[str]:
     """Tokenize prose while preserving whitespace and punctuation."""
 
     return re.findall(r"\s+|[\w]+|[^\w\s]", text, flags=re.UNICODE)
 
 
-def word_diff(before: str, after: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+def word_diff(
+    before: str, after: str
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     """Return tagged before/after token streams for side-by-side rendering."""
 
     old_tokens = tokenize_for_diff(before)
     new_tokens = tokenize_for_diff(after)
     matcher = difflib.SequenceMatcher(a=old_tokens, b=new_tokens, autojunk=False)
-    old_result: List[Tuple[str, str]] = []
-    new_result: List[Tuple[str, str]] = []
+    old_result: list[tuple[str, str]] = []
+    new_result: list[tuple[str, str]] = []
     for opcode, old_start, old_end, new_start, new_end in matcher.get_opcodes():
         if opcode == "equal":
-            old_result.extend(("equal", token) for token in old_tokens[old_start:old_end])
-            new_result.extend(("equal", token) for token in new_tokens[new_start:new_end])
+            old_result.extend(
+                ("equal", token) for token in old_tokens[old_start:old_end]
+            )
+            new_result.extend(
+                ("equal", token) for token in new_tokens[new_start:new_end]
+            )
         elif opcode == "delete":
-            old_result.extend(("delete", token) for token in old_tokens[old_start:old_end])
+            old_result.extend(
+                ("delete", token) for token in old_tokens[old_start:old_end]
+            )
         elif opcode == "insert":
-            new_result.extend(("insert", token) for token in new_tokens[new_start:new_end])
+            new_result.extend(
+                ("insert", token) for token in new_tokens[new_start:new_end]
+            )
         else:
-            old_result.extend(("delete", token) for token in old_tokens[old_start:old_end])
-            new_result.extend(("insert", token) for token in new_tokens[new_start:new_end])
+            old_result.extend(
+                ("delete", token) for token in old_tokens[old_start:old_end]
+            )
+            new_result.extend(
+                ("insert", token) for token in new_tokens[new_start:new_end]
+            )
     return old_result, new_result

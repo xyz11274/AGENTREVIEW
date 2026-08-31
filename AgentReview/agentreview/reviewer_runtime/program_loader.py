@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 from .tasks import ALL_TASKS, META_TASK
 
@@ -30,7 +29,7 @@ class MemoryProgramLoader:
     """Resolve a seed, promoted winner, or future optimizer output directly."""
 
     @staticmethod
-    def resolve(value: Union[str, Path, MemoryProgramIdentity], task_id: str = "") -> Path:
+    def resolve(value: str | Path | MemoryProgramIdentity, task_id: str = "") -> Path:
         if isinstance(value, MemoryProgramIdentity):
             path = Path(value.path).expanduser().resolve()
         else:
@@ -58,7 +57,7 @@ class MemoryProgramLoader:
 
     @classmethod
     def identity(
-        cls, value: Union[str, Path, MemoryProgramIdentity], task_id: str = ""
+        cls, value: str | Path | MemoryProgramIdentity, task_id: str = ""
     ) -> MemoryProgramIdentity:
         path = cls.resolve(value, task_id)
         name = path.name
@@ -79,6 +78,25 @@ class MemoryProgramLoader:
         )
 
 
+def record_manifest_path(path: str | Path, manifest_root: Path) -> str:
+    """Record an in-tree path relative to its manifest directory."""
+    resolved = Path(path).expanduser().resolve()
+    root = Path(manifest_root).expanduser().resolve()
+    try:
+        return resolved.relative_to(root).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
+def resolve_manifest_path(manifest_path: str | Path, recorded_path: str | Path) -> Path:
+    """Resolve a manifest-relative path while accepting explicit external paths."""
+    manifest = Path(manifest_path).expanduser().resolve()
+    recorded = Path(recorded_path).expanduser()
+    if recorded.is_absolute():
+        return recorded.resolve()
+    return (manifest.parent / recorded).resolve()
+
+
 def resolve_program_path(program_root: str, task_id: str) -> Path:
     """Backward-compatible suite resolver."""
     return MemoryProgramLoader.resolve(program_root, task_id)
@@ -92,7 +110,7 @@ def verify_promoted_program(
     embedding_revision: str,
     embedding_fingerprint: str = "",
 ) -> None:
-    """Preserve legacy promotion provenance checks without importing MSTAR."""
+    """Verify one promoted Program and its source-run embedding identity."""
     root = Path(program_root).expanduser().resolve()
     manifest_path = root / (
         "meta_manifest.json" if task_id == META_TASK else "suite_manifest.json"
@@ -102,14 +120,25 @@ def verify_promoted_program(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     promoted = manifest.get("promoted") or {}
     entry = promoted if task_id == META_TASK else promoted.get(task_id) or {}
+    resolved_program = Path(program_path).expanduser().resolve()
+    recorded_program = resolve_manifest_path(
+        manifest_path,
+        str(entry.get("program") or ""),
+    )
     expected_hash = str(entry.get("program_sha256") or "")
-    actual_hash = hashlib.sha256(Path(program_path).read_bytes()).hexdigest()
-    if not expected_hash or actual_hash != expected_hash:
+    actual_hash = hashlib.sha256(resolved_program.read_bytes()).hexdigest()
+    if recorded_program == resolved_program and actual_hash == expected_hash:
+        pass
+    else:
         raise RuntimeError(
-            f"{task_id} promoted program checksum mismatch: "
-            f"expected={expected_hash or '<missing>'}, actual={actual_hash}"
+            f"{task_id} promoted program identity mismatch: "
+            f"recorded={recorded_program}, resolved={resolved_program}, "
+            f"expected_sha256={expected_hash or '<missing>'}, "
+            f"actual_sha256={actual_hash}"
         )
-    source_run = Path(str(entry.get("source_run") or ""))
+    source_run = resolve_manifest_path(
+        manifest_path, str(entry.get("source_run") or "")
+    )
     config_path = source_run / "config.json"
     if not config_path.is_file():
         raise FileNotFoundError(f"Promoted source config is required: {config_path}")
@@ -117,18 +146,20 @@ def verify_promoted_program(
     expected_model = str(config.get("embedding_model_name") or "")
     expected_revision = str(config.get("embedding_revision") or "")
     expected_fingerprint = str(config.get("embedding_fingerprint") or "")
-    if (
-        expected_model != str(embedding_model_name)
-        or expected_revision != str(embedding_revision)
-        or (
-            expected_fingerprint
-            and expected_fingerprint != str(embedding_fingerprint)
+    embedding_matches = (
+        expected_model == str(embedding_model_name)
+        and expected_revision == str(embedding_revision)
+        and (
+            expected_fingerprint == ""
+            or expected_fingerprint == str(embedding_fingerprint)
         )
-    ):
-        raise RuntimeError(
-            f"{task_id} embedding provenance mismatch: evolved with "
-            f"{expected_model}@{expected_revision} "
-            f"fingerprint={expected_fingerprint or '<legacy>'}, deployed with "
-            f"{embedding_model_name}@{embedding_revision} "
-            f"fingerprint={embedding_fingerprint or '<missing>'}"
-        )
+    )
+    if embedding_matches:
+        return
+    raise RuntimeError(
+        f"{task_id} embedding provenance mismatch: evolved with "
+        f"{expected_model}@{expected_revision} "
+        f"fingerprint={expected_fingerprint or '<legacy>'}, deployed with "
+        f"{embedding_model_name}@{embedding_revision} "
+        f"fingerprint={embedding_fingerprint or '<missing>'}"
+    )

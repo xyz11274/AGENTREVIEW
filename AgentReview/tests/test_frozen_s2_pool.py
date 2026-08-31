@@ -1,11 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.build_frozen_s2_pool import (
-    asset_record_from_work,
-    canonical_sha256,
-    request_search,
-)
+from scripts.s2_search import request_search
 
 
 class FrozenS2PoolTest(unittest.TestCase):
@@ -19,12 +15,13 @@ class FrozenS2PoolTest(unittest.TestCase):
         return response
 
     def _request(self, response, *, max_attempts=2):
-        with patch(
-            "scripts.build_frozen_s2_pool.requests.get",
-            return_value=response,
-        ) as request, patch(
-            "scripts.build_frozen_s2_pool.time.sleep"
-        ) as sleep:
+        with (
+            patch(
+                "scripts.s2_search.requests.get",
+                return_value=response,
+            ) as request,
+            patch("scripts.s2_search.time.sleep") as sleep,
+        ):
             result = request_search(
                 title="Target",
                 top_k=10,
@@ -52,12 +49,14 @@ class FrozenS2PoolTest(unittest.TestCase):
 
     def test_positive_total_without_data_is_malformed_and_retried(self):
         response = self._response({"total": 5, "offset": 0})
-        with patch(
-            "scripts.build_frozen_s2_pool.requests.get",
-            return_value=response,
-        ) as request, patch(
-            "scripts.build_frozen_s2_pool.time.sleep"
-        ) as sleep, self.assertRaisesRegex(RuntimeError, "malformed search payload"):
+        with (
+            patch(
+                "scripts.s2_search.requests.get",
+                return_value=response,
+            ) as request,
+            patch("scripts.s2_search.time.sleep") as sleep,
+            self.assertRaisesRegex(RuntimeError, "malformed search payload"),
+        ):
             request_search(
                 title="Target",
                 top_k=10,
@@ -70,12 +69,14 @@ class FrozenS2PoolTest(unittest.TestCase):
 
     def test_non_list_data_is_malformed_and_retried(self):
         response = self._response({"total": 1, "offset": 0, "data": {}})
-        with patch(
-            "scripts.build_frozen_s2_pool.requests.get",
-            return_value=response,
-        ) as request, patch(
-            "scripts.build_frozen_s2_pool.time.sleep"
-        ) as sleep, self.assertRaisesRegex(RuntimeError, "malformed search payload"):
+        with (
+            patch(
+                "scripts.s2_search.requests.get",
+                return_value=response,
+            ) as request,
+            patch("scripts.s2_search.time.sleep") as sleep,
+            self.assertRaisesRegex(RuntimeError, "malformed search payload"),
+        ):
             request_search(
                 title="Target",
                 top_k=10,
@@ -89,12 +90,14 @@ class FrozenS2PoolTest(unittest.TestCase):
     def test_unparseable_json_is_malformed_and_retried(self):
         response = self._response(None)
         response.json.side_effect = ValueError("invalid JSON")
-        with patch(
-            "scripts.build_frozen_s2_pool.requests.get",
-            return_value=response,
-        ) as request, patch(
-            "scripts.build_frozen_s2_pool.time.sleep"
-        ) as sleep, self.assertRaisesRegex(RuntimeError, "malformed search payload"):
+        with (
+            patch(
+                "scripts.s2_search.requests.get",
+                return_value=response,
+            ) as request,
+            patch("scripts.s2_search.time.sleep") as sleep,
+            self.assertRaisesRegex(RuntimeError, "malformed search payload"),
+        ):
             request_search(
                 title="Target",
                 top_k=10,
@@ -111,13 +114,14 @@ class FrozenS2PoolTest(unittest.TestCase):
             {"total": "0", "offset": 0, "data": []},
             {"total": True, "offset": 0, "data": []},
         ):
-            with self.subTest(payload=payload), patch(
-                "scripts.build_frozen_s2_pool.requests.get",
-                return_value=self._response(payload),
-            ) as request, patch(
-                "scripts.build_frozen_s2_pool.time.sleep"
-            ) as sleep, self.assertRaisesRegex(
-                RuntimeError, "malformed search payload"
+            with (
+                self.subTest(payload=payload),
+                patch(
+                    "scripts.s2_search.requests.get",
+                    return_value=self._response(payload),
+                ) as request,
+                patch("scripts.s2_search.time.sleep") as sleep,
+                self.assertRaisesRegex(RuntimeError, "malformed search payload"),
             ):
                 request_search(
                     title="Target",
@@ -128,18 +132,6 @@ class FrozenS2PoolTest(unittest.TestCase):
                 )
             self.assertEqual(request.call_count, 2)
             self.assertEqual(sleep.call_count, 1)
-
-    def test_asset_result_count_does_not_modify_legacy_work_record(self):
-        results = []
-        work = {
-            "paper_id": "target",
-            "retrieved_papers": results,
-            "result_sha256": canonical_sha256(results),
-        }
-        asset = asset_record_from_work(work)
-        self.assertNotIn("result_count", work)
-        self.assertEqual(asset["result_count"], 0)
-        self.assertEqual(asset["retrieved_papers"], [])
 
 
 if __name__ == "__main__":

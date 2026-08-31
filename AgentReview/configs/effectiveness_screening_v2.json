@@ -1,5 +1,23 @@
 {
   "design_version": "effectiveness-screening-v2-temporal",
+  "arm_schema_version": "effectiveness-arm-v1",
+  "status": "inactive",
+  "activation_requirements": {
+    "evolution_data_root": {
+      "configured_path": "data/post_temporal_protocol_evolution",
+      "active": false,
+      "current_state": "pending_generation",
+      "required_state": "complete temporal-v2 A/B evolution inputs with frozen provenance",
+      "required_for": ["selection", "bundle_generation", "program_freeze", "generation", "evaluation", "summary"]
+    },
+    "evolved_program_root": {
+      "configured_path": "runs/post_temporal_protocol_authoritative",
+      "active": false,
+      "current_state": "pending_promotion",
+      "required_state": "complete specialist and META lineage promotions with suite_manifest.json and meta_manifest.json",
+      "required_for": ["program_freeze", "generation", "evaluation", "summary"]
+    }
+  },
   "metric_status": "CoCo-style proxy screening",
   "external_roots": {
     "openreview": "/data0/xyj/shengao/OpenReview",
@@ -9,7 +27,10 @@
   "evolution_data_root": "data/post_temporal_protocol_evolution",
   "evolved_program_root": "runs/post_temporal_protocol_authoritative",
   "output_root": "data/effectiveness_screening_v2",
-  "temporal_split_manifest": "configs/coco_temporal_split_v1/manifest.json",
+  "temporal_split_manifest": "configs/coco_temporal_split_v2/manifest.json",
+  "frozen_s2_pool": "configs/frozen_s2_temporal_v2.jsonl",
+  "frozen_s2_pool_manifest": "configs/frozen_s2_temporal_v2.jsonl.manifest.json",
+  "frozen_s2_pool_version": "frozen-s2-temporal-v2",
   "sampling": {
     "effectiveness_seed": 20260818,
     "memory_seed": 20260819,
@@ -19,7 +40,7 @@
     "work_family_identity": "frozen temporal manifest family identity"
   },
   "paper_context": {
-    "max_retrieved_refs": 20,
+    "max_retrieved_refs": 10,
     "reuse_frozen_bundle_for_all_arms_and_replicates": true,
     "forbidden_fields": [
       "reviews",
@@ -40,6 +61,13 @@
     "meta_review_max_tokens": 4096,
     "paper_context_max_chars": 60000,
     "context_protocol": "canonical-rich-paper-v1"
+  },
+  "memory_embedding": {
+    "mode": "frozen",
+    "adapter": "memory_evolution.embedding_adapter:create_qwen3_embedding",
+    "model_name": "Qwen/Qwen3-Embedding-8B",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+    "fingerprint": "f5fd62cb75e46177a293477c66cd9f2dfa0b3a7dad70d14ee7f0ada0130cb829"
   },
   "experiment": {
     "arms": ["no_memory", "seed", "evolved"],

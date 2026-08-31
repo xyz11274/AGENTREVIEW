@@ -6,13 +6,14 @@ import math
 import re
 import threading
 import time
+from collections.abc import Iterable
 from contextlib import contextmanager
 from datetime import date
-from typing import Any, Dict, Iterable, List, Optional
 from pathlib import Path
+from typing import Any
 
 
-def _load_s2_entries(path: Optional[str]):
+def _load_s2_entries(path: str | None):
     """Load a JSON/JSONL paper-id keyed S2 pool and return it with its hash."""
     if not path:
         return [], ""
@@ -42,7 +43,7 @@ def _load_s2_entries(path: Optional[str]):
     return [value for value in values if isinstance(value, dict)], digest
 
 
-def load_frozen_s2_pool(path: Optional[str]):
+def load_frozen_s2_pool(path: str | None):
     """Load a frozen pool after preserving per-target provenance for audits."""
     values, digest = _load_s2_entries(path)
     pool = {}
@@ -52,7 +53,12 @@ def load_frozen_s2_pool(path: Optional[str]):
         paper_id = str(
             value.get("paper_id") or value.get("id") or value.get("query_id") or ""
         )
-        papers = value.get("retrieved_papers") or value.get("papers") or value.get("results") or []
+        papers = (
+            value.get("retrieved_papers")
+            or value.get("papers")
+            or value.get("results")
+            or []
+        )
         if paper_id and isinstance(papers, list):
             cutoff_text = str(value.get("paper_review_cutoff") or "")
             safe = []
@@ -96,7 +102,7 @@ def frozen_s2_pool_version(path: str | Path) -> str:
     raise RuntimeError(f"Frozen S2 pool is empty: {source}")
 
 
-def _publication_cutoff(value: Dict[str, Any]) -> date:
+def _publication_cutoff(value: dict[str, Any]) -> date:
     raw = value.get("publication_date") or value.get("publicationDate")
     if raw:
         return date.fromisoformat(str(raw)[:10])
@@ -109,11 +115,11 @@ def _publication_cutoff(value: Dict[str, Any]) -> date:
 def validate_frozen_s2_pool(
     path: str,
     *,
-    expected_cutoffs: Dict[str, str],
+    expected_cutoffs: dict[str, str],
     required_ids: Iterable[str],
     expected_pool_version: str = "frozen-s2-temporal-v1",
-    expected_queries: Optional[Dict[str, str]] = None,
-) -> Dict[str, Any]:
+    expected_queries: dict[str, str] | None = None,
+) -> dict[str, Any]:
     """Prove that every frozen result existed no later than target review time."""
     entries, digest = _load_s2_entries(path)
     required_id_set = {str(value) for value in required_ids}
@@ -149,7 +155,9 @@ def validate_frozen_s2_pool(
                 f"{paper_id}: cutoff mismatch expected={expected} actual={cutoff_text}"
             )
         if missing:
-            provenance_errors.append(f"{paper_id}: missing provenance {sorted(set(missing))}")
+            provenance_errors.append(
+                f"{paper_id}: missing provenance {sorted(set(missing))}"
+            )
             continue
         target_identity = entry.get("target_identity")
         target_identity_id = (
@@ -208,16 +216,15 @@ def validate_frozen_s2_pool(
             if paper_id in required_id_set:
                 expected_query = str(expected_queries.get(paper_id) or "").strip()
                 actual_query = str(entry.get("query") or "").strip()
-                query_sha = hashlib.sha256(
-                    canonical_query.encode("utf-8")
-                ).hexdigest()
+                query_sha = hashlib.sha256(canonical_query.encode("utf-8")).hexdigest()
                 if not expected_query or canonical_query != expected_query:
                     mismatch_fields.append("canonical_query_title")
                 if actual_query != canonical_query:
                     mismatch_fields.append("query")
-                if not isinstance(target_identity, dict) or str(
-                    target_identity.get("title") or ""
-                ).strip() != expected_query:
+                if (
+                    not isinstance(target_identity, dict)
+                    or str(target_identity.get("title") or "").strip() != expected_query
+                ):
                     mismatch_fields.append("target_identity.title")
                 if entry.get("query_sha256") != query_sha:
                     mismatch_fields.append("query_sha256")
@@ -244,7 +251,9 @@ def validate_frozen_s2_pool(
                 future.append(
                     {
                         "paper_id": paper_id,
-                        "retrieved_id": str(result.get("paperId") or result.get("id") or ""),
+                        "retrieved_id": str(
+                            result.get("paperId") or result.get("id") or ""
+                        ),
                         "publication_date": published.isoformat(),
                         "paper_review_cutoff": cutoff.isoformat(),
                     }
@@ -270,7 +279,7 @@ def validate_frozen_s2_pool(
     }
 
 
-def _cosine(left: List[float], right: List[float]) -> float:
+def _cosine(left: list[float], right: list[float]) -> float:
     if not left or not right:
         return 0.0
     size = min(len(left), len(right))
@@ -287,21 +296,25 @@ class InMemoryVectorCollection:
 
     def __init__(self, name: str):
         self.name = name
-        self._records: List[Dict[str, Any]] = []
+        self._records: list[dict[str, Any]] = []
         self._ids = set()
 
     def add(
         self,
-        texts: List[str],
-        embeddings: List[List[float]],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-        ids: Optional[List[str]] = None,
+        texts: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
     ) -> None:
         metadatas = metadatas or [{} for _ in texts]
         ids = ids or [str(len(self._records) + index) for index in range(len(texts))]
         if not (len(texts) == len(embeddings) == len(metadatas) == len(ids)):
-            raise ValueError("texts, embeddings, metadatas, and ids must have equal lengths")
-        for record_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas):
+            raise ValueError(
+                "texts, embeddings, metadatas, and ids must have equal lengths"
+            )
+        for record_id, text, embedding, metadata in zip(
+            ids, texts, embeddings, metadatas
+        ):
             if record_id in self._ids:
                 continue
             self._ids.add(record_id)
@@ -314,7 +327,9 @@ class InMemoryVectorCollection:
                 }
             )
 
-    def query(self, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+    def query(
+        self, query_embedding: list[float], top_k: int = 5
+    ) -> list[dict[str, Any]]:
         scored = []
         for record in self._records:
             result = dict(record)
@@ -336,13 +351,13 @@ class MemoryToolkit:
         llm_client=None,
         embedding_client=None,
         vector_store_factory=None,
-        llm_model: Optional[str] = None,
-        embedding_model: Optional[str] = None,
+        llm_model: str | None = None,
+        embedding_model: str | None = None,
         review_splitter=None,
         review_classifier=None,
         max_llm_calls_per_operation: int = 1,
         fallback_embedding_dimensions: int = 256,
-        s2_retrieval_pool: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        s2_retrieval_pool: dict[str, list[dict[str, Any]]] | None = None,
         s2_retrieval_pool_sha256: str = "",
     ):
         self.llm_client = llm_client
@@ -360,7 +375,7 @@ class MemoryToolkit:
             if isinstance(values, list)
         }
         self.s2_retrieval_pool_sha256 = str(s2_retrieval_pool_sha256 or "")
-        self._collections: Dict[str, Any] = {}
+        self._collections: dict[str, Any] = {}
         self._operation_state = threading.local()
         self._resource_lock = threading.Lock()
         self._resources = {
@@ -375,7 +390,7 @@ class MemoryToolkit:
         }
 
     @contextmanager
-    def operation(self, name: str, max_llm_calls: Optional[int] = None):
+    def operation(self, name: str, max_llm_calls: int | None = None):
         previous = getattr(self._operation_state, "budget", None)
         self._operation_state.budget = {
             "name": name,
@@ -408,7 +423,7 @@ class MemoryToolkit:
             )
         budget["used"] += 1
 
-    def llm_completion(self, messages: List[Dict[str, str]], **kwargs) -> str:
+    def llm_completion(self, messages: list[dict[str, str]], **kwargs) -> str:
         if self.llm_client is None:
             raise RuntimeError("No LLM client is configured")
         self._consume_llm_budget()
@@ -490,7 +505,7 @@ class MemoryToolkit:
             self._resources["llm_latency_seconds"] += time.monotonic() - started
         return result
 
-    def retrieve_s2(self, paper_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def retrieve_s2(self, paper_id: str, limit: int = 10) -> list[dict[str, Any]]:
         """Read only from the experiment-frozen, paper-specific S2 pool."""
         key = str(paper_id or "")
         active = getattr(self._operation_state, "paper_id", None)
@@ -507,19 +522,16 @@ class MemoryToolkit:
             self._resources["s2_result_count"] += len(selected)
         return selected
 
-    def resource_snapshot(self) -> Dict[str, Any]:
+    def resource_snapshot(self) -> dict[str, Any]:
         with self._resource_lock:
             return dict(self._resources)
 
-    def resource_delta(self, before: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def resource_delta(self, before: dict[str, Any] | None = None) -> dict[str, Any]:
         current = self.resource_snapshot()
         baseline = dict(before or {})
-        return {
-            key: current.get(key, 0) - baseline.get(key, 0)
-            for key in current
-        }
+        return {key: current.get(key, 0) - baseline.get(key, 0) for key in current}
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
+    def embed(self, texts: list[str]) -> list[list[float]]:
         normalized = [str(text) for text in texts]
         if self.embedding_client is None:
             return [self._fallback_embed(text) for text in normalized]
@@ -535,7 +547,9 @@ class MemoryToolkit:
             embeddings = getattr(client, "embeddings", None)
             create = getattr(embeddings, "create", None)
             if create is None:
-                raise TypeError(f"Unsupported embedding client: {type(client).__name__}")
+                raise TypeError(
+                    f"Unsupported embedding client: {type(client).__name__}"
+                )
             request = {"input": normalized}
             if self.embedding_model:
                 request["model"] = self.embedding_model
@@ -543,7 +557,7 @@ class MemoryToolkit:
             result = [item.embedding for item in response.data]
         return [list(map(float, vector)) for vector in result]
 
-    def _fallback_embed(self, text: str) -> List[float]:
+    def _fallback_embed(self, text: str) -> list[float]:
         vector = [0.0] * self.fallback_embedding_dimensions
         tokens = re.findall(r"\w+", text.lower(), flags=re.UNICODE)
         for token in tokens:
@@ -571,7 +585,7 @@ class MemoryToolkit:
     def reset_vector_collections(self) -> None:
         self._collections.clear()
 
-    def classify_review(self, review_text: str, task_id: str) -> List[str]:
+    def classify_review(self, review_text: str, task_id: str) -> list[str]:
         """Run the frozen ReviewSplit/ReviewClassify adapter used by formal fitness."""
         if self.review_splitter is None or self.review_classifier is None:
             raise RuntimeError(

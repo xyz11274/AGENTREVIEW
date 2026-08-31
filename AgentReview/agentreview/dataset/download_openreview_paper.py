@@ -13,6 +13,7 @@ import glob
 import json
 import os
 import time
+
 import requests
 
 from agentreview.arguments import parse_args
@@ -20,7 +21,10 @@ from agentreview.arguments import parse_args
 try:
     import openreview
 except ImportError:
-    raise ImportError("Please install openreview package using `pip install openreview-py`")
+    raise ImportError(
+        "Please install openreview package using `pip install openreview-py`"
+    )
+
 
 def download_papers(args):
     """Downloads all papers from ICLR 2023 using OpenReview API.
@@ -47,9 +51,9 @@ def download_papers(args):
     )
 
     client = openreview.Client(
-        baseurl='https://api.openreview.net',
+        baseurl="https://api.openreview.net",
         username=openreview_username,
-        password=openreview_password
+        password=openreview_password,
     )
 
     page_size = 1000
@@ -59,7 +63,6 @@ def download_papers(args):
 
     assert "ICLR" in args.conference, "Only works for ICLR conferences!"
     year = int(args.conference.split("ICLR")[-1])  # Only works for ICLR currently
-    ids = []
 
     # Create directories if they don't exist
     for path in [papers_directory, notes_directory]:
@@ -68,10 +71,10 @@ def download_papers(args):
     while True:
         # Fetch submissions with pagination
         notes = client.get_notes(
-            invitation=f'ICLR.cc/{year}/Conference/-/Blind_Submission',
-            details='all',
+            invitation=f"ICLR.cc/{year}/Conference/-/Blind_Submission",
+            details="all",
             offset=offset,
-            limit=page_size
+            limit=page_size,
         )
 
         if not notes:
@@ -79,7 +82,9 @@ def download_papers(args):
 
         # Get existing paper IDs to avoid re-downloading
         existing_papers = glob.glob(f"{papers_directory}/*.pdf")
-        existing_paper_ids = {int(os.path.basename(paper).split(".pdf")[0]) for paper in existing_papers}
+        existing_paper_ids = {
+            int(os.path.basename(paper).split(".pdf")[0]) for paper in existing_papers
+        }
 
         for note in notes:
             paper_id = note.number
@@ -104,26 +109,32 @@ def download_papers(args):
                     response = requests.get(pdf_link)
 
                     if response.status_code == 200:
-                        
                         with open(paper_path, "wb") as pdf_file:
                             pdf_file.write(response.content)
 
                         print(f"PDF downloaded successfully as {paper_path}")
 
-                        # Save metadata as JSON, which contains the reviews, rebuttals, and decisions. 
+                        # Save metadata as JSON, which contains the reviews, rebuttals, and decisions.
                         with open(note_path, "w") as note_file:
                             json.dump(note.to_json(), note_file, indent=2)
 
                         break
 
                     else:
-                        print(f"Attempt {tries} failed. Status code: {response.status_code}")
+                        print(
+                            f"Attempt {tries} failed. Status code: {response.status_code}"
+                        )
                         if response.status_code == 429:  # Too many requests
                             print("Too many requests. Sleeping for 10 seconds.")
                             time.sleep(10)
 
-                except Exception as e:
-                    print(f"Attempt {tries} failed with error: {e}")
+                except (
+                    OSError,
+                    TypeError,
+                    ValueError,
+                    requests.RequestException,
+                ) as exc:
+                    print(f"Attempt {tries} failed with error: {exc}")
 
                 tries += 1
 

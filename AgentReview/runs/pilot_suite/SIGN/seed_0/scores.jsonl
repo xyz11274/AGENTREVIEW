@@ -1,4 +1,0 @@
-{"program_id": "program_000_seed_vector", "parent_id": null, "iteration": 0, "static_score": 0.9565217391304348, "rotating_score": 0.0, "quality_passed": true, "compile_errors": [], "change_summary": "Seed program: vector"}
-{"program_id": "program_001_seed_llm_summarizer", "parent_id": null, "iteration": 0, "static_score": 0.9246068455134135, "rotating_score": 0.0, "quality_passed": true, "compile_errors": [], "change_summary": "Seed program: llm_summarizer"}
-{"program_id": "program_002_seed_experience", "parent_id": null, "iteration": 0, "static_score": 0.9246068455134135, "rotating_score": 0.0, "quality_passed": true, "compile_errors": [], "change_summary": "Seed program: experience"}
-{"program_id": "program_003_child", "parent_id": "program_002_seed_experience", "iteration": 1, "static_score": 0.9689625850340136, "rotating_score": 0.9130434782608696, "quality_passed": true, "compile_errors": [], "change_summary": "Improve SIGN memory recall and calibration"}

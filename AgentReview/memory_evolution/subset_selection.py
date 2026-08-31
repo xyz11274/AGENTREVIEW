@@ -1,7 +1,7 @@
 import math
 import random
 import warnings
-from typing import Any, List
+from typing import Any
 
 
 def _question(item: Any) -> str:
@@ -16,7 +16,7 @@ def _episode_text(item: Any) -> str:
     return str(getattr(item, "text", ""))
 
 
-def _embed(client, texts: List[str]) -> List[List[float]]:
+def _embed(client, texts: list[str]) -> list[list[float]]:
     if client is None:
         raise RuntimeError("Embedding client is unavailable")
     if hasattr(client, "embed"):
@@ -48,7 +48,7 @@ def _embed(client, texts: List[str]) -> List[List[float]]:
     return output
 
 
-def _cosine(left: List[float], right: List[float]) -> float:
+def _cosine(left: list[float], right: list[float]) -> float:
     if len(left) != len(right):
         raise ValueError(
             "Cosine similarity requires equal embedding dimensions: "
@@ -62,7 +62,7 @@ def _cosine(left: List[float], right: List[float]) -> float:
     return dot / (left_norm * right_norm)
 
 
-def _mean(vectors: List[List[float]]) -> List[float]:
+def _mean(vectors: list[list[float]]) -> list[float]:
     if not vectors:
         return []
     dimensions = len(vectors[0])
@@ -123,7 +123,9 @@ def build_static_validation_set(
     selected_indices = []
     for cluster, centroid in enumerate(centroids):
         members = [
-            index for index, assignment in enumerate(assignments) if assignment == cluster
+            index
+            for index, assignment in enumerate(assignments)
+            if assignment == cluster
         ]
         candidates = members or [
             index for index in range(len(values)) if index not in selected_indices
@@ -139,9 +141,7 @@ def build_static_validation_set(
     return [values[index] for index in selected_indices[:n_static]]
 
 
-def sample_rotating_validation_set(
-    remaining_val_items, n_rotating: int = 5, seed=None
-):
+def sample_rotating_validation_set(remaining_val_items, n_rotating: int = 5, seed=None):
     values = list(remaining_val_items)
     if n_rotating <= 0:
         return []

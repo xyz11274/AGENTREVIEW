@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 try:
     from .data_loader import ancestor_root, load_run, load_trace_diagnostics, scan_runs
@@ -309,16 +309,16 @@ class ViewerController:
         self.catalog = scan_runs(self.runs_dir)
 
     @property
-    def entries(self) -> List[Dict[str, Any]]:
+    def entries(self) -> list[dict[str, Any]]:
         return list(self.catalog.get("entries") or [])
 
     def refresh(self) -> None:
         self.catalog = scan_runs(self.runs_dir)
 
-    def suites(self) -> List[str]:
+    def suites(self) -> list[str]:
         return sorted({str(item["suite"]) for item in self.entries})
 
-    def tasks(self, suite: Optional[str]) -> List[str]:
+    def tasks(self, suite: str | None) -> list[str]:
         return sorted(
             {
                 str(item["task"])
@@ -327,15 +327,14 @@ class ViewerController:
             }
         )
 
-    def runs(self, suite: Optional[str], task: Optional[str]) -> List[Tuple[str, str]]:
+    def runs(self, suite: str | None, task: str | None) -> list[tuple[str, str]]:
         return [
             (f"{item['run']} · {item['id']}", str(item["id"]))
             for item in self.entries
-            if str(item["suite"]) == str(suite)
-            and str(item["task"]) == str(task)
+            if str(item["suite"]) == str(suite) and str(item["task"]) == str(task)
         ]
 
-    def first_selection(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def first_selection(self) -> tuple[str | None, str | None, str | None]:
         suites = self.suites()
         suite = suites[0] if suites else None
         tasks = self.tasks(suite)
@@ -344,7 +343,7 @@ class ViewerController:
         run_id = runs[0][1] if runs else None
         return suite, task, run_id
 
-    def load(self, run_id: Optional[str]) -> Dict[str, Any]:
+    def load(self, run_id: str | None) -> dict[str, Any]:
         if not run_id:
             return {
                 "label": "未找到运行",
@@ -365,16 +364,22 @@ class ViewerController:
             }
 
     def program_defaults(
-        self, run: Dict[str, Any]
-    ) -> Tuple[List[Tuple[str, str]], Optional[str], Optional[str]]:
+        self, run: dict[str, Any]
+    ) -> tuple[list[tuple[str, str]], str | None, str | None]:
         values = []
         for program_id, item in (run.get("programs") or {}).items():
             if not item.get("source_path"):
                 continue
             score = item.get("static_score")
-            label = f"{program_id} · static={score:.4f}" if isinstance(score, (int, float)) else program_id
+            label = (
+                f"{program_id} · static={score:.4f}"
+                if isinstance(score, (int, float))
+                else program_id
+            )
             values.append((label, program_id))
-        values.sort(key=lambda pair: int((run["programs"][pair[1]].get("iteration") or 0)))
+        values.sort(
+            key=lambda pair: int(run["programs"][pair[1]].get("iteration") or 0)
+        )
         best = run.get("best_program_id")
         if best not in {value for _, value in values}:
             best = values[-1][1] if values else None
@@ -436,7 +441,9 @@ def create_app(runs_dir: str):
         run = controller.load(run_id)
         item = find_transformation(run, uid)
         comparison = comparison_for_transition(run, item)
-        trace = load_trace_diagnostics(controller.runs_dir, run_id, item) if item else {}
+        trace = (
+            load_trace_diagnostics(controller.runs_dir, run_id, item) if item else {}
+        )
         return (
             render_transition_header(item, comparison),
             render_parse_warnings(comparison),
@@ -445,7 +452,9 @@ def create_app(runs_dir: str):
             render_write_changes(comparison),
             render_read_changes(comparison),
             render_helper_changes(comparison),
-            comparison.get("raw_diff", "没有可用的父子代码 diff。") if comparison else "没有可用的父子代码 diff。",
+            comparison.get("raw_diff", "没有可用的父子代码 diff。")
+            if comparison
+            else "没有可用的父子代码 diff。",
             render_diagnostics(item, trace),
             trace.get("raw_excerpt", "该迭代没有 trace 文件。"),
             raw_record_json(item),
@@ -462,7 +471,9 @@ def create_app(runs_dir: str):
             render_write_changes(comparison),
             render_read_changes(comparison),
             render_helper_changes(comparison),
-            comparison.get("raw_diff", "没有可用的代码 diff。") if comparison else "没有可用的代码 diff。",
+            comparison.get("raw_diff", "没有可用的代码 diff。")
+            if comparison
+            else "没有可用的代码 diff。",
         )
 
     def update_for_suite(suite):
@@ -483,7 +494,11 @@ def create_app(runs_dir: str):
     def refresh_selectors(current_run):
         controller.refresh()
         current_entry = next(
-            (item for item in controller.entries if str(item["id"]) == str(current_run)),
+            (
+                item
+                for item in controller.entries
+                if str(item["id"]) == str(current_run)
+            ),
             None,
         )
         if current_entry:

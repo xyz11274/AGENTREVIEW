@@ -1,14 +1,15 @@
 """Public request/result values for the optimizer-agnostic reviewer runtime."""
 
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
 
 @dataclass
 class Episode:
     id: str
     text: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_value(cls, value: Any) -> "Episode":
@@ -35,11 +36,11 @@ class ReviewRequest:
     task_id: str
     question: str
     episodes: Iterable[Any] = field(default_factory=tuple)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     model: str = ""
     revision: str = ""
     run_identity: str = ""
-    provenance: Dict[str, Any] = field(default_factory=dict)
+    provenance: dict[str, Any] = field(default_factory=dict)
     read_operation: str = "memory_read"
 
     def validate(self) -> None:
@@ -56,16 +57,16 @@ class ReviewResult:
     paper_id: str
     task_id: str
     review_text: str
-    query: Dict[str, Any]
+    query: dict[str, Any]
     memory_context: str
-    reviewer_identity: Dict[str, Any]
-    memory_program_identity: Dict[str, Any]
+    reviewer_identity: dict[str, Any]
+    memory_program_identity: dict[str, Any]
     memory_program_sha256: str
     model: str
     revision: str
     run_identity: str
-    provenance: Dict[str, Any] = field(default_factory=dict)
-    runtime_stats: Dict[str, Any] = field(default_factory=dict)
+    provenance: dict[str, Any] = field(default_factory=dict)
+    runtime_stats: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)

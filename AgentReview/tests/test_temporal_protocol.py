@@ -5,12 +5,12 @@ import unittest
 from pathlib import Path
 
 from memory_evolution.assets import (
+    audit_family_target_integrity,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     validate_asset_manifest,
 )
 from memory_evolution.checkpoint import load_checkpoint, save_checkpoint
-from memory_evolution.reflector import EvalFeedback, validate_candidate_feedback
 from memory_evolution.evaluator import evaluate_program
 from memory_evolution.formal_protocol import (
     FORMAL_REQUIRED_VERSIONS,
@@ -20,6 +20,7 @@ from memory_evolution.formal_protocol import (
     _validate_v2_sidecar,
 )
 from memory_evolution.models import Episode, EvalItem
+from memory_evolution.reflector import EvalFeedback, validate_candidate_feedback
 from memory_evolution.sandbox import SandboxSession
 from memory_evolution.toolkit import (
     MemoryToolkit,
@@ -71,9 +72,7 @@ class TemporalProtocolTest(unittest.TestCase):
             report = _validate_frozen_coco_provenance(
                 provenance, coco_root=str(current_root)
             )
-            implementation = report["verified_reference_files"][
-                "implementation_path"
-            ]
+            implementation = report["verified_reference_files"]["implementation_path"]
             self.assertEqual(
                 implementation["relative_path"], "src/evaluation/_4_evaluation.py"
             )
@@ -178,7 +177,9 @@ class TemporalProtocolTest(unittest.TestCase):
                 )
             records = path.with_suffix(".json.records")
             (records / "999999_future.json").write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "beyond the legal completed prefix"):
+            with self.assertRaisesRegex(
+                ValueError, "beyond the legal completed prefix"
+            ):
                 load_checkpoint(
                     str(path), expected_identity=self._identity(), frozen_ids=frozen
                 )
@@ -197,9 +198,7 @@ class TemporalProtocolTest(unittest.TestCase):
                 "retrieval_config": {"top_k": 10},
                 "retrieved_papers": results,
                 "result_sha256": hashlib.sha256(
-                    json.dumps(
-                        results, sort_keys=True, separators=(",", ":")
-                    ).encode()
+                    json.dumps(results, sort_keys=True, separators=(",", ":")).encode()
                 ).hexdigest(),
                 "pool_version": "frozen-s2-temporal-v1",
             }
@@ -219,9 +218,7 @@ class TemporalProtocolTest(unittest.TestCase):
                 json.dumps({"pool_version": "frozen-s2-temporal-v2"}) + "\n",
                 encoding="utf-8",
             )
-            self.assertEqual(
-                frozen_s2_pool_version(path), "frozen-s2-temporal-v2"
-            )
+            self.assertEqual(frozen_s2_pool_version(path), "frozen-s2-temporal-v2")
 
     def test_readiness_manifest_registration_is_explicit_and_versioned(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -265,9 +262,7 @@ class TemporalProtocolTest(unittest.TestCase):
                 candidate["assets"]["frozen_s2_pool"]["version"],
                 "frozen-s2-temporal-v2",
             )
-            self.assertEqual(
-                len(candidate["assets"]["frozen_s2_pool"]["sha256"]), 64
-            )
+            self.assertEqual(len(candidate["assets"]["frozen_s2_pool"]["sha256"]), 64)
 
     def test_asset_manifest_rejects_wrong_required_s2_version(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -295,9 +290,7 @@ class TemporalProtocolTest(unittest.TestCase):
                 validate_asset_manifest(
                     str(manifest),
                     required_assets=("frozen_s2_pool",),
-                    required_versions={
-                        "frozen_s2_pool": "frozen-s2-temporal-v1"
-                    },
+                    required_versions={"frozen_s2_pool": "frozen-s2-temporal-v1"},
                 )
 
     def test_current_formal_versions_reject_frozen_v1_manifest(self):
@@ -394,9 +387,7 @@ class TemporalProtocolTest(unittest.TestCase):
             sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
             asset_report = {
                 "verified_assets": {
-                    "frozen_s2_pool_manifest": {
-                        "resolved_path": str(sidecar_path)
-                    }
+                    "frozen_s2_pool_manifest": {"resolved_path": str(sidecar_path)}
                 }
             }
             self.assertEqual(
@@ -451,7 +442,9 @@ class TemporalProtocolTest(unittest.TestCase):
                 json.dumps({"paper_id": "P3", "paper_index": 2, "completed": True}),
                 encoding="utf-8",
             )
-            with self.assertRaisesRegex(ValueError, "beyond the legal completed prefix"):
+            with self.assertRaisesRegex(
+                ValueError, "beyond the legal completed prefix"
+            ):
                 load_checkpoint(
                     str(path), expected_identity=self._identity(), frozen_ids=frozen
                 )
@@ -481,12 +474,22 @@ class TemporalProtocolTest(unittest.TestCase):
 
     def test_real_frozen_split_passes_temporal_audit(self):
         root = Path(__file__).parents[1]
-        _, zones = load_temporal_split_manifest(
-            str(root / "configs" / "coco_temporal_split_v1" / "manifest.json")
+        summary, zones = load_temporal_split_manifest(
+            str(root / "configs" / "coco_temporal_split_v2" / "manifest.json")
         )
         report = audit_four_zone_isolation(zones)
         self.assertTrue(report["passed"])
-        self.assertEqual(report["zone_counts"]["held_out_benchmark_test"], 900)
+        self.assertEqual(report["zone_counts"]["held_out_benchmark_test"], 899)
+        family_report = audit_family_target_integrity(summary, zones)
+        self.assertTrue(family_report["passed"])
+        self.assertEqual(family_report["accounted_source_record_count"], 3900)
+
+        first_zone = "historical_experience"
+        tampered = {name: list(records) for name, records in zones.items()}
+        first = dict(tampered[first_zone][0])
+        first["excluded_paper_ids"] = [first["paper_id"]]
+        tampered[first_zone][0] = first
+        self.assertFalse(audit_family_target_integrity(summary, tampered)["passed"])
 
     def test_memory_snapshot_round_trip(self):
         root = Path(__file__).parents[1]
@@ -592,8 +595,7 @@ class TemporalProtocolTest(unittest.TestCase):
             @staticmethod
             def embed(texts):
                 return [
-                    [1.0, 0.0] if "needle" in text else [0.0, 1.0]
-                    for text in texts
+                    [1.0, 0.0] if "needle" in text else [0.0, 1.0] for text in texts
                 ]
 
         root = Path(__file__).parents[1]
@@ -663,8 +665,7 @@ class TemporalProtocolTest(unittest.TestCase):
                 if not self.enabled:
                     raise RuntimeError("embedding backend unavailable")
                 return [
-                    [1.0, 0.0] if "needle" in text else [0.0, 1.0]
-                    for text in texts
+                    [1.0, 0.0] if "needle" in text else [0.0, 1.0] for text in texts
                 ]
 
         root = Path(__file__).parents[1]
@@ -709,7 +710,7 @@ class TemporalProtocolTest(unittest.TestCase):
             def embed(texts):
                 raise RuntimeError("embedding backend must not be used")
 
-        source = '''
+        source = """
 from dataclasses import dataclass
 
 INSTRUCTION_KNOWLEDGE_ITEM = "fixture"
@@ -740,7 +741,7 @@ class KnowledgeBase:
     def read(self, query):
         values = self.collection.query([1.0, 0.0], top_k=1)
         return values[0]["text"] if values else ""
-'''
+"""
         with tempfile.TemporaryDirectory() as directory:
             program = Path(directory) / "explicit_program.py"
             program.write_text(source, encoding="utf-8")
@@ -825,7 +826,9 @@ class KnowledgeBase:
                 run_identity=self._identity(),
             )
             self.assertIsNone(result.error)
-            self.assertEqual(result.runtime_stats["completed_historical_prefix"], ["P1::QUAL"])
+            self.assertEqual(
+                result.runtime_stats["completed_historical_prefix"], ["P1::QUAL"]
+            )
             self.assertTrue(result.runtime_stats["validation_state_reset_per_item"])
             payload = json.loads(checkpoint.read_text(encoding="utf-8"))
             self.assertEqual(payload["next_paper_index"], 1)

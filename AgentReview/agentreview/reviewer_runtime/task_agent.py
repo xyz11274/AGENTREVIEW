@@ -1,7 +1,7 @@
 import json
 import re
 from dataclasses import MISSING, fields
-from typing import Any, Dict, Type
+from typing import Any
 
 from agentreview.single_paper_review_roles import (
     build_meta_reviewer_config,
@@ -15,7 +15,7 @@ def _annotation_name(annotation: Any) -> str:
     return getattr(annotation, "__name__", str(annotation).replace("typing.", ""))
 
 
-def dataclass_schema(dataclass_type: Type) -> Dict[str, Any]:
+def dataclass_schema(dataclass_type: type) -> dict[str, Any]:
     properties = {}
     required = []
     for item in fields(dataclass_type):
@@ -30,7 +30,7 @@ def dataclass_schema(dataclass_type: Type) -> Dict[str, Any]:
     }
 
 
-def _parse_json_object(response: str) -> Dict[str, Any]:
+def _parse_json_object(response: str) -> dict[str, Any]:
     text = (response or "").strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text)
@@ -82,7 +82,7 @@ class TaskAgent:
         self.toolkit = toolkit
         self.system_prompt = system_prompt
         self.task_id = task_id
-        self.last_parser_debug: Dict[str, Any] = {}
+        self.last_parser_debug: dict[str, Any] = {}
 
     def _complete(self, prompt: str, agent_name: str = "Memory Harness") -> str:
         return self.toolkit.llm_completion(
@@ -93,7 +93,7 @@ class TaskAgent:
             agent_name=agent_name,
         )
 
-    def _structured_completion(self, prompt: str, dataclass_type: Type):
+    def _structured_completion(self, prompt: str, dataclass_type: type):
         response = self._complete(
             prompt, agent_name=f"Memory {dataclass_type.__name__}"
         )
@@ -105,9 +105,7 @@ class TaskAgent:
         try:
             value = _parse_json_object(response)
         except Exception as exc:
-            self.last_parser_debug["parser_error"] = (
-                f"{type(exc).__name__}: {exc}"
-            )
+            self.last_parser_debug["parser_error"] = f"{type(exc).__name__}: {exc}"
             raise
         items = list(fields(dataclass_type))
         expected = {item.name for item in items}
@@ -143,9 +141,7 @@ class TaskAgent:
                 f"JSON field types do not match {dataclass_type.__name__}: "
                 f"{sorted(invalid)}"
             )
-        self.last_parser_debug.update(
-            {"parser_success": True, "parser_result": value}
-        )
+        self.last_parser_debug.update({"parser_success": True, "parser_result": value})
         return dataclass_type(**value)
 
     def extract_knowledge_item(self, program, raw_text: str):

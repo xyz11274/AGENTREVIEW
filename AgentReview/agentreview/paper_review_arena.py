@@ -1,30 +1,27 @@
-#AgentReivew/agentreview/paper_review_arena.py
+# AgentReivew/agentreview/paper_review_arena.py
 
 import csv
 import json
 import logging
-from typing import Union
 
 from agentreview.arena import Arena, TooManyInvalidActions
 from agentreview.role_descriptions import get_reviewer_description
 from agentreview.utility.utils import format_metareviews
+
 from .agent import Player
 from .config import ArenaConfig
 from .environments import TimeStep, load_environment
-from .paper_review_player import PaperExtractorPlayer, AreaChair, Reviewer
-
+from .paper_review_player import AreaChair, PaperExtractorPlayer, Reviewer
 
 logger = logging.getLogger(__name__)
 
 
 class PaperReviewArena(Arena):
-    """Arena for the paper review environment.
-
-    """
+    """Arena for the paper review environment."""
 
     # PaperReviewArena.from_config
     @classmethod
-    def from_config(cls, config: Union[str, ArenaConfig]):
+    def from_config(cls, config: str | ArenaConfig):
         """Create an arena from a config."""
         # If config is a path, load the config
         if isinstance(config, str):
@@ -39,13 +36,13 @@ class PaperReviewArena(Arena):
             if global_prompt is not None:
                 player_config["global_prompt"] = global_prompt
 
-            if player_config['name'].startswith("Paper Extractor"):
+            if player_config["name"].startswith("Paper Extractor"):
                 player = PaperExtractorPlayer.from_config(player_config)
 
-            elif player_config['name'].startswith("AC"):
+            elif player_config["name"].startswith("AC"):
                 player = AreaChair.from_config(player_config)
 
-            elif player_config['name'].startswith("Reviewer"):
+            elif player_config["name"].startswith("Reviewer"):
                 player = Reviewer.from_config(player_config)
 
             else:
@@ -54,14 +51,14 @@ class PaperReviewArena(Arena):
 
         # Check that the player names are unique
         player_names = [player.name for player in players]
-        assert len(player_names) == len(
-            set(player_names)
-        ), f"Player names must be unique, current players: {[','.join(player_names)]}"
+        assert len(player_names) == len(set(player_names)), (
+            f"Player names must be unique, current players: {[','.join(player_names)]}"
+        )
 
         # Create the environment
-        config.environment[
-            "player_names"
-        ] = player_names  # add the player names to the environment config
+        config.environment["player_names"] = (
+            player_names  # add the player names to the environment config
+        )
         env = load_environment(config.environment)
 
         return cls(players, env, global_prompt=global_prompt)
@@ -91,23 +88,32 @@ class PaperReviewArena(Arena):
 
         # try to take an action for a few times
         for i in range(self.invalid_actions_retry):
-
-
             # Update reviewer description for rebuttal
-            if self.args.task == "paper_review" and self.environment.phase_index == 3 and player.name.startswith("Reviewer"):
-                logging.info("Update reviewers' role_desc for Phase 3 (reviewer_ac_discussion)")
+            if (
+                self.args.task == "paper_review"
+                and self.environment.phase_index == 3
+                and player.name.startswith("Reviewer")
+            ):
+                logger.info(
+                    "Update reviewers' role_desc for Phase 3 (reviewer_ac_discussion)"
+                )
                 reviewer_index = int(player.name.split("Reviewer ")[1])
 
                 # reviewer_index starts from 1, so we need to subtract 1 to get the index of the reviewer in the list
 
-                player.role_desc = get_reviewer_description(phase="reviewer_ac_discussion",
-                                                            **self.environment.experiment_setting["players"][
-                                                                'Reviewer'][reviewer_index - 1])
-                
+                player.role_desc = get_reviewer_description(
+                    phase="reviewer_ac_discussion",
+                    **self.environment.experiment_setting["players"]["Reviewer"][
+                        reviewer_index - 1
+                    ],
+                )
 
-            elif self.args.task == "paper_decision" and self.environment.phase_index == 5:  # Phase 5 AC Makes Decisions
-
-                player.role_desc += format_metareviews(self.environment.metareviews, self.environment.paper_ids)
+            elif (
+                self.args.task == "paper_decision" and self.environment.phase_index == 5
+            ):  # Phase 5 AC Makes Decisions
+                player.role_desc += format_metareviews(
+                    self.environment.metareviews, self.environment.paper_ids
+                )
 
             action = player(observation)  # take an action
 
@@ -117,14 +123,14 @@ class PaperReviewArena(Arena):
                 )  # update the environment
                 break
             else:  # action is invalid
-                logging.warning(f"{player_name} made an invalid action {action}")
+                logger.warning(f"{player_name} made an invalid action {action}")
                 continue
 
         if (
-                timestep is None
+            timestep is None
         ):  # if the player made invalid actions for too many times, terminate the game
             warning_msg = f"{player_name} has made invalid actions for {self.invalid_actions_retry} times. Terminating the game."
-            logging.warning(warning_msg)
+            logger.warning(warning_msg)
             raise TooManyInvalidActions(warning_msg)
 
         return timestep
@@ -175,11 +181,13 @@ class PaperReviewArena(Arena):
                 message_rows.append(message_row)
 
             with open(path, "w") as f:
-
-
-                json.dump({
-                    "experiment_setting": self.environment.experiment_setting,
-                    "messages": message_rows,
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "experiment_setting": self.environment.experiment_setting,
+                        "messages": message_rows,
+                    },
+                    f,
+                    indent=2,
+                )
         else:
             raise ValueError("Invalid file format")

@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List
 
 from ..config import Configurable, EnvironmentConfig
 from ..message import Message
@@ -20,8 +19,8 @@ class TimeStep(AttributedDict):
         terminal (bool): A boolean indicating whether the current state is terminal (end of episode).
     """
 
-    observation: List[Message]
-    reward: Dict[str, float]
+    observation: list[Message]
+    reward: dict[str, float]
     terminal: bool
 
 
@@ -44,8 +43,9 @@ class Environment(Configurable):
     type_name = None
     phase_index = 0
     task = None
+
     @abstractmethod
-    def __init__(self, player_names: List[str], **kwargs):
+    def __init__(self, player_names: list[str], **kwargs):
         """
         Initialize the Environment.
 
@@ -77,7 +77,6 @@ class Environment(Configurable):
         Note:
             This method must be implemented by subclasses.
         """
-        pass
 
     def to_config(self) -> EnvironmentConfig:
         self._config_dict["env_type"] = self.type_name
@@ -99,10 +98,9 @@ class Environment(Configurable):
         Returns:
             str: The name of the next player.
         """
-        pass
 
     @abstractmethod
-    def get_observation(self, player_name=None) -> List[Message]:
+    def get_observation(self, player_name=None) -> list[Message]:
         """
         Return observation for a given player.
 
@@ -115,12 +113,10 @@ class Environment(Configurable):
         Returns:
             List[Message]: The observation for the player in the form of a list of messages.
         """
-        pass
 
     @abstractmethod
     def print(self):
         """Print the environment state."""
-        pass
 
     @abstractmethod
     def step(self, player_name: str, action: str) -> TimeStep:
@@ -137,7 +133,6 @@ class Environment(Configurable):
         Returns:
             TimeStep: An object of the TimeStep class containing the observation, reward, and done state.
         """
-        pass
 
     @abstractmethod
     def check_action(self, action: str, player_name: str) -> bool:
@@ -167,9 +162,8 @@ class Environment(Configurable):
         Returns:
             bool: True if the environment is in a terminal state, False otherwise.
         """
-        pass
 
-    def get_zero_rewards(self) -> Dict[str, float]:
+    def get_zero_rewards(self) -> dict[str, float]:
         """
         Return a dictionary with all player names as keys and zero as reward.
 
@@ -178,7 +172,7 @@ class Environment(Configurable):
         """
         return {player_name: 0.0 for player_name in self.player_names}
 
-    def get_one_rewards(self) -> Dict[str, float]:
+    def get_one_rewards(self) -> dict[str, float]:
         """
         Return a dictionary with all player names as keys and one as reward.
 

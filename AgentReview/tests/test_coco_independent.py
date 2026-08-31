@@ -2,11 +2,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from agentreview.coco_eval import build_parser, candidate_rows, run
 from agentreview.reviewer_runtime.artifacts import CandidateReviewRecord
+from agentreview.reviewer_runtime.tasks import reviewer_identity
 
 
 def _record(paper_id="p1", task_id="META", run_identity="run-1"):
@@ -14,7 +14,7 @@ def _record(paper_id="p1", task_id="META", run_identity="run-1"):
         paper_id=paper_id,
         task_id=task_id,
         review_text=f"review for {paper_id}",
-        reviewer_identity={"name": "reviewer", "task_id": task_id},
+        reviewer_identity=reviewer_identity(task_id),
         memory_program_identity={
             "logical_identity": "program",
             "source_kind": "optimizer_output",
@@ -33,6 +33,15 @@ class IndependentCoCoAdapterTest(unittest.TestCase):
             path.write_text(json.dumps(_record().to_dict()) + "\n", encoding="utf-8")
             rows = candidate_rows(str(path), "META")
         self.assertEqual(rows, [{"id": "p1", "text": "review for p1"}])
+
+    def test_adapter_rejects_a_different_reviewer_suite_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "candidate_reviews.jsonl"
+            value = _record().to_dict()
+            value["reviewer_identity"]["suite_identity_sha256"] = "0" * 64
+            path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "frozen task META"):
+                candidate_rows(str(path), "META")
 
     def test_duplicate_paper_after_task_filter_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -58,24 +67,34 @@ class IndependentCoCoAdapterTest(unittest.TestCase):
             benchmark = root / "benchmark" / "benchmark_ICLR_2023.jsonl"
             benchmark.write_text("{}\n", encoding="utf-8")
             candidate = Path(directory) / "candidate_reviews.jsonl"
-            candidate.write_text(json.dumps(_record().to_dict()) + "\n", encoding="utf-8")
+            candidate.write_text(
+                json.dumps(_record().to_dict()) + "\n", encoding="utf-8"
+            )
             args = build_parser().parse_args(
                 [
-                    "--input", str(candidate),
-                    "--task-id", "META",
-                    "--coco-root", str(root),
-                    "--output-dir", str(output),
+                    "--input",
+                    str(candidate),
+                    "--task-id",
+                    "META",
+                    "--coco-root",
+                    str(root),
+                    "--output-dir",
+                    str(output),
                 ]
             )
             commands = []
-            with patch(
-                "agentreview.coco_eval._benchmark_paths", return_value=[benchmark]
-            ), patch(
-                "agentreview.coco_eval.verify_coco_protocol",
-                return_value={"protocol": "official"},
-            ), patch(
-                "agentreview.coco_eval._run",
-                side_effect=lambda command, **kwargs: commands.append(command),
+            with (
+                patch(
+                    "agentreview.coco_eval._benchmark_paths", return_value=[benchmark]
+                ),
+                patch(
+                    "agentreview.coco_eval.verify_coco_protocol",
+                    return_value={"protocol": "official"},
+                ),
+                patch(
+                    "agentreview.coco_eval._run",
+                    side_effect=lambda command, **kwargs: commands.append(command),
+                ),
             ):
                 run(args)
         self.assertEqual(len(commands), 3)
@@ -105,11 +124,16 @@ class IndependentCoCoAdapterTest(unittest.TestCase):
             external_benchmark.write_text("{}\n", encoding="utf-8")
             args = build_parser().parse_args(
                 [
-                    "--input", str(Path(directory) / "candidate_reviews.jsonl"),
-                    "--task-id", "META",
-                    "--coco-root", str(root),
-                    "--output-dir", str(Path(directory) / "output"),
-                    "--benchmark-file", str(external_benchmark),
+                    "--input",
+                    str(Path(directory) / "candidate_reviews.jsonl"),
+                    "--task-id",
+                    "META",
+                    "--coco-root",
+                    str(root),
+                    "--output-dir",
+                    str(Path(directory) / "output"),
+                    "--benchmark-file",
+                    str(external_benchmark),
                 ]
             )
 

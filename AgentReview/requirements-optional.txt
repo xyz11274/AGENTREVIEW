@@ -1,29 +1,22 @@
-# Install only the section needed for the selected optional workflow. The
-# formal AgentReview + memory-evolution path uses requirements-runtime.txt.
+# Install the section needed for the selected optional workflow. The formal
+# AgentReview + memory-evolution path uses requirements-runtime.txt.
 
-# Legacy provider adapters (not used by the formal OpenAI-compatible path).
+# Dormant provider adapters.
 anthropic
 bardapi
 cohere
 langchain
 supabase
 
-# Interactive CLI, viewers, PDF/OpenReview ingestion, and OpenScholar helpers.
+# Interactive CLI, viewers, OpenReview ingestion, and OpenScholar helpers.
 beautifulsoup4
 colorama
+googlesearch-python
 gradio>=5.0,<6.0
 jsonlines
 openreview-py
-pdfminer.six
 prompt-toolkit
-python-pptx
 rich
-
-# CoCo full-text BLEU/ROUGE/BERTScore functions. Formal M-star fitness does not
-# call these functions.
-bert-score
-nltk
-rouge-score
 
 # Development and test commands.
 pytest

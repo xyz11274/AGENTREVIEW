@@ -3,7 +3,7 @@ import json
 import random
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .quality import DEFAULT_IMPORT_WHITELIST, check_program_code
 
@@ -11,27 +11,27 @@ from .quality import DEFAULT_IMPORT_WHITELIST, check_program_code
 @dataclass
 class ChangeLog:
     summary: str
-    details: List[str] = field(default_factory=list)
-    score: Optional[float] = None
+    details: list[str] = field(default_factory=list)
+    score: float | None = None
 
 
 @dataclass
 class EvalFeedback:
     static_score: float
     rotating_score: float
-    failed_cases: List[Dict[str, Any]]
-    success_cases: List[Dict[str, Any]]
-    traces: List[Dict[str, Any]]
+    failed_cases: list[dict[str, Any]]
+    success_cases: list[dict[str, Any]]
+    traces: list[dict[str, Any]]
     task_description: str
-    write_examples: List[Dict[str, Any]] = field(default_factory=list)
-    debug_logs: List[Dict[str, Any]] = field(default_factory=list)
+    write_examples: list[dict[str, Any]] = field(default_factory=list)
+    debug_logs: list[dict[str, Any]] = field(default_factory=list)
     feedback_seed: int = 0
 
 
 @dataclass
 class EvolutionConstraints:
     task_description: str
-    import_whitelist: List[str] = field(
+    import_whitelist: list[str] = field(
         default_factory=lambda: sorted(DEFAULT_IMPORT_WHITELIST)
     )
     max_read_chars: int = 3000
@@ -55,7 +55,7 @@ class CompileFixResult:
     program_code: str
     attempts: int
     passed: bool
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 _FORBIDDEN_FEEDBACK_KEYS = {
@@ -73,7 +73,14 @@ _FORBIDDEN_FEEDBACK_KEYS = {
     "full_trace",
 }
 _SAFE_CASE_KEYS = {"score", "success", "error_category", "metrics", "resources"}
-_SAFE_TRACE_KEYS = {"phase", "score", "success", "error_category", "metrics", "resources"}
+_SAFE_TRACE_KEYS = {
+    "phase",
+    "score",
+    "success",
+    "error_category",
+    "metrics",
+    "resources",
+}
 
 
 def validate_candidate_feedback(feedback: EvalFeedback) -> None:
@@ -83,9 +90,17 @@ def validate_candidate_feedback(feedback: EvalFeedback) -> None:
     description = str(feedback.task_description or "").lower()
     if any(
         marker in description
-        for marker in ("gold", "human review", "raw question", "raw context", "reference answer")
+        for marker in (
+            "gold",
+            "human review",
+            "raw question",
+            "raw context",
+            "reference answer",
+        )
     ):
-        raise ValueError("Candidate task description contains evaluator-sensitive markers")
+        raise ValueError(
+            "Candidate task description contains evaluator-sensitive markers"
+        )
     for collection_name, values, allowed in (
         ("failed_cases", feedback.failed_cases, _SAFE_CASE_KEYS),
         ("success_cases", feedback.success_cases, _SAFE_CASE_KEYS),
@@ -94,7 +109,9 @@ def validate_candidate_feedback(feedback: EvalFeedback) -> None:
     ):
         for index, value in enumerate(values):
             if not isinstance(value, dict):
-                raise ValueError(f"Candidate feedback {collection_name}[{index}] is not a dict")
+                raise ValueError(
+                    f"Candidate feedback {collection_name}[{index}] is not a dict"
+                )
             lowered = {str(key).lower() for key in value}
             forbidden = lowered & _FORBIDDEN_FEEDBACK_KEYS
             unexpected = set(value) - allowed
@@ -116,8 +133,12 @@ def validate_candidate_feedback(feedback: EvalFeedback) -> None:
                         f"Candidate feedback {nested_name} must be numeric-only"
                     )
             category = value.get("error_category")
-            if category is not None and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", str(category)):
-                raise ValueError("Candidate feedback error_category is not predefined-safe")
+            if category is not None and not re.fullmatch(
+                r"[A-Za-z][A-Za-z0-9_]{0,63}", str(category)
+            ):
+                raise ValueError(
+                    "Candidate feedback error_category is not predefined-safe"
+                )
 
 
 def _complete(client, messages) -> str:
@@ -199,14 +220,13 @@ def _apply_v4a_patch(source: str, response: str) -> tuple:
     commit_block = response[:begin].strip()
     title_match = re.search(r"(?m)^Title:\s*(.+)$", commit_block)
     details = [
-        match.group(1).strip()
-        for match in re.finditer(r"(?m)^-\s+(.+)$", commit_block)
+        match.group(1).strip() for match in re.finditer(r"(?m)^-\s+(.+)$", commit_block)
     ]
     title = title_match.group(1).strip() if title_match else "V4A memory mutation"
     return result, ChangeLog(summary=title, details=details), commit_block
 
 
-def _scope_parts(code: str) -> Dict[str, Any]:
+def _scope_parts(code: str) -> dict[str, Any]:
     tree = ast.parse(code)
     instructions = {}
     classes = {}
@@ -246,10 +266,10 @@ def validate_mutation_scope(parent: str, child: str, scope: str) -> None:
 def mutate_program(
     parent_program_code: str,
     eval_feedback: EvalFeedback,
-    lineage_log: List[ChangeLog],
+    lineage_log: list[ChangeLog],
     llm_client,
     constraints: EvolutionConstraints,
-    reference_programs: Optional[List[str]] = None,
+    reference_programs: list[str] | None = None,
 ) -> MutationResult:
     validate_candidate_feedback(eval_feedback)
     rng = random.Random(eval_feedback.feedback_seed)
@@ -262,7 +282,8 @@ def mutate_program(
             key = rng.random() ** (1.0 / weight)
             keyed.append((key, case))
         failed_cases = [
-            case for _, case in sorted(keyed, key=lambda value: value[0], reverse=True)[:2]
+            case
+            for _, case in sorted(keyed, key=lambda value: value[0], reverse=True)[:2]
         ]
     selected_feedback = asdict(eval_feedback)
     selected_feedback["failed_cases"] = failed_cases
@@ -348,9 +369,7 @@ JSON, Markdown fences, Add File, Delete File, or any path other than program.py.
         raw = _complete(llm_client, messages)
         raw_responses.append(raw)
         try:
-            code, change_log, analysis = _apply_v4a_patch(
-                parent_program_code, raw
-            )
+            code, change_log, analysis = _apply_v4a_patch(parent_program_code, raw)
             validate_mutation_scope(
                 parent_program_code,
                 code,
@@ -385,10 +404,10 @@ Previous response:
 
 def compile_fix_loop(
     mutated_code: str,
-    error_messages: List[str],
+    error_messages: list[str],
     max_attempts: int = 3,
     llm_client=None,
-    constraints: Optional[EvolutionConstraints] = None,
+    constraints: EvolutionConstraints | None = None,
     toolkit=None,
     sandbox_memory_mb: int = 1024,
 ) -> CompileFixResult:

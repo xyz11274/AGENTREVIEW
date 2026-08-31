@@ -1,49 +1,217 @@
-# AgentReview Review Memory Evolution
+# AgentReview 领域术语
 
-AgentReview 通过离线 Evolution 改进专业审稿所使用的 Memory 策略。Reviewer 的职责保持冻结，真人参考与 Benchmark 始终位于 Candidate 不可见的外部边界。
+本文定义仓库使用的规范术语。完整模块边界与执行流见 `docs/ARCHITECTURE.md`。
 
-## Language
+## 审稿领域
 
-**Frozen Reviewer Identity**:
-`QUAL`、`CLAR`、`SIGN`、`ORIG`、`POL` 五类 Specialist Reviewer 的固定职责及 rubric 子维度。Evolution 不得改变这些职责。
-_Avoid_: 完整冻结的 reviewer prompt
+**AgentReview**
 
-**Full Review Corpus**:
-由统一的 no-memory Reviewer 在冻结的 A 区论文上预先生成、供所有 MemoryProgram 共享的 AI review 集合。它不包含真人 review、gold opinion 或 evaluator 信息。
-_Avoid_: Self-Generated Experience、human review library、初始 memory 数据库
+以五位独立 Specialist Reviewer 和一位 Final Meta-Reviewer 完成论文审稿的系统。
 
-**Full Review Record**:
-Full Review Corpus 中一篇完整、不可变且可按内容哈希寻址的 AI review，是所有检索切片的权威原文。
-_Avoid_: chunk、KnowledgeItem、向量记录
+**Frozen Reviewer Identity**
 
-**Retrieval Projection**:
-从 Full Review Record 确定性派生、可随时重建的检索视图。每条 Projection 必须能定位回原 Review，Projection 的丢失或重建不影响原文。
-_Avoid_: 原版 review、权威 memory 文本
+六个 Reviewer Task 的职责、完整 system prompt、请求协议与输出语义组成的冻结身份。`REVIEW_Request.md` 是内容源，`reviewer_identity.py` 负责唯一渲染，`frozen_reviewer_identity_v2.json` 记录 source、task prompt、Specialist/META request template 与 composite suite SHA256。
 
-**Rubric Subdimension**:
-Frozen Reviewer Identity 中的细分审稿标签，例如 `QUAL-MET`、`QUAL-EXP`、`QUAL-REP`、`QUAL-CMP`、`QUAL-STA`。它来自 Reviewer 输出协议，不是 CoCo taxonomy 或 gold label。
-_Avoid_: CoCo category、evaluator label
+**Specialist Task**
 
-**MemoryProgram**:
-在共享 Full Review Corpus 上定义确定性存储投影、检索查询、排序和 Memory 使用策略的可执行程序。运行期 Query 构造与 Review 投影不得调用生成式模型。
-_Avoid_: review 数据库、LLM 摘要器、prompt 模板
+五个相互独立的审稿任务：`QUAL` 评价研究质量，`CLAR` 评价表达清晰度，`SIGN` 评价研究意义，`ORIG` 评价原创性，`POL` 评价写作规范与政策风险。
 
-**Evolution Reflector**:
-Evolution 阶段根据允许的外部反馈提出 MemoryProgram 子代修改的 LLM。它不参与运行期 Memory Query、Review 投影或数据库构建。
-_Avoid_: Reviewer LLM、Memory Query LLM
+**META Task**
 
-**Specialist Review Bundle**:
-同一论文的五份独立 Specialist Review 组成的规范输出。它在不运行 Meta-Reviewer 时仍是完整有效的系统产物。
-_Avoid_: meta-review、拼接字符串
+按 `meta-synthesis-request-v2` 读取同一论文的 Canonical Paper Context（正文与 Source Anchors）以及按固定顺序排列的五份 Specialist Review，完成跨维度综合与最终 Meta Review 的任务。
 
-**META-OFF Export**:
-将 Specialist Review Bundle 按冻结角色顺序确定性拼接成单个文本的导出形式，不调用 LLM，也不替代 Bundle 作为权威产物。
-_Avoid_: meta-review、LLM synthesis
+**Rubric Subdimension**
 
-**META-LLM Export**:
-显式启用 Meta-Reviewer，对 Specialist Review Bundle 进行 LLM 重组织后得到的实验性导出形式。
-_Avoid_: 默认最终输出
+Frozen Reviewer Identity 内部的细分审稿标签，例如方法质量、实验质量、可复现性与比较完整性。
 
-**Human Reference Boundary**:
-真人 review、gold opinion、Benchmark taxonomy 与 judge 信息只允许进入外部 fitness 或最终评测，不得进入 Full Review Corpus、MemoryProgram 或 Reviewer 输入。
+**Specialist Review Bundle**
 
+同一论文对应的五份 Specialist Review 的结构化集合。META 以该集合为唯一 Specialist 输入。
+
+**Canonical Paper Context**
+
+由论文 Markdown 构造的规范论文上下文，包含固定字段、内容版本和来源信息。
+
+**Source Anchor**
+
+把 Reviewer 引用的证据定位回论文段落或标题区域的稳定标识。
+
+**Review Request**
+
+Reviewer Core 接收的目标审稿请求，携带论文身份、任务身份、规范上下文和溯源信息。
+
+**Review Result**
+
+一次审稿调用产生的正文、任务身份、程序身份和运行溯源记录。
+
+## 记忆领域
+
+**Episode**
+
+一篇历史论文及其 Reviewer 自生成 Review 构成的顺序经验单元。
+
+**Historical Experience Protocol**
+
+`self_generated_after_review` 协议：Program 先对历史论文生成 Review，再把该 Review 写入自身 Memory；A 区 Episode 按冻结顺序 replay。
+
+**MemoryProgram**
+
+实现固定协议的可执行记忆程序。Program 定义指令、`KnowledgeItem`、`Query` 和 `KnowledgeBase(toolkit)`；写接口为 `write(item, raw_text)`，读接口为 `read(query) -> str`。
+
+**KnowledgeItem**
+
+TaskAgent 根据历史论文与自生成 Review 构造的结构化写入对象。
+
+**Query**
+
+TaskAgent 根据目标论文与 Reviewer Task 构造的结构化检索对象。
+
+**KnowledgeBase**
+
+MemoryProgram 拥有的状态容器，负责写入历史经验、读取目标相关经验以及生成可恢复快照。
+
+**TaskAgent**
+
+固定的 LLM 驱动 Adapter，负责生成 `KnowledgeItem`、`Query` 和最终 Review。Memory Evolution 改变 MemoryProgram，TaskAgent 保持稳定。
+
+**Reviewer Core**
+
+拥有 MemoryProgram 加载、隔离执行、TaskAgent、session 状态、snapshot/restore、严格产物和 capability 边界的稳定内核。
+
+**Reviewer Session**
+
+一个 Program、一个 Reviewer Task 和一组能力组成的有状态评审会话。
+
+**Memory Snapshot**
+
+KnowledgeBase 在完成历史 replay 后的可序列化状态。同一执行面内的每个目标从该执行面冻结的同一历史基准快照开始。
+
+**Memory Toolkit**
+
+宿主向 MemoryProgram 提供 LLM、embedding、冻结 S2、向量存储和日志能力的 Adapter。
+
+**Capability**
+
+Sandbox 通过窄接口访问的宿主操作。调用计数、输入范围和资源预算属于 capability 合约。
+
+**Sandbox Wire Protocol**
+
+Reviewer Core 宿主与候选 worker 之间的逐行 JSON command/capability 协议。宿主发送 `command`，worker 返回 `result` 或发起 `tool_call`，宿主以 `tool_result` 应答。
+
+**Legacy Memory Library**
+
+生产编排入口在 `existing` 模式下使用的 JSONL 经验库与词法检索接口。该接口服务历史分析和兼容运行。
+
+## 演化领域
+
+**Seed Program**
+
+搜索池的三个起始 MemoryProgram：`vector_search`、`llm_summarizer`、`experience_learner`。
+
+**Evolution Attempt**
+
+一次完整的父代选择、Reflector 变异、质量检查、编译检查和评估机会。当前正式预算为 20 次，所有结果均消费一次预算。
+
+**Quality-Passing Pool**
+
+通过协议、源码、编译和质量门禁并完成 Static Evaluation 的全局候选集合。父代以分数 softmax 从该集合选择。
+
+**Lineage**
+
+候选从 Seed Program 到子代的来源链。Lineage 用于溯源、champion 统计和可视化。
+
+**Static Selection**
+
+从 B 区冻结的固定评估子集，用于跨候选可比评分。
+
+**Historical Episode Selection**
+
+从 A 区冻结的 Program replay 子集。Evolution 默认预算为 Static Selection 的五倍，即 25 个 B target 对应 125 个 A Episode；Reviewer Core、部署与 Effectiveness 分别冻结自身调用范围。
+
+**Rotating Selection**
+
+从 B 区按 iteration 确定性选择的反馈子集，用于生成新的变异信号。
+
+**Reflector**
+
+读取允许反馈并生成完整 MemoryProgram 子代源码的 LLM 组件。
+
+**Candidate Review Record**
+
+候选在某个目标上的严格 JSONL 评审产物，携带 schema 版本、身份哈希与 provenance。
+
+**Promoted Program**
+
+经选择后写入 `best_program.py` 并由 promotion manifest 绑定源码哈希的 MemoryProgram。manifest 以自身目录解析 `program` 与 `source_run`，并从 `<source_run>/config.json` 校验 embedding provenance。
+
+**Outer Seed**
+
+整次 Evolution 搜索的实验随机种子。Outer Seed 与池内三个 Seed Program 属于两个独立概念。
+
+## 数据与评测领域
+
+**Paper Family**
+
+由规范标题与 paperhash 的传递闭包归并得到的论文提交族。正式 split 每个 family 选择一个代表目标。
+
+**Zone A — Historical Experience**
+
+用于顺序 replay 和构建 Program Memory 的历史论文区。
+
+**Zone B — Evolution Validation**
+
+用于 Static Selection、Rotating Selection 和 META validation 分配的演化验证区。
+
+**Zone C — Effectiveness Holdout**
+
+用于 seed/evolved/no-memory 效果筛选的隔离留出区。
+
+**Zone D — Held-out Benchmark Test**
+
+用于冻结套件最终评测的一次性测试区。
+
+**Frozen S2 Pool**
+
+按目标论文、规范查询标题和时间 cutoff 绑定的 Semantic Scholar 检索资产。
+
+**Asset Manifest**
+
+用相对路径、版本和 SHA256 绑定 Frozen Reviewer Identity、split、S2、Seed Program 与 embedding 身份的正式资产索引。
+
+**Formal Protocol Gate**
+
+在正式演化与最终评测前统一校验资产、模型端点、程序身份、数据区和运行 provenance 的入口。
+
+**Proxy Screening**
+
+Effectiveness Screening 使用的 CoCo-style 代理指标流程，用于 C 区效果筛选。
+
+**Sealed D Suite Evaluation**
+
+`final-evaluate-suite` 在 formal gate 后运行的六任务 D 区测量。它在 Review 生成后通过冻结 ReviewSplit/ReviewClassify、`CoCoMetricBenchmarkAdapter` 与 `CoCoReviewFitness` 内联计分，并持久化紧凑套件报告；结果身份为 `sealed_d_coco_style`。
+
+**Official CoCo Evaluation**
+
+`agentreview.coco_eval` 读取已持久化的 `candidate_reviews.jsonl`，调用 CoCoReviewBench 自带 split、classify 和 evaluation 程序，并持久化各阶段产物形成的外部评测结果。
+
+## 系统边界
+
+**Production Orchestrator**
+
+执行 Markdown 抽取、五 Specialist 并发审稿、META 汇总、checkpoint 和在线 memory writeback 的部署入口。
+
+**Reviewer Core CLI**
+
+直接以 MemoryProgram 驱动完整 review/write/query/read/response 协议的稳定候选审稿入口。
+
+**Result Viewer**
+
+读取部署审稿 JSON 产物的只读 UI。
+
+**Evolution Viewer**
+
+读取 M★ `pool`、`lineage.jsonl`、`scores.jsonl` 和 trace 的独立只读 UI。
+
+**Dormant Interface**
+
+仓库保留的暂未启用接缝。当前集合包括 Arena/Supabase 快照、Bard 与 LangChain Provider Interface、BGE-M3 Adapter、OpenScholar core/API 字符串快照和 OpenReview 数据导入；Anthropic、Cohere、Transformers、Human 与 Dummy 属于已注册的可选 Provider Adapter。

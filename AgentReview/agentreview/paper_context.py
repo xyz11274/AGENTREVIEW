@@ -8,9 +8,10 @@ objects.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any
 
 from .source_map import (
     build_source_anchors,
@@ -18,7 +19,6 @@ from .source_map import (
     format_source_anchors,
     load_content_list,
 )
-
 
 CANONICAL_PAPER_CONTEXT_VERSION = "canonical-rich-paper-v1"
 DEFAULT_PAPER_CONTEXT_MAX_CHARS = 60000
@@ -45,6 +45,17 @@ INTERNAL_PROVENANCE_FIELDS = frozenset(
 )
 
 
+def require_human_review_free(
+    payload: Mapping[str, Any],
+    *,
+    source: str,
+) -> None:
+    """Require an explicit machine-readable human-review-free marker."""
+    if payload.get("contains_human_review_data") is False:
+        return
+    raise RuntimeError(f"{source} requires contains_human_review_data=false")
+
+
 def clip_text(text: str, max_chars: int, marker: str = "context clipped") -> str:
     """Deterministically retain the beginning and end within ``max_chars``."""
     value = str(text or "")
@@ -61,7 +72,7 @@ def clip_text(text: str, max_chars: int, marker: str = "context clipped") -> str
     return value[:head] + separator + value[-(available - head) :]
 
 
-def _clean_metadata(metadata: Optional[Mapping[str, Any]]) -> Dict[str, str]:
+def _clean_metadata(metadata: Mapping[str, Any] | None) -> dict[str, str]:
     raw = dict(metadata or {})
     leaked = INTERNAL_PROVENANCE_FIELDS & set(raw)
     # Provenance may be supplied to a caller, but it must never be silently
@@ -74,8 +85,7 @@ def _clean_metadata(metadata: Optional[Mapping[str, Any]]) -> Dict[str, str]:
     unknown = set(raw) - set(CANDIDATE_VISIBLE_METADATA_FIELDS)
     if unknown:
         raise ValueError(
-            "Unknown candidate-visible metadata fields: "
-            + ", ".join(sorted(unknown))
+            "Unknown candidate-visible metadata fields: " + ", ".join(sorted(unknown))
         )
     return {
         name: str(raw.get(name) or "").strip()
@@ -90,7 +100,7 @@ def candidate_visible_metadata(
     venue: str = "",
     year: Any = "",
     reviewer_role: str = "",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     return _clean_metadata(
         {
             "paper_id": paper_id,
@@ -102,8 +112,8 @@ def candidate_visible_metadata(
     )
 
 
-def _fallback_anchors(paper_text: str, max_anchors: int = 40) -> List[Dict[str, Any]]:
-    anchors: List[Dict[str, Any]] = []
+def _fallback_anchors(paper_text: str, max_anchors: int = 40) -> list[dict[str, Any]]:
+    anchors: list[dict[str, Any]] = []
     for start in range(0, min(len(paper_text), 40000), 1000):
         excerpt = paper_text[start : start + 500].replace("\n", " ").strip()
         if not excerpt:
@@ -174,9 +184,9 @@ def format_canonical_paper_context(
 @dataclass(frozen=True)
 class CanonicalPaperContext:
     text: str
-    candidate_metadata: Dict[str, str]
-    source_anchors: List[Dict[str, Any]] = field(default_factory=list)
-    internal_provenance: Dict[str, Any] = field(default_factory=dict)
+    candidate_metadata: dict[str, str]
+    source_anchors: list[dict[str, Any]] = field(default_factory=list)
+    internal_provenance: dict[str, Any] = field(default_factory=dict)
     version: str = CANONICAL_PAPER_CONTEXT_VERSION
 
 
@@ -189,7 +199,7 @@ def build_canonical_paper_context(
     year: Any = "",
     reviewer_role: str = "",
     max_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
-    internal_provenance: Optional[Mapping[str, Any]] = None,
+    internal_provenance: Mapping[str, Any] | None = None,
 ) -> CanonicalPaperContext:
     path = Path(paper_md_path).expanduser().resolve()
     paper_text = path.read_text(encoding="utf-8", errors="ignore")

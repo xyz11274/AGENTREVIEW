@@ -1,12 +1,12 @@
 from dataclasses import asdict, dataclass, field, is_dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
 class Episode:
     id: str
     text: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_value(cls, value: Any) -> "Episode":
@@ -24,7 +24,7 @@ class EvalItem:
     id: str
     question: str
     answer: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_value(cls, value: Any) -> "EvalItem":
@@ -41,13 +41,13 @@ class EvalItem:
 @dataclass
 class EvalResult:
     mean_score: float
-    success_cases: List[Dict[str, Any]] = field(default_factory=list)
-    failed_cases: List[Dict[str, Any]] = field(default_factory=list)
-    traces: List[Dict[str, Any]] = field(default_factory=list)
-    runtime_stats: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    success_cases: list[dict[str, Any]] = field(default_factory=list)
+    failed_cases: list[dict[str, Any]] = field(default_factory=list)
+    traces: list[dict[str, Any]] = field(default_factory=list)
+    runtime_stats: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 

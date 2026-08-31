@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import asdict, is_dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .models import Episode, ReviewRequest, ReviewResult
 from .program_loader import MemoryProgramLoader
 from .sandbox import SandboxSession
 from .task_agent import build_task_agent
 from .tasks import ALL_TASKS, reviewer_identity
-
 
 EXPERIENCE_PROTOCOL = "self_generated_after_review"
 EXPERIENCE_PROTOCOL_VERSION = "self-generated-experience-v1"
@@ -39,7 +38,7 @@ class ReviewerSession:
         memory_program,
         toolkit,
         task_agent=None,
-        loader: Optional[MemoryProgramLoader] = None,
+        loader: MemoryProgramLoader | None = None,
         timeout_seconds: float = 60.0,
         memory_mb: int = 1024,
         cpu_seconds: int = 60,
@@ -63,10 +62,10 @@ class ReviewerSession:
         )
         self.program = self.sandbox.program_interface()
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return self.sandbox.snapshot()
 
-    def restore(self, snapshot: Dict[str, Any]) -> None:
+    def restore(self, snapshot: dict[str, Any]) -> None:
         self.sandbox.restore(snapshot)
 
     def ingest_text(self, raw_text: str):
@@ -75,21 +74,21 @@ class ReviewerSession:
             self.sandbox.write(item, str(raw_text))
         return item
 
-    def ingest_precompiled(self, value: Dict[str, Any]) -> None:
+    def ingest_precompiled(self, value: dict[str, Any]) -> None:
         item = self.program.KnowledgeItem(**dict(value.get("item") or {}))
         raw_text = str(value.get("raw_text") or "")
         with self.toolkit.operation("memory_write"):
             self.sandbox.write(item, raw_text)
 
-    def ingest_episode(self, value: Any) -> Dict[str, Any]:
+    def ingest_episode(self, value: Any) -> dict[str, Any]:
         """Ingest one episode, preserving the existing review-then-write protocol."""
         episode = Episode.from_value(value)
         raw_text = episode.text
-        details: Dict[str, Any] = {}
+        details: dict[str, Any] = {}
         if episode.metadata.get("experience_protocol") == EXPERIENCE_PROTOCOL:
-            if (
-                episode.metadata.get("experience_protocol_version")
-                not in (None, EXPERIENCE_PROTOCOL_VERSION)
+            if episode.metadata.get("experience_protocol_version") not in (
+                None,
+                EXPERIENCE_PROTOCOL_VERSION,
             ):
                 raise ValueError(
                     f"Experience protocol version mismatch for {episode.id}"
@@ -163,7 +162,7 @@ class ReviewerSession:
             sandbox.close(force=force)
             self.sandbox = None
 
-    def __enter__(self) -> "ReviewerSession":
+    def __enter__(self) -> ReviewerSession:
         return self
 
     def __exit__(self, exc_type, exc, tb):

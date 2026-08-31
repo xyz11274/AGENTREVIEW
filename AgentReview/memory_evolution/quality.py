@@ -5,11 +5,10 @@ import threading
 from contextlib import contextmanager
 from dataclasses import MISSING, asdict, dataclass, field, fields, is_dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .sandbox import SandboxSession
 from .toolkit import MemoryToolkit
-
 
 DEFAULT_IMPORT_WHITELIST = {
     "dataclasses",
@@ -96,23 +95,21 @@ def time_limit(seconds: float, operation: str):
 @dataclass
 class QualityResult:
     passed: bool
-    static_errors: List[str] = field(default_factory=list)
-    compile_errors: List[str] = field(default_factory=list)
-    smoke_errors: List[str] = field(default_factory=list)
+    static_errors: list[str] = field(default_factory=list)
+    compile_errors: list[str] = field(default_factory=list)
+    smoke_errors: list[str] = field(default_factory=list)
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         return self.static_errors + self.compile_errors + self.smoke_errors
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
-def static_check(
-    code: str, import_whitelist: Optional[set] = None
-) -> List[str]:
+def static_check(code: str, import_whitelist: set | None = None) -> list[str]:
     whitelist = import_whitelist or DEFAULT_IMPORT_WHITELIST
-    errors: List[str] = []
+    errors: list[str] = []
     try:
         tree = ast.parse(code)
     except SyntaxError as exc:
@@ -167,20 +164,21 @@ def static_check(
             if isinstance(node.func, ast.Attribute):
                 attribute = node.func.attr
                 if attribute in FORBIDDEN_ATTRIBUTES:
-                    if attribute == "connect":
-                        if (
-                            isinstance(node.func.value, ast.Name)
-                            and node.func.value.id == "sqlite3"
-                            and node.args
-                            and isinstance(node.args[0], ast.Constant)
-                            and node.args[0].value == ":memory:"
-                        ):
-                            continue
+                    if attribute == "connect" and (
+                        isinstance(node.func.value, ast.Name)
+                        and node.func.value.id == "sqlite3"
+                        and node.args
+                        and isinstance(node.args[0], ast.Constant)
+                        and node.args[0].value == ":memory:"
+                    ):
+                        continue
                     errors.append(f"Forbidden call attribute: {attribute}")
         elif isinstance(node, ast.Attribute) and node.attr.startswith("__"):
             errors.append(f"Dunder attribute access is not allowed: {node.attr}")
         elif isinstance(node, (ast.Global, ast.Nonlocal)):
-            errors.append(f"Global state declaration is not allowed at line {node.lineno}")
+            errors.append(
+                f"Global state declaration is not allowed at line {node.lineno}"
+            )
 
     return sorted(set(errors))
 
@@ -218,14 +216,14 @@ def _default_smoke_toolkit() -> MemoryToolkit:
 
 def compile_and_smoke_check(
     program_path: str,
-    toolkit: Optional[MemoryToolkit] = None,
+    toolkit: MemoryToolkit | None = None,
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
     sandbox_memory_mb: int = 1024,
 ):
-    compile_errors: List[str] = []
-    smoke_errors: List[str] = []
+    compile_errors: list[str] = []
+    smoke_errors: list[str] = []
     session = None
     try:
         active_toolkit = toolkit or _default_smoke_toolkit()
@@ -242,7 +240,9 @@ def compile_and_smoke_check(
             session.close(force=True)
         return [f"Program import failed: {type(exc).__name__}: {exc}"], smoke_errors
 
-    missing = sorted(symbol for symbol in REQUIRED_SYMBOLS if not hasattr(program, symbol))
+    missing = sorted(
+        symbol for symbol in REQUIRED_SYMBOLS if not hasattr(program, symbol)
+    )
     if missing:
         compile_errors.append(f"Missing required symbols: {', '.join(missing)}")
         return compile_errors, smoke_errors
@@ -290,9 +290,13 @@ def compile_and_smoke_check(
         with active_toolkit.operation("quality_smoke_read"):
             result = session.read(query)
         if not isinstance(result, str):
-            smoke_errors.append(f"read() returned {type(result).__name__}, expected str")
+            smoke_errors.append(
+                f"read() returned {type(result).__name__}, expected str"
+            )
         elif len(result) > 3000:
-            smoke_errors.append(f"read() returned {len(result)} characters, limit is 3000")
+            smoke_errors.append(
+                f"read() returned {len(result)} characters, limit is 3000"
+            )
     except Exception as exc:
         smoke_errors.append(f"Smoke test failed: {type(exc).__name__}: {exc}")
     finally:
@@ -304,8 +308,8 @@ def compile_and_smoke_check(
 
 def check_program_path(
     program_path: str,
-    toolkit: Optional[MemoryToolkit] = None,
-    import_whitelist: Optional[set] = None,
+    toolkit: MemoryToolkit | None = None,
+    import_whitelist: set | None = None,
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,
@@ -337,8 +341,8 @@ def check_program_path(
 
 def check_program_code(
     code: str,
-    toolkit: Optional[MemoryToolkit] = None,
-    import_whitelist: Optional[set] = None,
+    toolkit: MemoryToolkit | None = None,
+    import_whitelist: set | None = None,
     import_timeout: float = 10.0,
     write_timeout: float = 60.0,
     read_timeout: float = 60.0,

@@ -1,5 +1,3 @@
-from typing import List, Union
-
 from ..agent import SIGNAL_END_OF_CONVERSATION, Moderator
 from ..config import AgentConfig, EnvironmentConfig
 from ..message import Message, MessagePool
@@ -15,7 +13,7 @@ class Conversation(Environment):
 
     type_name = "conversation"
 
-    def __init__(self, player_names: List[str], parallel: bool = False, **kwargs):
+    def __init__(self, player_names: list[str], parallel: bool = False, **kwargs):
         super().__init__(player_names=player_names, parallel=parallel, **kwargs)
 
         self.parallel = parallel
@@ -58,7 +56,7 @@ class Conversation(Environment):
         """Get the next player."""
         return self.player_names[self._next_player_index]
 
-    def get_observation(self, player_name=None) -> List[Message]:
+    def get_observation(self, player_name=None) -> list[Message]:
         """Get observation for the player."""
         if player_name is None:
             return self.message_pool.get_all_messages()
@@ -113,8 +111,8 @@ class ModeratedConversation(Conversation):
 
     def __init__(
         self,
-        player_names: List[str],
-        moderator: Union[Moderator, AgentConfig],
+        player_names: list[str],
+        moderator: Moderator | AgentConfig,
         parallel: bool = False,
         moderator_visibility="all",
         moderator_period=None,

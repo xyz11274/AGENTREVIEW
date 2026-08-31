@@ -1,8 +1,0 @@
-{
-  "Reviewer QUAL": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Reviewer QUAL failed to generate a response. Error: Connection error.. Sending signal to end the conversation.",
-  "Reviewer CLAR": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Reviewer CLAR failed to generate a response. Error: Connection error.. Sending signal to end the conversation.",
-  "Reviewer SIGN": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Reviewer SIGN failed to generate a response. Error: Connection error.. Sending signal to end the conversation.",
-  "Reviewer ORIG": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Reviewer ORIG failed to generate a response. Error: Connection error.. Sending signal to end the conversation.",
-  "Reviewer POL": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Reviewer POL failed to generate a response. Error: Connection error.. Sending signal to end the conversation.",
-  "Final Meta-Reviewer": "<<<<<<END_OF_CONVERSATION>>>>>>983466aa-f2cd-44c4-8fbe-0fb28449c7edAgent Final Meta-Reviewer failed to generate a response. Error: Connection error.. Sending signal to end the conversation."
-}

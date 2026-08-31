@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Build/query-migrate the query-bound, time-safe Frozen S2 v2 pool.
-
-This tool never modifies the v1 pool or its work directory. Clean v1 records
-whose actual query equals the v2 canonical title are copied into a separate v2
-checkpoint; all other targets are retrieved using the canonical v2 title.
-"""
+"""Build or verify the canonical, query-bound, time-safe Frozen S2 v2 pool."""
 
 from __future__ import annotations
 
@@ -14,25 +9,24 @@ import json
 import os
 import sys
 import time
+from collections.abc import Iterable, Mapping
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, Optional
-
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from memory_evolution.assets import (
+from memory_evolution.assets import (  # noqa: E402
     FOUR_ZONES,
     TEMPORAL_SPLIT_VERSION,
-    TEMPORAL_SPLIT_V1_VERSION,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     sha256_file,
 )
-from memory_evolution.toolkit import validate_frozen_s2_pool
-from scripts.build_frozen_s2_pool import (
+from memory_evolution.toolkit import validate_frozen_s2_pool  # noqa: E402
+from scripts.s2_search import (  # noqa: E402
     ENDPOINT,
     FIELDS,
     canonical_sha256,
@@ -40,12 +34,8 @@ from scripts.build_frozen_s2_pool import (
     request_search,
 )
 
-
 POOL_VERSION = "frozen-s2-temporal-v2"
 LIVE_RETRIEVAL_VERSION = "s2-graph-title-search-v2-query-bound"
-REUSE_RETRIEVAL_VERSION = "s2-v1-result-migration-v2-query-bound"
-LEGACY_POOL_VERSION = "frozen-s2-temporal-v1"
-DEPRECATION_REASON = "query_title_serialization_contamination"
 
 
 def query_sha256(title: str) -> str:
@@ -75,13 +65,12 @@ def canonical_target_title(target: Mapping[str, Any]) -> str:
     return title
 
 
-def iter_targets(zones: Mapping[str, Iterable[Dict[str, Any]]]):
+def iter_targets(zones: Mapping[str, Iterable[dict[str, Any]]]):
     for zone in FOUR_ZONES:
-        for target in zones[zone]:
-            yield target
+        yield from zones[zone]
 
 
-def _load_records(path: Path) -> Iterable[Dict[str, Any]]:
+def _load_records(path: Path) -> Iterable[dict[str, Any]]:
     if not path.is_file():
         return []
     text = path.read_text(encoding="utf-8")
@@ -98,86 +87,22 @@ def _load_records(path: Path) -> Iterable[Dict[str, Any]]:
             for paper_id, value in payload.items()
             if isinstance(value, dict)
         ]
-    raise ValueError(f"Unsupported legacy S2 payload: {path}")
+    raise ValueError(f"Unsupported S2 payload: {path}")
 
 
-def _legacy_equivalence_sha(value: Mapping[str, Any], source: str) -> str:
-    """Ignore only the final-asset-only derived result_count field."""
-    normalized = dict(value)
-    results = normalized.get("retrieved_papers")
-    if not isinstance(results, list):
-        raise ValueError(f"Legacy S2 record has invalid results: {source}")
-    if "result_count" in normalized and normalized["result_count"] != len(results):
-        raise ValueError(f"Legacy S2 record has invalid result_count: {source}")
-    normalized.pop("result_count", None)
-    return canonical_sha256(normalized)
-
-
-def load_legacy_records(pool_path: Path) -> Dict[str, Dict[str, Any]]:
-    """Load v1 final/work records read-only and reject conflicting duplicates."""
-    records: Dict[str, Dict[str, Any]] = {}
-    sources = []
-    if pool_path.is_file():
-        sources.extend((value, str(pool_path)) for value in _load_records(pool_path))
-    work_dir = pool_path.with_suffix(pool_path.suffix + ".work")
-    if work_dir.is_dir():
-        for work_path in sorted(work_dir.glob("*.json")):
-            sources.append(
-                (json.loads(work_path.read_text(encoding="utf-8")), str(work_path))
-            )
-    for value, source in sources:
-        paper_id = str(value.get("paper_id") or "")
-        if not paper_id:
-            raise ValueError(f"Legacy S2 record lacks paper_id: {source}")
-        previous = records.get(paper_id)
-        if previous is not None:
-            if _legacy_equivalence_sha(
-                previous, "previous final/work record"
-            ) != _legacy_equivalence_sha(value, source):
-                raise ValueError(f"Conflicting legacy S2 records for {paper_id}")
-            # Final JSONL is loaded first and is the frozen v1 asset of record.
-            # Do not replace it with an older work representation.
-            continue
-        _legacy_equivalence_sha(value, source)
-        records[paper_id] = value
-    return records
-
-
-def _results(value: Mapping[str, Any]) -> Optional[list]:
+def _results(value: Mapping[str, Any]) -> list | None:
     results = value.get("retrieved_papers")
     return results if isinstance(results, list) else None
 
 
-def results_are_time_safe(results: Iterable[Mapping[str, Any]], cutoff_text: str) -> bool:
+def results_are_time_safe(
+    results: Iterable[Mapping[str, Any]], cutoff_text: str
+) -> bool:
     cutoff = date.fromisoformat(str(cutoff_text)[:10])
     try:
         return all(publication_time(dict(result)) <= cutoff for result in results)
     except (TypeError, ValueError):
         return False
-
-
-def reusable_legacy_record(
-    value: Optional[Mapping[str, Any]],
-    target: Mapping[str, Any],
-    *,
-    top_k: int,
-) -> bool:
-    if not value:
-        return False
-    results = _results(value)
-    title = canonical_target_title(target)
-    return bool(
-        value.get("paper_id") == target["paper_id"]
-        and value.get("pool_version") == LEGACY_POOL_VERSION
-        and value.get("paper_review_cutoff") == target["paper_review_cutoff"]
-        and value.get("top_k") == top_k
-        and value.get("query") == title
-        and isinstance(value.get("retrieval_method"), str)
-        and isinstance(value.get("retrieval_version"), str)
-        and results is not None
-        and value.get("result_sha256") == canonical_sha256(results)
-        and results_are_time_safe(results, str(target["paper_review_cutoff"]))
-    )
 
 
 def build_v2_record(
@@ -191,8 +116,7 @@ def build_v2_record(
     raw_api_response_sha256: str,
     rejected_future: int = 0,
     rejected_unknown: int = 0,
-    legacy_record: Optional[Mapping[str, Any]] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     title = canonical_target_title(target)
     config = {
         "endpoint": ENDPOINT,
@@ -231,13 +155,6 @@ def build_v2_record(
         "pool_version": POOL_VERSION,
         "status": "completed",
     }
-    if legacy_record is not None:
-        record["reuse_provenance"] = {
-            "source_pool_version": LEGACY_POOL_VERSION,
-            "source_record_sha256": canonical_sha256(legacy_record),
-            "source_query": legacy_record.get("query"),
-            "reason": "actual v1 query exactly matches canonical v2 title",
-        }
     record["record_sha256"] = record_sha256(record)
     return record
 
@@ -275,39 +192,6 @@ def valid_v2_work_record(
     )
 
 
-def actual_v1_query(
-    paper_id: str,
-    v1_targets: Mapping[str, Mapping[str, Any]],
-    legacy_records: Mapping[str, Mapping[str, Any]],
-) -> str:
-    record = legacy_records.get(paper_id)
-    if record is not None and isinstance(record.get("query"), str):
-        return str(record["query"])
-    return str(v1_targets[paper_id].get("title") or "")
-
-
-def query_change_plan(
-    targets: Iterable[Mapping[str, Any]],
-    v1_targets: Mapping[str, Mapping[str, Any]],
-    legacy_records: Mapping[str, Mapping[str, Any]],
-) -> Dict[str, Dict[str, Any]]:
-    plan = {}
-    for target in targets:
-        paper_id = str(target["paper_id"])
-        if paper_id not in v1_targets:
-            raise ValueError(f"v2 target absent from v1 split: {paper_id}")
-        canonical = canonical_target_title(target)
-        old_query = actual_v1_query(paper_id, v1_targets, legacy_records)
-        plan[paper_id] = {
-            "v1_actual_query": old_query,
-            "v2_canonical_query": canonical,
-            "affected": old_query != canonical,
-        }
-    if not set(plan).issubset(v1_targets):
-        raise ValueError("v2 representative target is absent from the v1 source split")
-    return plan
-
-
 def _atomic_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -324,16 +208,14 @@ def audit_pool(
     *,
     split_path: Path,
     targets: list,
-    plan: Mapping[str, Mapping[str, Any]],
     top_k: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     cutoffs = {
         str(target["paper_id"]): str(target["paper_review_cutoff"])
         for target in targets
     }
     queries = {
-        str(target["paper_id"]): canonical_target_title(target)
-        for target in targets
+        str(target["paper_id"]): canonical_target_title(target) for target in targets
     }
     temporal = validate_frozen_s2_pool(
         str(output),
@@ -351,64 +233,71 @@ def audit_pool(
             malformed_titles.append(
                 {"paper_id": target.get("paper_id"), "error": str(exc)}
             )
-    origins = {str(value["paper_id"]): str(value.get("retrieval_origin") or "") for value in entries}
+    origin_counts: dict[str, int] = {}
+    for value in entries:
+        origin = str(value.get("retrieval_origin") or "unspecified")
+        origin_counts[origin] = origin_counts.get(origin, 0) + 1
     top_k_mismatches = [
         str(value.get("paper_id") or "")
         for value in entries
         if value.get("top_k") != top_k
     ]
+    record_identity_mismatches = [
+        str(target["paper_id"])
+        for target in targets
+        if not valid_v2_work_record(
+            next(
+                (
+                    value
+                    for value in entries
+                    if str(value.get("paper_id")) == str(target["paper_id"])
+                ),
+                {},
+            ),
+            target,
+            top_k=top_k,
+        )
+    ]
     query_audit = {
         "protocol": "frozen-s2-v2-query-integrity-audit-v1",
         "required_count": len(targets),
         "checked_count": len(entries),
-        "affected_target_count": sum(
-            1 for value in plan.values() if value["affected"]
-        ),
-        "reused_target_count": sum(
-            1 for value in origins.values() if value == "reused_clean_v1"
-        ),
-        "re_retrieved_target_count": sum(
-            1 for value in origins.values() if value == "re_retrieved_query_changed"
-        ),
-        "newly_retrieved_target_count": sum(
-            1 for value in origins.values() if value == "retrieved_missing_clean_v1"
-        ),
+        "retrieval_origin_counts": dict(sorted(origin_counts.items())),
         "malformed_titles": malformed_titles,
         "canonical_mismatches": temporal["canonical_mismatches"],
         "polluted_query_titles": temporal["polluted_query_titles"],
         "top_k_mismatches": top_k_mismatches,
+        "record_identity_mismatches": record_identity_mismatches,
     }
-    accounted_count = (
-        query_audit["reused_target_count"]
-        + query_audit["re_retrieved_target_count"]
-        + query_audit["newly_retrieved_target_count"]
+    query_audit["passed"] = all(
+        (
+            query_audit["checked_count"] == query_audit["required_count"],
+            len(query_audit["malformed_titles"]) == 0,
+            len(query_audit["canonical_mismatches"]) == 0,
+            len(query_audit["polluted_query_titles"]) == 0,
+            len(query_audit["top_k_mismatches"]) == 0,
+            len(query_audit["record_identity_mismatches"]) == 0,
+            temporal["passed"] is True,
+        )
     )
-    query_audit["passed"] = not (
-        query_audit["required_count"] != len(targets)
-        or query_audit["checked_count"] != query_audit["required_count"]
-        or accounted_count != query_audit["checked_count"]
-        or query_audit["re_retrieved_target_count"]
-        != query_audit["affected_target_count"]
-        or query_audit["malformed_titles"]
-        or query_audit["canonical_mismatches"]
-        or query_audit["polluted_query_titles"]
-        or query_audit["top_k_mismatches"]
-        or not temporal["passed"]
-    )
+    try:
+        asset_path = str(output.relative_to(PROJECT_ROOT))
+    except ValueError:
+        asset_path = str(output)
+    try:
+        manifest_path = str(split_path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        manifest_path = str(split_path)
     report = {
         "pool_version": POOL_VERSION,
         "paper_count": len(entries),
         "top_k": top_k,
-        "temporal_split_manifest": str(split_path),
+        "temporal_split_manifest": manifest_path,
         "temporal_split_manifest_sha256": sha256_file(split_path),
-        "asset": str(output),
+        "asset": asset_path,
         "asset_sha256": sha256_file(output),
         "temporal_audit": temporal,
         "query_integrity_audit": query_audit,
-        "legacy_v1_policy": {
-            "deprecated_for_formal_use": True,
-            "reason": DEPRECATION_REASON,
-        },
     }
     if not temporal["passed"] or not query_audit["passed"]:
         raise RuntimeError(f"Frozen S2 v2 audit failed: {report}")
@@ -429,19 +318,11 @@ def audit_pool(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Selectively migrate/retrieve the query-bound Frozen S2 v2 pool."
+        description="Build or verify the query-bound Frozen S2 v2 pool."
     )
     parser.add_argument(
         "--temporal-split-manifest",
         default=str(PROJECT_ROOT / "configs/coco_temporal_split_v2/manifest.json"),
-    )
-    parser.add_argument(
-        "--baseline-temporal-split-manifest",
-        default=str(PROJECT_ROOT / "configs/coco_temporal_split_v1/manifest.json"),
-    )
-    parser.add_argument(
-        "--legacy-s2-pool",
-        default=str(PROJECT_ROOT / "configs/frozen_s2_temporal_v1.jsonl"),
     )
     parser.add_argument(
         "--output",
@@ -458,28 +339,15 @@ def main() -> None:
         raise ValueError("min-interval-seconds must be at least 1.0")
 
     split_path = Path(args.temporal_split_manifest).expanduser().resolve()
-    baseline_path = Path(args.baseline_temporal_split_manifest).expanduser().resolve()
-    legacy_path = Path(args.legacy_s2_pool).expanduser().resolve()
     output = Path(args.output).expanduser().resolve()
     sidecar_path = output.with_suffix(output.suffix + ".manifest.json")
     split_summary, zones = load_temporal_split_manifest(str(split_path))
-    baseline_summary, baseline_zones = load_temporal_split_manifest(str(baseline_path))
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
         raise ValueError("Frozen S2 v2 requires coco temporal split v2")
-    if baseline_summary.get("version") != TEMPORAL_SPLIT_V1_VERSION:
-        raise ValueError("Frozen S2 v2 migration baseline must be temporal split v1")
     split_audit = audit_four_zone_isolation(zones)
     if not split_audit["passed"]:
         raise RuntimeError(f"Temporal split v2 audit failed: {split_audit}")
-    comparison = split_summary.get("v1_v2_comparison_audit") or {}
-    if not comparison.get("passed"):
-        raise RuntimeError("Temporal split v2 lacks a passed v1/v2 comparison audit")
     targets = list(iter_targets(zones))
-    v1_targets = {
-        str(target["paper_id"]): target for target in iter_targets(baseline_zones)
-    }
-    legacy_records = load_legacy_records(legacy_path)
-    plan = query_change_plan(targets, v1_targets, legacy_records)
 
     if args.check_only:
         if not output.is_file() or not sidecar_path.is_file():
@@ -491,7 +359,6 @@ def main() -> None:
                     sidecar_path,
                     split_path=split_path,
                     targets=targets,
-                    plan=plan,
                     top_k=args.top_k,
                 ),
                 ensure_ascii=False,
@@ -502,14 +369,12 @@ def main() -> None:
         return
     if output.is_file() and not sidecar_path.exists():
         # Recover the narrow crash window after the fully audited JSONL was
-        # atomically installed but before its sidecar was committed. This is
-        # read-only with respect to v1 and performs no live retrieval.
+        # atomically installed and before its sidecar was committed.
         report = audit_pool(
             output,
             sidecar_path,
             split_path=split_path,
             targets=targets,
-            plan=plan,
             top_k=args.top_k,
         )
         _atomic_json(sidecar_path, report)
@@ -531,65 +396,42 @@ def main() -> None:
             if valid_v2_work_record(existing, target, top_k=args.top_k):
                 continue
             raise RuntimeError(f"Incompatible query-bound v2 work record: {paper_id}")
-        legacy = legacy_records.get(paper_id)
-        if reusable_legacy_record(legacy, target, top_k=args.top_k):
-            results = list(_results(legacy) or [])
-            record = build_v2_record(
-                target,
-                top_k=args.top_k,
-                results=results,
-                retrieval_method="Provenance-safe reuse of clean Frozen S2 v1 result",
-                retrieval_version=REUSE_RETRIEVAL_VERSION,
-                retrieval_origin="reused_clean_v1",
-                raw_api_response_sha256=str(
-                    legacy.get("raw_api_response_sha256") or ""
-                ),
-                rejected_future=int(legacy.get("future_results_rejected") or 0),
-                rejected_unknown=int(legacy.get("unknown_date_results_rejected") or 0),
-                legacy_record=legacy,
-            )
-        else:
-            payload = request_search(
-                title=canonical_target_title(target),
-                top_k=args.top_k,
-                api_key=api_key,
-                max_attempts=args.max_attempts,
-                min_interval_seconds=args.min_interval_seconds,
-            )
-            cutoff = date.fromisoformat(str(target["paper_review_cutoff"])[:10])
-            accepted = []
-            rejected_future = 0
-            rejected_unknown = 0
-            for paper in payload["data"]:
-                try:
-                    published = publication_time(paper)
-                except (TypeError, ValueError):
-                    rejected_unknown += 1
-                    continue
-                if published > cutoff:
-                    rejected_future += 1
-                    continue
-                normalized = dict(paper)
-                normalized["publication_date"] = published.isoformat()
-                normalized["year"] = published.year
-                accepted.append(normalized)
-            origin = (
-                "re_retrieved_query_changed"
-                if plan[paper_id]["affected"]
-                else "retrieved_missing_clean_v1"
-            )
-            record = build_v2_record(
-                target,
-                top_k=args.top_k,
-                results=accepted,
-                retrieval_method="Semantic Scholar Graph API canonical title search",
-                retrieval_version=LIVE_RETRIEVAL_VERSION,
-                retrieval_origin=origin,
-                raw_api_response_sha256=canonical_sha256(payload),
-                rejected_future=rejected_future,
-                rejected_unknown=rejected_unknown,
-            )
-            time.sleep(args.min_interval_seconds)
+        payload = request_search(
+            title=canonical_target_title(target),
+            top_k=args.top_k,
+            api_key=api_key,
+            max_attempts=args.max_attempts,
+            min_interval_seconds=args.min_interval_seconds,
+        )
+        cutoff = date.fromisoformat(str(target["paper_review_cutoff"])[:10])
+        accepted = []
+        rejected_future = 0
+        rejected_unknown = 0
+        for paper in payload["data"]:
+            try:
+                published = publication_time(paper)
+            except (TypeError, ValueError):
+                rejected_unknown += 1
+                continue
+            if published > cutoff:
+                rejected_future += 1
+                continue
+            normalized = dict(paper)
+            normalized["publication_date"] = published.isoformat()
+            normalized["year"] = published.year
+            accepted.append(normalized)
+        record = build_v2_record(
+            target,
+            top_k=args.top_k,
+            results=accepted,
+            retrieval_method="Semantic Scholar Graph API canonical title search",
+            retrieval_version=LIVE_RETRIEVAL_VERSION,
+            retrieval_origin="live_s2_query",
+            raw_api_response_sha256=canonical_sha256(payload),
+            rejected_future=rejected_future,
+            rejected_unknown=rejected_unknown,
+        )
+        time.sleep(args.min_interval_seconds)
         _atomic_json(work_path, record)
         print(f"[{index}/{len(targets)}] v2 frozen {paper_id}", flush=True)
 
@@ -611,7 +453,6 @@ def main() -> None:
         sidecar_path,
         split_path=split_path,
         targets=targets,
-        plan=plan,
         top_k=args.top_k,
     )
     _atomic_json(sidecar_path, report)

@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import date, datetime, timezone
+from collections import Counter
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
-
+from typing import Any
 
 ASSET_MANIFEST_VERSION = "mstar-assets-v2-temporal"
 TEMPORAL_SPLIT_V1_VERSION = "coco-temporal-paper-split-v1"
@@ -39,7 +40,7 @@ def normalize_title(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
 
 
-def venue_year(record: Mapping[str, Any]) -> Tuple[str, str]:
+def venue_year(record: Mapping[str, Any]) -> tuple[str, str]:
     venue = str(
         record.get("venue")
         or record.get("conference")
@@ -47,9 +48,7 @@ def venue_year(record: Mapping[str, Any]) -> Tuple[str, str]:
         or ""
     ).strip()
     year = str(
-        record.get("year")
-        or (record.get("content") or {}).get("year")
-        or ""
+        record.get("year") or (record.get("content") or {}).get("year") or ""
     ).strip()
     if not year:
         match = re.search(r"(?:19|20)\d{2}", venue)
@@ -66,22 +65,17 @@ def venue_year(record: Mapping[str, Any]) -> Tuple[str, str]:
 def paper_review_cutoff(record: Mapping[str, Any]) -> str:
     """Return an explicit review-time cutoff, never an inferred current date."""
     metadata = record.get("metadata") or {}
-    value = record.get("paper_review_cutoff") or metadata.get(
-        "paper_review_cutoff"
-    )
+    value = record.get("paper_review_cutoff") or metadata.get("paper_review_cutoff")
     if value:
         return str(value)
     return ""
 
 
-def paper_identity(record: Mapping[str, Any]) -> Dict[str, str]:
+def paper_identity(record: Mapping[str, Any]) -> dict[str, str]:
     metadata = record.get("metadata") or {}
     content = record.get("content") or {}
     paper_id = str(
-        record.get("paper_id")
-        or record.get("id")
-        or metadata.get("paper_id")
-        or ""
+        record.get("paper_id") or record.get("id") or metadata.get("paper_id") or ""
     ).split("::", 1)[0]
     title = normalize_title(
         record.get("title")
@@ -103,7 +97,7 @@ def paper_identity(record: Mapping[str, Any]) -> Dict[str, str]:
 
 def audit_four_zone_isolation(
     zones: Mapping[str, Sequence[Mapping[str, Any]]],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Audit paper/title/family disjointness and chronological isolation."""
     unknown = set(zones) - set(FOUR_ZONES)
     if unknown:
@@ -117,18 +111,35 @@ def audit_four_zone_isolation(
         for right in FOUR_ZONES[index + 1 :]:
             left_values = identities.get(left, [])
             right_values = identities.get(right, [])
-            for field in ("paper_id", "normalized_title", "paper_family"):
+            for identity_field in (
+                "paper_id",
+                "normalized_title",
+                "paper_family",
+            ):
                 common = sorted(
-                    {value[field] for value in left_values if value[field]}
-                    & {value[field] for value in right_values if value[field]}
+                    {
+                        value[identity_field]
+                        for value in left_values
+                        if value[identity_field]
+                    }
+                    & {
+                        value[identity_field]
+                        for value in right_values
+                        if value[identity_field]
+                    }
                 )
                 if common:
                     overlaps.append(
-                        {"left": left, "right": right, "field": field, "values": common}
+                        {
+                            "left": left,
+                            "right": right,
+                            "field": identity_field,
+                            "values": common,
+                        }
                     )
     missing_cutoffs = []
     invalid_cutoffs = []
-    parsed_cutoffs: Dict[str, List[date]] = {zone: [] for zone in FOUR_ZONES}
+    parsed_cutoffs: dict[str, list[date]] = {zone: [] for zone in FOUR_ZONES}
     for zone in FOUR_ZONES:
         for record in zones.get(zone, []):
             cutoff = paper_review_cutoff(record)
@@ -185,7 +196,90 @@ def audit_four_zone_isolation(
     return report
 
 
-def load_temporal_split_manifest(path: str) -> Tuple[Dict[str, Any], Dict[str, List[Dict[str, Any]]]]:
+def audit_family_target_integrity(
+    summary: Mapping[str, Any],
+    zones: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Audit the persisted v2 family targets from their current content."""
+    targets = [(zone, record) for zone in FOUR_ZONES for record in zones.get(zone, ())]
+    paper_ids = [str(record.get("paper_id") or "") for _, record in targets]
+    family_ids = [str(record.get("family_id") or "") for _, record in targets]
+    accounted_source_ids: list[str] = []
+    malformed_targets = []
+    for zone, record in targets:
+        paper_id = str(record.get("paper_id") or "")
+        family_id = str(record.get("family_id") or "")
+        excluded = record.get("excluded_paper_ids")
+        valid = all(
+            (
+                bool(paper_id),
+                bool(family_id),
+                record.get("paper_family") == family_id,
+                record.get("representative_paper_id") == paper_id,
+                record.get("zone") == zone,
+                isinstance(excluded, list),
+                paper_id not in (excluded if isinstance(excluded, list) else ()),
+            )
+        )
+        if valid:
+            accounted_source_ids.extend([paper_id, *map(str, excluded)])
+        else:
+            malformed_targets.append(paper_id or f"{zone}:<missing-paper-id>")
+
+    duplicate_paper_ids = sorted(
+        value for value, count in Counter(paper_ids).items() if count > 1
+    )
+    duplicate_family_ids = sorted(
+        value for value, count in Counter(family_ids).items() if count > 1
+    )
+    duplicate_source_ids = sorted(
+        value for value, count in Counter(accounted_source_ids).items() if count > 1
+    )
+    target_count = len(targets)
+    source_record_count = int(summary.get("source_record_count", -1))
+    deduplicated_record_count = int(summary.get("deduplicated_record_count", -1))
+    family_index_count = int((summary.get("families") or {}).get("count", -1))
+    representative_audit = summary.get("representative_selection_audit") or {}
+    temporal_audit = audit_four_zone_isolation(zones)
+    report = {
+        "protocol": "persisted-family-target-integrity-v2",
+        "source_record_count": source_record_count,
+        "formal_target_count": target_count,
+        "family_index_count": family_index_count,
+        "deduplicated_record_count": deduplicated_record_count,
+        "accounted_source_record_count": len(accounted_source_ids),
+        "unique_accounted_source_record_count": len(set(accounted_source_ids)),
+        "duplicate_paper_ids": duplicate_paper_ids,
+        "duplicate_family_ids": duplicate_family_ids,
+        "duplicate_source_ids": duplicate_source_ids,
+        "malformed_targets": malformed_targets,
+        "zone_counts": temporal_audit["zone_counts"],
+        "cross_zone_isolation_passed": temporal_audit["passed"],
+        "representative_selection_passed": representative_audit.get("passed") is True,
+    }
+    report["passed"] = all(
+        (
+            summary.get("version") == TEMPORAL_SPLIT_VERSION,
+            summary.get("target_unit") == "one representative paper per paper family",
+            int(summary.get("unique_paper_family_count", -1)) == target_count,
+            int(summary.get("formal_target_count", -1)) == target_count,
+            family_index_count == target_count,
+            source_record_count == len(accounted_source_ids),
+            source_record_count == target_count + deduplicated_record_count,
+            len(set(paper_ids)) == target_count,
+            len(set(family_ids)) == target_count,
+            len(set(accounted_source_ids)) == source_record_count,
+            len(malformed_targets) == 0,
+            temporal_audit["passed"] is True,
+            representative_audit.get("passed") is True,
+        )
+    )
+    return report
+
+
+def load_temporal_split_manifest(
+    path: str,
+) -> tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]:
     """Load and checksum the four temporal target-zone manifests."""
     source = Path(path).expanduser().resolve()
     summary = json.loads(source.read_text(encoding="utf-8"))
@@ -193,7 +287,7 @@ def load_temporal_split_manifest(path: str) -> Tuple[Dict[str, Any], Dict[str, L
         raise ValueError(
             f"Unsupported temporal split protocol: {summary.get('version')!r}"
         )
-    zones: Dict[str, List[Dict[str, Any]]] = {}
+    zones: dict[str, list[dict[str, Any]]] = {}
     for zone in FOUR_ZONES:
         entry = (summary.get("zones") or {}).get(zone) or {}
         recorded = str(entry.get("path") or "")
@@ -285,8 +379,8 @@ def validate_asset_manifest(
     path: str,
     *,
     required_assets: Sequence[str] = (),
-    required_versions: Optional[Mapping[str, str]] = None,
-) -> Dict[str, Any]:
+    required_versions: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
     """Resolve every declared asset and fail closed on any identity mismatch."""
     source = Path(path).expanduser().resolve()
     payload = json.loads(source.read_text(encoding="utf-8"))
@@ -346,8 +440,8 @@ def resolve_asset_path(
     recorded_path: str,
     *,
     project_root: Path = PROJECT_ROOT,
-    external_roots: Optional[Mapping[str, str]] = None,
-) -> Tuple[Path, Optional[Dict[str, str]]]:
+    external_roots: Mapping[str, str] | None = None,
+) -> tuple[Path, dict[str, str] | None]:
     """Resolve project-relative/external paths and explicitly map legacy snapshots."""
     raw = str(recorded_path or "")
     if raw.startswith("external://"):
@@ -379,8 +473,8 @@ def resolve_asset_path(
 @dataclass
 class AssetManifest:
     project_root: Path = PROJECT_ROOT
-    external_roots: Dict[str, str] = field(default_factory=dict)
-    assets: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    external_roots: dict[str, str] = field(default_factory=dict)
+    assets: dict[str, dict[str, Any]] = field(default_factory=dict)
     version: str = ASSET_MANIFEST_VERSION
 
     def add_file(
@@ -390,7 +484,7 @@ class AssetManifest:
         *,
         split: str,
         asset_version: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         resolved, relation = resolve_asset_path(
             path,
             project_root=self.project_root,
@@ -417,7 +511,7 @@ class AssetManifest:
         self.assets[str(name)] = value
         return value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "manifest_version": self.version,
             "project_root": str(self.project_root.resolve()),

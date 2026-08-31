@@ -10,8 +10,9 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, Tuple
+from typing import Any
 
 
 def _sha256(path: Path) -> str:
@@ -29,9 +30,9 @@ def _load_module(name: str, path: Path):
 
 def load_official_coco_human_references(
     coco_root: str,
-    benchmark_records: Dict[str, Dict[str, Any]],
+    benchmark_records: dict[str, dict[str, Any]],
     benchmark_files: Iterable[Path],
-) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Any]]:
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Run CoCo's official ``load_human_review_data`` on selected papers.
 
     CoCo's shipped ``benchmark_left_out_human.jsonl`` already records the
@@ -55,7 +56,9 @@ def load_official_coco_human_references(
                 f"Required CoCoReviewBench reference artifact missing: {required}"
             )
 
-    resolved_benchmark_files = [Path(path).expanduser().resolve() for path in benchmark_files]
+    resolved_benchmark_files = [
+        Path(path).expanduser().resolve() for path in benchmark_files
+    ]
     for path in resolved_benchmark_files:
         if not path.is_file() or not path.is_relative_to(root):
             raise ValueError(f"Invalid CoCo benchmark source path: {path}")

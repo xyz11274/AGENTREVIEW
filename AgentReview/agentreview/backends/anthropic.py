@@ -1,8 +1,7 @@
-#AgentReview/agentreview/backends/anthropic.py
+# AgentReview/agentreview/backends/anthropic.py
 
 import os
 import re
-from typing import List
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -36,9 +35,9 @@ class Claude(IntelligenceBackend):
     def __init__(
         self, max_tokens: int = DEFAULT_MAX_TOKENS, model: str = DEFAULT_MODEL, **kwargs
     ):
-        assert (
-            is_anthropic_available
-        ), "anthropic package is not installed or the API key is not set"
+        assert is_anthropic_available, (
+            "anthropic package is not installed or the API key is not set"
+        )
         super().__init__(max_tokens=max_tokens, model=model, **kwargs)
 
         self.max_tokens = max_tokens
@@ -62,7 +61,7 @@ class Claude(IntelligenceBackend):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,

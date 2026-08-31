@@ -8,12 +8,11 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List
 
 from agentreview.reviewer_runtime.artifacts import iter_candidate_reviews
 from agentreview.reviewer_runtime.tasks import ALL_TASKS
-
 
 PROTOCOL_FILES = {
     "src/evaluation/_0_human_review.py": "311d878ce82f39145011bba8b4f5e9f4ce11674412757df1bc4025cbfcef6328",
@@ -52,7 +51,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_coco_protocol(coco_root: str, benchmark_files: Iterable[Path]) -> Dict:
+def verify_coco_protocol(coco_root: str, benchmark_files: Iterable[Path]) -> dict:
     root = Path(coco_root).expanduser().resolve()
     observed = {}
     for relative, expected in PROTOCOL_FILES.items():
@@ -73,9 +72,7 @@ def verify_coco_protocol(coco_root: str, benchmark_files: Iterable[Path]) -> Dic
             raise ValueError(f"Unpinned CoCo benchmark file: {path}")
         actual = _sha256(path)
         if actual != expected:
-            raise RuntimeError(
-                f"CoCo human-reference checksum mismatch: {path.name}"
-            )
+            raise RuntimeError(f"CoCo human-reference checksum mismatch: {path.name}")
         benchmark_observed[path.name] = actual
     head = "unknown"
     completed = subprocess.run(
@@ -96,7 +93,7 @@ def verify_coco_protocol(coco_root: str, benchmark_files: Iterable[Path]) -> Dic
 
 def candidate_rows(
     candidate_path: str, task_id: str, run_identity: str = ""
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     selected = [
         value
         for value in iter_candidate_reviews(candidate_path)
@@ -115,19 +112,16 @@ def candidate_rows(
             "CoCo requires one review per paper after task/run filtering; "
             f"duplicates={duplicates[:20]}"
         )
-    return [
-        {"id": value.paper_id, "text": value.review_text}
-        for value in selected
-    ]
+    return [{"id": value.paper_id, "text": value.review_text} for value in selected]
 
 
-def _write_jsonl(path: Path, values: Iterable[Dict]) -> None:
+def _write_jsonl(path: Path, values: Iterable[dict]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for value in values:
             handle.write(json.dumps(value, ensure_ascii=False) + "\n")
 
 
-def _benchmark_paths(args, root: Path) -> List[Path]:
+def _benchmark_paths(args, root: Path) -> list[Path]:
     names = args.benchmark_file or list(BENCHMARK_FILES)
     paths = []
     for value in names:
@@ -141,7 +135,7 @@ def _benchmark_paths(args, root: Path) -> List[Path]:
     return paths
 
 
-def _run(command: List[str], *, cwd: Path) -> None:
+def _run(command: list[str], *, cwd: Path) -> None:
     subprocess.run(command, cwd=str(cwd), env=os.environ.copy(), check=True)
 
 

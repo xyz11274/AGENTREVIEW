@@ -1,11 +1,10 @@
-#AgentReview/agentreview/backends/openai.py
+# AgentReview/agentreview/backends/openai.py
 
 import os
 import random
 import re
 import threading
 import time
-from typing import List
 
 import httpx
 from openai import (
@@ -16,10 +15,10 @@ from openai import (
     RateLimitError,
 )
 
-from agentreview.arguments import parse_args
 from agentreview.utility.authentication_utils import get_openai_client
-from .base import IntelligenceBackend
+
 from ..message import SYSTEM_NAME, Message
+from .base import IntelligenceBackend
 
 # Default config follows the OpenAI playground
 DEFAULT_TEMPERATURE = 1.0
@@ -125,22 +124,22 @@ class OpenAIChat(IntelligenceBackend):
     type_name = "openai-chat"
 
     def __init__(
-            self,
-            temperature: float = DEFAULT_TEMPERATURE,
-            max_tokens: int = DEFAULT_MAX_TOKENS,
-            model: str = DEFAULT_MODEL,
-            merge_other_agents_as_one_user: bool = True,
-            request_timeout_seconds: float = 600.0,
-            connect_timeout_seconds: float = 30.0,
-            read_timeout_seconds: float = 600.0,
-            write_timeout_seconds: float = 60.0,
-            pool_timeout_seconds: float = 30.0,
-            api_max_retries: int = 2,
-            reasoning_effort: str = None,
-            reasoning_effort_supported: bool = False,
-            retry_max_tokens: int = None,
-            openai_base_url: str = None,
-            **kwargs,
+        self,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        model: str = DEFAULT_MODEL,
+        merge_other_agents_as_one_user: bool = True,
+        request_timeout_seconds: float = 600.0,
+        connect_timeout_seconds: float = 30.0,
+        read_timeout_seconds: float = 600.0,
+        write_timeout_seconds: float = 60.0,
+        pool_timeout_seconds: float = 30.0,
+        api_max_retries: int = 2,
+        reasoning_effort: str | None = None,
+        reasoning_effort_supported: bool = False,
+        retry_max_tokens: int | None = None,
+        openai_base_url: str | None = None,
+        **kwargs,
     ):
         """
         Instantiate the OpenAIChat backend.
@@ -173,7 +172,9 @@ class OpenAIChat(IntelligenceBackend):
         self.max_tokens = max_tokens
         self.model = model
         self.merge_other_agent_as_user = merge_other_agents_as_one_user
-        self.min_interval_seconds = float(os.environ.get("AGENTREVIEW_API_MIN_INTERVAL_SECONDS", "2.0"))
+        self.min_interval_seconds = float(
+            os.environ.get("AGENTREVIEW_API_MIN_INTERVAL_SECONDS", "2.0")
+        )
         self.request_timeout_seconds = max(1.0, float(request_timeout_seconds))
         self.connect_timeout_seconds = max(1.0, float(connect_timeout_seconds))
         self.read_timeout_seconds = max(1.0, float(read_timeout_seconds))
@@ -225,9 +226,7 @@ class OpenAIChat(IntelligenceBackend):
             "model": self.model,
             "messages": messages,
             "temperature": self.temperature,
-            "timeout": getattr(
-                self, "request_timeout", self.request_timeout_seconds
-            ),
+            "timeout": getattr(self, "request_timeout", self.request_timeout_seconds),
         }
         if self._is_reasoning_model():
             kwargs["max_completion_tokens"] = output_tokens
@@ -242,9 +241,7 @@ class OpenAIChat(IntelligenceBackend):
         if active_effort and getattr(self, "reasoning_effort_supported", False):
             kwargs["reasoning_effort"] = active_effort
         if chat_template_kwargs:
-            kwargs["extra_body"] = {
-                "chat_template_kwargs": dict(chat_template_kwargs)
-            }
+            kwargs["extra_body"] = {"chat_template_kwargs": dict(chat_template_kwargs)}
         return kwargs
 
     def _create_completion(self, kwargs, agent_name):
@@ -286,7 +283,7 @@ class OpenAIChat(IntelligenceBackend):
             except retryable as exc:
                 if attempt >= max_attempts:
                     raise
-                wait_seconds = min(20.0, max(2.0, 2.0 ** attempt)) * random.uniform(
+                wait_seconds = min(20.0, max(2.0, 2.0**attempt)) * random.uniform(
                     0.75, 1.25
                 )
                 _log_retry(
@@ -323,9 +320,7 @@ class OpenAIChat(IntelligenceBackend):
             "response_id": getattr(completion, "id", None),
             "refusal": refusal,
             "reasoning_content_chars": (
-                len(reasoning_content)
-                if isinstance(reasoning_content, str)
-                else 0
+                len(reasoning_content) if isinstance(reasoning_content, str) else 0
             ),
             "reasoning_chars": len(reasoning) if isinstance(reasoning, str) else 0,
             "requested_tokens": requested_tokens,
@@ -425,9 +420,7 @@ class OpenAIChat(IntelligenceBackend):
             try:
                 response_options = {}
                 if chat_template_kwargs:
-                    response_options["chat_template_kwargs"] = (
-                        chat_template_kwargs
-                    )
+                    response_options["chat_template_kwargs"] = chat_template_kwargs
                 response = self._get_response(
                     messages,
                     agent_name,
@@ -530,14 +523,14 @@ class OpenAIChat(IntelligenceBackend):
         return response
 
     def query(
-            self,
-            agent_name: str,
-            role_desc: str,
-            history_messages: List[Message],
-            global_prompt: str = None,
-            request_msg: Message = None,
-            *args,
-            **kwargs,
+        self,
+        agent_name: str,
+        role_desc: str,
+        history_messages: list[Message],
+        global_prompt: str | None = None,
+        request_msg: Message | None = None,
+        *args,
+        **kwargs,
     ) -> str:
         """
         Format the input and call the ChatGPT/GPT-4 API.
@@ -574,7 +567,7 @@ class OpenAIChat(IntelligenceBackend):
         for i, msg in enumerate(all_messages):
             if i == 0:
                 assert (
-                        msg[0] == SYSTEM_NAME
+                    msg[0] == SYSTEM_NAME
                 )  # The first message should be from the system
                 messages.append({"role": "system", "content": msg[1]})
             else:
@@ -583,15 +576,15 @@ class OpenAIChat(IntelligenceBackend):
                 else:
                     if messages[-1]["role"] == "user":  # last message is from user
                         if self.merge_other_agent_as_user:
-                            messages[-1][
-                                "content"
-                            ] = f"{messages[-1]['content']}\n\n[{msg[0]}]: {msg[1]}"
+                            messages[-1]["content"] = (
+                                f"{messages[-1]['content']}\n\n[{msg[0]}]: {msg[1]}"
+                            )
                         else:
                             messages.append(
                                 {"role": "user", "content": f"[{msg[0]}]: {msg[1]}"}
                             )
                     elif (
-                            messages[-1]["role"] == "assistant"
+                        messages[-1]["role"] == "assistant"
                     ):  # consecutive assistant messages
                         # Merge the assistant messages
                         messages[-1]["content"] = f"{messages[-1]['content']}\n{msg[1]}"
@@ -605,10 +598,8 @@ class OpenAIChat(IntelligenceBackend):
         response = self._get_response_for_agent(agent_name, messages)
 
         # Remove the agent name if the response starts with it
-        response = re.sub(rf"^\s*\[.*]:", "", response).strip()  # noqa: F541
-        response = re.sub(
-            rf"^\s*{re.escape(agent_name)}\s*:", "", response
-        ).strip()  # noqa: F451
+        response = re.sub(r"^\s*\[.*]:", "", response).strip()
+        response = re.sub(rf"^\s*{re.escape(agent_name)}\s*:", "", response).strip()
 
         # Remove the tailing end of message token
         response = re.sub(rf"{END_OF_MESSAGE}$", "", response).strip()

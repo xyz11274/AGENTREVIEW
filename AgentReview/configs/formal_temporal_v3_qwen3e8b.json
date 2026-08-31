@@ -25,7 +25,7 @@
     },
     "frozen_s2_pool_manifest": {
       "path": "configs/frozen_s2_temporal_v2.jsonl.manifest.json",
-      "sha256": "559fa1ec2961ed911f3f48f9afb4aef6ca494eafd1b5d440cfab11a53b75b03e",
+      "sha256": "d9aa83668084a28627201e0d8bc77df05f51f14d941ff7908c530dc5fd7f7a42",
       "version": "frozen-s2-temporal-v2"
     }
   },

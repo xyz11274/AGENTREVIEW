@@ -1,31 +1,15 @@
-"""Stable reviewer task identities shared by every optimizer."""
+"""Stable reviewer task identities shared by every execution surface."""
 
-from typing import Tuple
-
-from agentreview.single_paper_review_roles import (
-    EXPECTED_REVIEW_REQUEST_SHA256,
-    REVIEWER_SPECS,
+from agentreview.reviewer_identity import (
+    ALL_TASKS,
+    META_TASK,
+    SPECIALIST_TASKS,
+    load_reviewer_suite,
 )
 
-
-SPECIALIST_TASKS: Tuple[str, ...] = ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
-META_TASK = "META"
-ALL_TASKS: Tuple[str, ...] = SPECIALIST_TASKS + (META_TASK,)
+__all__ = ["ALL_TASKS", "META_TASK", "SPECIALIST_TASKS", "reviewer_identity"]
 
 
 def reviewer_identity(task_id: str) -> dict:
-    """Return the immutable identity of one fixed AgentReview reviewer."""
-    if task_id == META_TASK:
-        return {
-            "name": "Final Meta-Reviewer",
-            "task_id": META_TASK,
-            "rubric_sha256": EXPECTED_REVIEW_REQUEST_SHA256,
-        }
-    for spec in REVIEWER_SPECS:
-        if spec["dimension"] == task_id:
-            return {
-                "name": spec["name"],
-                "task_id": task_id,
-                "rubric_sha256": EXPECTED_REVIEW_REQUEST_SHA256,
-            }
-    raise ValueError(f"Unknown review task: {task_id}")
+    """Return one task's prompt identity plus the composite suite identity."""
+    return load_reviewer_suite().identity(task_id)

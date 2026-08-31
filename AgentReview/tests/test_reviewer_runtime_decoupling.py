@@ -7,12 +7,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from agentreview.cli import run_review
-from agentreview.reviewer_runtime import ReviewRequest, ReviewerEngine
+from agentreview.reviewer_runtime import ReviewerEngine, ReviewRequest
 from agentreview.reviewer_runtime.artifacts import (
     CandidateReviewRecord,
     CandidateReviewWriter,
 )
 from agentreview.reviewer_runtime.task_agent import build_task_agent
+from agentreview.reviewer_runtime.tasks import reviewer_identity
 from agentreview.reviewer_runtime.toolkit import MemoryToolkit
 from memory_evolution.evaluator import evaluate_program
 from memory_evolution.metrics import exact_match
@@ -25,12 +26,18 @@ class DeterministicReviewerLLM:
         if "KnowledgeItem must conform" in prompt:
             schema = json.loads(prompt.split("schema:\n", 1)[1].split("\n\n", 1)[0])
             return json.dumps(
-                {name: "QUAL" if "dimension" in name else "memory" for name in schema["properties"]}
+                {
+                    name: "QUAL" if "dimension" in name else "memory"
+                    for name in schema["properties"]
+                }
             )
         if "Query must conform" in prompt:
             schema = json.loads(prompt.split("schema:\n", 1)[1].split("\n\n", 1)[0])
             return json.dumps(
-                {name: "QUAL" if "dimension" in name else "paper" for name in schema["properties"]}
+                {
+                    name: "QUAL" if "dimension" in name else "paper"
+                    for name in schema["properties"]
+                }
             )
         if "Provide the final answer only" in prompt:
             return "deterministic candidate review"
@@ -69,16 +76,19 @@ class ReviewerRuntimeDecouplingTest(unittest.TestCase):
         self.assertEqual(result.memory_program_identity["source_kind"], "seed")
 
     def test_existing_best_program_reviewer_only(self):
-        result = self._engine().review(
-            self._request(), self.root / "runs/pilot_suite/QUAL/best_program.py"
-        )
+        seed_program = self.root / "memory_evolution/seeds/vector_search.py"
+        with tempfile.TemporaryDirectory() as directory:
+            promoted_program = Path(directory) / "QUAL" / "best_program.py"
+            promoted_program.parent.mkdir(parents=True)
+            promoted_program.write_bytes(seed_program.read_bytes())
+            result = self._engine().review(self._request(), promoted_program)
         self.assertEqual(result.review_text, "deterministic candidate review")
         self.assertEqual(
             result.memory_program_identity["source_kind"], "promoted_best_program"
         )
 
     def test_future_optimizer_program_runs_without_optimizer_metadata(self):
-        source = '''
+        source = """
 from dataclasses import dataclass
 INSTRUCTION_KNOWLEDGE_ITEM = "remember"
 INSTRUCTION_QUERY = "query"
@@ -94,7 +104,7 @@ class KnowledgeBase:
     def __init__(self, toolkit): self.values = []
     def write(self, item, raw_text): self.values.append(raw_text)
     def read(self, query): return "\\n".join(self.values)[:3000]
-'''.lstrip()
+""".lstrip()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "future_optimizer_output.py"
             path.write_text(source, encoding="utf-8")
@@ -131,7 +141,13 @@ class KnowledgeBase:
         evaluation = evaluate_program(
             str(program),
             [],
-            [EvalItem(id="paper-1::QUAL", question=self._request().question, answer="deterministic candidate review")],
+            [
+                EvalItem(
+                    id="paper-1::QUAL",
+                    question=self._request().question,
+                    answer="deterministic candidate review",
+                )
+            ],
             build_task_agent(old_toolkit, "QUAL"),
             old_toolkit,
             exact_match,
@@ -148,7 +164,7 @@ class KnowledgeBase:
                 paper_id="paper-1",
                 task_id="META",
                 review_text="review",
-                reviewer_identity={"name": "Final Meta-Reviewer", "task_id": "META"},
+                reviewer_identity=reviewer_identity("META"),
                 memory_program_identity={
                     "logical_identity": "future",
                     "source_kind": "optimizer_output",

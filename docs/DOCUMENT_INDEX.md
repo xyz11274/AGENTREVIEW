@@ -1,82 +1,74 @@
-# 文档索引与新旧判定（2026-08-25）
+# AgentReview 现行文档索引
 
-> 目的：`AgentReview_0811` 路径下 md 文档较多且新旧混杂，本文给出每份文档的分类与可信度判定，作为「读哪份」的入口。
-> 判定基准：git HEAD `0f79eaf`（2026-08-25）与代码实测，并反映 2026-08-25 的文档归位移动（`AgentReview/docs/*.md` 六份已并入本目录）。
-> **代码架构的现行权威**：[AgentReview_Mstar_代码全览导读_20260825.md](AgentReview_Mstar_代码全览导读_20260825.md)。
+本文列出代码仓当前保留的说明文件、各自所有权和更新规则。代码、测试与 versioned manifest 提供运行事实；说明文件把这些事实组织为可阅读的系统契约。
 
-## 阅读顺序建议
+## 阅读顺序
 
-1. [待阅读md/CONTEXT.md](待阅读md/CONTEXT.md) -- 术语与系统主张（先读；注意其中两处待改，见下表）
-2. [AgentReview_Mstar_代码全览导读_20260825.md](AgentReview_Mstar_代码全览导读_20260825.md) -- 代码架构（现行权威）
-3. [adr/0005](adr/0005-frozen-identity-evolvable-harness-outermost-benchmark.md)、[adr/0006](adr/0006-data-protocol-four-zones.md)、[adr/0007](adr/0007-evolution-semantics-fresh-state-lineage-budget.md) -- 三份现行核心决策
-4. [待阅读md/AGENTS.md](待阅读md/AGENTS.md) + [memory_evolution.md](memory_evolution.md) -- 仓库契约与进化规范
-5. [LOCAL_QWEN_OPENAI_ALIGNMENT.md](LOCAL_QWEN_OPENAI_ALIGNMENT.md) -- 最新运行指引（本地 qwen3.8 + Qwen3-Embedding 正式 run 必读）
-6. [REVIEWER_EVOLUTION_DECOUPLING_20260824.md](REVIEWER_EVOLUTION_DECOUPLING_20260824.md) -- 08-24 解耦后的依赖方向与公共 API
+1. [`AgentReview/README.md`](../AgentReview/README.md)：安装、入口、运行状态与常用命令。
+2. [`ARCHITECTURE.md`](ARCHITECTURE.md)：完整模块边界、执行流、数据流、产物与接口状态。
+3. [`CONTEXT.md`](../CONTEXT.md)：Reviewer、MemoryProgram、Evolution、四区数据与评测术语。
+4. [`adr/`](adr/)：当前架构决策及其约束。
+5. 组件 README：Seed Programs 与 Evolution Viewer 的局部使用说明。
 
-## 分类清单
+## 核心说明文件
 
-### A. 仍然权威（以最新版本为准）
+| File | Ownership | Update trigger |
+|---|---|---|
+| `AgentReview/README.md` | 用户入口、依赖、三条执行面、当前资产状态 | CLI、安装方式、运行状态或主要命令变化 |
+| `docs/ARCHITECTURE.md` | 全仓模块、Interface、Implementation、Seam、Adapter、数据流和产物 | 模块边界、运行协议、入口或正式流程变化 |
+| `CONTEXT.md` | 当前领域词汇及精确定义 | 代码引入、重命名或改变领域概念 |
+| `docs/DOCUMENT_INDEX.md` | 说明文件集合和所有权 | 新增、移动、合并或删除说明文件 |
 
-| 文档 | 性质 |
+## 冻结规范与组件说明
+
+| File | Ownership | Status |
+|---|---|---|
+| `AgentReview/REVIEW_Request.md` | 五 Specialist 与 META 的 Frozen Reviewer Identity 内容源 | `reviewer_identity.py` 解析六个有序章节；`frozen_reviewer_identity_v2.json` 固化 source、task、Specialist/META request template 与 suite SHA256 |
+| `AgentReview/memory_evolution/seeds/README.md` | 三个 Seed Program 的设计与区别 | 与 `seeds/*.py` 同步 |
+| `AgentReview/evolution_viewer/README.md` | Evolution Viewer 参数、数据源和管理命令 | 与 `evolution_viewer/app.py`、`manage.sh` 同步 |
+| `AgentReview/LICENSE` | 项目许可证 | 法律文件 |
+
+## 现行架构决策
+
+| ADR | Decision |
 |---|---|
-| `AgentReview_Mstar_代码全览导读_20260825.md` | 代码架构现行权威（基准 0f79eaf） |
-| `待阅读md/CONTEXT.md` | 统一语言表 / 术语权威（🟡 两处待改，见 B 表） |
-| `adr/0003` | 路径纪律与 Asset Manifest |
-| `adr/0005` | 系统边界唯一权威（supersede 0001/0002 的过时部分） |
-| `adr/0006` | 四区数据协议：A/B/C/D = 2391/299/300/899 |
-| `adr/0007` | 进化语义（fresh-state、lineage、21 迭代预算） |
-| `待阅读md/AGENTS.md` | 仓库地图与不变量契约（不变量逐项核对通过，已含 Qwen3 表述） |
-| `AgentReview/REVIEW_Request.md` | 五维度 23 子类 rubric（不可变冻结资产，SHA `609eb930…7be42` 运行时校验，**不得移动/修改**） |
-| `memory_evolution.md` | M★ 复现契约（搜索协议/产物布局/数据隔离）（🟡 未反映解耦，见 B 表） |
-| `DEPRECATED.md` | 已废弃代码注册表（活文档）（🟡 需补解耦条目，见 B 表） |
-| `LOCAL_QWEN_OPENAI_ALIGNMENT.md` | 本地 qwen3.8-27b-fp8 双 replica + Qwen3-Embedding 正式运行手册（逐项核对通过） |
-| `REVIEWER_EVOLUTION_DECOUPLING_20260824.md` | Reviewer Core 解耦设计（与 HEAD 逐项核对全部通过） |
-| `effectiveness_screening.md` | 冻结三臂筛选预注册手册（模块/参数/judge 配置逐项通过） |
-| `AgentReview/evolution_viewer/README.md` | 进化查看器使用说明 |
-| `待阅读md/GROUP_MEETING_REPORT.md` | 历史归档（自带横幅，定位正确） |
-| `adr/0001`、`adr/0002` | 已被 0005 部分取代（文档内已声明），决策沿革 |
+| [`0003`](adr/0003-path-discipline-and-asset-manifest.md) | 项目相对路径、显式外部根与 hash-bound Asset Manifest |
+| [`0004`](adr/0004-proxy-vs-official-evaluation.md) | Evolution fitness、C 区 proxy、密封 D 测量与 official CoCo 分层 |
+| [`0005`](adr/0005-frozen-identity-evolvable-harness-outermost-benchmark.md) | Frozen Reviewer Identity、可演化 Memory Harness 与外置 Benchmark |
+| [`0006`](adr/0006-data-protocol-four-zones.md) | family-deduplicated temporal v2 和 A/B/C/D 四区协议 |
+| [`0007`](adr/0007-evolution-semantics-fresh-state-lineage-budget.md) | fresh-state replay、全局候选池、lineage provenance 与 20-attempt 预算 |
 
-### B. 基本权威、局部滞后（仍可用，读时注意）
+## 配置与 manifest
 
-| 文档 | 滞后点 |
+以下 JSON/JSONL 文件属于机器可读运行契约，由代码校验。架构文档引用其状态，具体身份以文件内容和 SHA256 为准：
+
+| Asset | Role |
 |---|---|
-| `待阅读md/CONTEXT.md` | ①「Human Reference Boundary 已知违反待修复」应改**已修复（2026-08-17）**，仅旧 run 产物保留历史分析身份；②「Evolution Validation 300 篇」应为 **299**（与同文 Source Pool 条目 2391/299/300/899 自相矛盾） |
-| `待阅读md/AGENTS.md` | M★ source 一节仍把 sandbox/task_agent 等指向 memory_evolution（现为 shim），真实实现在 `agentreview/reviewer_runtime/` |
-| `memory_evolution.md` | 未反映 08-24 解耦：`candidate_reviews.jsonl`、`agentreview.cli review`、`agentreview.coco_eval`、MSTAR->Reviewer Core 依赖方向均未提及；12705 行缓存现为 gitignored 本地资产 |
-| `DEPRECATED.md` | 需补：①七模块已迁 `agentreview/reviewer_runtime/`（旧位 3 行 shim，非死代码）；②`--memory_mode` 默认已定 `none`（`arguments.py:178`，待决已闭环）；③ embedding 主路线 BGE-M3->Qwen3-Embedding-8B 的语境 |
-| `TODO.md` | 多项已完成未回填：S2 v2 池（3889 行）、split v2 冻结、canonical bundles（`data/evolution_coco_v2_20260819`）；`runs/formal_qual_seed0_20260825` 进行中未登记；qwen3/缓存修复/解耦未登记 |
-| `RUN_AUDIT_20260818.md` | 已修：B1、D-2、D-3（加 lineage 预算）、F-1、F-3（强化）、QUAL_test.sh 硬编码 key；未修：H1、M1、M3-M5、L1-L6、F-2、F-4、S-1、S-2、D-1；B2 机制仍在但语境过时。§2.1 运行指令基于旧 run.sh，仅作历史记录 |
-| `adr/0004` | 「D manifest 900 篇」应为 899（split v2 manifest 实测） |
-| `ENVIRONMENT_AUDIT.md` | 核心结论仍有效（requirements-runtime.txt 未变）；行号/文件位置漂移（sandbox 实现在 reviewer_runtime；.py 计数 245->291；缺 reviewer_runtime 新包） |
-| `AgentReview/README.md` | 命令/参数全部有效；缺解耦后的新入口（`agentreview.cli review` / `coco_eval` / `candidate_reviews.jsonl`）；引用的 cache 文件已 gitignored |
-| `待阅读md/CODEBASE_ONBOARDING_ANALYSIS.md` | 三份长分析中基准最新（2026-08-24 / `cc1007f`），值得保留；但写于解耦前（0 次提及 reviewer_runtime），行数/位置描述现指 shim；移动后相对路径失效 |
-| `20260820_ppt/PPT_PROJECT_CONTEXT.md` | 08-20 PPT 配套快照：三处路径死链（CONTEXT.md / 全景解析 / CLOUD_FORMAL 均已移动）；BGE-M3、kimi-k3、formal_ready=false、D-3 等表述已被 08-22~25 进展超越；与 pptx 配套保留 |
+| `AgentReview/configs/frozen_reviewer_identity_v2.json` | Reviewer Identity version、source SHA、六个 task prompt SHA、Specialist/META request protocol/template 与 suite SHA |
+| `AgentReview/configs/asset_manifest_v2.json` | Frozen Reviewer Identity、temporal v2、Frozen S2 v2、Seed Program 与 embedding 身份 |
+| `AgentReview/configs/formal_temporal_v3_qwen3e8b.json` | 正式 Qwen3 embedding 实验身份与 selection 资产状态 |
+| `AgentReview/configs/coco_temporal_split_v2/manifest.json` | 3900 records、3889 families 与 A/B/C/D 冻结分配 |
+| `AgentReview/configs/frozen_s2_temporal_v2.jsonl.manifest.json` | Frozen S2 v2 覆盖、查询、时间与内容审计 |
+| `AgentReview/cache/qwen3_embedding_8b_cache.audit.json` | 12,705 个 4096 维 selection vectors、模型 fingerprint 与截断审计 |
+| `AgentReview/configs/effectiveness_screening_v2.json` | C 区筛选设计、arm schema、阈值与激活条件 |
 
-### C. 已过时 / 被取代（勿作现行依据）
+这些文件保留自身的版本化 provenance 字段。历史比较字段表达当前资产的生成来源。
 
-| 文档 | 说明 |
-|---|---|
-| `AgentReview M★ 代码架构全景解析.md`（顶层 245 行） | ⚠️ 0f79eaf 复活的 **0811-0812 旧版**（内容 = 98bb5ce），正是 08-20 版开头明令「请勿引用」的那份旧文，且无任何版本标注、通篇 vscode-webview 死链。**建议删除或移入待阅读区加横幅**。现行权威见 0825 导读 |
-| `AGENTREVIEW_架构解读.md`（顶层 179 行） | 08-12 快照的**无横幅裸拷贝**（待阅读md 里的同内容版本带「已被取代」横幅）；`--memory_mode` 默认值等主张过时，链接全死。建议删除或补横幅 |
-| `AgentReview0811架构.md`（141 行） | 0811-0812 时代分析：行数/子命令数（7 vs 实际 9）/三臂口径（`seed_experience` 臂名已禁用）/judge 模型（gpt-5-mini）全滞后，链接指向 0722。建议归档 |
-| `待阅读md/AgentReview M★ 代码架构全景解析.md`（293 行） | 08-20 版（基准 7256ffc），沿革参考中相对最可用；滞后：kimi->qwen3.8-27b-fp8、BGE-M3->Qwen3、CLI 2135->2200 行、七模块成 shim、缺 reviewer_runtime 等新模块、B1 与硬编码 key 已修。已被 0825 导读取代 |
-| `待阅读md/AGENTREVIEW_架构解读.md`（181 行） | 同顶层版内容但带取代横幅，定位正确，仅沿革参考 |
-| `CLOUD_FORMAL_ALIGNMENT_20260820.md` | ❌ 作为操作手册已过时，被 `LOCAL_QWEN_OPENAI_ALIGNMENT.md` 取代（运行时已从 Kimi+BGE 切到本地 qwen3.8+Qwen3）；其第 7/8/9 节命令会被当前 formal 门拒绝。**仍有效部分**：冻结资产哈希实测全部匹配、D-3 无限 retry 风险提示、CoCo 严格 commit 检查说明 |
+## 数据类 Markdown
 
-### 已废弃路线（文档层面，勿再引用）
+当前受版本控制的 Markdown 论文输入按数据资产管理：
 
-- Frozen Library Route：`frozen_memory_library.jsonl` -> 二次加工（违反 Self-Generated Experience，见 ADR-0005 / DEPRECATED.md）
-- `seed_experience` 臂名（CONTEXT.md 禁用；现用三条 lineage 名）
-- `coco_temporal_split_v1` 与「venue-year 全量 benchmark_reserved」规则（ADR-0006 禁止进入新 formal run）
-- `runs/pilot_full_iter5_202607300117` 产物（违反 Human Reference Boundary，仅历史分析用）
-- BGE-M3 作为正式 embedding（82c8c60 起正式轨道为 Qwen3-Embedding-8B；`BgeM3Embedding` 代码保留）
+- `AgentReview/test_data/**/md_content.md`
+- `AgentReview/test_data/**/md_content_no_appendix.md`
+- `AgentReview/papers_eval20/ICLR2024_*/md_content.md`
 
-## 数据类 md（不属于文档，盘点时排除）
+它们的内容进入 smoke/test paper identity、受控评测输入与 context bundle。Effectiveness `prepare.py` 在激活后生成 `paper_context/<split>/<paper_id>/paper.md` 运行数据。更新受版本控制的输入需要同步对应 hash 和测试预期。
 
-`AgentReview/test_data/`、`AgentReview/papers_eval20/`、`AgentReview/data/**/paper.md` 下的 `md_content*.md` / `paper.md` 均为论文语料/实验输入，不是项目文档；`docs/整理/`（qual_prompt、拼接后的review）为实验材料，同样不是说明文档。
+## 文档维护规则
 
-## 2026-08-25 文档归位记录
-
-- `AgentReview/docs/` 六份（CLOUD_FORMAL_ALIGNMENT、effectiveness_screening、ENVIRONMENT_AUDIT、LOCAL_QWEN_OPENAI_ALIGNMENT、memory_evolution、REVIEWER_EVOLUTION_DECOUPLING）已 `git mv` 至本目录；`AgentReview/README.md` 相关链接已同步修复。
-- 原仓库根 `CONTEXT.md`、`AgentReview/AGENTS.md` 等已于 0f79eaf 移入 `docs/待阅读md/`（本文路径已按新位置书写）。
-- 不移动项：`AgentReview/REVIEW_Request.md`（SHA 运行时校验）、`AgentReview/README.md`（仓库入口）、`AgentReview/evolution_viewer/README.md`（组件自带）、`AgentReview/configs/configs_README.md`（0 字节占位）。
+- 每个主题由上表指定的一份说明文件负责。
+- 架构事实变化时，同一变更同步源码、测试、manifest 与权威说明。
+- ADR 记录仍然生效的决策；新决策完整替换原决策时，仓库保留一份现行 ADR。
+- 动态运行状态写入 run artifact、checkpoint 与 machine-readable report。
+- 临时调查、会议快照、拼接 prompt、运行日志和生成报告存放在外部工作区或正式归档。
+- 说明文件使用项目相对路径和稳定入口名称。

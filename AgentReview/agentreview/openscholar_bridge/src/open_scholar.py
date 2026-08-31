@@ -24,7 +24,7 @@ price_per_million_output = {"gpt-4o": 10.00, "gpt-4o-2024-08-06": 10.00,  "gpt-4
 def calculate_openai_api_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
     """
     Calculate OpenAI API cost based on the number of input and output tokens.
-    
+
     Args:
     - input_tokens (int): Number of tokens in the input.
     - output_tokens (int): Estimated number of tokens in the output.
@@ -39,15 +39,15 @@ def calculate_openai_api_cost(input_tokens: int, output_tokens: int, model_name:
     return round(total_cost, 6)
 
 def remove_citations(sent):
-    return re.sub(r"\[\d+", "", re.sub(r" \[\d+", "", sent)).replace(" |", "").replace("]", "")
-    
+    return re.sub(r"\\[\\d+", "", re.sub(r" \\[\\d+", "", sent)).replace(" |", "").replace("]", "")
+
 def rerank_paragraphs_bge(query, paragraphs, reranker, norm_cite=False, start_index=0, use_abstract=False):
     paragraphs = [p for p in paragraphs if p["text"] is not None]
     if use_abstract is True:
         paragraph_texts = [p["title"] + "\n" + p["abstract"] + "\n" + p["text"] if "title" in p and "abstract" in p else p["text"] for p in paragraphs]
     else:
         paragraph_texts = [p["title"] + " " + p["text"] if "title" in p and p["title"] is not None else p["text"] for p in paragraphs]
-    
+
     print(paragraph_texts[0])
     scores = reranker.compute_score([[query, p] for p in paragraph_texts], batch_size=100)
     if type(scores) is float:
@@ -101,7 +101,7 @@ def load_hf_tokenizer(
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
         return tokenizer
-   
+
 class OpenScholar(object):
     def __init__(self, model, tokenizer, client=None, api_model_name=None, use_contexts=True, top_n=8, reranker=None, min_citation=None, norm_cite=False, ss_retriever=False):
         self.model = model
@@ -118,7 +118,7 @@ class OpenScholar(object):
 
     # Reranking: We rerank passages based on the LMs' predictions on how useful passages are.
     def process_ranking_results(self, result):
-        ratings = {int(match.group(1)): int(match.group(2)) for match in re.finditer(r'\[(\d+)\] Rating: (\d)', result)}
+        ratings = {int(match.group(1)): int(match.group(2)) for match in re.finditer(r'\\[(\\d+)\\] Rating: (\\d)', result)}
         return ratings
 
     def reranking_passages_cross_encoder2(self, item, batch_size=5, llama3_chat=False, task_name="default", use_abstract=False):
@@ -131,30 +131,30 @@ class OpenScholar(object):
         # 使用BGE模型进行重排序
         reranked_contexts, sorted_results, id_mapping = rerank_paragraphs_bge(item["input"], item["ctxs"], self.reranker, norm_cite=self.norm_cite, use_abstract=use_abstract)
         return reranked_contexts, sorted_results, id_mapping
-    
+
     def reranking_passages_cross_encoder(self, item, batch_size=5, llama3_chat=False, task_name="default", use_abstract=False):
         # 分离title搜索和keyword搜索的论文
         title_papers = [p for p in item["ctxs"] if p.get("title_query", False)]
         keyword_papers = [p for p in item["ctxs"] if not p.get("title_query", False)]
         # 只对keyword搜索的论文应用引用数过滤
         if self.min_citation is not None:
-            keyword_papers = [p for p in keyword_papers 
+            keyword_papers = [p for p in keyword_papers
                             if "citation_counts" in p and p["citation_counts"] >= self.min_citation]
 
         # 合并论文列表，title搜索的论文放在前面
         filtered_papers = title_papers + keyword_papers
-        
+
        # 使用BGE模型进行重排序，但仅对非title搜索的论文重排序
         if filtered_papers:
             # 对所有论文进行排序以获取分数
             reranked_contexts, sorted_results, id_mapping = rerank_paragraphs_bge(
-                item["input"], 
+                item["input"],
                 filtered_papers,
-                self.reranker, 
-                norm_cite=self.norm_cite, 
+                self.reranker,
+                norm_cite=self.norm_cite,
                 use_abstract=use_abstract
             )
-            
+
             # 重新组织结果，确保title论文在前面
             final_contexts = title_papers.copy()  # 首先添加所有title论文
             # 从重排序结果中添加非title论文，直到达到top_n
@@ -162,33 +162,33 @@ class OpenScholar(object):
             if remaining_slots > 0:
                 non_title_papers = [p for p in reranked_contexts if not p.get("title_query", False)]
                 final_contexts.extend(non_title_papers[:remaining_slots])
-                
+
             return final_contexts, sorted_results, id_mapping
-        
+
         return [], {}, {}
-    
+
     def reranking_passages_cross_encoder_supplemental2(self, item, passages, batch_size=5, llama3_chat=False, task_name="default"):
-        
+
         if self.min_citation is not None:
             ctx_above_threshold = [p for p in passages if "citation_counts" in p and p["citation_counts"] >= self.min_citation]
             if len(ctx_above_threshold) > self.top_n:
                 passages = ctx_above_threshold
                 print("after filtering -- number of ctxs: {0}".format(len(passages)))
-                
+
         reranked_contexts, sorted_results, id_mapping = rerank_paragraphs_bge(item["input"], passages, self.reranker, norm_cite=False, start_index=len(item["ctxs"]))
         return reranked_contexts, sorted_results, id_mapping
-    
+
     def reranking_passages_cross_encoder_supplemental(self, item, passages, batch_size=5, llama3_chat=False, task_name="default"):
         # 分离title搜索和keyword搜索的论文
         title_papers = [p for p in passages if p.get("title_query", False)]
         keyword_papers = [p for p in passages if not p.get("title_query", False)]
-        
+
         if self.min_citation is not None:
-            keyword_papers = [p for p in keyword_papers 
+            keyword_papers = [p for p in keyword_papers
                             if "citation_counts" in p and p["citation_counts"] >= self.min_citation]
-        
+
         filtered_papers = title_papers + keyword_papers
-        
+
         if filtered_papers:
             reranked_contexts, sorted_results, id_mapping = rerank_paragraphs_bge(
                 item["input"],
@@ -197,20 +197,20 @@ class OpenScholar(object):
                 norm_cite=False,
                 start_index=len(item["ctxs"])
             )
-            
+
             final_contexts = title_papers.copy()
             remaining_slots = self.top_n - len(final_contexts)
             if remaining_slots > 0:
                 non_title_papers = [p for p in reranked_contexts if not p.get("title_query", False)]
                 final_contexts.extend(non_title_papers[:remaining_slots])
-                
+
             return final_contexts, sorted_results, id_mapping
-        
+
         return [], {}, {}
-    
+
     def retrieve_keywords(self, question):
         prompt = [instructions.keyword_extraction_prompt.format_map({"question": question})]
-        
+
         if  self.client is not None:
             result = self.client.chat.completions.create(
                     model=self.model_name,
@@ -224,7 +224,7 @@ class OpenScholar(object):
                 )
             raw_output = result.choices[0].message.content
             outputs = raw_output
-        
+
         else:
             sampling_params = vllm.SamplingParams(
                 temperature=0.9,  # greedy decoding
@@ -234,7 +234,7 @@ class OpenScholar(object):
             outputs = self.model.generate(prompt, sampling_params)
             outputs = [it.outputs[0].text for it in outputs][0]
         raw_output = [t.split("[Response_End]")[0]  for t  in outputs.split("[Response_Start]") if "[Response_End]" in t][0] if "[Response_End]" in outputs else outputs
- 
+
         queries = raw_output.split(", ")[:3]
         queries = [query.replace("Search queries: " , "") for query in queries if len(query) > 0]
         return queries
@@ -244,7 +244,7 @@ class OpenScholar(object):
         ranked_results = {}
         print("zero-shot?: {}".format(zero_shot))
         print(item["input"])
-        
+
         if self.use_contexts is False:
             ctxs = []
             # support more task
@@ -264,7 +264,7 @@ class OpenScholar(object):
                 else:
                     ctxs += "[{0}] {1}\n".format(doc_idx,  doc["text"])
             item["final_passages"] = ctxs
-            
+
             if task_name =="summarization":
                 if zero_shot is True:
                     input_query = instructions.prompts_w_references_summarization_zero_shot.format_map({"context": ctxs, "input": item["input"]})
@@ -275,7 +275,7 @@ class OpenScholar(object):
                     input_query = instructions.generation_instance_prompts_w_references_single_paper_zero_shot.format_map({"context": ctxs, "input": item["input"]})
                 else:
                     input_query = instructions.generation_instance_prompts_w_references_single_paper.format_map({"context": ctxs, "input": item["input"]})
-            
+
             elif task_name in instructions.task_instructions:
                 task_instruction = instructions.task_instructions[task_name][0]
                 instance_header = instructions.task_instructions[task_name][1]
@@ -284,7 +284,7 @@ class OpenScholar(object):
                 else:
                     demonstration = instructions.demonstrations[task_name]
                     input_query = "{0}{1}\nReferences:\n{2}\n{3}{4}".format(task_instruction, demonstration, ctxs, instance_header, item["input"])
-                    
+
             else:
                 if zero_shot is True:
                     input_query = instructions.generation_instance_prompts_w_references_zero_shot.format_map({"context": ctxs, "input": item["input"]})
@@ -293,8 +293,8 @@ class OpenScholar(object):
 
         if llama3_chat is True:
             input_query = create_prompt_with_llama3_format(input_query)
-            
-        if self.client is not None: 
+
+        if self.client is not None:
             result = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -332,10 +332,10 @@ class OpenScholar(object):
 
     def get_feedback(self, item, llama3_chat):
         input_query = instructions.feedback_example_instance_prompt.format_map({"question": item["input"], "passages": item["final_passages"], "answer": item["output"]})
-        # TODO: check if the llama3 chat format is helpful or not. 
+        # TODO: check if the llama3 chat format is helpful or not.
         if llama3_chat is True:
             input_query = create_prompt_with_llama3_format(input_query)
-        
+
         if self.client is not None:
             result = self.client.chat.completions.create(
                 model=self.model_name,
@@ -364,12 +364,12 @@ class OpenScholar(object):
 
     def edit_with_feedback(self, item, feedback, max_tokens=3000, llama3_chat=False):
         input_query = instructions.editing_instance_prompt.format_map({"question": item["input"], "passages": item["final_passages"], "answer": item["output"], "feedback": feedback})
-        
-        # TODO: check if the llama3 chat format is helpful or not. 
+
+        # TODO: check if the llama3 chat format is helpful or not.
         if llama3_chat is True:
             input_query = create_prompt_with_llama3_format(input_query)
-        
-        if self.client is not None: 
+
+        if self.client is not None:
             result = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -408,8 +408,8 @@ class OpenScholar(object):
         input_query = instructions.editing_with_retrieval_instance_prompt.format_map({"question": item["input"], "retrieved_passages": processed_passages, "answer": item["output"], "feedback": feedback})
         if llama3_chat is True:
             input_query = create_prompt_with_llama3_format(input_query)
-                
-        if self.client is not None: 
+
+        if self.client is not None:
             result = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -437,7 +437,7 @@ class OpenScholar(object):
     def insert_attributions_posthoc_paragraph(self, item, llama3_chat=False):
         text = item["output"]
         if "final_passages" in item:
-            passages = item["final_passages"] 
+            passages = item["final_passages"]
         else:
             ctxs = item["ctxs"]
             passages = ""
@@ -447,7 +447,7 @@ class OpenScholar(object):
         print(text)
         sentences = text.split("\n")
         print(sentences)
-        # post process sentences 
+        # post process sentences
         updated_sentences = []
         post_hoc_sentence = {}
 
@@ -457,7 +457,7 @@ class OpenScholar(object):
                     updated_sentences[-1] = updated_sentences[-1] + " " + statement
                 else:
                     updated_sentences.append(statement)
-            
+
             else:
                 # cases where citations are included
                 if "[" in statement or (s_index < len(sentences) - 1 and len(sentences[s_index+1]) > 0 and sentences[s_index+1][0] == "["):
@@ -469,15 +469,15 @@ class OpenScholar(object):
         if len(post_hoc_sentence) > 0:
             print("{0} sentences require attributions, e..g, {1}".format(len(post_hoc_sentence), list(post_hoc_sentence.values())[0] ))
             prompts = []
-            for s in list(post_hoc_sentence.values()):    
+            for s in list(post_hoc_sentence.values()):
                 input_query = instructions.posthoc_attributions_paragraph.format_map({"statement": s, "passages": passages})
 
                 if llama3_chat is True:
                     input_query = create_prompt_with_llama3_format(input_query)
-                
+
                 prompts.append(input_query)
-            
-            if self.client is not None: 
+
+            if self.client is not None:
                 outputs = []
                 for input_query in prompts:
                     result = self.client.chat.completions.create(
@@ -499,7 +499,7 @@ class OpenScholar(object):
                 )
                 outputs = self.model.generate(prompts, sampling_params)
                 outputs = [it.outputs[0].text for it in outputs]
-            
+
             # Postprocess Output
             for output, sentence_key in zip(outputs, list(post_hoc_sentence.keys())):
                 if len([t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t]) == 0:
@@ -507,7 +507,7 @@ class OpenScholar(object):
                 else:
                     processed_output = [t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t][0]
                     post_hoc_sentence[sentence_key] = processed_output
-                
+
             final_processed_outputs = []
             for item in updated_sentences:
                 if item in post_hoc_sentence:
@@ -515,15 +515,15 @@ class OpenScholar(object):
                 else:
                     final_processed_outputs.append(item)
             updated_sentences = final_processed_outputs
-            
+
         return "\n".join(updated_sentences)
-    
+
     def insert_attributions_posthoc(self, item, llama3_chat=False):
         text = item["output"]
         passages = item["final_passages"]
 
         sentences = sent_tokenize(text)
-        # post process sentences 
+        # post process sentences
         updated_sentences = []
         post_hoc_sentence = {}
 
@@ -533,7 +533,7 @@ class OpenScholar(object):
                     updated_sentences[-1]  = updated_sentences[-1] + " " + statement
                 else:
                     updated_sentences.append(statement)
-            
+
             else:
                 # cases where citations are included
                 if "[" in statement or (s_index < len(sentences) - 1 and sentences[s_index+1][0] =="["):
@@ -543,18 +543,18 @@ class OpenScholar(object):
                     post_hoc_sentence["[replace_{}]".format(s_index)] = statement
 
         if len(post_hoc_sentence) > 0:
-                        
+
             print("{0} sentences require attributions, e..g, {1}".format(len(post_hoc_sentence), list(post_hoc_sentence.values())[0] ))
             prompts = []
-            for s in list(post_hoc_sentence.values()):    
+            for s in list(post_hoc_sentence.values()):
                 input_query = instructions.posthoc_attributions.format_map({"statement": s, "passages": passages})
 
                 if llama3_chat is True:
                     input_query = create_prompt_with_llama3_format(input_query)
-                
+
                 prompts.append(input_query)
-            
-            if self.client is not None: 
+
+            if self.client is not None:
                 outputs = []
                 for input_query in prompts:
                     result = self.client.chat.completions.create(
@@ -576,7 +576,7 @@ class OpenScholar(object):
                 )
                 outputs = self.model.generate(prompts, sampling_params)
                 outputs = [it.outputs[0].text for it in outputs]
-            
+
             # process_output
             for output, sentence_key in zip(outputs, list(post_hoc_sentence.keys())):
                 if len([t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t]) == 0:
@@ -584,7 +584,7 @@ class OpenScholar(object):
                 else:
                     processed_output = [t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t][0]
                     post_hoc_sentence[sentence_key] = processed_output
-                
+
             final_processed_outputs = []
             for item in updated_sentences:
                 if item in post_hoc_sentence:
@@ -592,13 +592,13 @@ class OpenScholar(object):
                 else:
                     final_processed_outputs.append(item)
             updated_sentences = final_processed_outputs
-            
+
         return " ".join(updated_sentences)
 
     def insert_attributions_posthoc_paragraph_all(self, item, llama3_chat=False):
         text = item["output"]
         if "final_passages" in item:
-            passages = item["final_passages"] 
+            passages = item["final_passages"]
         else:
             ctxs = item["ctxs"]
             passages = ""
@@ -617,20 +617,20 @@ class OpenScholar(object):
                     updated_sentences[-1] = updated_sentences[-1] + " " + statement
                 else:
                     updated_sentences.append(statement)
-            
+
             else:
                 updated_sentences.append("[replace_{}]".format(s_index))
                 post_hoc_sentence["[replace_{}]".format(s_index)] = statement
 
-        for s in list(post_hoc_sentence.values()):    
+        for s in list(post_hoc_sentence.values()):
             input_query = instructions.posthoc_attributions_paragraph_all.format_map({"statement": s, "passages": passages})
 
             if llama3_chat is True:
                 input_query = create_prompt_with_llama3_format(input_query)
-            
+
             prompts.append(input_query)
-        
-        if self.client is not None: 
+
+        if self.client is not None:
             outputs = []
             cost = 0
             for input_query in prompts:
@@ -655,7 +655,7 @@ class OpenScholar(object):
             outputs = self.model.generate(prompts, sampling_params)
             outputs = [it.outputs[0].text for it in outputs]
             cost = 0
-        
+
         # process_output
         for output, sentence_key in zip(outputs, list(post_hoc_sentence.keys())):
             if len([t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t]) == 0:
@@ -663,7 +663,7 @@ class OpenScholar(object):
             else:
                 processed_output = [t.split("[Response_End]")[0] for t in output.split("[Response_Start]") if "[Response_End]" in t][0]
                 post_hoc_sentence[sentence_key] = processed_output
-            
+
         final_processed_outputs = []
         for item in updated_sentences:
             if item in post_hoc_sentence:
@@ -671,26 +671,26 @@ class OpenScholar(object):
             else:
                 final_processed_outputs.append(item)
         updated_sentences = final_processed_outputs
-        
+
         return "\n".join(updated_sentences), cost
 
     def run(self, item, ranking_ce=False, use_feedback=False, skip_generation=False, posthoc_at=False, llama3_chat=False, task_name="default", zero_shot=False, max_per_paper=None, use_abstract=False, max_tokens=3000):
         print("llama3 chat format? {0}".format(llama3_chat))
         print("use feedback: {}".format(use_feedback))
         total_cost = 0
-            
+
         if ranking_ce is True:
             # item["ctxs"], ranked_results, id_mapping = self.reranking_passages_cross_encoder(item, batch_size=1, llama3_chat=llama3_chat, task_name=task_name, use_abstract=False)
             item["ctxs"], ranked_results, id_mapping = self.reranking_passages_cross_encoder(
-                item, 
-                batch_size=1, 
-                llama3_chat=llama3_chat, 
-                task_name=task_name, 
+                item,
+                batch_size=1,
+                llama3_chat=llama3_chat,
+                task_name=task_name,
                 use_abstract=use_abstract
             ) # 确保title的论文被保留
             item["ranked_results"] = ranked_results
             item["id_mapping"] = id_mapping
-            
+
 
         if max_per_paper is not None:
             filtered_ctxs = []
@@ -705,9 +705,9 @@ class OpenScholar(object):
                 else:
                     filtered_ctxs.append(ctx)
                     title_to_count[ctx["title"]] += 1
-                    
+
             item["ctxs"] = filtered_ctxs
-            
+
         if skip_generation is False:
             generated_result, passages, gen_cost = self.generate_response(item, max_tokens=max_tokens, llama3_chat=llama3_chat, task_name=task_name, zero_shot=zero_shot)
             if "\n\n References":
@@ -740,7 +740,7 @@ class OpenScholar(object):
                         new_keywords = self.retrieve_keywords(feedback[1])
                         paper_list = {}
                         if len(new_keywords) > 0:
-                            for keyword in new_keywords:    
+                            for keyword in new_keywords:
                                 top_papers = search_paper_via_query(keyword)
                                 print(top_papers)
                                 if top_papers is None:
@@ -752,13 +752,13 @@ class OpenScholar(object):
                                             paper["citation_counts"] = paper["citationCount"]
                                             paper_list[paper["paperId"]] = paper
                             new_papers += list(paper_list.values())
-                            # remove duplicarted data 
+                            # remove duplicarted data
                     if len(new_papers) > 0:
                         print("before deduplication: {}".format(len(new_papers)))
                         new_papers_dicts = {paper["text"][:100] + paper["title"]: paper for paper in new_papers if paper is not None and type(paper["text"]) is str}
                         new_papers = list(new_papers_dicts.values())
                         print("after deduplication: {}".format(len(new_papers)))
-                        # add new papers when and only when we have the new papers. 
+                        # add new papers when and only when we have the new papers.
                         if len(new_papers) > 0:
                             new_passages_reranked, _ , _  = self.reranking_passages_cross_encoder_supplemental(item, new_papers, batch_size=10, llama3_chat=llama3_chat, task_name=task_name)
                             passages_start_index = len(item["ctxs"])
@@ -784,7 +784,7 @@ class OpenScholar(object):
             attributed_results, attributed_cost =  self.insert_attributions_posthoc_paragraph_all(item, llama3_chat=llama3_chat)
             total_cost += attributed_cost
             item["output"] = attributed_results
-        
+
         item["output"] = item["output"].replace("[Response_Start]", "").replace("[Response_End]", "")
 
         print(item["output"])
@@ -793,12 +793,12 @@ class OpenScholar(object):
             item["output"] = item["output"].split("\n### References")[0]
         return item, total_cost
 
-    def run_batch(self, items, batch_size=4, ranking_ce=False, use_feedback=False, skip_generation=False, 
-            posthoc_at=False, llama3_chat=False, task_name="default", zero_shot=False, 
+    def run_batch(self, items, batch_size=4, ranking_ce=False, use_feedback=False, skip_generation=False,
+            posthoc_at=False, llama3_chat=False, task_name="default", zero_shot=False,
             max_per_paper=None, use_abstract=False, max_tokens=3000):
         """
         批量处理多个查询项
-        
+
         Args:
             items: List[Dict] - 输入项列表
             batch_size: int - 批处理大小
@@ -866,7 +866,7 @@ class OpenScholar(object):
                             else:
                                 ctxs += "[{0}] {1}\n".format(doc_idx, doc["text"])
                         item["final_passages"] = ctxs
-                        
+
                         if task_name == "summarization":
                             if zero_shot:
                                 input_query = instructions.prompts_w_references_summarization_zero_shot.format_map({"context": ctxs, "input": item["input"]})
@@ -947,14 +947,14 @@ class OpenScholar(object):
                     feedbacks, feedback_cost = self.get_feedback(item, llama3_chat=llama3_chat)[:3]
                     item["total_cost"] += feedback_cost
                     item["feedbacks"] = feedbacks
-                    
+
                     for feedback_idx, feedback in enumerate(feedbacks[:3]):
                         if not feedback[1]:  # 无需检索的反馈
                             edited_answer, edited_cost = self.edit_with_feedback(item, feedback[0], llama3_chat=llama3_chat)
                             item["total_cost"] += edited_cost
                             if "Here is the revised answer:\n\n" in edited_answer:
                                 edited_answer = edited_answer.split("Here is the revised answer:\n\n")[1]
-                            
+
                             if len(item["output"]) > 0 and len(edited_answer) / len(item["output"]) > 0.9:
                                 item["output"] = edited_answer
                                 item["edited_answer_{}".format(feedback_idx)] = edited_answer
@@ -1036,13 +1036,13 @@ def process_input_data(data, use_contexts=True):
                 item["input"] = item["question"]
             if "query" in item:
                 item["input"] = item["query"]
-                
+
         if use_contexts is True:
             # 分离title查询和keyword查询的论文
             title_papers = []
             keyword_papers = []
             new_ctxs = []
-            
+
             # normalize ctx format for different retrieval APIs
             for ctx in item["ctxs"]:
                 if type(ctx) is list:
@@ -1052,7 +1052,7 @@ def process_input_data(data, use_contexts=True):
                 if type(ctx) is dict:
                     new_ctxs.append(ctx)
             item["ctxs"] = new_ctxs
-            
+
             # 分别处理两类论文
             for ctx in tqdm(item["ctxs"]):
                 if "retrieval text" in ctx:
@@ -1064,34 +1064,34 @@ def process_input_data(data, use_contexts=True):
                 ctx["text"] = process_paragraph(ctx["text"])
                 if "title" not in ctx:
                     ctx["title"] = ""
-                
+
                 # 根据标记分类
                 if ctx.get("title_query", False):
                     title_papers.append(ctx)
                 else:
                     keyword_papers.append(ctx)
-            
+
             # 分别去重
             # 处理title论文
             title_papers_dict = {
-                paper["text"][:100] + paper["title"]: paper 
+                paper["text"][:100] + paper["title"]: paper
                 for paper in title_papers
             }
             processed_title_papers = list(title_papers_dict.values())
-            
+
             # 处理keyword论文
             keyword_papers_dict = {
-                paper["text"][:100] + paper["title"]: paper 
+                paper["text"][:100] + paper["title"]: paper
                 for paper in keyword_papers
             }
             processed_keyword_papers = list(keyword_papers_dict.values())
-            
+
             # 合并结果，确保title论文在前
             processed_paras = processed_title_papers + processed_keyword_papers
-            
+
             item["ctxs"] = processed_paras
             item["original_ctxs"] = processed_paras
-            
+
         processed_data.append(item)
     return processed_data
 '''

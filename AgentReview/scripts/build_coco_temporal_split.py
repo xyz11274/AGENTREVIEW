@@ -12,37 +12,28 @@ import shutil
 import sys
 import tempfile
 from collections import Counter, defaultdict
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Dict, Mapping, Sequence
-
+from typing import Any
 
 SCRIPT_PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(SCRIPT_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_PROJECT_ROOT))
 
-from memory_evolution.assets import (
+from memory_evolution.assets import (  # noqa: E402
     FOUR_ZONES,
     PROJECT_ROOT,
     TEMPORAL_SPLIT_VERSION,
-    TEMPORAL_SPLIT_V1_VERSION,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     normalize_title,
     sha256_file,
 )
 
-
-SUPERSEDES = "coco_temporal_split_v1"
-SUPERSESSION_REASON = (
-    "canonicalize OpenReview API v2 scalar fields and enforce one "
-    "representative target per paper family"
-)
 REPRESENTATIVE_PROTOCOL = "coco-family-representative-v1"
 
 
-def _extract_coco_scalar(
-    content: Mapping[str, Any], field: str, paper_id: str
-) -> str:
+def _extract_coco_scalar(content: Mapping[str, Any], field: str, paper_id: str) -> str:
     """Extract a required string or OpenReview-v2 ``{value: string}`` field."""
     if field not in content:
         raise ValueError(f"CoCo paper {paper_id!r} is missing content.{field}")
@@ -94,7 +85,7 @@ def _family_components(records: Sequence[Mapping[str, Any]]) -> list[str]:
         if left != right:
             parents[right] = left
 
-    owners: Dict[str, int] = {}
+    owners: dict[str, int] = {}
     identifiers = []
     for index, record in enumerate(records):
         values = {
@@ -123,11 +114,13 @@ def _accepted_or_published_rank(record: Mapping[str, Any]) -> int:
 
 
 def _explicit_version_rank(record: Mapping[str, Any]) -> int:
-    match = re.search(r"v(\d+)(?=\.[^.]+$)", str(record.get("_pdf_path") or ""), re.I)
+    match = re.search(
+        r"v(\d+)(?=\.[^.]+$)", str(record.get("_pdf_path") or ""), re.IGNORECASE
+    )
     return int(match.group(1)) if match else 0
 
 
-def representative_rank(record: Mapping[str, Any]) -> Dict[str, Any]:
+def representative_rank(record: Mapping[str, Any]) -> dict[str, Any]:
     """Return only score/review-independent representative ranking features."""
     return {
         "accepted_or_published": _accepted_or_published_rank(record),
@@ -144,7 +137,7 @@ def select_family_representative(
     """Select one representative by one global deterministic ranking rule."""
     if not records:
         raise ValueError("Cannot select a representative from an empty family")
-    return sorted(
+    return min(
         records,
         key=lambda value: (
             -_accepted_or_published_rank(value),
@@ -153,10 +146,10 @@ def select_family_representative(
             str(value["paper_id"]),
             str(value["source_record_sha256"]),
         ),
-    )[0]
+    )
 
 
-def _source_provenance(record: Mapping[str, Any]) -> Dict[str, Any]:
+def _source_provenance(record: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "paper_id": record["paper_id"],
         "canonical_title": record["title"],
@@ -170,7 +163,7 @@ def _source_provenance(record: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _selection_reason(record: Mapping[str, Any]) -> Dict[str, Any]:
+def _selection_reason(record: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "protocol": REPRESENTATIVE_PROTOCOL,
         "ranking_order": [
@@ -190,7 +183,9 @@ def _selection_reason(record: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _load_source_records(coco_root: Path) -> tuple[list[Dict[str, Any]], Dict[str, str]]:
+def _load_source_records(
+    coco_root: Path,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
     records = []
     source_hashes = {}
     pattern = re.compile(r"benchmark_(ICLR|NeurIPS)_(\d{4})\.jsonl$")
@@ -246,7 +241,7 @@ def _load_source_records(coco_root: Path) -> tuple[list[Dict[str, Any]], Dict[st
 
 def _representatives(
     records: Sequence[Mapping[str, Any]],
-) -> tuple[list[Dict[str, Any]], list[Dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     by_family = defaultdict(list)
     for record in records:
         by_family[str(record["paper_family"])].append(record)
@@ -296,13 +291,12 @@ def _representatives(
 def audit_representative_selection(
     source_records: Sequence[Mapping[str, Any]],
     representatives: Sequence[Mapping[str, Any]],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     by_family = defaultdict(list)
     for record in source_records:
         by_family[str(record["paper_family"])].append(record)
     selected_by_family = {
-        str(record["family_id"]): str(record["paper_id"])
-        for record in representatives
+        str(record["family_id"]): str(record["paper_id"]) for record in representatives
     }
     violations = []
     determining_stages = Counter()
@@ -338,9 +332,7 @@ def audit_representative_selection(
         "family_count": len(by_family),
         "selected_representative_count": len(selected_by_family),
         "ranking_order": _selection_reason(representatives[0])["ranking_order"],
-        "forbidden_inputs": _selection_reason(representatives[0])[
-            "forbidden_inputs"
-        ],
+        "forbidden_inputs": _selection_reason(representatives[0])["forbidden_inputs"],
         "manual_exception_count": 0,
         "selection_violations": violations,
         "determining_stage_counts": dict(sorted(determining_stages.items())),
@@ -349,32 +341,34 @@ def audit_representative_selection(
 
 
 def _assign_zones(
-    representatives: Sequence[Dict[str, Any]],
-    family_entries: Sequence[Dict[str, Any]],
-    baseline_zones: Mapping[str, Sequence[Mapping[str, Any]]],
+    representatives: Sequence[dict[str, Any]],
+    family_entries: Sequence[dict[str, Any]],
+    validation_assignment_zones: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
     historical_through_year: int,
     heldout_from_year: int,
-) -> Dict[str, list[Dict[str, Any]]]:
+) -> dict[str, list[dict[str, Any]]]:
     validation_year = historical_through_year + 1
     zones = {zone: [] for zone in FOUR_ZONES}
     family_by_id = {value["family_id"]: value for value in family_entries}
-    baseline_by_paper = _by_paper(baseline_zones)
+    assignment_by_paper = _by_paper(validation_assignment_zones)
     for record in representatives:
         year = int(record["year"])
         paper_id = str(record["paper_id"])
-        if paper_id not in baseline_by_paper:
-            raise ValueError(f"Representative absent from frozen v1: {paper_id}")
-        zone = baseline_by_paper[paper_id][0]
-        valid_zone = (
-            (year <= historical_through_year and zone == FOUR_ZONES[0])
-            or (year == validation_year and zone in FOUR_ZONES[1:3])
-            or (year >= heldout_from_year and zone == FOUR_ZONES[3])
-        )
-        if not valid_zone:
+        if year <= historical_through_year:
+            zone = FOUR_ZONES[0]
+        elif year >= heldout_from_year:
+            zone = FOUR_ZONES[3]
+        elif year == validation_year and paper_id in assignment_by_paper:
+            zone = assignment_by_paper[paper_id][0]
+        else:
             raise ValueError(
-                f"Representative v1 zone/year violates temporal protocol: "
-                f"{paper_id}: zone={zone}, year={year}"
+                f"Representative lacks a current zone assignment: "
+                f"{paper_id}: year={year}"
+            )
+        if year == validation_year and zone not in FOUR_ZONES[1:3]:
+            raise ValueError(
+                f"Validation assignment must use B or C: {paper_id}: zone={zone}"
             )
         zones[zone].append(record)
     for zone in FOUR_ZONES:
@@ -409,114 +403,47 @@ def _by_paper(zones: Mapping[str, Sequence[Mapping[str, Any]]]):
     return values
 
 
-def compare_split_versions(
-    v1_zones: Mapping[str, Sequence[Mapping[str, Any]]],
-    v2_zones: Mapping[str, Sequence[Mapping[str, Any]]],
-    *,
-    expected_source_record_count: int = 3900,
-) -> Dict[str, Any]:
-    """Audit provenance-safe v1-record to v2-family-target accounting."""
-    old = _by_paper(v1_zones)
-    new = _by_paper(v2_zones)
-    old_ids, new_ids = set(old), set(new)
-    extra = sorted(new_ids - old_ids)
+def audit_family_accounting(
+    source_records: Sequence[Mapping[str, Any]],
+    zones: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Audit one-to-one accounting from source submissions to family targets."""
+    source_ids = {str(value["paper_id"]) for value in source_records}
+    targets = [value for zone in FOUR_ZONES for value in zones.get(zone, [])]
     accounted = []
     malformed_family_metadata = []
-    immutable_mismatches = []
-    title_changes = []
-    zone_changes = []
-    for paper_id, (new_zone, record) in sorted(new.items()):
+    for record in targets:
+        paper_id = str(record.get("paper_id") or "")
         excluded = record.get("excluded_paper_ids")
-        if (
-            not isinstance(excluded, list)
-            or record.get("representative_paper_id") != paper_id
-            or record.get("family_id") != record.get("paper_family")
-        ):
+        valid_metadata = (
+            isinstance(excluded, list)
+            and record.get("representative_paper_id") == paper_id
+            and record.get("family_id") == record.get("paper_family")
+        )
+        if valid_metadata:
+            accounted.extend([paper_id, *map(str, excluded)])
+        else:
             malformed_family_metadata.append(paper_id)
-            excluded = []
-        accounted.extend([paper_id, *map(str, excluded)])
-        if paper_id not in old:
-            continue
-        old_zone, old_record = old[paper_id]
-        fields = {
-            "venue": (old_record.get("venue"), record.get("venue")),
-            "year": (old_record.get("year"), record.get("year")),
-            "paper_review_cutoff": (
-                old_record.get("paper_review_cutoff"),
-                record.get("paper_review_cutoff"),
-            ),
-        }
-        changed = {
-            field: {"v1": values[0], "v2": values[1]}
-            for field, values in fields.items()
-            if values[0] != values[1]
-        }
-        if changed:
-            immutable_mismatches.append({"paper_id": paper_id, "fields": changed})
-        if old_record.get("title") != record.get("title"):
-            title_changes.append(
-                {
-                    "paper_id": paper_id,
-                    "v1_title": old_record.get("title"),
-                    "v2_title": record.get("title"),
-                }
-            )
-        if old_zone != new_zone:
-            zone_changes.append(
-                {"paper_id": paper_id, "v1_zone": old_zone, "v2_zone": new_zone}
-            )
-    accounting_counts = defaultdict(int)
-    for paper_id in accounted:
-        accounting_counts[paper_id] += 1
+
+    accounting_counts = Counter(accounted)
+    accounted_ids = set(accounting_counts)
     duplicate_accounting = sorted(
         paper_id for paper_id, count in accounting_counts.items() if count != 1
     )
-    accounted_ids = set(accounting_counts)
-    unaccounted = sorted(old_ids - accounted_ids)
-    unknown_accounting = sorted(accounted_ids - old_ids)
-    family_ids = [
-        str(record.get("family_id") or "")
-        for zone in FOUR_ZONES
-        for record in v2_zones.get(zone, [])
-    ]
-    isolation = audit_four_zone_isolation(v2_zones)
-    passed = not (
-        len(old) != expected_source_record_count
-        or extra
-        or malformed_family_metadata
-        or immutable_mismatches
-        or duplicate_accounting
-        or unaccounted
-        or unknown_accounting
-        or not all(family_ids)
-        or len(set(family_ids)) != len(family_ids)
-        or not isolation["passed"]
-    )
-    return {
-        "protocol": "coco-v1-record-to-v2-family-target-audit-v1",
-        "v1_source_record_count": len(old),
-        "v2_unique_family_count": len(set(family_ids)),
-        "v2_formal_target_count": len(new),
-        "deduplicated_record_count": len(old) - len(new),
-        "excluded_paper_ids": sorted(old_ids - new_ids),
-        "extra_paper_ids": extra,
-        "unaccounted_paper_ids": unaccounted,
-        "unknown_accounted_paper_ids": unknown_accounting,
+    family_ids = [str(record.get("family_id") or "") for record in targets]
+    isolation = audit_four_zone_isolation(zones)
+    report = {
+        "protocol": "coco-source-to-family-target-audit-v2",
+        "source_record_count": len(source_records),
+        "unique_source_id_count": len(source_ids),
+        "unique_family_count": len(set(family_ids)),
+        "formal_target_count": len(targets),
+        "deduplicated_record_count": len(source_records) - len(targets),
+        "unaccounted_paper_ids": sorted(source_ids - accounted_ids),
+        "unknown_accounted_paper_ids": sorted(accounted_ids - source_ids),
         "duplicate_accounting_paper_ids": duplicate_accounting,
         "malformed_family_metadata": malformed_family_metadata,
-        "immutable_field_mismatches": immutable_mismatches,
-        "title_changed_count": len(title_changes),
-        "title_changes": title_changes,
-        "representative_zone_changed_count": len(zone_changes),
-        "representative_zone_changes": zone_changes,
-        "zone_counts": {
-            "v1_records": {
-                zone: len(v1_zones.get(zone, [])) for zone in FOUR_ZONES
-            },
-            "v2_family_targets": {
-                zone: len(v2_zones.get(zone, [])) for zone in FOUR_ZONES
-            },
-        },
+        "zone_counts": {zone: len(zones.get(zone, [])) for zone in FOUR_ZONES},
         "cross_zone_paper_family_overlap_count": sum(
             len(value["values"])
             for value in isolation["overlaps"]
@@ -527,62 +454,78 @@ def compare_split_versions(
             for value in isolation["overlaps"]
             if value["field"] == "normalized_title"
         ),
-        "passed": passed,
     }
+    report["passed"] = all(
+        (
+            report["source_record_count"] == report["unique_source_id_count"],
+            len(report["unaccounted_paper_ids"]) == 0,
+            len(report["unknown_accounted_paper_ids"]) == 0,
+            len(report["duplicate_accounting_paper_ids"]) == 0,
+            len(report["malformed_family_metadata"]) == 0,
+            all(family_ids),
+            len(set(family_ids)) == len(family_ids),
+            isolation["passed"] is True,
+        )
+    )
+    return report
 
 
 def construct_split(
     coco_root: Path,
     *,
-    baseline_manifest_path: Path,
+    validation_assignment_manifest_path: Path,
     historical_through_year: int,
     heldout_from_year: int,
-) -> tuple[Dict[str, Any], Dict[str, list[Dict[str, Any]]], list[Dict[str, Any]]]:
+) -> tuple[dict[str, Any], dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
     validation_year = historical_through_year + 1
     if heldout_from_year != validation_year + 1:
         raise ValueError(
             "This protocol requires one complete validation year between "
             "Historical and held-out D"
         )
-    baseline_summary, baseline_zones = load_temporal_split_manifest(
-        str(baseline_manifest_path)
+    assignment_summary, assignment_zones = load_temporal_split_manifest(
+        str(validation_assignment_manifest_path)
     )
-    if baseline_summary.get("version") != TEMPORAL_SPLIT_V1_VERSION:
-        raise ValueError("The v2 migration baseline must be coco temporal split v1")
+    if assignment_summary.get("version") != TEMPORAL_SPLIT_VERSION:
+        raise ValueError("Validation assignment must use coco temporal split v2")
     records, source_hashes = _load_source_records(coco_root)
     representatives, family_entries = _representatives(records)
     representative_audit = audit_representative_selection(records, representatives)
     zones = _assign_zones(
         representatives,
         family_entries,
-        baseline_zones,
+        assignment_zones,
         historical_through_year=historical_through_year,
         heldout_from_year=heldout_from_year,
     )
     isolation = audit_four_zone_isolation(zones)
-    comparison = compare_split_versions(baseline_zones, zones)
-    if not isolation["passed"] or not comparison["passed"] or not representative_audit["passed"]:
+    accounting = audit_family_accounting(records, zones)
+    audits_passed = all(
+        (
+            isolation["passed"] is True,
+            accounting["passed"] is True,
+            representative_audit["passed"] is True,
+        )
+    )
+    if not audits_passed:
         raise RuntimeError(
             f"Family-deduplicated temporal split audit failed: "
-            f"isolation={isolation}, comparison={comparison}"
+            f"isolation={isolation}, accounting={accounting}, "
+            f"representatives={representative_audit}"
         )
-    excluded_records = [
-        {
-            "family_id": family["family_id"],
-            "representative_paper_id": family["representative_paper_id"],
-            **source,
-        }
-        for family in family_entries
-        for source in family["source_provenance"]
-        if source["paper_id"] in family["excluded_paper_ids"]
-    ]
+    try:
+        assignment_path = str(
+            validation_assignment_manifest_path.resolve().relative_to(PROJECT_ROOT)
+        )
+    except ValueError:
+        assignment_path = str(validation_assignment_manifest_path.resolve())
     summary = {
         "version": TEMPORAL_SPLIT_VERSION,
         "status": "frozen_before_formal_evolution",
-        "supersedes": SUPERSEDES,
-        "reason": SUPERSESSION_REASON,
-        "superseded_manifest": str(baseline_manifest_path.resolve()),
-        "superseded_manifest_sha256": sha256_file(baseline_manifest_path),
+        "validation_assignment_manifest": assignment_path,
+        "validation_assignment_manifest_sha256": sha256_file(
+            validation_assignment_manifest_path
+        ),
         "source_pool": "external://cocoreviewbench/benchmark",
         "source_record_count": len(records),
         "source_pool_count": len(records),
@@ -601,8 +544,8 @@ def construct_split(
         "split_rule": {
             "A": f"representatives whose venue year <= {historical_through_year}",
             "B_C": (
-                f"{validation_year} representatives inherit their frozen v1 "
-                "B/C membership; no re-sampling"
+                f"{validation_year} representatives use the frozen v2 "
+                "validation assignment"
             ),
             "D": f"representatives whose venue year >= {heldout_from_year}",
             "family_atomic": True,
@@ -635,22 +578,7 @@ def construct_split(
             for zone in FOUR_ZONES
         },
         "audit": isolation,
-        "v1_v2_comparison_audit": comparison,
-        "deduplication_audit": {
-            "protocol": "one-paper-family-one-target-audit-v1",
-            "source_record_count": len(records),
-            "unique_paper_family_count": len(family_entries),
-            "formal_target_count": len(representatives),
-            "deduplicated_record_count": len(excluded_records),
-            "excluded_records": excluded_records,
-            "cross_zone_paper_family_overlap_count": comparison[
-                "cross_zone_paper_family_overlap_count"
-            ],
-            "cross_zone_normalized_title_overlap_count": comparison[
-                "cross_zone_normalized_title_overlap_count"
-            ],
-            "passed": comparison["passed"],
-        },
+        "family_accounting_audit": accounting,
         "representative_selection_audit": representative_audit,
     }
     return summary, zones, family_entries
@@ -660,13 +588,13 @@ def build(
     coco_root: Path,
     output_dir: Path,
     *,
-    baseline_manifest_path: Path,
+    validation_assignment_manifest_path: Path,
     historical_through_year: int,
     heldout_from_year: int,
 ) -> dict:
     summary, zones, family_entries = construct_split(
         coco_root,
-        baseline_manifest_path=baseline_manifest_path,
+        validation_assignment_manifest_path=validation_assignment_manifest_path,
         historical_through_year=historical_through_year,
         heldout_from_year=heldout_from_year,
     )
@@ -681,9 +609,7 @@ def build(
     for zone, values in zones.items():
         path = output_dir / f"{zone}.jsonl"
         _write_jsonl(path, values)
-        summary["zones"][zone].update(
-            {"path": path.name, "sha256": sha256_file(path)}
-        )
+        summary["zones"][zone].update({"path": path.name, "sha256": sha256_file(path)})
     summary_path = output_dir / "manifest.json"
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True),
@@ -692,32 +618,16 @@ def build(
     return summary
 
 
-def _report(value: Mapping[str, Any]) -> Dict[str, Any]:
-    comparison = value["v1_v2_comparison_audit"]
-    removed_count = comparison["deduplicated_record_count"]
-    zone_change_count = comparison["representative_zone_changed_count"]
+def _report(value: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "source_record_count": value["source_record_count"],
         "unique_paper_family_count": value["unique_paper_family_count"],
         "formal_target_count": value["formal_target_count"],
         "deduplicated_record_count": value["deduplicated_record_count"],
-        "zone_counts": value["v1_v2_comparison_audit"]["zone_counts"],
-        "excluded_records": value["deduplication_audit"]["excluded_records"],
+        "zone_counts": value["family_accounting_audit"]["zone_counts"],
         "temporal_audit": value["audit"],
-        "deduplication_audit": {
-            key: item
-            for key, item in value["deduplication_audit"].items()
-            if key != "excluded_records"
-        },
+        "family_accounting_audit": value["family_accounting_audit"],
         "representative_selection_audit": value["representative_selection_audit"],
-        "v1_v2_membership_changes": {
-            "total_changed_source_record_count": removed_count + zone_change_count,
-            "removed_duplicate_submission_count": removed_count,
-            "removed_duplicate_submission_ids": comparison["excluded_paper_ids"],
-            "representative_zone_changed_count": zone_change_count,
-            "representative_zone_changes": comparison["representative_zone_changes"],
-        },
-        "v1_v2_comparison_passed": comparison["passed"],
     }
 
 
@@ -726,8 +636,8 @@ def main() -> None:
     parser.add_argument("--coco-root", required=True)
     parser.add_argument("--output-dir")
     parser.add_argument(
-        "--baseline-manifest",
-        default=str(PROJECT_ROOT / "configs/coco_temporal_split_v1/manifest.json"),
+        "--validation-assignment-manifest",
+        default=str(PROJECT_ROOT / "configs/coco_temporal_split_v2/manifest.json"),
     )
     parser.add_argument("--historical-through-year", type=int, required=True)
     parser.add_argument("--heldout-from-year", type=int, required=True)
@@ -738,11 +648,11 @@ def main() -> None:
     )
     args = parser.parse_args()
     coco_root = Path(args.coco_root).expanduser().resolve()
-    baseline = Path(args.baseline_manifest).expanduser().resolve()
+    assignment = Path(args.validation_assignment_manifest).expanduser().resolve()
     if args.analysis_only:
         value, _, _ = construct_split(
             coco_root,
-            baseline_manifest_path=baseline,
+            validation_assignment_manifest_path=assignment,
             historical_through_year=args.historical_through_year,
             heldout_from_year=args.heldout_from_year,
         )
@@ -754,12 +664,14 @@ def main() -> None:
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite temporal split output: {output}")
     output.parent.mkdir(parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(prefix=output.name + ".staging.", dir=output.parent))
+    staging = Path(
+        tempfile.mkdtemp(prefix=output.name + ".staging.", dir=output.parent)
+    )
     try:
         value = build(
             coco_root,
             staging,
-            baseline_manifest_path=baseline,
+            validation_assignment_manifest_path=assignment,
             historical_through_year=args.historical_through_year,
             heldout_from_year=args.heldout_from_year,
         )

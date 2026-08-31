@@ -1,8 +1,7 @@
-#AgentReview/agentreview/backends/hf_transformers.py
+# AgentReview/agentreview/backends/hf_transformers.py
 
 import os
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
-from typing import List
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -20,14 +19,9 @@ def suppress_stdout_stderr():
 
 
 with suppress_stdout_stderr():
-    # Try to import the transformers package
     try:
-        import transformers
         from transformers import pipeline
-        from transformers.pipelines.conversational import (
-            Conversation,
-            ConversationalPipeline,
-        )
+        from transformers.pipelines.conversational import Conversation
     except ImportError:
         is_transformers_available = False
     else:
@@ -64,7 +58,7 @@ class TransformersConversational(IntelligenceBackend):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,

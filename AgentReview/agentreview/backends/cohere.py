@@ -1,7 +1,6 @@
-#AgentReview/agentreview/backends/cohere.py
+# AgentReview/agentreview/backends/cohere.py
 
 import os
-from typing import List
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -46,9 +45,9 @@ class CohereAIChat(IntelligenceBackend):
         self.max_tokens = max_tokens
         self.model = model
 
-        assert (
-            is_cohere_available
-        ), "Cohere package is not installed or the API key is not set"
+        assert is_cohere_available, (
+            "Cohere package is not installed or the API key is not set"
+        )
         self.client = cohere.Client(os.environ.get("COHEREAI_API_KEY"))
 
         # Stateful variables
@@ -78,7 +77,7 @@ class CohereAIChat(IntelligenceBackend):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,

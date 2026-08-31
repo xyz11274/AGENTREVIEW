@@ -15,29 +15,27 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
-
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from memory_evolution.assets import (
+from memory_evolution.assets import (  # noqa: E402
     ASSET_MANIFEST_VERSION,
     FOUR_ZONES,
     TEMPORAL_SPLIT_VERSION,
+    audit_family_target_integrity,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     sha256_file,
 )
-from memory_evolution.formal_protocol import run_formal_protocol_gate
-from memory_evolution.embedding_adapter import embedding_fingerprint
-from memory_evolution.tasks import SPECIALIST_TASKS
-from memory_evolution.toolkit import validate_frozen_s2_pool
-
+from memory_evolution.embedding_adapter import embedding_fingerprint  # noqa: E402
+from memory_evolution.formal_protocol import run_formal_protocol_gate  # noqa: E402
+from memory_evolution.tasks import SPECIALIST_TASKS  # noqa: E402
+from memory_evolution.toolkit import validate_frozen_s2_pool  # noqa: E402
 
 POOL_VERSION = "frozen-s2-temporal-v2"
-DEPRECATION_REASON = "query_title_serialization_contamination_and_duplicate_family_targets"
 ZONE_ASSET_NAMES = {
     FOUR_ZONES[0]: "zone_A_historical_experience",
     FOUR_ZONES[1]: "zone_B_evolution_validation",
@@ -55,35 +53,20 @@ def portable_path(path: Path) -> str:
 
 
 def build_candidate_manifest(
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     temporal_split_manifest: Path,
-    split_summary: Dict[str, Any],
+    split_summary: dict[str, Any],
     s2_pool: Path,
     s2_manifest: Path,
-    formal_experiment: Dict[str, Any] | None = None,
-) -> Dict[str, Any]:
+    formal_experiment: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     candidate = copy.deepcopy(payload)
     if candidate.get("manifest_version") != ASSET_MANIFEST_VERSION:
         raise ValueError("Unsupported Asset Manifest version")
     assets = candidate.setdefault("assets", {})
-    previous_temporal = copy.deepcopy(assets.get("temporal_split_manifest") or {})
-    deprecated = candidate.setdefault("deprecated_assets", {})
-    if previous_temporal:
-        previous_temporal.update(
-            {
-                "deprecated_for_formal_use": True,
-                "reason": DEPRECATION_REASON,
-            }
-        )
-        deprecated["coco_temporal_split_v1"] = previous_temporal
-    deprecated["frozen_s2_temporal_v1"] = {
-        "path": "configs/frozen_s2_temporal_v1.jsonl",
-        "work_path": "configs/frozen_s2_temporal_v1.jsonl.work",
-        "version": "frozen-s2-temporal-v1",
-        "deprecated_for_formal_use": True,
-        "reason": DEPRECATION_REASON,
-    }
+    candidate.pop("deprecated_assets", None)
+    candidate.pop("supersedes", None)
     assets["temporal_split_manifest"] = {
         "path": portable_path(temporal_split_manifest),
         "sha256": sha256_file(temporal_split_manifest),
@@ -130,12 +113,14 @@ def build_candidate_manifest(
         candidate["experiment_identity"] = formal_experiment["experiment_identity"]
         candidate["embedding"] = copy.deepcopy(formal_experiment["embedding"])
     candidate["formal_ready"] = True
-    candidate["formal_readiness_scope"] = "pre-QUAL-evolution assets and A/B task bundles"
+    candidate["formal_readiness_scope"] = (
+        "pre-QUAL-evolution assets and A/B task bundles"
+    )
     candidate["formal_blockers"] = []
     return candidate
 
 
-def atomic_write_json(path: Path, value: Dict[str, Any]) -> None:
+def atomic_write_json(path: Path, value: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(
         json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -186,9 +171,9 @@ def main() -> None:
     s2_manifest_path = s2_path.with_suffix(s2_path.suffix + ".manifest.json")
     data_root = Path(args.data_root).expanduser().resolve()
     coco_root = Path(args.coco_root).expanduser().resolve()
-    formal_experiment_path = Path(
-        args.formal_experiment_manifest
-    ).expanduser().resolve()
+    formal_experiment_path = (
+        Path(args.formal_experiment_manifest).expanduser().resolve()
+    )
     for required in (
         asset_path,
         split_path,
@@ -202,23 +187,23 @@ def main() -> None:
         raise FileNotFoundError(f"Formal A/B data root is missing: {data_root}")
     if not coco_root.is_dir():
         raise FileNotFoundError(f"Current CoCo root is missing: {coco_root}")
-    formal_experiment = json.loads(
-        formal_experiment_path.read_text(encoding="utf-8")
-    )
+    formal_experiment = json.loads(formal_experiment_path.read_text(encoding="utf-8"))
     embedding = dict(formal_experiment.get("embedding") or {})
     recorded_fingerprint = str(embedding.pop("fingerprint", "") or "")
     if (
-        formal_experiment.get("experiment_identity")
-        != "formal_temporal_v3_qwen3e8b"
+        formal_experiment.get("experiment_identity") != "formal_temporal_v3_qwen3e8b"
         or embedding_fingerprint(embedding) != recorded_fingerprint
     ):
         raise RuntimeError("Formal Qwen experiment manifest identity is invalid")
 
     split_summary, zones = load_temporal_split_manifest(str(split_path))
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
-        raise RuntimeError("Formal readiness rejects contaminated temporal split v1")
-    if not (split_summary.get("v1_v2_comparison_audit") or {}).get("passed"):
-        raise RuntimeError("Temporal split v2 comparison audit is missing or failed")
+        raise RuntimeError("Formal readiness requires temporal split v2")
+    family_audit = audit_family_target_integrity(split_summary, zones)
+    if family_audit["passed"] is not True:
+        raise RuntimeError(
+            f"Temporal split v2 family-target integrity failed: {family_audit}"
+        )
     temporal_audit = audit_four_zone_isolation(zones)
     if not temporal_audit["passed"]:
         raise RuntimeError(f"Temporal split audit failed: {temporal_audit}")
@@ -227,10 +212,7 @@ def main() -> None:
         str(value["paper_id"]): str(value["paper_review_cutoff"])
         for value in all_targets
     }
-    queries = {
-        str(value["paper_id"]): str(value["title"])
-        for value in all_targets
-    }
+    queries = {str(value["paper_id"]): str(value["title"]) for value in all_targets}
     s2_audit = validate_frozen_s2_pool(
         str(s2_path),
         expected_cutoffs=cutoffs,
@@ -319,9 +301,7 @@ def main() -> None:
         "experiment_identity": formal_experiment["experiment_identity"],
         "embedding_fingerprint": recorded_fingerprint,
         "coco_root": str(coco_root),
-        "frozen_coco_root": gate_reports["QUAL"]["coco_provenance"][
-            "frozen_root"
-        ],
+        "frozen_coco_root": gate_reports["QUAL"]["coco_provenance"]["frozen_root"],
         "asset_manifest_sha256": (
             sha256_file(asset_path) if not args.check_only else None
         ),

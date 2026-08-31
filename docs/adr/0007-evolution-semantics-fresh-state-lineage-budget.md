@@ -1,48 +1,104 @@
-# 进化语义：fresh-state replay、时序协议、code lineage、统一预算上限
+# ADR-0007：Fresh-State Replay、全局候选池与 20-Attempt 搜索
 
-> **状态：A 区 replay 语义被 ADR-0008 supersede（2026-08-27）。** 新主线不再让每个 Candidate 从 empty Memory 顺序重放 A 并自产 review；旧 run 仍按本 ADR 解释。Code lineage、反馈边界、资源记录与未被新 ADR 显式取代的公平性约束仍有效。
+- 状态：Accepted
+- 适用范围：MemoryProgram evaluation、parent selection、lineage、预算与恢复
 
-Evolution 的运行语义固定为：
+## Context
 
-1. **Empty-state 起始**：每个 Seed / Candidate / Program 从 empty Memory State 开始，在完全相同的 Historical / Experience Set 上按冻结顺序运行。
-2. **时序协议**：对 `Paper_i`：`读取 Paper_i → 可读 Paper_1..Paper_{i-1} 的已有 Memory → 当前 Program 自己审稿 → 审稿完成后才把 Paper_i 的经验写入 Memory`。当前论文不能先写 Memory 再审自己，不能读取自己刚产生的经验。
-3. **Memory 不跨 Program**：Seed A / B / C 之间不共享 Program-specific Memory；Candidate 不继承父 Candidate 的运行时 Memory State。**继承和 mutation 的是 Program / code lineage，不是已构建的 Memory State。**
-4. **Fresh-state replay**：每次 Candidate fitness evaluation 都是：
+MemoryProgram 的效果同时取决于源码和它从历史论文构建的运行时 Memory。可解释比较需要让每个候选从同一初始条件构建自己的 Memory。搜索还需要明确的 attempt 单位、统一候选池与可恢复控制器状态。
 
-`fresh empty state → replay Historical / Experience Set → Candidate 自己产生 review / trajectory / evidence → 构建该 Candidate 自己的 Program-specific Memory → Evolution Validation → external fitness`
+## Decision
 
-Memory 不是在 Evolution 之前统一预构建的资产，而是 Candidate evaluation 的运行产物。
+### 1. Fresh-state historical replay
 
-Historical Set 中产生的经验可以写入 Memory；Evolution Validation 产生的 review 用于 fitness / feedback，不进入该 Candidate 的 Historical Memory。
+每个 Seed、Candidate 与 Program evaluation 从空 Memory State 开始，按冻结顺序执行同一 run-scoped Historical Episode Selection：
 
-1. **三条 Seed lineage 独立**：`seed_vector_search` / `seed_llm_summarizer` / `seed_experience_learner` 及各自 `evolved_from_*` 后代；实验记录携带 parent seed、lineage、SHA256、fitness、promotion provenance；global champion 评选保留全链。
-2. **工程资源边界与用量记录**：同一次正式实验内所有 Candidate 使用相同 Base LLM 和相同系统级资源能力边界。Context organization 与实际 context 使用量属于 Review Harness 的策略自由，不要求不同 Program 实际消费相同长度的 context。
+> Paper_i loaded → Program reads prior Memory → TaskAgent generates Review_i → TaskAgent constructs KnowledgeItem_i → Program calls `write(item, raw_text)` → checkpoint commits completed prefix
 
-系统仅保留 Base LLM context window、API / runtime 限制和防止失控所需的工程安全边界，不以固定实际 context 长度限制不同 Program 的策略差异。
+Formal Evolution 默认从 25 个 Static Validation target 选择 `5 × 25 = 125` 个 A 区 Episode。每个 B 区 target 从相同的历史 baseline snapshot 开始。B 区生成结果用于评价和反馈，baseline snapshot 保持稳定。
 
-正式实验必须记录实际资源使用，包括：
+### 2. Code lineage
 
-- LLM calls
-- prompt / completion tokens
-- context size
-- memory context size
-- S2 retrieval usage
-- 方便时记录 latency / cost
+候选继承父代 Program 源码和 provenance。每次评价建立新的运行时 Memory。Lineage 记录：
 
-这些数据用于后续进行 performance–cost 分析，不作为强迫所有 Program 使用完全相同资源量的要求。
+- parent candidate 与 source SHA；
+- origin Seed；
+- attempt ID；
+- mutation、quality、compile 与 evaluation outcome；
+- fitness 和 promotion provenance。
 
-1. **反馈通道收窄**：reflector / mutation 只能获得 scalar fitness、不泄漏答案的 structured metrics、不含 gold 内容的错误类型；judge rationale 若复述 gold 不得回灌（ADR-0005 的 Human Reference Boundary 旁路规则）。
-2. **安全续跑**：同一 Candidate × lineage × replicate × Program SHA × Historical manifest × config 可从自身 identity-bound checkpoint 恢复；每篇 A 完成后原子保存 Memory snapshot。completed IDs 必须是 frozen order 的严格 prefix，中断论文不计 completed 并整篇重跑。若 checkpoint 已存在，允许清理唯一紧邻 `next_paper_index` 的未提交 sidecar；任何更远 future record 都 fail-fast。没有 checkpoint 时，任何旧 `memory_library`、history sidecar 或历史论文输出都视为无法认证的残留状态并直接拒绝，不从目录内容猜测 resume 身份。formal search controller 另行原子记录已提交 Seeds/Candidates、attempt/lineage cursor、successful completed counts、RNG state、selection repeats 与日志边界；重启同一命令恢复控制器状态并丢弃唯一未提交 Candidate，不能重算已提交搜索前缀。新 run identity 与旧 controller 不匹配时直接拒绝。
-3. **lineage 公平预算**：正式搜索的配置预算必须能被三条 lineage 整除；当前默认 21 个 **successful child candidate evaluations**，每条 lineage 各 7 个 completed。mutation/reflector 构造失败、protocol guard 拒绝、quality/compile 失败或未真正完成 static evaluation 均不消耗 completed budget；调度继续轮转并补跑未达标 lineage。只有三条 successful completed count 相等且达到目标后才允许比较 lineage champion。replicate 记录显式 ID、run seed、generation config、Program SHA 和 Memory state identity；当前模型后端不承诺 deterministic seed，必须记录 `seed_control_available=false`。
+### 3. Global quality-passing pool
 
-## Considered Options
+搜索先评估三个 Seed，再将通过质量门禁且完成 Static Evaluation 的 Seed 加入全局候选池。每次 Evolution Attempt 从全局池选择父代。完成 Static Evaluation 的合格子代加入同一全局池。默认策略以分数 softmax 采样，temperature 为 0.15；best policy 作为显式 ablation。
 
-- **Candidate warm-start 父代的 Memory State**：被否决。fitness 归因混淆（收益来自 code 还是继承的记忆？），且祖先经验沿 lineage 泄漏，等价于隐式共享答案。
-- **三个 Seed 合并为单一起点池**：被否决。三种初始假设混血统后无法回答「哪类假设更适合进化」。
-- **预算不设统一上限、Program 自由使用算力**：被否决。无法区分策略收益与算力收益；上限内自由、上限统一是公平比较的前提。
+Lineage 用于来源追踪和 lineage champion 统计。Parent selection 面向完整全局池。
+
+### 4. Attempt budget
+
+默认搜索包含 20 个 Evolution Attempts。一次 attempt 覆盖：
+
+1. parent selection；
+2. rotating feedback；
+3. Reflector 生成完整子代源码；
+4. protocol、source、compile 与 quality gates；
+5. static evaluation；
+6. outcome commit。
+
+每个 outcome 消费一个 attempt，包括 Reflector/变异生成失败、门禁拒绝、编译失败、质量失败与评估结果。固定 attempt 预算直接表达实际搜索机会与成本。
+
+### 5. Selection
+
+- Static Selection 默认 25，用于跨候选比较。
+- Rotating Selection 默认 5，用于构造新的变异反馈。
+- Selection Repeats 默认 3。
+- Selection Top K 默认 3。
+- Overall selection 先取 Static Score 前 3 名，再各执行 3 次重复评估；最高均值获胜，方差作为同均值 tie-break。
+- 每条 provenance lineage 的 Static Score 最高候选形成 lineage champion。
+
+### 6. Feedback boundary
+
+Reflector 接收 scalar fitness、安全聚合指标、预定义错误类别、运行失败类型与资源统计。Evaluator-only human/gold 内容由外部评价边界管理。
+
+### 7. Checkpoint and resume
+
+History checkpoint 绑定：
+
+- checkpoint protocol version；
+- Candidate、lineage、replicate 与 Program SHA；
+- Historical manifest 与配置 identity；
+- 完成 Episode 的严格冻结顺序 prefix 与 `next_paper_index`；
+- Memory snapshot 内容身份与已提交 sidecar 集合。
+
+Search controller 原子记录：
+
+- 已提交 Seeds 与 Candidates；
+- attempt cursor；
+- RNG state；
+- selection repeats；
+- pool、scores、lineage 与 trace 日志边界。
+
+相同 run identity 恢复已提交前缀，并从下一个完整工作单元继续。
+
+### 8. Resource provenance
+
+正式运行记录：
+
+- LLM calls 与 token usage；
+- context 和 memory context size；
+- embedding 与 Frozen S2 usage；
+- latency 和可得的 cost；
+- model、revision、generation parameters；
+- sandbox memory、timeout 与 capability counters。
+
+`runtime_resources.json` 记录 runtime policy version 与 sandbox memory；`llm_runtime.json` 记录 logical model、endpoint preflight、base URL history 与 runtime embedding namespace；`selection.json`、`embedding_closure_smoke.json`、`evolution_budget.json` 和两类 checkpoint 分别记录选择、闭环验证、预算与恢复身份。
+
+资源统计用于 performance–cost 分析。同一正式比较共享相同系统级资源边界。
 
 ## Consequences
 
-- 实现上，fitness 评估的运行结构必须支持 fresh replay（状态完全可重置、顺序确定）。
-- Evaluator feedback 通道需审计：现有 reflector 的 `EvalFeedback`（failed cases / traces / judge rationale）是否含复述 gold 的内容——列入 docs/TODO.md。
-- 预算参数化但同实验一致，用量日志成为实验记录的必备字段。
+- Fitness 收益归因于当前 Program 源码与其自生成经验策略。
+- 三个 Seed 保持独立起点；完成 Static Evaluation 的合格 Seed 与子代共同参与全局父代选择。
+- 20 次 attempt 的每种 outcome 都进入预算与 provenance。
+- overall champion 表达全局最优；lineage champion 表达来源维度的最佳结果。
+- evolution_budget.json、scores.jsonl、lineage.jsonl 和 controller checkpoint 共同解释完整搜索过程。
+- Effectiveness Screening 以 lineage-qualified Seed/Evolved pairs 测量提升效果。

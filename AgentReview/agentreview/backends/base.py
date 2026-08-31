@@ -1,7 +1,6 @@
-#AgentReview/agentreview/backends/base.py
+# AgentReview/agentreview/backends/base.py
 
 from abc import abstractmethod
-from typing import List
 
 from ..config import BackendConfig, Configurable
 from ..message import Message
@@ -38,7 +37,7 @@ class IntelligenceBackend(Configurable):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,
@@ -51,7 +50,7 @@ class IntelligenceBackend(Configurable):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,

@@ -6,15 +6,16 @@ import argparse
 import hashlib
 import importlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
 from agentreview.backends.openai import OpenAIChat
 from agentreview.reviewer_runtime import (
     CandidateReviewWriter,
     Episode,
-    ReviewRequest,
     ReviewerEngine,
+    ReviewRequest,
 )
 from agentreview.reviewer_runtime.requests import (
     build_review_question,
@@ -24,14 +25,13 @@ from agentreview.reviewer_runtime.tasks import ALL_TASKS, META_TASK
 from agentreview.reviewer_runtime.toolkit import MemoryToolkit
 from agentreview.source_map import build_source_anchors, load_content_list
 
-
 TEMPORAL_REVIEW_ZONES = (
     "effectiveness_holdout",
     "held_out_benchmark_test",
 )
 
 
-def _iter_jsonl(path: str | Path) -> Iterable[Dict[str, Any]]:
+def _iter_jsonl(path: str | Path) -> Iterable[dict[str, Any]]:
     source = Path(path).expanduser().resolve()
     with source.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
@@ -46,7 +46,7 @@ def _iter_jsonl(path: str | Path) -> Iterable[Dict[str, Any]]:
             yield value
 
 
-def _load_episodes(path: str) -> List[Episode]:
+def _load_episodes(path: str) -> list[Episode]:
     return [Episode.from_value(value) for value in _iter_jsonl(path)] if path else []
 
 
@@ -81,13 +81,15 @@ def _backend(args):
         temperature=args.temperature,
         openai_base_url=args.openai_base_url,
         openai_client_type=args.openai_client_type,
-        reasoning_effort=(None if args.reasoning_effort == "none" else args.reasoning_effort),
+        reasoning_effort=(
+            None if args.reasoning_effort == "none" else args.reasoning_effort
+        ),
         reasoning_effort_supported=args.reasoning_effort_supported,
         request_timeout_seconds=args.request_timeout_seconds,
     )
 
 
-def _load_temporal_entries(manifest_path: str, zone: str) -> List[Dict[str, Any]]:
+def _load_temporal_entries(manifest_path: str, zone: str) -> list[dict[str, Any]]:
     if zone not in TEMPORAL_REVIEW_ZONES:
         raise ValueError(
             "Reviewer temporal batch accepts only effectiveness_holdout or "
@@ -105,9 +107,9 @@ def _load_temporal_entries(manifest_path: str, zone: str) -> List[Dict[str, Any]
     return values
 
 
-def _benchmark_records(coco_root: str, entries: Iterable[Dict[str, Any]]):
+def _benchmark_records(coco_root: str, entries: Iterable[dict[str, Any]]):
     root = Path(coco_root).expanduser().resolve()
-    files: Dict[str, Path] = {}
+    files: dict[str, Path] = {}
     for entry in entries:
         basename = str(entry.get("source_asset") or "").rsplit("/", 1)[-1]
         if not basename:
@@ -117,7 +119,9 @@ def _benchmark_records(coco_root: str, entries: Iterable[Dict[str, Any]]):
     for path in files.values():
         if not path.is_file():
             raise FileNotFoundError(f"CoCo benchmark source is missing: {path}")
-        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
             if not line.strip():
                 continue
             value = json.loads(line)
@@ -127,7 +131,7 @@ def _benchmark_records(coco_root: str, entries: Iterable[Dict[str, Any]]):
     return records
 
 
-def _questions_by_paper(path: str) -> Dict[str, str]:
+def _questions_by_paper(path: str) -> dict[str, str]:
     if not path:
         return {}
     output = {}
@@ -142,7 +146,7 @@ def _questions_by_paper(path: str) -> Dict[str, str]:
     return output
 
 
-def _temporal_requests(args) -> List[ReviewRequest]:
+def _temporal_requests(args) -> list[ReviewRequest]:
     entries = _load_temporal_entries(args.temporal_manifest, args.zone)
     if args.limit is not None:
         entries = entries[: args.limit]
@@ -159,7 +163,10 @@ def _temporal_requests(args) -> List[ReviewRequest]:
         if int(entry.get("source_line") or source_line) != source_line:
             raise ValueError(f"CoCo source line drift for {paper_id}")
         expected_sha = str(entry.get("source_record_sha256") or "")
-        if expected_sha and hashlib.sha256(raw_line.encode("utf-8")).hexdigest() != expected_sha:
+        if (
+            expected_sha
+            and hashlib.sha256(raw_line.encode("utf-8")).hexdigest() != expected_sha
+        ):
             raise ValueError(f"CoCo source record checksum mismatch for {paper_id}")
         question = supplied_questions.get(paper_id, "")
         if not question:
@@ -212,7 +219,9 @@ def _single_request(args) -> ReviewRequest:
     if args.question_file:
         question = Path(args.question_file).expanduser().read_text(encoding="utf-8")
     if not args.paper_id or not question:
-        raise ValueError("Single review requires --paper-id and --question/--question-file")
+        raise ValueError(
+            "Single review requires --paper-id and --question/--question-file"
+        )
     return ReviewRequest(
         paper_id=args.paper_id,
         task_id=args.task_id,

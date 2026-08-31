@@ -5,15 +5,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import random
 import re
 import shutil
-import time
-from datetime import date
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Sequence
+from typing import Any
 
 from agentreview.paper_context import (
     CANONICAL_PAPER_CONTEXT_VERSION,
@@ -24,7 +22,6 @@ from agentreview.paper_review_player_md import format_refs
 from agentreview.source_map import (
     build_source_anchors,
     extract_title_from_content_list,
-    format_source_anchors,
     load_content_list,
 )
 from memory_evolution.agentreview_data import (
@@ -34,7 +31,9 @@ from memory_evolution.agentreview_data import (
 )
 from memory_evolution.assets import FOUR_ZONES, load_temporal_split_manifest
 from memory_evolution.tasks import SPECIALIST_TASKS
+from memory_evolution.toolkit import validate_frozen_s2_pool
 
+from .activation import ActivationPending, require_activation
 
 DESIGN_VERSION = "effectiveness-screening-v2-temporal"
 STRATA = ("ICLR-accept", "ICLR-reject", "NeurIPS-accept", "NeurIPS-reject")
@@ -62,10 +61,8 @@ def text_value(value: Any) -> str:
     return str(value or "").strip()
 
 
-def category_reference_map(
-    record: Mapping[str, Any], task_id: str
-) -> Dict[str, str]:
-    output: Dict[str, str] = {}
+def category_reference_map(record: Mapping[str, Any], task_id: str) -> dict[str, str]:
+    output: dict[str, str] = {}
     for category, value in sorted(
         (record.get("opinions_md_by_category_dict") or {}).items()
     ):
@@ -88,7 +85,7 @@ def category_reference_map(
     return output
 
 
-def iter_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
+def iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
@@ -109,107 +106,11 @@ def write_jsonl(path: Path, values: Iterable[Mapping[str, Any]]) -> None:
             handle.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n")
 
 
-def semantic_scholar_query_candidates(title: str) -> List[str]:
-    """Return deterministic title queries, ordered from specific to broader."""
-    candidates = [title.strip()]
-    if ":" in title:
-        descriptive_title = title.split(":", 1)[1].strip()
-        if descriptive_title:
-            candidates.append(descriptive_title)
-    unique = []
-    for candidate in candidates:
-        if candidate and candidate not in unique:
-            unique.append(candidate)
-    return unique
-
-
-def semantic_scholar_search(
-    requests_module: Any,
-    *,
-    query: str,
-    limit: int,
-    api_key: str,
-    min_interval_seconds: float,
-    max_attempts: int,
-    last_request_at: float | None,
-) -> tuple[List[Dict[str, Any]], float]:
-    """Search S2 with 1-RPS pacing and bounded retry for transient failures."""
-    retryable_statuses = {429, 500, 502, 503, 504}
-    for attempt in range(1, max_attempts + 1):
-        if last_request_at is not None:
-            elapsed = time.monotonic() - last_request_at
-            if elapsed < min_interval_seconds:
-                time.sleep(min_interval_seconds - elapsed)
-        try:
-            response = requests_module.get(
-                "https://api.semanticscholar.org/graph/v1/paper/search",
-                params={
-                    "query": query,
-                    "limit": limit,
-                    "minCitationCount": 0,
-                    "fields": (
-                        "title,year,abstract,authors.name,citationCount,url,"
-                        "externalIds"
-                    ),
-                },
-                headers={"x-api-key": api_key},
-                timeout=60,
-            )
-            last_request_at = time.monotonic()
-        except requests_module.RequestException as exc:
-            if attempt == max_attempts:
-                raise RuntimeError(
-                    f"Semantic Scholar request failed after {max_attempts} "
-                    f"attempts for query {query!r}"
-                ) from exc
-            delay = min(60.0, 5.0 * (2 ** (attempt - 1)))
-            print(
-                f"S2 network error; retrying in {delay:.0f}s "
-                f"({attempt}/{max_attempts})",
-                flush=True,
-            )
-            time.sleep(delay)
-            continue
-        if response.status_code == 200:
-            try:
-                payload = response.json()
-            except ValueError as exc:
-                raise RuntimeError(
-                    f"Semantic Scholar returned invalid JSON for query {query!r}"
-                ) from exc
-            return list(payload.get("data") or []), last_request_at
-        if response.status_code not in retryable_statuses:
-            raise RuntimeError(
-                f"Semantic Scholar retrieval failed for query {query!r}: "
-                f"HTTP {response.status_code}. Check S2_API_KEY and request."
-            )
-        if attempt == max_attempts:
-            raise RuntimeError(
-                f"Semantic Scholar retrieval failed after {max_attempts} "
-                f"attempts for query {query!r}: HTTP {response.status_code}."
-            )
-        retry_after = response.headers.get("Retry-After", "").strip()
-        try:
-            delay = float(retry_after)
-        except ValueError:
-            delay = min(60.0, 5.0 * (2 ** (attempt - 1)))
-        delay = max(min_interval_seconds, min(delay, 300.0))
-        print(
-            f"S2 HTTP {response.status_code}; retrying in {delay:.0f}s "
-            f"({attempt}/{max_attempts})",
-            flush=True,
-        )
-        time.sleep(delay)
-    raise AssertionError("unreachable")
-
-
-def load_config(path: Path) -> Dict[str, Any]:
+def load_config(path: Path) -> dict[str, Any]:
     source = path.expanduser().resolve()
     value = json.loads(source.read_text(encoding="utf-8"))
     if value.get("design_version") != DESIGN_VERSION:
-        raise ValueError(
-            f"Unsupported design version: {value.get('design_version')!r}"
-        )
+        raise ValueError(f"Unsupported design version: {value.get('design_version')!r}")
     if value.get("metric_status") != "CoCo-style proxy screening":
         raise ValueError("The screening config must explicitly declare proxy status")
     value["_config_path"] = str(source)
@@ -228,6 +129,8 @@ def load_config(path: Path) -> Dict[str, Any]:
         "evolved_program_root",
         "output_root",
         "temporal_split_manifest",
+        "frozen_s2_pool",
+        "frozen_s2_pool_manifest",
     ):
         if not value.get(name):
             continue
@@ -303,8 +206,8 @@ def has_author_reply(record: Mapping[str, Any]) -> bool:
     return False
 
 
-def reviewer_overall_scores(record: Mapping[str, Any]) -> List[float]:
-    scores: List[float] = []
+def reviewer_overall_scores(record: Mapping[str, Any]) -> list[float]:
+    scores: list[float] = []
     for group in record.get("reviews") or []:
         if not isinstance(group, list):
             continue
@@ -327,8 +230,8 @@ def reviewer_overall_scores(record: Mapping[str, Any]) -> List[float]:
     return scores
 
 
-def markdown_index(openreview_root: Path) -> Dict[str, Path]:
-    index: Dict[str, Path] = {}
+def markdown_index(openreview_root: Path) -> dict[str, Path]:
+    index: dict[str, Path] = {}
     for path in sorted(openreview_root.rglob("md_content_no_appendix.md")):
         sample_dir = path.parent.name
         if "_" in sample_dir:
@@ -346,8 +249,8 @@ def _eligible(
     *,
     markdown_by_id: Mapping[str, Path],
     allowed_paper_ids: set[str] | None = None,
-) -> tuple[bool, List[str]]:
-    reasons: List[str] = []
+) -> tuple[bool, list[str]]:
+    reasons: list[str] = []
     if str(record.get("id") or "") not in set(allowed_paper_ids or set()):
         reasons.append("outside_frozen_temporal_development_zones")
     if decision_stratum(record) not in STRATA:
@@ -373,17 +276,17 @@ def _eligible(
 
 
 def _sample_stratified(
-    candidates: Sequence[Dict[str, Any]],
+    candidates: Sequence[dict[str, Any]],
     *,
     seed: int,
     per_stratum: int,
     controversial_total: int | None,
-) -> List[Dict[str, Any]]:
-    by_stratum: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+) -> list[dict[str, Any]]:
+    by_stratum: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for candidate in candidates:
         by_stratum[candidate["stratum"]].append(candidate)
     rng = random.Random(seed)
-    selected: List[Dict[str, Any]] = []
+    selected: list[dict[str, Any]] = []
     controversial_allocation = {}
     if controversial_total is not None:
         base, remainder = divmod(controversial_total, len(STRATA))
@@ -413,19 +316,30 @@ def _sample_stratified(
     return selected
 
 
-def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
+def select_papers(config: dict[str, Any]) -> dict[str, Any]:
     openreview_root = Path(config["openreview_root"]).expanduser().resolve()
     evolution_data_root = Path(config["evolution_data_root"]).expanduser().resolve()
     output_root = Path(config["output_root"]).expanduser().resolve()
+    require_activation(
+        config,
+        "selection",
+        {
+            "openreview_train": openreview_root / "train_clean.jsonl",
+            "openreview_test": openreview_root / "test.jsonl",
+            "temporal_split_manifest": config["temporal_split_manifest"],
+            "evolution_data_root": {
+                "path": evolution_data_root,
+                "type": "directory",
+            },
+        },
+    )
     if (output_root / "design_lock.json").exists():
         raise RuntimeError("Refusing to resample after the design lock was written")
     train_path = openreview_root / "train_clean.jsonl"
     test_path = openreview_root / "test.jsonl"
     train = list(iter_jsonl(train_path))
     test = list(iter_jsonl(test_path))
-    _, temporal_zones = load_temporal_split_manifest(
-        config["temporal_split_manifest"]
-    )
+    _, temporal_zones = load_temporal_split_manifest(config["temporal_split_manifest"])
     temporal_entries = {
         str(value["paper_id"]): value
         for zone in (FOUR_ZONES[0], FOUR_ZONES[2])
@@ -433,21 +347,18 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
     }
     families = _assign_work_families(train + test)
     train_families = families[: len(train)]
-    test_families = set(families[len(train) :])
     id_to_family = {
         str(record.get("id") or ""): family
         for record, family in zip(train + test, families)
     }
     evolution_ids = collect_evolution_paper_ids(evolution_data_root)
     evolution_families = {
-        id_to_family[paper_id]
-        for paper_id in evolution_ids
-        if paper_id in id_to_family
+        id_to_family[paper_id] for paper_id in evolution_ids if paper_id in id_to_family
     }
     md_index = markdown_index(openreview_root)
     rejection_counts: Counter[str] = Counter()
-    candidates: List[Dict[str, Any]] = []
-    records_by_id: Dict[str, Dict[str, Any]] = {}
+    candidates: list[dict[str, Any]] = []
+    records_by_id: dict[str, dict[str, Any]] = {}
     for record, family in zip(train, train_families):
         eligible, reasons = _eligible(
             record,
@@ -514,9 +425,7 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
         for task_id in SPECIALIST_TASKS:
             reference, categories = _category_reference(record, task_id)
             category_references[task_id] = reference
-            category_reference_by_tag.update(
-                category_reference_map(record, task_id)
-            )
+            category_reference_by_tag.update(category_reference_map(record, task_id))
             reference_categories[task_id] = categories
         proxy_references.append(
             {
@@ -584,127 +493,66 @@ def select_papers(config: Dict[str, Any]) -> Dict[str, Any]:
     return audit
 
 
-def retrieve_related_work(config: Dict[str, Any]) -> Dict[str, Any]:
-    import requests
+def audit_selected_s2_pool(
+    config: Mapping[str, Any], selected: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """Validate the selected A/C subset against the global Frozen S2 v2 asset."""
+    selected_by_id = {str(value["paper_id"]): value for value in selected}
+    return validate_frozen_s2_pool(
+        str(config["frozen_s2_pool"]),
+        expected_cutoffs={
+            paper_id: str(value["paper_review_cutoff"])
+            for paper_id, value in selected_by_id.items()
+        },
+        required_ids=set(selected_by_id),
+        expected_pool_version=str(config["frozen_s2_pool_version"]),
+        expected_queries={
+            paper_id: str(value["title"]) for paper_id, value in selected_by_id.items()
+        },
+    )
 
+
+def build_bundles(config: dict[str, Any]) -> dict[str, Any]:
     output_root = Path(config["output_root"]).expanduser().resolve()
-    destination = output_root / "frozen_related_work.jsonl"
-    existing = {
-        str(value["paper_id"]): value
-        for value in iter_jsonl(destination)
-    } if destination.is_file() else {}
-    selected = list(iter_jsonl(output_root / "effectiveness_validation.jsonl"))
-    selected += list(iter_jsonl(output_root / "memory_corpus.jsonl"))
-    api_key = os.environ.get("S2_API_KEY", "")
-    min_interval_seconds = float(os.environ.get("S2_MIN_INTERVAL_SECONDS", "1.1"))
-    max_attempts = int(os.environ.get("S2_MAX_ATTEMPTS", "6"))
-    if min_interval_seconds < 1.0:
-        raise ValueError("S2_MIN_INTERVAL_SECONDS must be at least 1.0")
-    if max_attempts < 1:
-        raise ValueError("S2_MAX_ATTEMPTS must be positive")
-    last_request_at = None
-    for index, value in enumerate(selected, start=1):
-        paper_id = str(value["paper_id"])
-        cutoff_text = str(value.get("paper_review_cutoff") or "")
-        if not cutoff_text:
-            raise ValueError(f"Missing paper_review_cutoff for {paper_id}")
-        if (
-            paper_id in existing
-            and existing[paper_id].get("status") == "ok"
-            and existing[paper_id].get("paper_review_cutoff") == cutoff_text
-            and existing[paper_id].get("retrieval_version") == "s2-search-temporal-v1"
-        ):
-            continue
-        title = str(value["title"])
-        queries = semantic_scholar_query_candidates(title)
-        papers: List[Dict[str, Any]] = []
-        resolved_query = None
-        for query in queries:
-            papers, last_request_at = semantic_scholar_search(
-                requests,
-                query=query,
-                limit=int(config["paper_context"]["max_retrieved_refs"]),
-                api_key=api_key,
-                min_interval_seconds=min_interval_seconds,
-                max_attempts=max_attempts,
-                last_request_at=last_request_at,
-            )
-            if papers:
-                resolved_query = query
-                break
-        cutoff = date.fromisoformat(cutoff_text[:10])
-        accepted = []
-        rejected_future_or_unknown = []
-        for paper in papers:
-            year = paper.get("year")
-            if not year:
-                rejected_future_or_unknown.append(paper)
-                continue
-            publication = date(int(year), 12, 31)
-            if publication > cutoff:
-                rejected_future_or_unknown.append(paper)
-                continue
-            accepted.append(paper)
-        papers = accepted
-        retrieval_config = {
-            "limit": int(config["paper_context"]["max_retrieved_refs"]),
-            "fields": "title,year,abstract,authors.name,citationCount,url,externalIds",
-            "future_or_unknown_date_policy": "reject",
-        }
-        existing[paper_id] = {
-            "paper_id": paper_id,
-            "target_identity": {"paper_id": paper_id, "title": title},
-            "paper_review_cutoff": cutoff_text,
-            "query": title,
-            "queries_attempted": (
-                queries
-                if not papers
-                else queries[: queries.index(resolved_query) + 1]
-            ),
-            "resolved_query": resolved_query,
-            "retrieved_papers": papers,
-            "empty_result_confirmed": not papers,
-            "retrieval_method": "Semantic Scholar Graph API title search",
-            "retrieval_version": "s2-search-temporal-v1",
-            "top_k": retrieval_config["limit"],
-            "retrieval_config": retrieval_config,
-            "result_sha256": canonical_json_sha256(papers),
-            "future_or_unknown_results_rejected": len(rejected_future_or_unknown),
-            "status": "ok",
-            "pool_version": "frozen-s2-temporal-v1",
-        }
-        write_jsonl(destination, [existing[key] for key in sorted(existing)])
-        result_note = f"{len(papers)} papers" if papers else "confirmed empty"
-        print(
-            f"[{index}/{len(selected)}] froze related work for "
-            f"{paper_id} ({result_note})",
-            flush=True,
-        )
-    return {
-        "path": str(destination),
-        "sha256": sha256_file(destination),
-        "paper_count": len(existing),
-    }
-
-
-def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
-    output_root = Path(config["output_root"]).expanduser().resolve()
-    related_path = output_root / "frozen_related_work.jsonl"
+    related_path = Path(config["frozen_s2_pool"]).expanduser().resolve()
+    require_activation(
+        config,
+        "bundle_generation",
+        {
+            "effectiveness_selection": output_root / "effectiveness_validation.jsonl",
+            "memory_corpus_selection": output_root / "memory_corpus.jsonl",
+            "frozen_s2_pool": related_path,
+            "frozen_s2_pool_manifest": config["frozen_s2_pool_manifest"],
+        },
+    )
     if not related_path.is_file():
         raise FileNotFoundError(
-            "Run retrieve-related before building frozen paper-context bundles"
+            f"Configured Frozen S2 v2 asset is required: {related_path}"
+        )
+    selected_by_split = {
+        split_name: list(iter_jsonl(output_root / filename))
+        for split_name, filename in (
+            ("effectiveness_validation", "effectiveness_validation.jsonl"),
+            ("memory_corpus", "memory_corpus.jsonl"),
+        )
+    }
+    selected_all = [
+        value for split_values in selected_by_split.values() for value in split_values
+    ]
+    s2_audit = audit_selected_s2_pool(config, selected_all)
+    if s2_audit.get("passed") is not True:
+        raise RuntimeError(
+            "Frozen S2 v2 selection audit failed: "
+            + json.dumps(s2_audit, ensure_ascii=False, sort_keys=True)
         )
     related = {
         str(value["paper_id"]): value
         for value in iter_jsonl(related_path)
-        if value.get("status") == "ok"
+        if value.get("status") == "completed"
     }
     manifest_items = []
-    for split_name, filename in (
-        ("effectiveness_validation", "effectiveness_validation.jsonl"),
-        ("memory_corpus", "memory_corpus.jsonl"),
-    ):
-        for selected in iter_jsonl(output_root / filename):
+    for split_name, split_values in selected_by_split.items():
+        for selected in split_values:
             paper_id = str(selected["paper_id"])
             if paper_id not in related:
                 raise ValueError(f"Frozen related-work cache missing {paper_id}")
@@ -743,7 +591,9 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
                 paper_id=paper_id,
                 title=title,
                 venue=venue,
-                year=str(selected.get("year") or (year_match.group(0) if year_match else "")),
+                year=str(
+                    selected.get("year") or (year_match.group(0) if year_match else "")
+                ),
                 reviewer_role="SPECIALIST",
                 max_chars=int(
                     config.get("generation", {}).get(
@@ -793,7 +643,10 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
     manifest = {
         "design_version": DESIGN_VERSION,
         "contains_human_review_data": False,
-        "frozen_related_work_sha256": sha256_file(related_path),
+        "frozen_s2_pool": str(related_path),
+        "frozen_s2_pool_version": str(config["frozen_s2_pool_version"]),
+        "frozen_s2_pool_sha256": sha256_file(related_path),
+        "frozen_s2_selection_audit": s2_audit,
         "s2_default_injection": False,
         "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION,
         "paper_count": len(manifest_items),
@@ -809,18 +662,18 @@ def build_bundles(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "command", choices=("select", "retrieve-related", "build-bundles")
-    )
+    parser.add_argument("command", choices=("select", "build-bundles"))
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
     config = load_config(Path(args.config).expanduser().resolve())
-    if args.command == "select":
-        result = select_papers(config)
-    elif args.command == "retrieve-related":
-        result = retrieve_related_work(config)
-    else:
-        result = build_bundles(config)
+    try:
+        if args.command == "select":
+            result = select_papers(config)
+        else:
+            result = build_bundles(config)
+    except ActivationPending as exc:
+        print(json.dumps(exc.report, ensure_ascii=False, indent=2, sort_keys=True))
+        raise SystemExit(2) from exc
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
 
 

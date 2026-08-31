@@ -1,8 +1,7 @@
-from typing import Iterable
+from collections.abc import Iterable
 
-from .models import Episode
 from .engine import ReviewerSession
-from .models import ReviewRequest
+from .models import Episode, ReviewRequest
 
 
 class MemoryHarnessAdapter:

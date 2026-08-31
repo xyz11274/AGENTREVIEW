@@ -1,17 +1,16 @@
+import hashlib
 import json
 import math
+import os
 import random
 import shutil
-import hashlib
-import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .evaluator import candidate_safe_case, candidate_safe_trace, evaluate_program
 from .models import Episode, EvalItem
 from .quality import QualityResult, check_program_path
-from .sandbox import SandboxSession
 from .reflector import (
     ChangeLog,
     EvalFeedback,
@@ -20,6 +19,7 @@ from .reflector import (
     mutate_program,
     validate_mutation_scope,
 )
+from .sandbox import SandboxSession
 from .subset_selection import (
     build_static_validation_set,
     sample_rotating_validation_set,
@@ -35,7 +35,7 @@ class EvolutionConfig:
     static_size: int = 25
     rotating_size: int = 5
     temperature: float = 0.15
-    episode_budget: Optional[int] = None
+    episode_budget: int | None = None
     seed: int = 0
     dry_run: bool = False
     max_fix_attempts: int = 3
@@ -68,7 +68,7 @@ class EvolutionConfig:
     embedding_adapter_sha256: str = ""
     embedding_model_name: str = ""
     embedding_revision: str = ""
-    embedding_spec: Dict[str, Any] = field(default_factory=dict)
+    embedding_spec: dict[str, Any] = field(default_factory=dict)
     embedding_fingerprint: str = ""
     runtime_embedding_namespace: str = "candidate_runtime_v1"
     runtime_embedding_local_files_only: bool = True
@@ -76,7 +76,7 @@ class EvolutionConfig:
     formal_experiment_identity: str = ""
     formal_experiment_manifest_sha256: str = ""
     formal: bool = True
-    review_request_sha256: str = ""
+    reviewer_suite_identity_sha256: str = ""
     data_manifest_sha256: str = ""
     semantic_scholar_cache_sha256: str = ""
     historical_manifest_sha256: str = ""
@@ -84,7 +84,7 @@ class EvolutionConfig:
     s2_asset_version: str = ""
     run_seed: int = 0
     seed_control_available: bool = False
-    seed_program_sha256: Dict[str, str] = field(default_factory=dict)
+    seed_program_sha256: dict[str, str] = field(default_factory=dict)
     experiment_kind: str = "formal"
 
     @classmethod
@@ -101,12 +101,12 @@ class EvolutionConfig:
 class ProgramCandidate:
     program_id: str
     path: str
-    parent_id: Optional[str]
+    parent_id: str | None
     iteration: int
     static_score: float
     quality: QualityResult
     change_log: ChangeLog
-    lineage: List[ChangeLog] = field(default_factory=list)
+    lineage: list[ChangeLog] = field(default_factory=list)
     parent_seed: str = ""
     lineage_name: str = ""
     program_sha256: str = ""
@@ -120,9 +120,9 @@ class EvolutionResult:
     best_score: float
     output_dir: str
     pool_size: int
-    static_validation_ids: List[str]
+    static_validation_ids: list[str]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -147,7 +147,7 @@ def _atomic_write_json(path: Path, value: Any) -> None:
     os.replace(temporary, path)
 
 
-def _change_log_from_value(value: Dict[str, Any]) -> ChangeLog:
+def _change_log_from_value(value: dict[str, Any]) -> ChangeLog:
     return ChangeLog(
         summary=str(value.get("summary") or ""),
         details=list(value.get("details") or []),
@@ -155,7 +155,7 @@ def _change_log_from_value(value: Dict[str, Any]) -> ChangeLog:
     )
 
 
-def _candidate_to_state(candidate: ProgramCandidate) -> Dict[str, Any]:
+def _candidate_to_state(candidate: ProgramCandidate) -> dict[str, Any]:
     return {
         **_candidate_record(candidate),
         "path": candidate.path,
@@ -165,7 +165,7 @@ def _candidate_to_state(candidate: ProgramCandidate) -> Dict[str, Any]:
     }
 
 
-def _candidate_from_state(value: Dict[str, Any]) -> ProgramCandidate:
+def _candidate_from_state(value: dict[str, Any]) -> ProgramCandidate:
     quality_value = dict(value.get("quality") or {})
     candidate = ProgramCandidate(
         program_id=str(value["program_id"]),
@@ -230,18 +230,16 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _append_jsonl(path: Path, value: Dict[str, Any]) -> None:
+def _append_jsonl(path: Path, value: dict[str, Any]) -> None:
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(value, ensure_ascii=False) + "\n")
 
 
-def _write_traces(path: Path, program_id: str, traces: List[Dict[str, Any]]) -> None:
+def _write_traces(path: Path, program_id: str, traces: list[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for trace in traces:
             handle.write(
-                json.dumps(
-                    {"program_id": program_id, **trace}, ensure_ascii=False
-                )
+                json.dumps({"program_id": program_id, **trace}, ensure_ascii=False)
                 + "\n"
             )
 
@@ -253,7 +251,7 @@ def run_embedding_closure_smoke(
     task_agent,
     toolkit,
     sandbox_memory_mb: int = 1024,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Exercise one real vector write/read through the runtime embedder."""
     embedding = getattr(toolkit, "embedding_client", None)
     if embedding is None:
@@ -288,18 +286,14 @@ def run_embedding_closure_smoke(
             "episode_text_sha256": hashlib.sha256(
                 episode.text.encode("utf-8")
             ).hexdigest(),
-            "query_text_sha256": hashlib.sha256(
-                query_text.encode("utf-8")
-            ).hexdigest(),
+            "query_text_sha256": hashlib.sha256(query_text.encode("utf-8")).hexdigest(),
             "context_chars": len(context),
             "embedding_fingerprint": str(
                 getattr(embedding, "embedding_fingerprint", "")
             ),
             "model_revision": str(getattr(embedding, "revision", "")),
             "runtime_cache": str(getattr(embedding, "cache_path", "")),
-            "runtime_namespace": str(
-                getattr(embedding, "cache_namespace", "")
-            ),
+            "runtime_namespace": str(getattr(embedding, "cache_namespace", "")),
         }
     finally:
         session.close(force=True)
@@ -308,8 +302,8 @@ def run_embedding_closure_smoke(
 def _candidate_record(
     candidate: ProgramCandidate,
     rotating_score: float = 0.0,
-    compile_errors: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    compile_errors: list[str] | None = None,
+) -> dict[str, Any]:
     return {
         "program_id": candidate.program_id,
         "parent_id": candidate.parent_id,
@@ -346,8 +340,7 @@ def search_controller_identity(
         {
             "config": controller_config,
             "seed_program_sha256": {
-                Path(path).name: _sha256_file(Path(path))
-                for path in seed_program_paths
+                Path(path).name: _sha256_file(Path(path)) for path in seed_program_paths
             },
             "episode_ids": [_item_id(value) for value in episodes],
             "validation_ids": [_item_id(value) for value in validation_items],
@@ -394,9 +387,9 @@ def _item_id(item) -> str:
 
 
 def _reference_programs(
-    candidates: List[ProgramCandidate],
+    candidates: list[ProgramCandidate],
     parent_id: str,
-) -> List[str]:
+) -> list[str]:
     """Expose scored high/low population designs without validation case content."""
     eligible = [
         candidate
@@ -423,7 +416,7 @@ def _reference_programs(
 
 
 def run_evolution(
-    seed_program_paths: List[str],
+    seed_program_paths: list[str],
     episodes,
     validation_items,
     task_agent,
@@ -552,12 +545,8 @@ def run_evolution(
         collect_traces: bool = True,
     ):
         program_sha = _sha256_file(Path(program_path))
-        checkpoint = (
-            output_dir
-            / "checkpoints"
-            / program_id
-            / f"{replicate_id}.json"
-        )
+        checkpoint = output_dir / "checkpoints" / program_id / f"{replicate_id}.json"
+
         def observe_candidate_review(value):
             record = dict(value)
             provenance = dict(record.get("provenance") or {})
@@ -605,9 +594,7 @@ def run_evolution(
                         "max_tokens": cfg.max_tokens,
                         "retry_max_tokens": cfg.retry_max_tokens,
                         "reasoning_effort": cfg.reasoning_effort,
-                        "reasoning_effort_supported": (
-                            cfg.reasoning_effort_supported
-                        ),
+                        "reasoning_effort_supported": (cfg.reasoning_effort_supported),
                     },
                 }
                 if cfg.formal
@@ -618,6 +605,7 @@ def run_evolution(
         if cfg.formal and evaluation.error:
             raise RuntimeError(evaluation.error)
         return evaluation
+
     if cfg.formal and controller.get("phase") != "subset_selection":
         static_id_values = set(controller.get("static_validation_ids") or [])
         episode_id_values = set(controller.get("selected_episode_ids") or [])
@@ -666,9 +654,7 @@ def run_evolution(
             "fingerprint": cfg.embedding_fingerprint,
         },
     }
-    selection_payload["selection_fingerprint"] = _canonical_sha256(
-        selection_payload
-    )
+    selection_payload["selection_fingerprint"] = _canonical_sha256(selection_payload)
     if (
         cfg.formal
         and cfg.embedding_spec.get("provider") == "qwen3_embedding"
@@ -713,7 +699,7 @@ def run_evolution(
         read_timeout=cfg.read_timeout,
         mutation_scope=cfg.mutation_scope,
     )
-    candidates: List[ProgramCandidate] = (
+    candidates: list[ProgramCandidate] = (
         [
             _candidate_from_state(dict(value))
             for value in controller.get("candidates") or []
@@ -825,13 +811,13 @@ def run_evolution(
     if cfg.formal and controller.get("phase") == "seeds":
         commit_controller(phase="search")
 
-    next_index = int(controller.get("next_index", len(candidates))) if cfg.formal else len(candidates)
-    successful_by_lineage = {
-        f"evolved_from_{name}": 0 for name in seed_names
-    }
-    attempts_by_lineage = {
-        f"evolved_from_{name}": 0 for name in seed_names
-    }
+    next_index = (
+        int(controller.get("next_index", len(candidates)))
+        if cfg.formal
+        else len(candidates)
+    )
+    successful_by_lineage = {f"evolved_from_{name}": 0 for name in seed_names}
+    attempts_by_lineage = {f"evolved_from_{name}": 0 for name in seed_names}
     if cfg.formal:
         successful_by_lineage.update(
             {
@@ -848,7 +834,10 @@ def run_evolution(
             {str(key): int(value) for key, value in stored_attempts.items()}
         )
         if any(value < 0 for value in attempts_by_lineage.values()):
-            raise RuntimeError("Formal checkpoint has negative lineage attempt counters")
+            raise RuntimeError(
+                "Formal checkpoint has negative lineage attempt counters"
+            )
+
     def admit_child(
         *,
         program_id: str,
@@ -931,9 +920,8 @@ def run_evolution(
         if parent is None:
             raise RuntimeError("Formal inflight Candidate parent is missing")
         target = Path(str(inflight.get("path") or "")).expanduser().resolve()
-        if (
-            not target.is_file()
-            or _sha256_file(target) != inflight.get("program_sha256")
+        if not target.is_file() or _sha256_file(target) != inflight.get(
+            "program_sha256"
         ):
             raise RuntimeError("Formal inflight Candidate Program identity mismatch")
         quality_value = dict(inflight.get("quality") or {})
@@ -1025,17 +1013,12 @@ def run_evolution(
                 static_score=parent.static_score,
                 rotating_score=rotating_eval.mean_score,
                 failed_cases=[
-                    candidate_safe_case(case)
-                    for case in rotating_eval.failed_cases
+                    candidate_safe_case(case) for case in rotating_eval.failed_cases
                 ],
                 success_cases=[
-                    candidate_safe_case(case)
-                    for case in rotating_eval.success_cases
+                    candidate_safe_case(case) for case in rotating_eval.success_cases
                 ],
-                traces=[
-                    candidate_safe_trace(trace)
-                    for trace in rotating_eval.traces
-                ],
+                traces=[candidate_safe_trace(trace) for trace in rotating_eval.traces],
                 task_description=cfg.task_description,
                 write_examples=[],
                 debug_logs=[
@@ -1049,7 +1032,10 @@ def run_evolution(
             next_index += 1
             try:
                 parent_code = Path(parent.path).read_text(encoding="utf-8")
-                print(f"[MSTAR] Iteration {iteration}: reflector mutation started", flush=True)
+                print(
+                    f"[MSTAR] Iteration {iteration}: reflector mutation started",
+                    flush=True,
+                )
                 mutation = mutate_program(
                     parent_code,
                     feedback,
@@ -1175,7 +1161,10 @@ def run_evolution(
                         },
                         phase="search_inflight",
                     )
-                print(f"[MSTAR] Iteration {iteration}: static evaluation started", flush=True)
+                print(
+                    f"[MSTAR] Iteration {iteration}: static evaluation started",
+                    flush=True,
+                )
                 static_eval = evaluate_candidate(
                     str(target),
                     program_id,
@@ -1271,9 +1260,7 @@ def run_evolution(
             repeated_scores.append(repeated.mean_score)
             if cfg.formal:
                 selection_scores[candidate.program_id] = list(repeated_scores)
-                commit_controller(
-                    phase="selection", selection_scores=selection_scores
-                )
+                commit_controller(phase="selection", selection_scores=selection_scores)
         mean = sum(repeated_scores) / len(repeated_scores)
         variance = sum((score - mean) ** 2 for score in repeated_scores) / len(
             repeated_scores
@@ -1319,7 +1306,7 @@ def run_evolution(
             "parent_seed": champion.parent_seed,
             "program_id": champion.program_id,
             "fitness": champion.static_score,
-            "program": str(lineage_path),
+            "program": lineage_path.relative_to(output_dir).as_posix(),
             "program_sha256": _sha256_file(lineage_path),
             "promotion_provenance": "best static fitness within independent lineage",
         }
@@ -1343,7 +1330,8 @@ def run_evolution(
         "static_score": best.static_score,
         "selection_mean": selected["mean"],
         "selection_variance": selected["variance"],
-        "selection_repeats": repeated_selection and [
+        "selection_repeats": repeated_selection
+        and [
             {
                 "program_id": value["candidate"].program_id,
                 "scores": value["scores"],

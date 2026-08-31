@@ -1,10 +1,10 @@
 {
   "assets": {
     "frozen_reviewer_identity": {
-      "path": "REVIEW_Request.md",
-      "sha256": "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
+      "path": "configs/frozen_reviewer_identity_v2.json",
+      "sha256": "a480246958ec0371e577c89a946ddf1e92bad766a076ec55201cbe1c111f7cf2",
       "split": "program",
-      "version": "frozen-reviewer-identity-v1"
+      "version": "frozen-reviewer-identity-v2"
     },
     "frozen_s2_pool": {
       "path": "configs/frozen_s2_temporal_v2.jsonl",
@@ -14,7 +14,7 @@
     },
     "frozen_s2_pool_manifest": {
       "path": "configs/frozen_s2_temporal_v2.jsonl.manifest.json",
-      "sha256": "559fa1ec2961ed911f3f48f9afb4aef6ca494eafd1b5d440cfab11a53b75b03e",
+      "sha256": "d9aa83668084a28627201e0d8bc77df05f51f14d941ff7908c530dc5fd7f7a42",
       "split": "A+B+C+D",
       "version": "frozen-s2-temporal-v2"
     },
@@ -44,7 +44,7 @@
     },
     "temporal_split_generator": {
       "path": "scripts/build_coco_temporal_split.py",
-      "sha256": "b9d67356fa831cd6c24dc16eb0974aaa39d3430d2707db15c3213df25b79d86f",
+      "sha256": "e95ce065d672153158cca5117f7826e67df95223c11a441dae184322752152e3",
       "split": "infrastructure",
       "version": "coco-temporal-paper-split-v2"
     },
@@ -79,23 +79,6 @@
       "version": "coco-temporal-paper-split-v2"
     }
   },
-  "deprecated_assets": {
-    "coco_temporal_split_v1": {
-      "deprecated_for_formal_use": true,
-      "path": "configs/coco_temporal_split_v1/manifest.json",
-      "reason": "query_title_serialization_contamination_and_duplicate_family_targets",
-      "sha256": "0b040aefcef39bb4aa89869f941233ff5025665da50351ca40faa65e6443dc26",
-      "split": "A+B+C+D",
-      "version": "coco-temporal-paper-split-v1"
-    },
-    "frozen_s2_temporal_v1": {
-      "deprecated_for_formal_use": true,
-      "path": "configs/frozen_s2_temporal_v1.jsonl",
-      "reason": "query_title_serialization_contamination_and_duplicate_family_targets",
-      "version": "frozen-s2-temporal-v1",
-      "work_path": "configs/frozen_s2_temporal_v1.jsonl.work"
-    }
-  },
   "embedding": {
     "dimension": 4096,
     "fingerprint": "f5fd62cb75e46177a293477c66cd9f2dfa0b3a7dad70d14ee7f0ada0130cb829",
@@ -115,6 +98,5 @@
   "formal_blockers": [],
   "formal_readiness_scope": "pre-QUAL-evolution assets and A/B task bundles",
   "formal_ready": true,
-  "manifest_version": "mstar-assets-v2-temporal",
-  "supersedes": "configs/asset_manifest_v1.json"
+  "manifest_version": "mstar-assets-v2-temporal"
 }

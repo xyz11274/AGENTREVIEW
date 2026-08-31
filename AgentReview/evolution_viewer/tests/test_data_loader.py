@@ -11,8 +11,7 @@ from evolution_viewer.data_loader import (
     scan_runs,
 )
 
-
-PROGRAM = '''
+PROGRAM = """
 INSTRUCTION_KNOWLEDGE_ITEM = "item"
 INSTRUCTION_QUERY = "query"
 INSTRUCTION_RESPONSE = "response"
@@ -29,7 +28,7 @@ class KnowledgeBase:
         return None
     def read(self, query):
         return ""
-'''
+"""
 
 
 class DataLoaderTest(unittest.TestCase):
@@ -175,4 +174,3 @@ class DataLoaderTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

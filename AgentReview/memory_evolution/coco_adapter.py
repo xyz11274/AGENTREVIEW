@@ -9,11 +9,10 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import List
 
 from agentreview.utility.authentication_utils import get_openai_client
-from .tasks import COCOREVIEWBENCH_COMMIT
 
+from .tasks import COCOREVIEWBENCH_COMMIT
 
 SPLIT_BASE_URL = "http://localhost:13099/v1"
 CLASSIFY_BASE_URL = "http://localhost:13098/v1"
@@ -46,8 +45,7 @@ def _head_commit(root: Path) -> str:
 def _load_official_modules(root: Path):
     if not root.is_dir() or _head_commit(root) != COCOREVIEWBENCH_COMMIT:
         raise RuntimeError(
-            "CoCoReviewBench checkout must be pinned to "
-            f"{COCOREVIEWBENCH_COMMIT}"
+            f"CoCoReviewBench checkout must be pinned to {COCOREVIEWBENCH_COMMIT}"
         )
     root_text = str(root)
     if root_text not in sys.path:
@@ -60,9 +58,7 @@ def _load_official_modules(root: Path):
 
 
 class FrozenCoCoAdapter:
-    def __init__(
-        self, root: Path, split_revision: str, classify_revision: str
-    ):
+    def __init__(self, root: Path, split_revision: str, classify_revision: str):
         if not split_revision or not classify_revision:
             raise ValueError(
                 "Immutable ReviewSplit and ReviewClassify revisions are required"
@@ -114,9 +110,7 @@ class FrozenCoCoAdapter:
             None,
         )
         if served is None:
-            raise RuntimeError(
-                f"Frozen CoCo model {model!r} is absent from {endpoint}"
-            )
+            raise RuntimeError(f"Frozen CoCo model {model!r} is absent from {endpoint}")
         model_root_value = str(getattr(served, "root", "") or "").strip()
         if not model_root_value:
             raise RuntimeError(
@@ -140,9 +134,7 @@ class FrozenCoCoAdapter:
     @staticmethod
     def _request(client, phase: str, endpoint: str, **kwargs):
         started = time.monotonic()
-        template_kwargs = (
-            kwargs.get("extra_body", {}).get("chat_template_kwargs", {})
-        )
+        template_kwargs = kwargs.get("extra_body", {}).get("chat_template_kwargs", {})
         print(
             f"[COCO START] phase={phase}, endpoint={endpoint}, "
             f"model={kwargs.get('model')}, max_tokens={kwargs.get('max_tokens')}, "
@@ -188,20 +180,14 @@ class FrozenCoCoAdapter:
             max_tokens=512,
             timeout=COCO_PREFLIGHT_TIMEOUT_SECONDS,
             extra_body={
-                "chat_template_kwargs": {
-                    "enable_thinking": SPLIT_ENABLE_THINKING
-                }
+                "chat_template_kwargs": {"enable_thinking": SPLIT_ENABLE_THINKING}
             },
         )
         split_content = self._content(split_response)
         parsed = self.split_code.parse_llm_output(split_content)
         coverage, _ = self.split_code.compute_coverage(parsed, len(to_text))
         split_finish_reason = split_response.choices[0].finish_reason
-        if (
-            not split_content
-            or coverage < 1.0
-            or split_finish_reason != "stop"
-        ):
+        if not split_content or coverage < 1.0 or split_finish_reason != "stop":
             raise RuntimeError(
                 "Frozen CoCo split_preflight returned invalid semantic output "
                 f"(coverage={coverage:.3f}, finish_reason="
@@ -220,9 +206,7 @@ class FrozenCoCoAdapter:
                 {
                     "role": "user",
                     "content": (
-                        prompt_body.strip()
-                        + "\n\n\nReviewer Comment:\n"
-                        + review
+                        prompt_body.strip() + "\n\n\nReviewer Comment:\n" + review
                     ),
                 },
             ],
@@ -250,7 +234,7 @@ class FrozenCoCoAdapter:
                 f"content_prefix={classify_content[:200]!r})"
             )
 
-    def split_review(self, review_text: str) -> List[str]:
+    def split_review(self, review_text: str) -> list[str]:
         to_text, prompt_text, _ = self.split_code.build_prompt(str(review_text))
         if not to_text:
             return []
@@ -275,38 +259,22 @@ class FrozenCoCoAdapter:
                 presence_penalty=penalty,
                 max_tokens=32768,
                 extra_body={
-                    "chat_template_kwargs": {
-                        "enable_thinking": SPLIT_ENABLE_THINKING
-                    }
+                    "chat_template_kwargs": {"enable_thinking": SPLIT_ENABLE_THINKING}
                 },
             )
             parsed = self.split_code.parse_llm_output(self._content(response))
-            coverage, missing = self.split_code.compute_coverage(
-                parsed, len(to_text)
-            )
-            parsed, _ = self.split_code.sanitize_parsed_ids(
-                parsed, len(to_text)
-            )
+            coverage, missing = self.split_code.compute_coverage(parsed, len(to_text))
+            parsed, _ = self.split_code.sanitize_parsed_ids(parsed, len(to_text))
             if coverage < 1.0:
                 parsed["##N/A"] = missing
-            parsed = self.split_code.split_groups_on_markdown_items(
-                parsed, to_text
-            )
-            parsed = self.split_code.merge_similar_parsed(
-                parsed, jaccard_threshold=0.8
-            )
-            (complete if coverage == 1.0 else incomplete).append(
-                (coverage, parsed)
-            )
+            parsed = self.split_code.split_groups_on_markdown_items(parsed, to_text)
+            parsed = self.split_code.merge_similar_parsed(parsed, jaccard_threshold=0.8)
+            (complete if coverage == 1.0 else incomplete).append((coverage, parsed))
         candidates = [value for _, value in complete]
         if not candidates:
-            candidates = [
-                max(incomplete, key=lambda value: value[0])[1]
-            ]
+            candidates = [max(incomplete, key=lambda value: value[0])[1]]
         candidates.sort(key=len)
-        groups = self.split_code.normalize_groups(
-            candidates[-1].values(), offset=-1
-        )
+        groups = self.split_code.normalize_groups(candidates[-1].values(), offset=-1)
         opinions = []
         for group in sorted([sorted(value) for value in groups]):
             text = "\n".join(
@@ -316,7 +284,7 @@ class FrozenCoCoAdapter:
                 opinions.append(text)
         return opinions
 
-    def classify_opinions(self, opinions: List[str]):
+    def classify_opinions(self, opinions: list[str]):
         system_prompt, prompt_body = self.prompts.classify_reviews_prompt()
         output = []
         for opinion in opinions:
@@ -354,8 +322,7 @@ class FrozenCoCoAdapter:
                 if content and valid and "</think>" in content:
                     candidates.append(labels or ["N/A"])
             if not candidates or any(
-                self.classify_code._is_na_labelset(set(value))
-                for value in candidates
+                self.classify_code._is_na_labelset(set(value)) for value in candidates
             ):
                 output.append(["N/A"])
             else:
@@ -379,8 +346,6 @@ def create_frozen_coco_adapter(
     root = Path(configured_root).expanduser().resolve()
     key = (split_revision, classify_revision, str(root))
     if key not in _INSTANCES:
-        _INSTANCES[key] = FrozenCoCoAdapter(
-            root, split_revision, classify_revision
-        )
+        _INSTANCES[key] = FrozenCoCoAdapter(root, split_revision, classify_revision)
     instance = _INSTANCES[key]
     return instance.split_review, instance.classify_opinions

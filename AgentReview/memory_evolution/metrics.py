@@ -1,7 +1,8 @@
 import json
 import re
 from collections import Counter
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .tasks import META_TASK, SPECIALIST_TASKS
 
@@ -10,14 +11,16 @@ def _tokens(text: str):
     return re.findall(r"\w+", (text or "").lower(), flags=re.UNICODE)
 
 
-def exact_match(prediction: str, gold: str, item: Optional[Dict[str, Any]] = None) -> float:
+def exact_match(
+    prediction: str, gold: str, item: dict[str, Any] | None = None
+) -> float:
     def normalize(value):
         return " ".join(_tokens(value))
 
     return float(normalize(prediction) == normalize(gold))
 
 
-def token_f1(prediction: str, gold: str, item: Optional[Dict[str, Any]] = None) -> float:
+def token_f1(prediction: str, gold: str, item: dict[str, Any] | None = None) -> float:
     predicted = _tokens(prediction)
     expected = _tokens(gold)
     if not predicted and not expected:
@@ -33,7 +36,9 @@ def token_f1(prediction: str, gold: str, item: Optional[Dict[str, Any]] = None) 
     return 2.0 * precision * recall / (precision + recall)
 
 
-def rubric_score(prediction: str, gold: str, item: Optional[Dict[str, Any]] = None) -> float:
+def rubric_score(
+    prediction: str, gold: str, item: dict[str, Any] | None = None
+) -> float:
     metadata = (item or {}).get("metadata") or {}
     rubric = metadata.get("rubric")
     if not rubric:
@@ -46,11 +51,13 @@ def rubric_score(prediction: str, gold: str, item: Optional[Dict[str, Any]] = No
 
 
 def build_llm_judge_metric(toolkit) -> Callable:
-    def llm_judge(prediction: str, gold: str, item: Optional[Dict[str, Any]] = None) -> float:
+    def llm_judge(
+        prediction: str, gold: str, item: dict[str, Any] | None = None
+    ) -> float:
         question = (item or {}).get("question", "")
         prompt = (
             "Score the candidate answer against the reference from 0 to 1. "
-            "Return only JSON like {\"score\": 0.5}.\n\n"
+            'Return only JSON like {"score": 0.5}.\n\n'
             f"Question: {question}\nReference: {gold}\nCandidate: {prediction}"
         )
         response = toolkit.llm_completion([{"role": "user", "content": prompt}])
@@ -69,7 +76,7 @@ def build_llm_judge_metric(toolkit) -> Callable:
     return llm_judge
 
 
-def _json_object(text: str) -> Dict[str, Any]:
+def _json_object(text: str) -> dict[str, Any]:
     start = str(text).find("{")
     if start < 0:
         raise ValueError("judge response contains no JSON object")
@@ -108,7 +115,7 @@ def _harmonic(left: float, right: float) -> float:
     return 2.0 * left * right / (left + right)
 
 
-def _normalized_five_point(value: Any) -> Optional[float]:
+def _normalized_five_point(value: Any) -> float | None:
     if value == "X":
         return None
     if not isinstance(value, (int, float)):
@@ -154,7 +161,7 @@ class CoCoReviewFitness:
         self.judge_toolkit = judge_toolkit
         self.task_id = task_id
         self.formal = bool(formal)
-        self.last_details: Dict[str, Any] = {}
+        self.last_details: dict[str, Any] = {}
 
     def _candidate_categories(self, prediction: str) -> set:
         try:
@@ -167,9 +174,7 @@ class CoCoReviewFitness:
             prefix = rf"\b{re.escape(self.task_id)}-[A-Z]+\b"
             return set(re.findall(prefix, prediction))
 
-    def _specialist_prompt(
-        self, prediction: str, gold: str, question: str
-    ) -> str:
+    def _specialist_prompt(self, prediction: str, gold: str, question: str) -> str:
         return (
             "You are a fixed peer-review evaluator. Compare the candidate "
             "specialist review with correctness-oriented human reference opinions. "
@@ -196,7 +201,7 @@ class CoCoReviewFitness:
         self,
         prediction: str,
         gold: str,
-        item: Optional[Dict[str, Any]] = None,
+        item: dict[str, Any] | None = None,
     ) -> float:
         metadata = (item or {}).get("metadata") or {}
         question = str((item or {}).get("question") or "")
@@ -218,9 +223,7 @@ class CoCoReviewFitness:
         except Exception as exc:
             self.last_details["parser_error"] = f"{type(exc).__name__}: {exc}"
             raise
-        self.last_details.update(
-            {"parser_success": True, "parser_result": parsed}
-        )
+        self.last_details.update({"parser_success": True, "parser_result": parsed})
         expected = (
             set(self.META_METRICS)
             if self.task_id == META_TASK
@@ -229,8 +232,7 @@ class CoCoReviewFitness:
         if set(parsed) != expected:
             self.last_details["parser_success"] = False
             self.last_details["parser_error"] = (
-                f"field mismatch: expected={sorted(expected)}, "
-                f"got={sorted(parsed)}"
+                f"field mismatch: expected={sorted(expected)}, got={sorted(parsed)}"
             )
             raise ValueError(
                 f"Judge fields mismatch: expected={sorted(expected)}, "
@@ -245,9 +247,7 @@ class CoCoReviewFitness:
                 or not 1 <= float(value) <= 5
             ):
                 self.last_details["parser_success"] = False
-                self.last_details["parser_error"] = (
-                    f"invalid score: {name}={value!r}"
-                )
+                self.last_details["parser_error"] = f"invalid score: {name}={value!r}"
                 raise ValueError(f"Invalid 1-5 judge score for {name}: {value!r}")
         if self.task_id == META_TASK:
             normalized = {
@@ -318,7 +318,7 @@ def get_metric(
     name: str,
     toolkit=None,
     *,
-    task_id: Optional[str] = None,
+    task_id: str | None = None,
     judge_toolkit=None,
     formal: bool = True,
 ) -> Callable:

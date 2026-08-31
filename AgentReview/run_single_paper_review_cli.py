@@ -1,5 +1,5 @@
-import importlib
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -10,7 +10,6 @@ from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Optional
 
 CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 if CURRENT_DIR not in sys.path:
@@ -19,8 +18,16 @@ if CURRENT_DIR not in sys.path:
 try:
     from agentreview.agent import Player
     from agentreview.arguments import parse_args
-    from agentreview.backends.openai import EmptyModelResponseError
     from agentreview.const import AGENTREVIEW_LOGO
+    from agentreview.history_checkpoint import (
+        canonical_sha256,
+    )
+    from agentreview.history_checkpoint import (
+        load_checkpoint as load_history_checkpoint,
+    )
+    from agentreview.history_checkpoint import (
+        save_checkpoint as save_history_checkpoint,
+    )
     from agentreview.memory_library import (
         build_memory_record,
         extract_reviews_from_messages,
@@ -30,11 +37,37 @@ try:
         update_memory_library,
     )
     from agentreview.message import Message
-    from agentreview.paper_review_player import Reviewer
-    from agentreview.paper_review_player_md import MarkdownPaperExtractorPlayer
     from agentreview.paper_context import (
         DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    )
+    from agentreview.paper_context import (
         clip_text as canonical_clip_text,
+    )
+    from agentreview.paper_context import require_human_review_free
+    from agentreview.paper_review_player import Reviewer
+    from agentreview.paper_review_player_md import MarkdownPaperExtractorPlayer
+    from agentreview.reviewer_identity import (
+        build_meta_review_question,
+        load_reviewer_suite,
+    )
+    from agentreview.reviewer_runtime.artifacts import (
+        CandidateReviewRecord,
+        CandidateReviewWriter,
+    )
+    from agentreview.reviewer_runtime.episodes import build_reviewer_memory_episode_text
+    from agentreview.reviewer_runtime.memory_runtime import MemoryHarnessAdapter
+    from agentreview.reviewer_runtime.models import Episode
+    from agentreview.reviewer_runtime.program_loader import (
+        MemoryProgramLoader,
+        resolve_program_path,
+        verify_promoted_program,
+    )
+    from agentreview.reviewer_runtime.task_agent import build_task_agent
+    from agentreview.reviewer_runtime.tasks import reviewer_identity
+    from agentreview.reviewer_runtime.toolkit import (
+        MemoryToolkit,
+        frozen_s2_pool_version,
+        load_frozen_s2_pool,
     )
     from agentreview.role_descriptions import get_paper_extractor_config
     from agentreview.single_paper_review_roles import (
@@ -44,30 +77,6 @@ try:
         build_specialist_reviewer_configs,
     )
     from agentreview.utility.utils import project_setup
-    from agentreview.reviewer_runtime.memory_runtime import MemoryHarnessAdapter
-    from agentreview.reviewer_runtime.episodes import build_reviewer_memory_episode_text
-    from agentreview.reviewer_runtime.models import Episode
-    from agentreview.reviewer_runtime.task_agent import build_task_agent
-    from agentreview.reviewer_runtime.program_loader import (
-        MemoryProgramLoader,
-        resolve_program_path,
-        verify_promoted_program,
-    )
-    from agentreview.reviewer_runtime.artifacts import (
-        CandidateReviewRecord,
-        CandidateReviewWriter,
-    )
-    from agentreview.reviewer_runtime.tasks import reviewer_identity
-    from agentreview.reviewer_runtime.toolkit import (
-        MemoryToolkit,
-        frozen_s2_pool_version,
-        load_frozen_s2_pool,
-    )
-    from agentreview.history_checkpoint import (
-        canonical_sha256,
-        load_checkpoint as load_history_checkpoint,
-        save_checkpoint as save_history_checkpoint,
-    )
 except ModuleNotFoundError as exc:
     missing_name = getattr(exc, "name", "unknown dependency")
     raise SystemExit(
@@ -77,7 +86,7 @@ except ModuleNotFoundError as exc:
     ) from exc
 
 
-def build_single_paper_experiment_setting() -> Dict:
+def build_single_paper_experiment_setting() -> dict:
     return {
         "paper_id": None,
         "paper_decision": None,
@@ -95,8 +104,8 @@ def build_single_paper_experiment_setting() -> Dict:
         },
         "global_settings": {
             "provides_numeric_rating": ["reviewer", "meta_reviewer"],
-            "persons_aware_of_authors_identities": []
-        }
+            "persons_aware_of_authors_identities": [],
+        },
     }
 
 
@@ -124,13 +133,9 @@ def build_single_paper_players(args: Namespace):
         reviewer_cfg["backend"]["retry_max_tokens"] = getattr(
             args, "review_retry_max_tokens", 16384
         )
-        reviewer_reasoning_effort = getattr(
-            args, "reviewer_reasoning_effort", "low"
-        )
+        reviewer_reasoning_effort = getattr(args, "reviewer_reasoning_effort", "low")
         reviewer_cfg["backend"]["reasoning_effort"] = (
-            None
-            if reviewer_reasoning_effort == "none"
-            else reviewer_reasoning_effort
+            None if reviewer_reasoning_effort == "none" else reviewer_reasoning_effort
         )
         reviewer_cfg["backend"]["request_timeout_seconds"] = getattr(
             args, "api_request_timeout_seconds", 600.0
@@ -149,12 +154,8 @@ def build_single_paper_players(args: Namespace):
 
     meta_cfg = build_meta_reviewer_config()
     meta_cfg["backend"]["model"] = args.model_name
-    meta_cfg["backend"]["temperature"] = getattr(
-        args, "review_temperature", 0.3
-    )
-    meta_cfg["backend"]["max_tokens"] = getattr(
-        args, "meta_review_max_tokens", 4096
-    )
+    meta_cfg["backend"]["temperature"] = getattr(args, "review_temperature", 0.3)
+    meta_cfg["backend"]["max_tokens"] = getattr(args, "meta_review_max_tokens", 4096)
     meta_cfg["backend"]["request_timeout_seconds"] = getattr(
         args, "api_request_timeout_seconds", 600.0
     )
@@ -173,8 +174,8 @@ def build_single_paper_players(args: Namespace):
     return players
 
 
-def discover_markdown_papers(args: Namespace) -> List[Dict[str, str]]:
-    papers: List[Dict[str, str]] = []
+def discover_markdown_papers(args: Namespace) -> list[dict[str, str]]:
+    papers: list[dict[str, str]] = []
 
     if args.paper_md_path and getattr(args, "frozen_context_bundle_path", None):
         md_path = Path(args.paper_md_path).resolve()
@@ -202,10 +203,10 @@ def discover_markdown_papers(args: Namespace) -> List[Dict[str, str]]:
     if getattr(args, "paper_context_manifest", None):
         manifest_path = Path(args.paper_context_manifest).expanduser().resolve()
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("contains_human_review_data") is not False:
-            raise RuntimeError(
-                "Frozen paper-context manifest must be marked human-review-free"
-            )
+        require_human_review_free(
+            manifest,
+            source=f"Frozen paper-context manifest {manifest_path}",
+        )
         requested_split = getattr(
             args, "paper_context_split", "effectiveness_validation"
         )
@@ -243,12 +244,18 @@ def discover_markdown_papers(args: Namespace) -> List[Dict[str, str]]:
 
     if args.paper_md_path:
         md_path = Path(args.paper_md_path).resolve()
-        sample_id = md_path.parent.name if md_path.name.startswith("md_content") else md_path.stem
-        papers.append({
-            "sample_id": sample_id,
-            "paper_md_path": str(md_path),
-            "paper_dir": str(md_path.parent),
-        })
+        sample_id = (
+            md_path.parent.name
+            if md_path.name.startswith("md_content")
+            else md_path.stem
+        )
+        papers.append(
+            {
+                "sample_id": sample_id,
+                "paper_md_path": str(md_path),
+                "paper_dir": str(md_path.parent),
+            }
+        )
         return papers
 
     if not args.paper_md_dir:
@@ -264,25 +271,31 @@ def discover_markdown_papers(args: Namespace) -> List[Dict[str, str]]:
                 paper_dir / "md_content_no_appendix.md",
                 paper_dir / "md_content.md",
             ]
-            chosen = next((candidate for candidate in candidates if candidate.is_file()), None)
+            chosen = next(
+                (candidate for candidate in candidates if candidate.is_file()), None
+            )
             if chosen is None:
                 continue
-            papers.append({
-                "sample_id": paper_dir.name,
-                "paper_md_path": str(chosen.resolve()),
-                "paper_dir": str(paper_dir.resolve()),
-            })
+            papers.append(
+                {
+                    "sample_id": paper_dir.name,
+                    "paper_md_path": str(chosen.resolve()),
+                    "paper_dir": str(paper_dir.resolve()),
+                }
+            )
     else:
         matched_paths = sorted(md_root.glob(args.paper_md_glob))
         for path in matched_paths:
             if not path.is_file():
                 continue
             sample_id = path.parent.name
-            papers.append({
-                "sample_id": sample_id,
-                "paper_md_path": str(path.resolve()),
-                "paper_dir": str(path.parent.resolve()),
-            })
+            papers.append(
+                {
+                    "sample_id": sample_id,
+                    "paper_md_path": str(path.resolve()),
+                    "paper_dir": str(path.parent.resolve()),
+                }
+            )
 
     if not papers:
         raise FileNotFoundError(
@@ -290,18 +303,18 @@ def discover_markdown_papers(args: Namespace) -> List[Dict[str, str]]:
         )
 
     if args.batch_limit is not None:
-        papers = papers[:args.batch_limit]
+        papers = papers[: args.batch_limit]
 
     return papers
 
 
 def save_structured_outputs(
     args: Namespace,
-    paper_info: Dict[str, str],
+    paper_info: dict[str, str],
     extractor,
-    messages: List[Message],
-    reviewer_memory_contexts: Dict[str, Dict] = None,
-) -> Dict:
+    messages: list[Message],
+    reviewer_memory_contexts: dict[str, dict] | None = None,
+) -> dict:
     output_dir = Path(args.output_dir) / "single_paper_review" / paper_info["sample_id"]
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -327,37 +340,44 @@ def save_structured_outputs(
             serialized_messages
         ).items()
     }
-    extraction_memory.update({
-        "sample_id": paper_info["sample_id"],
-        "paper_dir": paper_info["paper_dir"],
-        "paper_md_path": paper_info["paper_md_path"],
-        "review_model_name": args.model_name,
-        "review_temperature": getattr(args, "review_temperature", 0.3),
-        "replicate_id": getattr(args, "replicate_id", ""),
-        "run_seed": getattr(args, "run_seed", None),
-        "seed_control_available": False,
-        "generation_config": {
-            "model": args.model_name,
-            "temperature": getattr(args, "review_temperature", 0.3),
-            "reasoning_effort": getattr(args, "reviewer_reasoning_effort", None),
-            "review_max_tokens": getattr(args, "review_max_tokens", None),
-            "retry_max_tokens": getattr(args, "review_retry_max_tokens", None),
-        },
-        "reviewer_names": list(reviews.keys()),
-        "reviewer_memory_contexts": reviewer_memory_contexts or {},
-        "memory_retrieval_enabled": (
-            not getattr(args, "disable_memory_retrieval", False)
-            and getattr(args, "memory_mode", "existing") != "none"
-        ),
-        "memory_mode": (
-            "none"
-            if getattr(args, "disable_memory_retrieval", False)
-            else getattr(args, "memory_mode", "existing")
-        ),
-    })
+    extraction_memory.update(
+        {
+            "reviewer_suite_identity_sha256": (
+                load_reviewer_suite().suite_identity_sha256
+            ),
+            "sample_id": paper_info["sample_id"],
+            "paper_dir": paper_info["paper_dir"],
+            "paper_md_path": paper_info["paper_md_path"],
+            "review_model_name": args.model_name,
+            "review_temperature": getattr(args, "review_temperature", 0.3),
+            "replicate_id": getattr(args, "replicate_id", ""),
+            "run_seed": getattr(args, "run_seed", None),
+            "seed_control_available": False,
+            "generation_config": {
+                "model": args.model_name,
+                "temperature": getattr(args, "review_temperature", 0.3),
+                "reasoning_effort": getattr(args, "reviewer_reasoning_effort", None),
+                "review_max_tokens": getattr(args, "review_max_tokens", None),
+                "retry_max_tokens": getattr(args, "review_retry_max_tokens", None),
+            },
+            "reviewer_names": list(reviews.keys()),
+            "reviewer_memory_contexts": reviewer_memory_contexts or {},
+            "memory_retrieval_enabled": (
+                not getattr(args, "disable_memory_retrieval", False)
+                and getattr(args, "memory_mode", "existing") != "none"
+            ),
+            "memory_mode": (
+                "none"
+                if getattr(args, "disable_memory_retrieval", False)
+                else getattr(args, "memory_mode", "existing")
+            ),
+        }
+    )
 
     reviews_path = output_dir / "reviews.json"
-    reviews_path.write_text(json.dumps(reviews, ensure_ascii=False, indent=2), encoding="utf-8")
+    reviews_path.write_text(
+        json.dumps(reviews, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     candidate_reviews_path = output_dir / "candidate_reviews.jsonl"
     candidate_reviews_path.write_text("", encoding="utf-8")
@@ -388,8 +408,7 @@ def save_structured_outputs(
                 memory_program_sha256=program_sha256,
                 model=str(args.model_name),
                 revision=str(
-                    getattr(args, "model_revision", "")
-                    or "legacy-backend-unspecified"
+                    getattr(args, "model_revision", "") or "legacy-backend-unspecified"
                 ),
                 run_identity=(
                     f"legacy:{getattr(args, 'replicate_id', '')}:"
@@ -399,7 +418,9 @@ def save_structured_outputs(
         )
 
     memory_path = output_dir / "memory.json"
-    memory_path.write_text(json.dumps(extraction_memory, ensure_ascii=False, indent=2), encoding="utf-8")
+    memory_path.write_text(
+        json.dumps(extraction_memory, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     memory_record = build_memory_record(
         sample_id=paper_info["sample_id"],
@@ -412,6 +433,7 @@ def save_structured_outputs(
         reviews=reviews,
         keyword_model_name=extraction_memory.get("keyword_model_name"),
         review_model_name=args.model_name,
+        reviewer_suite_identity_sha256=(load_reviewer_suite().suite_identity_sha256),
     )
     return {
         "review_dir": str(output_dir),
@@ -422,25 +444,39 @@ def save_structured_outputs(
     }
 
 
-def commit_global_memory(args: Namespace, memory_record: Dict) -> Dict[str, str]:
+def commit_global_memory(args: Namespace, memory_record: dict) -> dict[str, str]:
     return update_memory_library(args.output_dir, memory_record)
 
 
-def validate_generated_outputs(result: Dict[str, str]):
+def validate_generated_outputs(result: dict[str, str]):
     review_dir = Path(result["review_dir"])
     reviews = json.loads((review_dir / "reviews.json").read_text(encoding="utf-8"))
     memory = json.loads((review_dir / "memory.json").read_text(encoding="utf-8"))
     timing = json.loads((review_dir / "timing.json").read_text(encoding="utf-8"))
-    history = json.loads((review_dir / "review_history.json").read_text(encoding="utf-8"))
+    history = json.loads(
+        (review_dir / "review_history.json").read_text(encoding="utf-8")
+    )
 
-    missing_reviewers = [name for name in EXPECTED_REVIEWER_NAMES if name not in reviews]
+    missing_reviewers = [
+        name for name in EXPECTED_REVIEWER_NAMES if name not in reviews
+    ]
     if missing_reviewers:
-        raise ValueError(f"Incomplete review set for {result['sample_id']}: missing {missing_reviewers}")
+        raise ValueError(
+            f"Incomplete review set for {result['sample_id']}: missing {missing_reviewers}"
+        )
 
     for reviewer_name, review_text in reviews.items():
-        has_score = bool(re.search(r"(Dimension score|Final score|Score \(1-10\))\s*[:：]", review_text, flags=re.IGNORECASE))
+        has_score = bool(
+            re.search(
+                r"(Dimension score|Final score|Score \(1-10\))\s*[:：]",
+                review_text,
+                flags=re.IGNORECASE,
+            )
+        )
         if not has_score:
-            raise ValueError(f"Missing score in {reviewer_name} for {result['sample_id']}")
+            raise ValueError(
+                f"Missing score in {reviewer_name} for {result['sample_id']}"
+            )
         validate_review_source_anchors(
             review_text,
             memory.get("source_anchors", []),
@@ -454,17 +490,15 @@ def validate_generated_outputs(result: Dict[str, str]):
     if not timing.get("duration_text"):
         raise ValueError(f"Missing timing duration for {result['sample_id']}")
     if "timing" not in history or not history["timing"].get("duration_text"):
-        raise ValueError(f"Missing timing block in review history for {result['sample_id']}")
+        raise ValueError(
+            f"Missing timing block in review history for {result['sample_id']}"
+        )
 
 
-def load_completed_result_if_valid(args: Namespace, paper_info: Dict[str, str]):
+def load_completed_result_if_valid(args: Namespace, paper_info: dict[str, str]):
     if not getattr(args, "reuse_completed_specialists", False):
         return None
-    review_dir = (
-        Path(args.output_dir)
-        / "single_paper_review"
-        / paper_info["sample_id"]
-    )
+    review_dir = Path(args.output_dir) / "single_paper_review" / paper_info["sample_id"]
     required = [
         review_dir / "reviews.json",
         review_dir / "memory.json",
@@ -475,9 +509,10 @@ def load_completed_result_if_valid(args: Namespace, paper_info: Dict[str, str]):
         return None
     try:
         timing = json.loads((review_dir / "timing.json").read_text(encoding="utf-8"))
-        if Path(timing.get("paper_md_path", "")).resolve() != Path(
-            paper_info["paper_md_path"]
-        ).resolve():
+        if (
+            Path(timing.get("paper_md_path", "")).resolve()
+            != Path(paper_info["paper_md_path"]).resolve()
+        ):
             return None
         result = {
             "sample_id": paper_info["sample_id"],
@@ -520,7 +555,7 @@ SOURCE_ANCHOR_CANDIDATE_PATTERN = re.compile(
 
 
 class SourceAnchorValidationError(ValueError):
-    def __init__(self, reviewer_name: str, errors: List[str]):
+    def __init__(self, reviewer_name: str, errors: list[str]):
         self.reviewer_name = reviewer_name
         self.errors = list(errors)
         super().__init__(
@@ -529,7 +564,7 @@ class SourceAnchorValidationError(ValueError):
         )
 
 
-def allowed_source_anchor_map(source_anchors: List[Dict]) -> Dict[str, int]:
+def allowed_source_anchor_map(source_anchors: list[dict]) -> dict[str, int]:
     """Return the exact numeric source IDs and pages a reviewer may copy."""
     allowed = {}
     for anchor in source_anchors or []:
@@ -546,7 +581,7 @@ def allowed_source_anchor_map(source_anchors: List[Dict]) -> Dict[str, int]:
     return allowed
 
 
-def allowed_source_anchor_tokens(source_anchors: List[Dict]) -> List[str]:
+def allowed_source_anchor_tokens(source_anchors: list[dict]) -> list[str]:
     return [
         f"{source_id}(page={page})"
         for source_id, page in allowed_source_anchor_map(source_anchors).items()
@@ -555,9 +590,9 @@ def allowed_source_anchor_tokens(source_anchors: List[Dict]) -> List[str]:
 
 def validate_review_source_anchors(
     review_text: str,
-    source_anchors: List[Dict],
+    source_anchors: list[dict],
     reviewer_name: str = "Reviewer",
-) -> List[str]:
+) -> list[str]:
     """Validate every SRC reference against the extractor-provided ID/page pair."""
     allowed = allowed_source_anchor_map(source_anchors)
     candidates = SOURCE_ANCHOR_CANDIDATE_PATTERN.findall(review_text or "")
@@ -595,7 +630,7 @@ def build_anchor_repair_request(
     reviewer_name: str,
     previous_review: str,
     validation_error: SourceAnchorValidationError,
-    source_anchors: List[Dict],
+    source_anchors: list[dict],
 ) -> str:
     allowed_tokens = allowed_source_anchor_tokens(source_anchors)
     return (
@@ -618,7 +653,7 @@ def build_anchor_repair_request(
 
 
 def validate_complete_specialist_reviews(
-    messages: List[Message], source_anchors: List[Dict]
+    messages: list[Message], source_anchors: list[dict]
 ) -> None:
     by_name = {
         message.agent_name: message
@@ -642,8 +677,8 @@ def validate_complete_specialist_reviews(
 
 def validate_review_payload(
     sample_id: str,
-    extraction_memory: Dict,
-    messages: List[Message],
+    extraction_memory: dict,
+    messages: list[Message],
     duration_text: str,
 ) -> None:
     """Validate all non-file review state before any final artifact is written."""
@@ -689,7 +724,7 @@ def validate_review_payload(
         raise ValueError(f"Missing timing duration for {sample_id}")
 
 
-def source_anchor_page_map(source_anchors: List[Dict]) -> Dict[str, int]:
+def source_anchor_page_map(source_anchors: list[dict]) -> dict[str, int]:
     pages = {}
     for anchor in source_anchors or []:
         source_id = str(anchor.get("source_id", "")).upper()
@@ -714,7 +749,9 @@ def _page_from_hint(page_hint: str):
     return int(match.group(0))
 
 
-def _canonical_source_anchor(source_number: str, pages: Dict[str, int], page_hint: str = None) -> str:
+def _canonical_source_anchor(
+    source_number: str, pages: dict[str, int], page_hint: str | None = None
+) -> str:
     source_id = f"SRC-{int(source_number):03d}"
     page = pages.get(source_id)
     if page is None:
@@ -724,7 +761,7 @@ def _canonical_source_anchor(source_number: str, pages: Dict[str, int], page_hin
     return f"{source_id}(page={page})"
 
 
-def normalize_source_anchors(text: str, source_anchors: List[Dict]) -> str:
+def normalize_source_anchors(text: str, source_anchors: list[dict]) -> str:
     """Normalize common model citation variants to SRC-xxx(page=y)."""
     if not text:
         return text
@@ -760,7 +797,9 @@ def normalize_source_anchors(text: str, source_anchors: List[Dict]) -> str:
     return normalized
 
 
-def normalize_review_messages(messages: List[Message], source_anchors: List[Dict]) -> List[Message]:
+def normalize_review_messages(
+    messages: list[Message], source_anchors: list[dict]
+) -> list[Message]:
     reviewer_names = set(EXPECTED_REVIEWER_NAMES)
     for message in messages:
         if message.agent_name in reviewer_names:
@@ -826,7 +865,9 @@ def _load_precompiled_memory(args: Namespace, task_id: str, program_path: Path):
     cache_root = Path(cache_root_value).expanduser().resolve()
     manifest_path = cache_root / "cache_manifest.json"
     if not manifest_path.is_file():
-        raise FileNotFoundError(f"KnowledgeItem cache manifest missing: {manifest_path}")
+        raise FileNotFoundError(
+            f"KnowledgeItem cache manifest missing: {manifest_path}"
+        )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     entry = (manifest.get("tasks") or {}).get(task_id) or {}
     expected_program_sha = str(entry.get("program_sha256") or "")
@@ -863,9 +904,7 @@ def _load_precompiled_memory(args: Namespace, task_id: str, program_path: Path):
 
 
 def _mstar_toolkit(args: Namespace, backend, embedding_factory) -> MemoryToolkit:
-    s2_pool, s2_sha256 = load_frozen_s2_pool(
-        getattr(args, "s2_retrieval_pool", None)
-    )
+    s2_pool, s2_sha256 = load_frozen_s2_pool(getattr(args, "s2_retrieval_pool", None))
     return MemoryToolkit(
         llm_client=backend,
         llm_model=getattr(args, "model_name", None),
@@ -880,10 +919,10 @@ def _mstar_toolkit(args: Namespace, backend, embedding_factory) -> MemoryToolkit
 
 def _mstar_memory_contexts(
     args: Namespace,
-    paper_info: Dict[str, str],
+    paper_info: dict[str, str],
     extractor,
-    players: List[Player],
-) -> Dict[str, Dict]:
+    players: list[Player],
+) -> dict[str, dict]:
     if not getattr(args, "memory_program_dir", None):
         raise ValueError("--memory_mode=mstar_program requires --memory_program_dir")
     embedding_factory = _memory_embedding_factory(args)
@@ -904,7 +943,7 @@ def _mstar_memory_contexts(
         ]
     )
 
-    reviewer_episodes: Dict[str, List[Episode]] = {}
+    reviewer_episodes: dict[str, list[Episode]] = {}
     for record in records:
         sample_id = str(record.get("sample_id", ""))
         for reviewer_name, review in sorted((record.get("reviews") or {}).items()):
@@ -932,7 +971,7 @@ def _mstar_memory_contexts(
         reviewer_name: str,
         dimension: str,
         question: str,
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         toolkit = _mstar_toolkit(args, backend, embedding_factory)
         program_path = resolve_program_path(args.memory_program_dir, dimension)
         precompiled, cache_provenance = _load_precompiled_memory(
@@ -950,8 +989,7 @@ def _mstar_memory_contexts(
                 ),
                 getattr(args, "memory_embedding_revision", ""),
                 str(
-                    getattr(toolkit.embedding_client, "embedding_fingerprint", "")
-                    or ""
+                    getattr(toolkit.embedding_client, "embedding_fingerprint", "") or ""
                 ),
             )
         adapter = MemoryHarnessAdapter(
@@ -996,9 +1034,7 @@ def _mstar_memory_contexts(
     extraction_memory = getattr(extractor, "last_memory", {}) or {}
     paper_title = extraction_memory.get("paper_title") or paper_info["sample_id"]
     contexts = {}
-    reviewer_targets = [
-        (spec["name"], spec["dimension"]) for spec in REVIEWER_SPECS
-    ]
+    reviewer_targets = [(spec["name"], spec["dimension"]) for spec in REVIEWER_SPECS]
     for reviewer_name, dimension in reviewer_targets:
         question = (
             f"Paper id: {paper_info['sample_id']}\n"
@@ -1039,10 +1075,11 @@ def _mstar_memory_contexts(
 
 def _mstar_meta_memory_context(
     args: Namespace,
-    paper_info: Dict[str, str],
-    players: List[Player],
-    specialist_messages: List[Message],
-) -> Dict[str, object]:
+    paper_info: dict[str, str],
+    players: list[Player],
+    specialist_messages: list[Message],
+    paper_context: str,
+) -> dict[str, object]:
     """Run the sixth program only after all five specialist outputs are frozen."""
     backend = next(
         player.backend for player in players if player.name == META_REVIEWER_NAME
@@ -1050,9 +1087,7 @@ def _mstar_meta_memory_context(
     embedding_factory = _memory_embedding_factory(args)
     toolkit = _mstar_toolkit(args, backend, embedding_factory)
     program_path = resolve_program_path(args.memory_program_dir, "META")
-    precompiled, cache_provenance = _load_precompiled_memory(
-        args, "META", program_path
-    )
+    precompiled, cache_provenance = _load_precompiled_memory(args, "META", program_path)
     if precompiled is None:
         verify_promoted_program(
             args.memory_program_dir,
@@ -1064,10 +1099,7 @@ def _mstar_meta_memory_context(
                 "Qwen/Qwen3-Embedding-8B",
             ),
             getattr(args, "memory_embedding_revision", ""),
-            str(
-                getattr(toolkit.embedding_client, "embedding_fingerprint", "")
-                or ""
-            ),
+            str(getattr(toolkit.embedding_client, "embedding_fingerprint", "") or ""),
         )
     adapter = MemoryHarnessAdapter(
         str(program_path),
@@ -1109,13 +1141,10 @@ def _mstar_meta_memory_context(
         infer_reviewer_dimension(message.agent_name): message.content
         for message in specialist_messages
     }
-    question = (
-        f"Review task: META\nPaper id: {paper_info['sample_id']}\n\n"
-        + "\n\n".join(
-            f"=== {task_id} ===\n{by_dimension[task_id]}"
-            for task_id in ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
-        )
-        + "\n\nReturn the complete final meta-review."
+    question = build_meta_review_question(
+        paper_id=paper_info["sample_id"],
+        specialist_reviews=by_dimension,
+        paper_context=paper_context,
     )
     try:
         if precompiled is not None:
@@ -1162,10 +1191,10 @@ def _mstar_meta_memory_context(
 
 def build_reviewer_memory_contexts(
     args: Namespace,
-    paper_info: Dict[str, str],
+    paper_info: dict[str, str],
     extractor,
-    players: List[Player] = None,
-) -> Dict[str, Dict]:
+    players: list[Player] | None = None,
+) -> dict[str, dict]:
     memory_mode = getattr(args, "memory_mode", "existing")
     if getattr(args, "disable_memory_retrieval", False):
         memory_mode = "none"
@@ -1177,7 +1206,7 @@ def build_reviewer_memory_contexts(
     extraction_memory = getattr(extractor, "last_memory", {}) or {}
     paper_title = extraction_memory.get("paper_title") or paper_info["sample_id"]
 
-    contexts: Dict[str, Dict] = {}
+    contexts: dict[str, dict] = {}
     for spec in REVIEWER_SPECS:
         reviewer_name = spec["name"]
         contexts[reviewer_name] = retrieve_memory_context(
@@ -1202,7 +1231,9 @@ def build_reviewer_memory_contexts(
     return contexts
 
 
-def memory_message_for(reviewer_name: str, reviewer_memory_contexts: Dict[str, Dict]) -> Message:
+def memory_message_for(
+    reviewer_name: str, reviewer_memory_contexts: dict[str, dict]
+) -> Message:
     context = reviewer_memory_contexts.get(reviewer_name, {})
     content = context.get("formatted_context")
     if not content:
@@ -1211,14 +1242,19 @@ def memory_message_for(reviewer_name: str, reviewer_memory_contexts: Dict[str, D
             "No memory retrieval context is available for this run.\n"
             "=== END REVIEW MEMORY CONTEXT ==="
         )
-    return Message(agent_name="Memory Librarian", content=content, turn=0, visible_to=[reviewer_name])
+    return Message(
+        agent_name="Memory Librarian",
+        content=content,
+        turn=0,
+        visible_to=[reviewer_name],
+    )
 
 
 def write_specialist_checkpoint(
     checkpoint_path: Path,
-    reviews: Dict[str, str],
-    checkpoint_metadata: Dict[str, str] = None,
-    failures: Dict[str, str] = None,
+    reviews: dict[str, str],
+    checkpoint_metadata: dict[str, str] | None = None,
+    failures: dict[str, str] | None = None,
 ) -> None:
     if checkpoint_path is None:
         return
@@ -1227,9 +1263,7 @@ def write_specialist_checkpoint(
         **(checkpoint_metadata or {}),
         "reviews": reviews,
         "failures": failures or {},
-        "updated_at_local": time.strftime(
-            "%Y-%m-%d %H:%M:%S", time.localtime()
-        ),
+        "updated_at_local": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
     }
     temporary_path = checkpoint_path.with_suffix(".tmp")
     temporary_path.write_text(
@@ -1241,12 +1275,12 @@ def write_specialist_checkpoint(
 
 def call_role_with_anchor_repair(
     player: Player,
-    observation: List[Message],
-    source_anchors: List[Dict],
+    observation: list[Message],
+    source_anchors: list[dict],
 ) -> str:
     """Call one review role, validating immediately and repairing at most once."""
 
-    def invoke(messages: List[Message]) -> str:
+    def invoke(messages: list[Message]) -> str:
         return player(messages)
 
     content = invoke(observation)
@@ -1297,18 +1331,20 @@ def call_role_with_anchor_repair(
 
 
 def run_parallel_reviews(
-    players: List[Player],
+    players: list[Player],
     extractor_message: Message,
-    reviewer_memory_contexts: Dict[str, Dict],
+    reviewer_memory_contexts: dict[str, dict],
     max_workers: int = 1,
-    existing_messages: List[Message] = None,
-    checkpoint_path: Path = None,
-    checkpoint_metadata: Dict[str, str] = None,
+    existing_messages: list[Message] | None = None,
+    checkpoint_path: Path | None = None,
+    checkpoint_metadata: dict[str, str] | None = None,
     paper_max_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
-    resume_command: str = None,
-    source_anchors: List[Dict] = None,
-) -> List[Message]:
-    reviewer_players = [player for player in players if player.name.startswith("Reviewer ")]
+    resume_command: str | None = None,
+    source_anchors: list[dict] | None = None,
+) -> list[Message]:
+    reviewer_players = [
+        player for player in players if player.name.startswith("Reviewer ")
+    ]
     existing_by_name = {}
     for message in existing_messages or []:
         if not message.agent_name.startswith("Reviewer ") or not message.content:
@@ -1374,9 +1410,7 @@ def run_parallel_reviews(
             flush=True,
         )
     if not reviewer_players:
-        name_to_order = {
-            spec["name"]: idx for idx, spec in enumerate(REVIEWER_SPECS)
-        }
+        name_to_order = {spec["name"]: idx for idx, spec in enumerate(REVIEWER_SPECS)}
         return [
             Message(agent_name=name, content=content, turn=1)
             for name, content in sorted(
@@ -1408,9 +1442,7 @@ def run_parallel_reviews(
                 )
             except Exception as exc:
                 failures.append((reviewer_name, exc))
-                failure_records[reviewer_name] = (
-                    f"{type(exc).__name__}: {exc}"
-                )
+                failure_records[reviewer_name] = f"{type(exc).__name__}: {exc}"
                 write_specialist_checkpoint(
                     checkpoint_path,
                     dict(results),
@@ -1420,11 +1452,11 @@ def run_parallel_reviews(
 
     if failures:
         successful_names = [
-            name for name, _ in sorted(
+            name
+            for name, _ in sorted(
                 results,
                 key=lambda item: {
-                    spec["name"]: idx
-                    for idx, spec in enumerate(REVIEWER_SPECS)
+                    spec["name"]: idx for idx, spec in enumerate(REVIEWER_SPECS)
                 }[item[0]],
             )
         ]
@@ -1437,22 +1469,20 @@ def run_parallel_reviews(
         )
         if resume_command:
             print(
-                f"[Review] Resume only failed reviewers with:\n"
-                f"{resume_command}",
+                f"[Review] Resume only failed reviewers with:\n{resume_command}",
                 flush=True,
             )
         failure_text = "; ".join(
-            f"{name}: {type(exc).__name__}: {exc}"
-            for name, exc in failures
+            f"{name}: {type(exc).__name__}: {exc}" for name, exc in failures
         )
-        failure_error = RuntimeError(
-            f"Specialist reviewer failure(s): {failure_text}"
-        )
+        failure_error = RuntimeError(f"Specialist reviewer failure(s): {failure_text}")
         raise failure_error
 
-    messages: List[Message] = []
+    messages: list[Message] = []
     name_to_order = {spec["name"]: idx for idx, spec in enumerate(REVIEWER_SPECS)}
-    for reviewer_name, content in sorted(results, key=lambda item: name_to_order[item[0]]):
+    for reviewer_name, content in sorted(
+        results, key=lambda item: name_to_order[item[0]]
+    ):
         messages.append(Message(agent_name=reviewer_name, content=content, turn=1))
 
     print(
@@ -1465,25 +1495,22 @@ def run_parallel_reviews(
 
 def load_reusable_specialist_messages(
     args: Namespace,
-    paper_info: Dict[str, str],
-    source_anchors: List[Dict] = None,
-) -> List[Message]:
+    paper_info: dict[str, str],
+    source_anchors: list[dict] | None = None,
+) -> list[Message]:
     if not getattr(args, "reuse_completed_specialists", False):
         return []
-    review_dir = (
-        Path(args.output_dir)
-        / "single_paper_review"
-        / paper_info["sample_id"]
-    )
+    review_dir = Path(args.output_dir) / "single_paper_review" / paper_info["sample_id"]
     history_path = review_dir / "review_history.json"
     timing_path = review_dir / "timing.json"
     if not history_path.is_file() or not timing_path.is_file():
         return []
     try:
         timing = json.loads(timing_path.read_text(encoding="utf-8"))
-        if Path(timing.get("paper_md_path", "")).resolve() != Path(
-            paper_info["paper_md_path"]
-        ).resolve():
+        if (
+            Path(timing.get("paper_md_path", "")).resolve()
+            != Path(paper_info["paper_md_path"]).resolve()
+        ):
             return []
         history = json.loads(history_path.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError):
@@ -1523,9 +1550,7 @@ def load_reusable_specialist_messages(
     return messages
 
 
-def specialist_checkpoint_path(
-    args: Namespace, paper_info: Dict[str, str]
-) -> Path:
+def specialist_checkpoint_path(args: Namespace, paper_info: dict[str, str]) -> Path:
     return (
         Path(args.output_dir)
         / "single_paper_review"
@@ -1534,26 +1559,19 @@ def specialist_checkpoint_path(
     )
 
 
-def runtime_condition_fingerprint(args: Namespace, paper_info: Dict[str, str]) -> str:
+def runtime_condition_fingerprint(args: Namespace, paper_info: dict[str, str]) -> str:
     condition = {
+        "reviewer_suite_identity_sha256": (load_reviewer_suite().suite_identity_sha256),
         "paper_md_path": str(Path(paper_info["paper_md_path"]).resolve()),
-        "frozen_context_bundle_path": paper_info.get(
-            "frozen_context_bundle_path"
-        ),
+        "frozen_context_bundle_path": paper_info.get("frozen_context_bundle_path"),
         "model_name": getattr(args, "model_name", None),
         "review_temperature": getattr(args, "review_temperature", 0.3),
-        "reviewer_reasoning_effort": getattr(
-            args, "reviewer_reasoning_effort", None
-        ),
+        "reviewer_reasoning_effort": getattr(args, "reviewer_reasoning_effort", None),
         "review_max_tokens": getattr(args, "review_max_tokens", None),
-        "review_retry_max_tokens": getattr(
-            args, "review_retry_max_tokens", None
-        ),
+        "review_retry_max_tokens": getattr(args, "review_retry_max_tokens", None),
         "memory_mode": getattr(args, "memory_mode", None),
         "memory_program_dir": getattr(args, "memory_program_dir", None),
-        "memory_knowledge_cache_dir": getattr(
-            args, "memory_knowledge_cache_dir", None
-        ),
+        "memory_knowledge_cache_dir": getattr(args, "memory_knowledge_cache_dir", None),
         "memory_embedding_mode": getattr(args, "memory_embedding_mode", None),
         "replicate_id": getattr(args, "replicate_id", ""),
         "run_seed": getattr(args, "run_seed", None),
@@ -1567,9 +1585,9 @@ def runtime_condition_fingerprint(args: Namespace, paper_info: Dict[str, str]) -
 
 def load_specialist_checkpoint(
     args: Namespace,
-    paper_info: Dict[str, str],
-    source_anchors: List[Dict] = None,
-) -> List[Message]:
+    paper_info: dict[str, str],
+    source_anchors: list[dict] | None = None,
+) -> list[Message]:
     if getattr(args, "strict_history_resume", False):
         # An interrupted Historical paper is rerun as a whole. Only the batch
         # prefix checkpoint, never a per-paper partial, is authoritative.
@@ -1584,9 +1602,11 @@ def load_specialist_checkpoint(
     except (OSError, ValueError, json.JSONDecodeError):
         return []
     checkpoint_paper = payload.get("paper_md_path")
-    if checkpoint_paper and Path(checkpoint_paper).resolve() != Path(
-        paper_info["paper_md_path"]
-    ).resolve():
+    if (
+        checkpoint_paper
+        and Path(checkpoint_paper).resolve()
+        != Path(paper_info["paper_md_path"]).resolve()
+    ):
         return []
     checkpoint_model = payload.get("model_name")
     if checkpoint_model and checkpoint_model != getattr(args, "model_name", None):
@@ -1624,9 +1644,7 @@ def load_specialist_checkpoint(
             )
         except SourceAnchorValidationError:
             continue
-        messages.append(
-            Message(agent_name=reviewer_name, content=content, turn=1)
-        )
+        messages.append(Message(agent_name=reviewer_name, content=content, turn=1))
     return messages
 
 
@@ -1634,9 +1652,7 @@ def clip_context(text: str, max_chars: int) -> str:
     return canonical_clip_text(text, max_chars, marker="Paper context clipped")
 
 
-def build_specialist_resume_command(
-    args: Namespace, paper_info: Dict[str, str]
-) -> str:
+def build_specialist_resume_command(args: Namespace, paper_info: dict[str, str]) -> str:
     command = [
         sys.executable,
         str(Path(__file__).resolve()),
@@ -1699,13 +1715,9 @@ def build_specialist_resume_command(
             ]
         )
     if getattr(args, "memory_program_dir", None):
-        command.extend(
-            ["--memory_program_dir", args.memory_program_dir]
-        )
+        command.extend(["--memory_program_dir", args.memory_program_dir])
     if getattr(args, "memory_embedding_adapter", None):
-        command.extend(
-            ["--memory_embedding_adapter", args.memory_embedding_adapter]
-        )
+        command.extend(["--memory_embedding_adapter", args.memory_embedding_adapter])
     if getattr(args, "memory_embedding_model_name", None):
         command.extend(
             [
@@ -1743,7 +1755,7 @@ def build_specialist_resume_command(
     return shlex.join(command)
 
 
-def build_review_history(experiment_setting: Dict, messages: List[Message]) -> Dict:
+def build_review_history(experiment_setting: dict, messages: list[Message]) -> dict:
     return {
         "experiment_setting": experiment_setting,
         "messages": [
@@ -1761,7 +1773,7 @@ def build_review_history(experiment_setting: Dict, messages: List[Message]) -> D
 
 
 def format_duration(seconds: float) -> str:
-    total_seconds = max(0, int(round(seconds)))
+    total_seconds = max(0, round(seconds))
     hours, remainder = divmod(total_seconds, 3600)
     minutes, secs = divmod(remainder, 60)
     if hours > 0:
@@ -1769,7 +1781,14 @@ def format_duration(seconds: float) -> str:
     return f"{minutes:02d}:{secs:02d}"
 
 
-def print_paper_banner(kind: str, index: int, total: int, sample_id: str, paper_md_path: str = "", duration_text: str = ""):
+def print_paper_banner(
+    kind: str,
+    index: int,
+    total: int,
+    sample_id: str,
+    paper_md_path: str = "",
+    duration_text: str = "",
+):
     if kind == "start":
         print("\n" + "=" * 96)
         print(f"[START {index}/{total}] {sample_id}")
@@ -1781,25 +1800,29 @@ def print_paper_banner(kind: str, index: int, total: int, sample_id: str, paper_
         print("-" * 96 + "\n")
 
 
-def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str, str]:
+def run_one_paper(base_args: Namespace, paper_info: dict[str, str]) -> dict[str, str]:
     args = deepcopy(base_args)
     args.paper_md_path = paper_info["paper_md_path"]
     args.paper_md_output_name = paper_info["sample_id"]
-    args.frozen_context_bundle_path = paper_info.get(
-        "frozen_context_bundle_path"
-    )
+    args.frozen_context_bundle_path = paper_info.get("frozen_context_bundle_path")
     args.task = "single_paper_review"
     started_at_epoch = time.time()
-    started_at_local = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(started_at_epoch))
+    started_at_local = time.strftime(
+        "%Y-%m-%d %H:%M:%S", time.localtime(started_at_epoch)
+    )
 
     experiment_setting = build_single_paper_experiment_setting()
     players = build_single_paper_players(args)
     extractor = next(player for player in players if player.name == "Paper Extractor")
-    meta_reviewer = next(player for player in players if player.name == META_REVIEWER_NAME)
+    meta_reviewer = next(
+        player for player in players if player.name == META_REVIEWER_NAME
+    )
 
     print(f"Running extractor for {paper_info['sample_id']}")
     extractor_content = extractor([])
-    extractor_message = Message(agent_name="Paper Extractor", content=extractor_content, turn=0)
+    extractor_message = Message(
+        agent_name="Paper Extractor", content=extractor_content, turn=0
+    )
     source_anchors = (getattr(extractor, "last_memory", {}) or {}).get(
         "source_anchors", []
     )
@@ -1817,7 +1840,9 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
             name: context.get("num_selected_records", 0)
             for name, context in reviewer_memory_contexts.items()
         }
-        print(f"Prepared reviewer memory contexts for {paper_info['sample_id']}: {selected_counts}")
+        print(
+            f"Prepared reviewer memory contexts for {paper_info['sample_id']}: {selected_counts}"
+        )
 
     checkpoint_path = specialist_checkpoint_path(args, paper_info)
     resume_command = build_specialist_resume_command(args, paper_info)
@@ -1829,12 +1854,8 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         "memory_embedding_model_name": getattr(
             args, "memory_embedding_model_name", None
         ),
-        "memory_embedding_revision": getattr(
-            args, "memory_embedding_revision", None
-        ),
-        "runtime_condition_sha256": runtime_condition_fingerprint(
-            args, paper_info
-        ),
+        "memory_embedding_revision": getattr(args, "memory_embedding_revision", None),
+        "runtime_condition_sha256": runtime_condition_fingerprint(args, paper_info),
     }
     specialist_messages = load_reusable_specialist_messages(
         args,
@@ -1877,22 +1898,6 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         )
 
     validate_complete_specialist_reviews(specialist_messages, source_anchors)
-    if memory_mode == "mstar_program":
-        reviewer_memory_contexts[META_REVIEWER_NAME] = _mstar_meta_memory_context(
-            args,
-            paper_info,
-            players,
-            specialist_messages,
-        )
-    write_specialist_checkpoint(
-        checkpoint_path,
-        {
-            message.agent_name: message.content
-            for message in specialist_messages
-        },
-        checkpoint_metadata,
-    )
-    print("[Review] Starting final meta-reviewer", flush=True)
     meta_paper_context = Message(
         agent_name=extractor_message.agent_name,
         content=clip_context(
@@ -1907,33 +1912,42 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
         ),
         turn=extractor_message.turn,
     )
+    if memory_mode == "mstar_program":
+        reviewer_memory_contexts[META_REVIEWER_NAME] = _mstar_meta_memory_context(
+            args,
+            paper_info,
+            players,
+            specialist_messages,
+            meta_paper_context.content,
+        )
+    write_specialist_checkpoint(
+        checkpoint_path,
+        {message.agent_name: message.content for message in specialist_messages},
+        checkpoint_metadata,
+    )
+    print("[Review] Starting final meta-reviewer", flush=True)
+    specialist_by_dimension = {
+        infer_reviewer_dimension(message.agent_name): message.content
+        for message in specialist_messages
+    }
+    meta_request = Message(
+        agent_name=extractor_message.agent_name,
+        content=build_meta_review_question(
+            paper_id=paper_info["sample_id"],
+            specialist_reviews=specialist_by_dimension,
+            paper_context=meta_paper_context.content,
+        ),
+        turn=extractor_message.turn,
+    )
     meta_observation = [
-        meta_paper_context,
+        meta_request,
         memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
-    ] + specialist_messages
-    try:
-        try:
-            meta_content = call_role_with_anchor_repair(
-                meta_reviewer,
-                meta_observation,
-                source_anchors,
-            )
-        except EmptyModelResponseError:
-            print(
-                "[Review] Final Meta-Reviewer: empty response; retrying with "
-                "specialist reviews only",
-                flush=True,
-            )
-            compact_meta_observation = [
-                memory_message_for(META_REVIEWER_NAME, reviewer_memory_contexts),
-            ] + specialist_messages
-            meta_content = call_role_with_anchor_repair(
-                meta_reviewer,
-                compact_meta_observation,
-                source_anchors,
-            )
-    except Exception:
-        raise
+    ]
+    meta_content = call_role_with_anchor_repair(
+        meta_reviewer,
+        meta_observation,
+        source_anchors,
+    )
     meta_message = Message(agent_name=META_REVIEWER_NAME, content=meta_content, turn=2)
 
     memory_messages = [
@@ -1949,7 +1963,9 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
     output_dir.mkdir(parents=True, exist_ok=True)
     review_history_path = output_dir / "review_history.json"
     if review_history_path.exists() and (not args.overwrite):
-        raise Exception(f"History already exists: {review_history_path} (use --overwrite to replace)")
+        raise Exception(
+            f"History already exists: {review_history_path} (use --overwrite to replace)"
+        )
     ended_at_epoch = time.time()
     ended_at_local = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ended_at_epoch))
     duration_seconds = ended_at_epoch - started_at_epoch
@@ -2024,16 +2040,16 @@ def run_one_paper(base_args: Namespace, paper_info: Dict[str, str]) -> Dict[str,
     return result
 
 
-def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
+def _strict_history_state(args: Namespace, papers: list[dict[str, str]]):
     checkpoint_path = (
-        Path(args.output_dir)
-        / "single_paper_review"
-        / "history_replay_checkpoint.json"
+        Path(args.output_dir) / "single_paper_review" / "history_replay_checkpoint.json"
     )
     manifest_path = Path(args.paper_context_manifest).expanduser().resolve()
     program_root = Path(args.memory_program_dir).expanduser().resolve()
     program_hashes = {
-        str(path.relative_to(program_root)): hashlib.sha256(path.read_bytes()).hexdigest()
+        str(path.relative_to(program_root)): hashlib.sha256(
+            path.read_bytes()
+        ).hexdigest()
         for path in sorted(program_root.rglob("*.py"))
     }
     s2_path = Path(args.s2_retrieval_pool).expanduser().resolve()
@@ -2042,7 +2058,9 @@ def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
         "lineage": program_root.parent.name,
         "replicate_id": str(args.replicate_id),
         "program_sha256": canonical_sha256(program_hashes),
-        "historical_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "historical_manifest_sha256": hashlib.sha256(
+            manifest_path.read_bytes()
+        ).hexdigest(),
         "experiment_config_sha256": runtime_condition_fingerprint(args, papers[0]),
         "s2_asset_sha256": hashlib.sha256(s2_path.read_bytes()).hexdigest(),
         "s2_asset_version": frozen_s2_pool_version(s2_path),
@@ -2063,14 +2081,14 @@ def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
         frozen_ids=frozen_ids,
     )
     completed = list(checkpoint.get("completed_paper_ids") or []) if checkpoint else []
-    library_path = Path(args.output_dir) / "single_paper_review" / "memory_library.jsonl"
+    library_path = (
+        Path(args.output_dir) / "single_paper_review" / "memory_library.jsonl"
+    )
     if not checkpoint:
         stale_paper_dirs = [
             paper_id
             for paper_id in frozen_ids
-            if (
-                Path(args.output_dir) / "single_paper_review" / paper_id
-            ).is_dir()
+            if (Path(args.output_dir) / "single_paper_review" / paper_id).is_dir()
             and any(
                 (Path(args.output_dir) / "single_paper_review" / paper_id).iterdir()
             )
@@ -2083,7 +2101,9 @@ def _strict_history_state(args: Namespace, papers: List[Dict[str, str]]):
     if checkpoint:
         snapshot = checkpoint["memory_snapshot"]
         expected_text = str(snapshot.get("memory_library_jsonl") or "")
-        actual_text = library_path.read_text(encoding="utf-8") if library_path.is_file() else ""
+        actual_text = (
+            library_path.read_text(encoding="utf-8") if library_path.is_file() else ""
+        )
         if actual_text != expected_text:
             library_path.parent.mkdir(parents=True, exist_ok=True)
             temporary = library_path.with_suffix(".tmp")
@@ -2158,7 +2178,9 @@ def main(args: Namespace):
         validate_generated_outputs(result)
         results.append(result)
         if strict_state:
-            checkpoint_path, identity, frozen_ids, completed, library_path = strict_state
+            checkpoint_path, identity, frozen_ids, completed, library_path = (
+                strict_state
+            )
             completed.append(paper_info["sample_id"])
             library_text = (
                 library_path.read_text(encoding="utf-8")
@@ -2189,9 +2211,13 @@ def main(args: Namespace):
             duration_text=result["duration_text"],
         )
 
-    manifest_path = Path(args.output_dir) / "single_paper_review" / "batch_manifest.json"
+    manifest_path = (
+        Path(args.output_dir) / "single_paper_review" / "batch_manifest.json"
+    )
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"Saved batch manifest to {manifest_path}")
 
 

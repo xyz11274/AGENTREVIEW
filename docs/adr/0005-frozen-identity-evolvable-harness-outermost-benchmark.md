@@ -1,30 +1,82 @@
-# Frozen Reviewer Identity + Evolvable Review Harness，Benchmark 居于最外层
+# ADR-0005：Frozen Reviewer Identity、可演化 Memory Harness 与外置 Benchmark
 
-> **状态：部分被 ADR-0008 supersede（2026-08-27）。** Frozen Reviewer Identity、Human Reference Boundary 和 Benchmark 外部性仍有效；第 2 条“共享题目、不共享 no-memory AI review”已改为共享冻结 Full Review Corpus。
+- 状态：Accepted
+- 适用范围：Reviewer、MemoryProgram、候选可见信息与外部评价
 
-系统边界的核心定义。
+## Context
 
-**可进化外围（Review Harness）**：Memory、review workflow、context organization、evidence strategy、retrieval strategy、Semantic Scholar 的使用、review generation / critique / repair strategy 及后续合理组件。**最终评价层**：CoCoReviewBench 为第一个正式 Benchmark，经 Benchmark Adapter 接入，系统 benchmark-agnostic；Reviewer 不应知道自己正被哪个 Benchmark 评分。
+系统需要稳定的审稿任务身份，同时允许搜索记忆、检索、上下文组织和经验抽象策略。效果归因要求 Reviewer 职责保持稳定，搜索变量保持清晰，外部 benchmark 保持独立。
 
-**固定核心**：Frozen Reviewer Identity（五类职责与子维度）、统一能力接口的语义边界、Benchmark 与 Reviewer 的隔离、外部评价权。
+## Decision
 
-**实验内冻结项**：Base LLM、生成参数及正式比较所需的其他运行条件，在同一次对照实验内保持一致；它们不是 M★ 的永久系统身份。跨独立实验可以把 Base LLM 作为新的受控实验变量更换，用于验证跨 backbone 泛化。
+系统采用三层边界。
 
-配套边界：
+### 1. Frozen Reviewer Identity
 
-1. **Human Reference Boundary**——真人 review / gold 只用于外部 fitness 与最终评测，不得进入候选可见输入。`pilot_full` 把 `VERIFIED HUMAN REFERENCE OPINIONS` 拼进 episode 属边界违反，修复前其进化产物（含 iter5）不作为 effectiveness 结论的权威 Program，仅作历史分析。
-2. **共享题目，不共享答案**——所有 Seed 共享同一批原始历史论文（**论文全文 + candidate-visible metadata + source anchors**；related work 不默认注入，经统一 Semantic Scholar Capability 按需调用，复现所需的 retrieval cache 在系统层维护、仍经 capability 接口取得），各自运行自己的审稿策略、自产经验、自建 Memory；废除「固定 no-memory Reviewer 预生成 AI review 供二次加工」的 Frozen Library Route。episode 中的 metadata 必须二分：candidate-visible（paper_id / title / venue / year / reviewer role 等）可入 prompt，internal provenance（paper_md_path / split / SHA256 / run_id / manifest 等）默认留在系统内部。
-3. **Engineering Budget 参数化**——LLM 调用次数/操作、返回字符上限等是工程预算而非方法学冻结；接口参数化，默认值为最小实现服务。永久冻结的是 Reviewer Identity、Benchmark / Candidate 隔离原则和外部评价权；统一能力接口保持一致的能力语义。Base LLM 与具体生成参数属于实验内冻结条件，不属于系统永久身份，跨独立实验可作为受控变量更换。
+固定内容包括：
 
-## Considered Options
+- QUAL、CLAR、SIGN、ORIG、POL 与 META 的职责；
+- 六个 system prompt、rubric 维度和输出语义；
+- Specialist request v1 与 META synthesis request v2；
+- Candidate 与 evaluator 的信息边界；
+- Benchmark 的外部评价权。
 
-- **整个 Reviewer prompt 完全冻结**（ADR-0001 的原始表述）：被修订。它把 workflow、context organization、自检查等本可进化的 Harness 策略也锁死，搜索空间被人为压扁。
-- **一切皆可进化（含 Reviewer 职责）**：被否决。职责漂移则实验对象本身改变，效果无从归因。
-- **Identity 冻结 + Harness 进化 + Benchmark 最外层**：被采纳。
+`REVIEW_Request.md` 是六个有序章节的身份内容源。`agentreview/reviewer_identity.py` 是唯一渲染 Implementation，`configs/frozen_reviewer_identity_v2.json` 记录 source SHA、六个 task prompt SHA、Specialist/META request template SHA 与 composite suite SHA。部署编排、Reviewer Core、Evolution、META cache、Effectiveness design lock 与 formal gate 读取同一套身份。
+
+META v2 请求依次组合 paper ID、同一论文的 Canonical Paper Context（正文与 Source Anchors）、`QUAL/CLAR/SIGN/ORIG/POL` 五份 Specialist Review 和最终输出指令。
+
+### 2. Evolvable Review Harness
+
+MemoryProgram 可以改变：
+
+- memory schema；
+- write-time abstraction；
+- index 与 retrieval strategy；
+- query construction 与 context organization；
+- read-time compression；
+- Frozen S2、embedding、vector store 和 LLM capability 的使用策略；
+- review workflow 中由 MemoryProgram 协议承载的逻辑。
+
+固定 TaskAgent 提供 extract、query 与 response Adapter。当前 Implementation 使用 LLM 按严格 JSON schema 构造 KnowledgeItem、Query，并用冻结 task system prompt 生成最终 Review。
+
+### 3. Outermost Benchmark
+
+Reviewer Core 保持 benchmark-agnostic。评测调用在 Reviewer 输出之后进入 Benchmark Adapter：Evolution 与 Sealed D 使用进程内 `ReviewSubmission` 逐条计分，Official CoCo 使用已持久化的 `candidate_reviews.jsonl` 启动独立三阶段运行。
+
+## Shared raw material and program-specific experience
+
+同一次比较的所有 Program 使用同一批冻结原始历史论文、candidate-visible metadata 与 source anchors。每个 Program 从空状态顺序 replay 该执行面的冻结历史子集，并按 `self_generated_after_review` 协议生成自己的 Review、KnowledgeItem 与 Memory。Evolution 默认从 A 区选择 125 个 Episode；Effectiveness 固定选择 20 个 A 区目标；Reviewer Core 使用调用方提供的 Episode 序列。
+
+Program 之间共享题目身份和能力边界。每个 Program 拥有独立运行时 Memory。
+
+## Human Reference Boundary
+
+Candidate-visible：
+
+- 论文正文；
+- paper ID、title、venue、year 与 reviewer task；
+- source anchors；
+- 当前 Program 自身 Memory；
+- 当前 paper scope 的 Frozen S2 capability。
+
+Evaluator-only：
+
+- human review 与 gold；
+- benchmark taxonomy 和 score；
+- judge rationale 与完整 evaluator trace；
+- internal provenance 中的受限评价字段。
+
+Reflector 接收 scalar fitness、安全数值指标、预定义错误类别与资源统计。
+
+## Experimental controls
+
+同一次正式比较冻结 Base LLM、generation parameters、模型 revision、embedding identity、data manifest、capability contract 与 evaluator revision。跨独立实验可以把 backbone 作为显式受控变量。
 
 ## Consequences
 
-- ADR-0001 的「冻结 reviewer rubric/prompt」按本 ADR 收窄：冻结的是职责与 rubric 定义，Harness 侧策略开放进化。
-- ADR-0002 的「共享语料」按本 ADR 收窄为 Shared Raw Material（原始论文）；语料之上的经验层由各 Program 自产，分叉从经验生成就开始了。
-- iter5 降级为历史分析材料；`frozen_memory_library` 路线标记 legacy，不补完剩余 history generation（见 docs/DEPRECATED.md）。
-- 待办（见 docs/TODO.md）：episode 构建器剥离真人参照；工程预算参数化；统一 rich paper interface；Benchmark Adapter 抽象；按 Program 各自生成历史经验。
+- Evolution 的主要可变对象是完整 MemoryProgram 源码。
+- 三个 Seed 共享 A/B paper identity，各自生成经验并建立 Memory。
+- Candidate evaluation 使用 fresh-state replay，收益归因于当前 Program。
+- Reviewer Core 提供稳定协议；部署编排把 MemoryProgram 作为 context provider；Reviewer Core CLI 执行完整协议。
+- Benchmark 扩展集中在 Adapter seam，Reviewer Core Interface 保持稳定。
+- 所有正式产物携带 Program、data、model、capability 与 evaluator provenance。

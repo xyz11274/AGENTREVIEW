@@ -1,33 +1,31 @@
 import logging
-import os
 from pathlib import Path
-from typing import List, Union
 
-#from llama_index.readers.file.docs import PDFReader
-
+# from llama_index.readers.file.docs import PDFReader
 from agentreview.agent import Player
+
 from .backends import IntelligenceBackend
 from .config import BackendConfig
 from .message import Message
 
+logger = logging.getLogger(__name__)
+
 
 class AreaChair(Player):
-
     def __init__(
-            self,
-            name: str,
-            role_desc: str,
-            env_type: str,
-            backend: Union[BackendConfig, IntelligenceBackend],
-            global_prompt: str = None,
-            **kwargs,
+        self,
+        name: str,
+        role_desc: str,
+        env_type: str,
+        backend: BackendConfig | IntelligenceBackend,
+        global_prompt: str = None,
+        **kwargs,
     ):
         super().__init__(name, role_desc, backend, global_prompt, **kwargs)
         self.env_type = env_type
         self.role_desc = role_desc
 
-    def act(self, observation: List[Message]) -> str:
-
+    def act(self, observation: list[Message]) -> str:
         # The author just finished their rebuttals (so last speaker is Author 1).
         # The AC asks each reviewer to update their reviews.
 
@@ -46,18 +44,17 @@ class AreaChair(Player):
 
 
 class Reviewer(Player):
-
     def __init__(
-            self,
-            name: str,
-            role_desc: str,
-            backend: Union[BackendConfig, IntelligenceBackend],
-            global_prompt: str = None,
-            **kwargs,
+        self,
+        name: str,
+        role_desc: str,
+        backend: BackendConfig | IntelligenceBackend,
+        global_prompt: str = None,
+        **kwargs,
     ):
         super().__init__(name, role_desc, backend, global_prompt, **kwargs)
 
-    def act(self, observation: List[Message]) -> str:
+    def act(self, observation: list[Message]) -> str:
         return super().act(observation)
 
 
@@ -68,16 +65,16 @@ class PaperExtractorPlayer(Player):
     """
 
     def __init__(
-            self,
-            name: str,
-            role_desc: str,
-            paper_id: int,
-            paper_decision: str,
-            conference: str,
-            backend: Union[BackendConfig, IntelligenceBackend],
-            paper_md_path: str = None,
-            global_prompt: str = None,
-            **kwargs,
+        self,
+        name: str,
+        role_desc: str,
+        paper_id: int,
+        paper_decision: str,
+        conference: str,
+        backend: BackendConfig | IntelligenceBackend,
+        paper_md_path: str = None,
+        global_prompt: str = None,
+        **kwargs,
     ):
         super().__init__(name, role_desc, backend, global_prompt, **kwargs)
         self.paper_id = paper_id
@@ -85,7 +82,7 @@ class PaperExtractorPlayer(Player):
         self.conference: str = conference
         self.paper_md_path = paper_md_path
 
-    def act(self, observation: List[Message]) -> str:
+    def act(self, observation: list[Message]) -> str:
         if not self.paper_md_path:
             return "Error: `paper_md_path` is required for Markdown input."
 
@@ -93,7 +90,7 @@ class PaperExtractorPlayer(Player):
         if not document_path.exists():
             return f"Error: Markdown file not found: {document_path}"
 
-        logging.info(f"Loading paper from {document_path} ...")
+        logger.info(f"Loading paper from {document_path} ...")
 
         md_text = document_path.read_text(encoding="utf-8", errors="ignore")
 

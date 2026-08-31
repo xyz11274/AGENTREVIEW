@@ -1,4 +1,5 @@
-#AgentReview/agentreview/config.py
+# AgentReview/agentreview/config.py
+import ast
 import copy
 import json
 
@@ -16,12 +17,15 @@ class Config(AttributedDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for key, value in self.items():
-
-            # Try to convert the value (the "metadata" field) to dict if applicable
-            try:
-                value = dict(eval(value))
-            except Exception:
-                pass
+            # Convert serialized mapping values (such as "metadata") without
+            # executing arbitrary configuration text.
+            if isinstance(value, str):
+                try:
+                    parsed_value = ast.literal_eval(value)
+                except (SyntaxError, ValueError):
+                    parsed_value = value
+                if isinstance(parsed_value, dict):
+                    value = parsed_value
 
             if isinstance(value, dict):
                 self[key] = init_config(value)  # convert dict to Config recursively

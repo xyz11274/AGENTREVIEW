@@ -1,51 +1,60 @@
-# AgentReview/agentreview/utility/s2_retrieval.py
+"""Stable compatibility wrapper for optional live OpenScholar retrieval."""
+
+from __future__ import annotations
+
+from typing import Any
 
 from agentreview.openscholar_bridge.src import use_search_apis
 
+DEFAULT_MODEL_NAME = "yi-lightning"
+
+
 def retrieve_with_openscholar(
     query: str,
-    title_query: str = None,
+    title_query: str | None = None,
     use_llm_keywords: bool = False,
-    client=None,
-    model_name=None,
+    client: Any = None,
+    model_name: str | None = None,
     max_papers: int = 8,
-):
-    """
-    Minimal wrapper around OpenScholar Semantic Scholar pipeline.
-    Returns a list of papers (dicts).
-    """
+    s2_api_key: str | None = None,
+) -> list[dict[str, Any]]:
+    """Retrieve papers through title matching, LLM keywords, or a direct query."""
+    if max_papers < 1:
+        raise ValueError("max_papers must be at least 1")
 
     if title_query:
-        papers = use_search_apis.search_paper_via_query(
-            query=title_query,
+        _, title_papers, _ = use_search_apis.search_semantic_scholar(
+            question="",
+            new_keywords=[],
+            new_titles=[title_query],
             max_paper_num=max_papers,
-            min_citation_count=0,
-            sort=None,
+            s2_api_key=s2_api_key,
         )
-        papers = papers or []
-        for paper in papers:
-            paper["title_query"] = True
-        return papers
+        return title_papers[:max_papers]
 
-    # 情况 1：不用 LLM 生成关键词（最稳，推荐先用）
-    if not use_llm_keywords:
-        papers = use_search_apis.search_paper_via_query(
-            query=query,
-            max_paper_num=max_papers
+    if use_llm_keywords:
+        if client is None:
+            raise ValueError("client is required when use_llm_keywords is enabled")
+        resolved_model_name = model_name or DEFAULT_MODEL_NAME
+        keywords = use_search_apis.retrieve_keywords(
+            question=query,
+            client=client,
+            model_name=resolved_model_name,
         )
-        return papers or []
+        keyword_papers, title_papers, _ = use_search_apis.search_semantic_scholar(
+            question=query,
+            new_keywords=keywords,
+            new_titles=[],
+            max_paper_num=max_papers,
+            s2_api_key=s2_api_key,
+        )
+        return (keyword_papers + title_papers)[:max_papers]
 
-    # 情况 2：完全复用 OpenScholar 的 LLM → S2 流程
-    keywords = use_search_apis.retrieve_keywords(
+    keyword_papers, _, _ = use_search_apis.search_semantic_scholar(
         question=query,
-        client=client,
-        model_name=model_name
+        new_keywords=[query],
+        new_titles=[],
+        max_paper_num=max_papers,
+        s2_api_key=s2_api_key,
     )
-
-    keyword_papers, title_papers, _ = use_search_apis.search_semantic_scholar(
-        question=query,
-        new_keywords=keywords,
-        new_titles=[]
-    )
-
-    return keyword_papers + title_papers
+    return keyword_papers[:max_papers]

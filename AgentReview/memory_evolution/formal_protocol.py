@@ -4,23 +4,31 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, Sequence
+from typing import Any
 
 from agentreview.paper_context import CANONICAL_PAPER_CONTEXT_VERSION
+from agentreview.reviewer_identity import (
+    ALL_TASKS,
+    META_REQUEST_PROTOCOL_VERSION,
+    REVIEWER_IDENTITY_VERSION,
+    validate_reviewer_identity_manifest,
+)
+from agentreview.reviewer_runtime.program_loader import resolve_manifest_path
 
+from .agentreview_data import assert_no_human_reference_leak
 from .assets import (
     FOUR_ZONES,
     TEMPORAL_SPLIT_VERSION,
+    audit_family_target_integrity,
     audit_four_zone_isolation,
     load_temporal_split_manifest,
     sha256_file,
     validate_asset_manifest,
 )
 from .evaluator import EXPERIENCE_PROTOCOL, EXPERIENCE_PROTOCOL_VERSION
-from .agentreview_data import assert_no_human_reference_leak
 from .toolkit import validate_frozen_s2_pool
-
 
 REQUIRED_ASSETS = (
     "temporal_split_manifest",
@@ -38,6 +46,7 @@ FORMAL_REQUIRED_VERSIONS = {
     "temporal_family_manifest": TEMPORAL_SPLIT_VERSION,
     "frozen_s2_pool": FROZEN_S2_POOL_VERSION,
     "frozen_s2_pool_manifest": FROZEN_S2_POOL_VERSION,
+    "frozen_reviewer_identity": REVIEWER_IDENTITY_VERSION,
 }
 FROZEN_COCO_ROOT = Path("/data0/xyj/shengao/CoCoReviewBench")
 
@@ -52,7 +61,9 @@ def _remap_frozen_coco_path(source: str, coco_root: str) -> tuple[Path, Path]:
     source_text = str(source or "")
     source_path = Path(source_text)
     if not source_path.is_absolute():
-        raise ValueError(f"Formal CoCo provenance path is not absolute: {source_text!r}")
+        raise ValueError(
+            f"Formal CoCo provenance path is not absolute: {source_text!r}"
+        )
     try:
         relative = source_path.relative_to(FROZEN_COCO_ROOT)
     except ValueError as exc:
@@ -67,7 +78,9 @@ def _remap_frozen_coco_path(source: str, coco_root: str) -> tuple[Path, Path]:
 
     configured_root = Path(str(coco_root or "")).expanduser()
     if not str(coco_root or "") or not configured_root.is_absolute():
-        raise ValueError("Formal CoCo provenance requires an absolute current coco_root")
+        raise ValueError(
+            "Formal CoCo provenance requires an absolute current coco_root"
+        )
     resolved_root = configured_root.resolve()
     if not resolved_root.is_dir():
         raise FileNotFoundError(
@@ -96,12 +109,10 @@ def _verify_remapped_coco_file(
     *,
     coco_root: str,
     label: str,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     mapped, relative = _remap_frozen_coco_path(source, coco_root)
     if not mapped.is_file():
-        raise RuntimeError(
-            f"Formal CoCo {label} is missing after root remap: {mapped}"
-        )
+        raise RuntimeError(f"Formal CoCo {label} is missing after root remap: {mapped}")
     actual_sha256 = sha256_file(mapped)
     if actual_sha256 != str(expected_sha256 or ""):
         raise RuntimeError(
@@ -116,8 +127,8 @@ def _verify_remapped_coco_file(
 
 
 def _validate_frozen_coco_provenance(
-    reference_source: Dict[str, Any], *, coco_root: str
-) -> Dict[str, Any]:
+    reference_source: dict[str, Any], *, coco_root: str
+) -> dict[str, Any]:
     verified = {}
     for path_key, sha_key in (
         ("implementation_path", "implementation_sha256"),
@@ -152,28 +163,6 @@ def _validate_frozen_coco_provenance(
     }
 
 
-def _validate_family_target_protocol(
-    split_summary: Dict[str, Any], zones: Dict[str, Any]
-) -> None:
-    target_count = sum(len(zones[zone]) for zone in FOUR_ZONES)
-    family_count = int(split_summary.get("unique_paper_family_count", -1))
-    deduplication = split_summary.get("deduplication_audit") or {}
-    if (
-        split_summary.get("target_unit")
-        != "one representative paper per paper family"
-        or family_count != target_count
-        or int(split_summary.get("formal_target_count", -1)) != target_count
-        or int((split_summary.get("families") or {}).get("count", -1))
-        != target_count
-        or not deduplication.get("passed")
-        or deduplication.get("formal_target_count") != target_count
-        or deduplication.get("unique_paper_family_count") != target_count
-        or deduplication.get("cross_zone_paper_family_overlap_count") != 0
-        or deduplication.get("cross_zone_normalized_title_overlap_count") != 0
-    ):
-        raise RuntimeError("Formal split violates one-paper-family-one-target protocol")
-
-
 def _iter_jsonl(path: Path):
     with path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
@@ -185,7 +174,7 @@ def _iter_jsonl(path: Path):
                 raise ValueError(f"Invalid JSONL {path}:{line_number}") from exc
 
 
-def _base_id(value: Dict[str, Any]) -> str:
+def _base_id(value: dict[str, Any]) -> str:
     metadata = value.get("metadata") or {}
     return str(metadata.get("paper_id") or value.get("id") or "").split("::", 1)[0]
 
@@ -199,12 +188,12 @@ def _canonical_hash(value: Any) -> str:
 
 
 def _validate_v2_sidecar(
-    asset_report: Dict[str, Any],
+    asset_report: dict[str, Any],
     *,
     temporal_split_manifest_path: str,
     s2_pool_path: str,
     expected_target_count: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     sidecar_path = Path(
         asset_report["verified_assets"]["frozen_s2_pool_manifest"]["resolved_path"]
     )
@@ -240,9 +229,9 @@ def run_formal_protocol_gate(
     task_id: str,
     s2_pool_path: str,
     program_paths: Sequence[str],
-    config_identity: Dict[str, Any],
+    config_identity: dict[str, Any],
     coco_root: str = "",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     asset_report = validate_asset_manifest(
         asset_manifest_path,
         required_assets=REQUIRED_ASSETS,
@@ -252,14 +241,17 @@ def run_formal_protocol_gate(
         raise RuntimeError(
             f"Asset Manifest is not formal-ready: {asset_report['formal_blockers']}"
         )
-    split_summary, zones = load_temporal_split_manifest(
-        temporal_split_manifest_path
+    reviewer_identity = validate_reviewer_identity_manifest(
+        asset_report["verified_assets"]["frozen_reviewer_identity"]["resolved_path"]
     )
+    split_summary, zones = load_temporal_split_manifest(temporal_split_manifest_path)
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
         raise RuntimeError("Formal execution rejects contaminated temporal split v1")
-    if not (split_summary.get("v1_v2_comparison_audit") or {}).get("passed"):
-        raise RuntimeError("Temporal split v2 lacks a passed v1/v2 comparison audit")
-    _validate_family_target_protocol(split_summary, zones)
+    family_audit = audit_family_target_integrity(split_summary, zones)
+    if family_audit["passed"] is not True:
+        raise RuntimeError(
+            f"Temporal split v2 family-target integrity failed: {family_audit}"
+        )
     isolation = audit_four_zone_isolation(zones)
     if not isolation["passed"]:
         raise RuntimeError(f"Four-zone temporal isolation failed: {isolation}")
@@ -292,9 +284,7 @@ def run_formal_protocol_gate(
     )
     if not prepared_manifest_path.is_file():
         raise FileNotFoundError("Formal prepared-data manifest is missing")
-    prepared_manifest = json.loads(
-        prepared_manifest_path.read_text(encoding="utf-8")
-    )
+    prepared_manifest = json.loads(prepared_manifest_path.read_text(encoding="utf-8"))
     task_manifest = (
         prepared_manifest
         if task_id == "META"
@@ -326,17 +316,12 @@ def run_formal_protocol_gate(
     validation_path = task_root / "validation.jsonl"
     queries_path = task_root / "queries.jsonl"
     evaluator_references_path = (
-        data_path
-        / "evaluator_only"
-        / task_id
-        / "validation_references.jsonl"
+        data_path / "evaluator_only" / task_id / "validation_references.jsonl"
     )
     if not episodes_path.is_file() or not validation_path.is_file():
         raise FileNotFoundError("Formal A/B task files are missing")
     if not evaluator_references_path.is_file():
-        raise FileNotFoundError(
-            "Formal B evaluator-only reference artifact is missing"
-        )
+        raise FileNotFoundError("Formal B evaluator-only reference artifact is missing")
     episodes = list(_iter_jsonl(episodes_path))
     validation = list(_iter_jsonl(validation_path))
     queries = list(_iter_jsonl(queries_path)) if queries_path.is_file() else []
@@ -371,7 +356,9 @@ def run_formal_protocol_gate(
             or ""
         )
         if not md_path:
-            raise RuntimeError(f"Formal Candidate task lacks Markdown source: {paper_id}")
+            raise RuntimeError(
+                f"Formal Candidate task lacks Markdown source: {paper_id}"
+            )
         path, _ = _remap_frozen_coco_path(md_path, coco_root)
         if not path.is_file():
             raise FileNotFoundError(f"Formal Candidate Markdown is missing: {path}")
@@ -401,8 +388,15 @@ def run_formal_protocol_gate(
             violations.append(f"A protocol mismatch {paper_id}")
         if metadata.get("experience_protocol_version") != EXPERIENCE_PROTOCOL_VERSION:
             violations.append(f"A protocol version mismatch {paper_id}")
-        if metadata.get("contains_human_reference") is not False:
-            violations.append(f"A Human Reference marker is not false {paper_id}")
+        human_reference_marker = metadata.get("contains_human_reference")
+        if human_reference_marker is False:
+            marker_violation = ""
+        else:
+            marker_violation = (
+                f"A Human Reference marker requires false for paper {paper_id}"
+            )
+        if marker_violation:
+            violations.append(marker_violation)
         if metadata.get("paper_review_cutoff") != expected["paper_review_cutoff"]:
             violations.append(f"A cutoff mismatch {paper_id}")
         if metadata.get("paper_context_version") != CANONICAL_PAPER_CONTEXT_VERSION:
@@ -442,11 +436,19 @@ def run_formal_protocol_gate(
     if not s2_audit["passed"]:
         raise RuntimeError(f"Frozen S2 temporal audit failed: {s2_audit}")
 
-    program_sha256 = {Path(path).name: sha256_file(Path(path)) for path in program_paths}
+    program_sha256 = {
+        Path(path).name: sha256_file(Path(path)) for path in program_paths
+    }
     expected_programs = {
-        "vector_search.py": asset_report["verified_assets"]["seed_vector_search"]["sha256"],
-        "llm_summarizer.py": asset_report["verified_assets"]["seed_llm_summarizer"]["sha256"],
-        "experience_learner.py": asset_report["verified_assets"]["seed_experience_learner"]["sha256"],
+        "vector_search.py": asset_report["verified_assets"]["seed_vector_search"][
+            "sha256"
+        ],
+        "llm_summarizer.py": asset_report["verified_assets"]["seed_llm_summarizer"][
+            "sha256"
+        ],
+        "experience_learner.py": asset_report["verified_assets"][
+            "seed_experience_learner"
+        ]["sha256"],
     }
     if program_sha256 != expected_programs:
         raise ValueError("Formal seed Program SHA256 differs from Asset Manifest")
@@ -455,6 +457,7 @@ def run_formal_protocol_gate(
         "protocol": "formal-experiment-gate-v1",
         "passed": True,
         "asset_manifest": asset_report,
+        "reviewer_identity": reviewer_identity,
         "temporal_split_manifest": str(Path(temporal_split_manifest_path).resolve()),
         "temporal_split_manifest_sha256": sha256_file(
             Path(temporal_split_manifest_path).resolve()
@@ -490,7 +493,7 @@ def run_formal_test_gate(
     asset_manifest_path: str,
     temporal_split_manifest_path: str,
     test_manifest_path: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fail-closed gate used exclusively by ``final-evaluate-suite``."""
     asset_report = validate_asset_manifest(
         asset_manifest_path,
@@ -507,12 +510,17 @@ def run_formal_test_gate(
         raise RuntimeError(
             f"D Asset Manifest is not formal-ready: {asset_report['formal_blockers']}"
         )
+    reviewer_identity = validate_reviewer_identity_manifest(
+        asset_report["verified_assets"]["frozen_reviewer_identity"]["resolved_path"]
+    )
     split_summary, zones = load_temporal_split_manifest(temporal_split_manifest_path)
     if split_summary.get("version") != TEMPORAL_SPLIT_VERSION:
         raise RuntimeError("Formal D/Test rejects contaminated temporal split v1")
-    if not (split_summary.get("v1_v2_comparison_audit") or {}).get("passed"):
-        raise RuntimeError("Formal D/Test requires the passed v1/v2 split audit")
-    _validate_family_target_protocol(split_summary, zones)
+    family_audit = audit_family_target_integrity(split_summary, zones)
+    if family_audit["passed"] is not True:
+        raise RuntimeError(
+            f"Formal D/Test family-target integrity failed: {family_audit}"
+        )
     temporal_audit = audit_four_zone_isolation(zones)
     if not temporal_audit["passed"]:
         raise RuntimeError("D gate failed four-zone temporal audit")
@@ -524,6 +532,77 @@ def run_formal_test_gate(
 
     manifest_source = Path(test_manifest_path).expanduser().resolve()
     test_manifest = json.loads(manifest_source.read_text(encoding="utf-8"))
+    if (
+        test_manifest.get("reviewer_suite_identity_sha256")
+        == reviewer_identity["suite_identity_sha256"]
+        and test_manifest.get("meta_request_protocol_version")
+        == META_REQUEST_PROTOCOL_VERSION
+    ):
+        reviewer_materialization = {
+            "suite_identity_sha256": reviewer_identity["suite_identity_sha256"],
+            "meta_request_protocol_version": META_REQUEST_PROTOCOL_VERSION,
+        }
+    else:
+        raise RuntimeError("D materialization uses a different Reviewer Identity")
+    task_assets = dict(test_manifest.get("tasks") or {})
+    if set(task_assets) == set(ALL_TASKS):
+        verified_task_assets: dict[str, dict[str, Any]] = {}
+    else:
+        raise RuntimeError("D materialization requires all six reviewer task assets")
+    for task_id in ALL_TASKS:
+        entry = dict(task_assets[task_id])
+        path = resolve_manifest_path(manifest_source, str(entry.get("path") or ""))
+        expected_path = (
+            manifest_source.parent
+            / task_id
+            / ("references.jsonl" if task_id == "META" else "test.jsonl")
+        ).resolve()
+        expected_sha256 = str(entry.get("sha256") or "")
+        values = [
+            line
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        if (
+            path == expected_path
+            and path.is_file()
+            and sha256_file(path) == expected_sha256
+            and len(values) == int(entry.get("count", -1))
+        ):
+            verified_task_assets[task_id] = {
+                "path": str(path),
+                "sha256": expected_sha256,
+                "count": len(values),
+            }
+        else:
+            raise RuntimeError(f"D {task_id} task asset identity mismatch")
+    meta_entry = task_assets["META"]
+    meta_context_path = resolve_manifest_path(
+        manifest_source,
+        str(meta_entry.get("context_path") or ""),
+    )
+    expected_meta_context_path = (
+        manifest_source.parent / "META" / "contexts.jsonl"
+    ).resolve()
+    meta_context_values = [
+        line
+        for line in meta_context_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if (
+        meta_context_path == expected_meta_context_path
+        and meta_context_path.is_file()
+        and sha256_file(meta_context_path)
+        == str(meta_entry.get("context_sha256") or "")
+        and len(meta_context_values) == int(meta_entry.get("context_count", -1))
+    ):
+        verified_task_assets["META"]["context_path"] = str(meta_context_path)
+        verified_task_assets["META"]["context_sha256"] = str(
+            meta_entry["context_sha256"]
+        )
+        verified_task_assets["META"]["context_count"] = len(meta_context_values)
+    else:
+        raise RuntimeError("D META context asset identity mismatch")
     s2_path = str(test_manifest.get("semantic_scholar_cache") or "")
     if not s2_path:
         raise RuntimeError("D materialization lacks its frozen S2 pool path")
@@ -546,8 +625,7 @@ def run_formal_test_gate(
     if test_manifest.get("paper_ids_sha256") != expected_ids_sha:
         raise RuntimeError("D paper identities differ from held-out manifest")
     cutoffs = {
-        str(value["paper_id"]): str(value["paper_review_cutoff"])
-        for value in held_out
+        str(value["paper_id"]): str(value["paper_review_cutoff"]) for value in held_out
     }
     s2_audit = validate_frozen_s2_pool(
         s2_path,
@@ -564,6 +642,9 @@ def run_formal_test_gate(
         "protocol": "formal-held-out-test-gate-v1",
         "passed": True,
         "asset_manifest": asset_report,
+        "reviewer_identity": reviewer_identity,
+        "reviewer_materialization": reviewer_materialization,
+        "verified_task_assets": verified_task_assets,
         "four_zone_temporal_audit": temporal_audit,
         "s2_future_leak_audit": s2_audit,
         "s2_query_integrity_audit": s2_sidecar["query_integrity_audit"],

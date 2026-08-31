@@ -1,8 +1,7 @@
-#AgentReview/agentreview/message.py
+# AgentReview/agentreview/message.py
 import hashlib
 import time
 from dataclasses import dataclass, field
-from typing import List, Union
 from uuid import uuid1
 
 # Preserved roles
@@ -43,7 +42,7 @@ class Message:
     content: str
     turn: int
     timestamp: int = field(default_factory=time.time_ns)
-    visible_to: Union[str, List[str]] = "all"
+    visible_to: str | list[str] = "all"
     msg_type: str = "text"
     logged: bool = False  # Whether the message is logged in the database
 
@@ -51,7 +50,7 @@ class Message:
     def msg_hash(self):
         # Generate a unique message id given the content, timestamp and role
         return _hash(
-            f"agent: {self.agent_name}\ncontent: {self.content}\ntimestamp: {str(self.timestamp)}\nturn: {self.turn}\nmsg_type: {self.msg_type}"
+            f"agent: {self.agent_name}\ncontent: {self.content}\ntimestamp: {self.timestamp!s}\nturn: {self.turn}\nmsg_type: {self.msg_type}"
         )
 
 
@@ -67,9 +66,7 @@ class MessagePool:
     def __init__(self):
         """Initialize the MessagePool with a unique conversation ID."""
         self.conversation_id = str(uuid1())
-        self._messages: List[
-            Message
-        ] = []
+        self._messages: list[Message] = []
         self._last_message_idx = 0
 
     def reset(self):
@@ -84,7 +81,6 @@ class MessagePool:
             message (Message): The message to be added to the pool.
         """
         self._messages.append(message)
-
 
     def print(self):
         """Print all the messages in the pool."""
@@ -117,7 +113,7 @@ class MessagePool:
         else:
             return self._messages[-1]
 
-    def get_all_messages(self) -> List[Message]:
+    def get_all_messages(self) -> list[Message]:
         """
         Get all the messages in the pool.
 
@@ -126,7 +122,7 @@ class MessagePool:
         """
         return self._messages
 
-    def get_visible_messages(self, agent_name, turn: int) -> List[Message]:
+    def get_visible_messages(self, agent_name, turn: int) -> list[Message]:
         """
         Get all the messages that are visible to a given agent before a specified turn.
 
@@ -151,7 +147,7 @@ class MessagePool:
                 visible_messages.append(message)
         return visible_messages
 
-    def get_messages_from_player(self, player_name: str) -> List[Message]:
+    def get_messages_from_player(self, player_name: str) -> list[Message]:
         """
         Get all the messages from a given player.
 
@@ -161,4 +157,6 @@ class MessagePool:
         Returns:
             List[Message]: A list of messages from the player.
         """
-        return [message for message in self._messages if message.agent_name == player_name]
+        return [
+            message for message in self._messages if message.agent_name == player_name
+        ]

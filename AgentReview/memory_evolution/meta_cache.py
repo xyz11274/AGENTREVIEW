@@ -2,8 +2,15 @@
 
 import hashlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any
+
+from agentreview.reviewer_identity import (
+    META_REQUEST_PROTOCOL_VERSION,
+    load_reviewer_suite,
+)
+from agentreview.reviewer_runtime.program_loader import resolve_manifest_path
 
 from .integration import MemoryHarnessAdapter
 from .models import Episode
@@ -11,24 +18,22 @@ from .task_agent import build_task_agent
 from .tasks import SPECIALIST_TASKS, resolve_program_path
 
 
-def _iter_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
+def _iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
                 yield json.loads(line)
 
 
-def _selected_episode_ids(program_root: Path, task_id: str) -> Optional[set]:
+def _selected_episode_ids(program_root: Path, task_id: str) -> set | None:
     manifest_path = program_root / "suite_manifest.json"
     if not manifest_path.is_file():
         return None
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    source_run = (
-        (manifest.get("promoted") or {}).get(task_id) or {}
-    ).get("source_run")
+    source_run = ((manifest.get("promoted") or {}).get(task_id) or {}).get("source_run")
     if not source_run:
         return None
-    selection_path = Path(source_run) / "selection.json"
+    selection_path = resolve_manifest_path(manifest_path, source_run) / "selection.json"
     if not selection_path.is_file():
         return None
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
@@ -70,12 +75,12 @@ def build_meta_input_cache(
     output_path: str,
     toolkit_factory,
     folds: int = 5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Use out-of-fold specialist predictions for train and frozen predictions for val."""
     data = Path(data_root).expanduser().resolve()
     programs = Path(program_root).expanduser().resolve()
     folds = max(2, int(folds))
-    combined: Dict[str, Dict[str, Any]] = {}
+    combined: dict[str, dict[str, Any]] = {}
     program_hashes = {}
 
     for task_id in SPECIALIST_TASKS:
@@ -91,7 +96,7 @@ def build_meta_input_cache(
         program_path = resolve_program_path(str(programs), task_id)
         program_hashes[task_id] = _sha256(program_path)
 
-        task_outputs: Dict[str, str] = {}
+        task_outputs: dict[str, str] = {}
         validation_queries = [
             query
             for query in queries
@@ -112,16 +117,14 @@ def build_meta_input_cache(
                 query
                 for query in queries
                 if query["metadata"].get("split") == "train"
-                and _fold(query["metadata"].get("work_family", ""), folds)
-                == fold_index
+                and _fold(query["metadata"].get("work_family", ""), folds) == fold_index
             ]
             if not fold_queries:
                 continue
             fold_episodes = [
                 episode
                 for episode in episodes
-                if _fold(episode.metadata.get("work_family", ""), folds)
-                != fold_index
+                if _fold(episode.metadata.get("work_family", ""), folds) != fold_index
             ]
             task_outputs.update(
                 _run_group(
@@ -142,8 +145,7 @@ def build_meta_input_cache(
                 {
                     "id": paper_id,
                     "paper_title": str(
-                        (query.get("metadata") or {}).get("paper_title")
-                        or paper_id
+                        (query.get("metadata") or {}).get("paper_title") or paper_id
                     ),
                     "split": (
                         "validation"
@@ -152,7 +154,9 @@ def build_meta_input_cache(
                     ),
                     "work_family": query["metadata"]["work_family"],
                     "paper_review_cutoff": query["metadata"].get("paper_review_cutoff"),
-                    "paper_context_version": query["metadata"].get("paper_context_version"),
+                    "paper_context_version": query["metadata"].get(
+                        "paper_context_version"
+                    ),
                     "temporal_zone": query["metadata"].get("temporal_zone"),
                     "specialists": {},
                 },
@@ -182,12 +186,12 @@ def build_meta_input_cache(
         "output_sha256": _sha256(destination),
         "paper_count": len(complete),
         "train_count": sum(record["split"] == "train" for record in complete),
-        "validation_count": sum(
-            record["split"] == "validation" for record in complete
-        ),
+        "validation_count": sum(record["split"] == "validation" for record in complete),
         "folds": folds,
         "program_root": str(programs),
         "specialist_program_sha256": program_hashes,
+        "reviewer_suite_identity_sha256": (load_reviewer_suite().suite_identity_sha256),
+        "meta_request_protocol_version": META_REQUEST_PROTOCOL_VERSION,
         "suite_manifest_sha256": (
             _sha256(programs / "suite_manifest.json")
             if (programs / "suite_manifest.json").is_file()

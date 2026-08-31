@@ -1,9 +1,9 @@
-#AgentReview/agentreview/utility/authentication_utils.py
+# AgentReview/agentreview/utility/authentication_utils.py
 
 import ipaddress
 import logging
 import os
-from typing import Mapping, Optional
+from collections.abc import Mapping
 from urllib.parse import urlparse
 
 import httpx
@@ -23,17 +23,21 @@ def _is_loopback_url(value: str) -> bool:
 
 
 def resolve_openai_base_url(
-    explicit_value: Optional[str] = None,
-    environ: Optional[Mapping[str, str]] = None,
+    explicit_value: str | None = None,
+    environ: Mapping[str, str] | None = None,
 ) -> str:
     """Resolve an explicit OpenAI-compatible endpoint without a cloud default."""
     values = os.environ if environ is None else environ
-    base_url = str(
-        explicit_value
-        or values.get("OPENAI_BASE_URL")
-        or values.get("OPENAI_API_BASE")
-        or ""
-    ).strip().rstrip("/")
+    base_url = (
+        str(
+            explicit_value
+            or values.get("OPENAI_BASE_URL")
+            or values.get("OPENAI_API_BASE")
+            or ""
+        )
+        .strip()
+        .rstrip("/")
+    )
     if not base_url:
         raise ValueError(
             "OpenAI-compatible endpoint is required: pass --openai-base-url or "
@@ -49,9 +53,9 @@ def resolve_openai_base_url(
 def get_openai_client(
     client_type: str,
     *,
-    base_url: Optional[str] = None,
-    api_key: Optional[str] = None,
-    timeout: Optional[httpx.Timeout] = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    timeout: httpx.Timeout | None = None,
 ):
     """
 
@@ -62,8 +66,8 @@ def get_openai_client(
 
     assert client_type in ["azure_openai", "openai"]
 
-    if not os.environ.get('OPENAI_API_VERSION'):
-        os.environ['OPENAI_API_VERSION'] = "2023-05-15"
+    if not os.environ.get("OPENAI_API_VERSION"):
+        os.environ["OPENAI_API_VERSION"] = "2023-05-15"
 
     if client_type == "openai":
         resolved_base_url = resolve_openai_base_url(base_url)
@@ -87,17 +91,19 @@ def get_openai_client(
         )
 
     elif client_type == "azure_openai":
-        endpoint: str = os.environ['AZURE_ENDPOINT']
+        endpoint: str = os.environ["AZURE_ENDPOINT"]
 
         if not endpoint.startswith("https://"):
             endpoint = f"https://{endpoint}.openai.azure.com"
 
-        os.environ['AZURE_ENDPOINT'] = endpoint
-        
+        os.environ["AZURE_ENDPOINT"] = endpoint
+
         client = openai.AzureOpenAI(
-            api_key=os.environ['AZURE_OPENAI_KEY'],
-            azure_endpoint=os.environ['AZURE_ENDPOINT'],  # f"https://YOUR_END_POINT.openai.azure.com"
-            azure_deployment=os.environ['AZURE_DEPLOYMENT'],
+            api_key=os.environ["AZURE_OPENAI_KEY"],
+            azure_endpoint=os.environ[
+                "AZURE_ENDPOINT"
+            ],  # f"https://YOUR_END_POINT.openai.azure.com"
+            azure_deployment=os.environ["AZURE_DEPLOYMENT"],
             max_retries=0,
         )
 

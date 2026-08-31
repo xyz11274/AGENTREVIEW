@@ -1,33 +1,47 @@
 """Command line entrypoint for the single M★ evolution architecture."""
 
 import argparse
-import importlib
 import hashlib
+import importlib
 import ipaddress
 import json
 import os
 import shutil
 import sqlite3
 import urllib.parse
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
+
+from agentreview.reviewer_identity import (
+    build_meta_review_question,
+    load_reviewer_suite,
+)
+from agentreview.reviewer_runtime.program_loader import (
+    record_manifest_path,
+    resolve_manifest_path,
+)
+from agentreview.utility.authentication_utils import resolve_openai_base_url
 
 from .agentreview_data import (
     prepare_held_out_test_data,
     prepare_meta_data,
     prepare_openreview_data,
 )
-from .evaluator import evaluate_program
-from .metrics import get_metric
-from .meta_cache import build_meta_input_cache
-from .models import Episode, EvalItem
-from .quality import check_program_path
-from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
+from .api_preflight import run_preflight
+from .benchmark_adapter import CoCoMetricBenchmarkAdapter
 from .embedding_adapter import (
     DEFAULT_QWEN3_EMBEDDING_CACHE,
     DEFAULT_QWEN3_RUNTIME_EMBEDDING_CACHE,
     QWEN3_MODEL_ID,
     is_immutable_model_revision,
 )
+from .evaluator import evaluate_program
+from .formal_protocol import run_formal_protocol_gate, run_formal_test_gate
+from .meta_cache import build_meta_input_cache
+from .metrics import get_metric
+from .models import Episode, EvalItem
+from .quality import check_program_path
 from .search import EvolutionConfig, run_evolution
 from .task_agent import build_task_agent
 from .tasks import (
@@ -38,12 +52,7 @@ from .tasks import (
     resolve_program_path,
     verify_promoted_program,
 )
-from agentreview.single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
 from .toolkit import MemoryToolkit, load_frozen_s2_pool
-from .benchmark_adapter import CoCoMetricBenchmarkAdapter
-from .api_preflight import run_preflight
-from agentreview.utility.authentication_utils import resolve_openai_base_url
-
 
 TASK_MODEL_DEFAULT = "qwen3.8-27b-fp8"
 REFLECTOR_MODEL_DEFAULT = "qwen3.8-27b-fp8"
@@ -60,7 +69,9 @@ def _load_jsonl(path: str):
             try:
                 values.append(json.loads(line))
             except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSONL at {path}:{line_number}: {exc}") from exc
+                raise ValueError(
+                    f"Invalid JSONL at {path}:{line_number}: {exc}"
+                ) from exc
     return values
 
 
@@ -317,10 +328,7 @@ def _selection_embedding_client(args):
         not getattr(args, "disable_embedding_cache", False),
         getattr(args, "embedding_device", ""),
         getattr(args, "embedding_batch_size", 1),
-        (
-            not _is_nonformal(args)
-            or getattr(args, "embedding_cache_read_only", False)
-        ),
+        (not _is_nonformal(args) or getattr(args, "embedding_cache_read_only", False)),
         "selection",
     )
 
@@ -359,9 +367,7 @@ def _prepare_llm_runtime(args, *, formal: bool):
         str(args.judge_model_name),
     }
     if formal and args.openai_client_type != "openai":
-        raise SystemExit(
-            "Formal local evolution requires --openai-client-type openai"
-        )
+        raise SystemExit("Formal local evolution requires --openai-client-type openai")
     if formal:
         hostname = urllib.parse.urlparse(args.openai_base_url).hostname or ""
         local_hostname = hostname == "localhost" or hostname.endswith(".local")
@@ -474,9 +480,7 @@ def _record_llm_runtime(output: Path, args) -> None:
         "api_key_recorded": False,
         "embedding_runtime": {
             "namespace": "candidate_runtime_v1",
-            "cache": str(
-                Path(args.runtime_embedding_cache).expanduser().resolve()
-            ),
+            "cache": str(Path(args.runtime_embedding_cache).expanduser().resolve()),
             "local_files_only": True,
         },
     }
@@ -627,9 +631,7 @@ def _add_runtime_args(parser):
             / "cache"
             / DEFAULT_QWEN3_EMBEDDING_CACHE.name
         ),
-        help=(
-            "Frozen exact-text cache used only for episode/validation selection."
-        ),
+        help=("Frozen exact-text cache used only for episode/validation selection."),
     )
     parser.add_argument(
         "--runtime-embedding-cache",
@@ -939,7 +941,10 @@ def build_parser():
     )
     _add_runtime_args(evaluate)
 
-    final_suite = subparsers.add_parser("final-evaluate-suite")
+    final_suite = subparsers.add_parser(
+        "final-evaluate-suite",
+        help="Run the formal-gated sealed D suite with the CoCo-style metric.",
+    )
     final_suite.add_argument("--data-root", required=True)
     final_suite.add_argument("--test-data-root", required=True)
     final_suite.add_argument("--program-root", required=True)
@@ -958,10 +963,7 @@ def _load_evaluator_validation(data_root: Path, task_id: str):
     task_path = data_root / task_id / "validation.jsonl"
     task_values = _load_jsonl(str(task_path))
     references_path = (
-        data_root
-        / "evaluator_only"
-        / task_id
-        / "validation_references.jsonl"
+        data_root / "evaluator_only" / task_id / "validation_references.jsonl"
     )
     if not references_path.is_file():
         # Explicit compatibility path for legacy pilot/META artifacts. Formal
@@ -1017,6 +1019,50 @@ def _parse_experiment_seeds(value: str):
     return seeds
 
 
+def _promote_lineage_champions(
+    winner: Mapping[str, Any],
+    output_root: Path,
+    task_id: str,
+    experiment_seed: int,
+) -> dict[str, dict[str, Any]]:
+    """Copy one run's lineage champions into the suite promotion layout."""
+    source_run = Path(str(winner["output_dir"])).expanduser().resolve()
+    source_manifest = source_run / "lineage_champions.json"
+    champions = json.loads(source_manifest.read_text(encoding="utf-8"))
+    if isinstance(champions, dict) and champions:
+        promoted: dict[str, dict[str, Any]] = {}
+    else:
+        raise RuntimeError(f"Lineage champion manifest is empty: {source_manifest}")
+    for lineage, entry in sorted(champions.items()):
+        source_program = resolve_manifest_path(
+            source_manifest,
+            str(entry.get("program") or ""),
+        )
+        if source_program.is_file():
+            source_sha256 = _sha256(source_program)
+        else:
+            raise FileNotFoundError(
+                f"Lineage champion program is missing: {source_program}"
+            )
+        expected_sha256 = str(entry.get("program_sha256") or "")
+        if source_sha256 == expected_sha256:
+            destination = (
+                output_root / "lineages" / str(lineage) / task_id / "best_program.py"
+            )
+        else:
+            raise RuntimeError(f"Lineage champion checksum mismatch: {source_program}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_program, destination)
+        promoted[str(lineage)] = {
+            **entry,
+            "program": record_manifest_path(destination, output_root),
+            "program_sha256": _sha256(destination),
+            "source_run": record_manifest_path(source_run, output_root),
+            "experiment_seed": experiment_seed,
+        }
+    return promoted
+
+
 def _run_task(args, task_id: str, output: Path, seed: int):
     formal = not _is_nonformal(args)
     _prepare_llm_runtime(args, formal=formal)
@@ -1045,9 +1091,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         else {}
     )
     if not getattr(args, "s2_retrieval_pool", ""):
-        args.s2_retrieval_pool = str(
-            manifest.get("semantic_scholar_cache") or ""
-        )
+        args.s2_retrieval_pool = str(manifest.get("semantic_scholar_cache") or "")
     if formal and not getattr(args, "coco_root", ""):
         raise SystemExit("Formal execution requires configured --coco-root")
     formal_gate = None
@@ -1060,15 +1104,11 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             s2_pool_path=args.s2_retrieval_pool,
             program_paths=_seed_paths(),
             coco_root=args.coco_root,
-            config_identity=evolution_protocol_config_identity(
-                args, task_id, seed
-            ),
+            config_identity=evolution_protocol_config_identity(args, task_id, seed),
         )
     task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
     selection_embedding = _selection_embedding_client(args)
-    embedding_spec, embedding_fingerprint = _embedding_provenance(
-        selection_embedding
-    )
+    embedding_spec, embedding_fingerprint = _embedding_provenance(selection_embedding)
     runtime_spec, runtime_fingerprint = _embedding_provenance(
         task_toolkit.embedding_client
     )
@@ -1076,9 +1116,10 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         raise RuntimeError(
             "Selection and candidate-runtime embedding identities differ"
         )
-    if Path(args.embedding_cache).expanduser().resolve() == Path(
-        args.runtime_embedding_cache
-    ).expanduser().resolve():
+    if (
+        Path(args.embedding_cache).expanduser().resolve()
+        == Path(args.runtime_embedding_cache).expanduser().resolve()
+    ):
         raise RuntimeError(
             "Selection and candidate-runtime embedding caches must be separate"
         )
@@ -1086,12 +1127,8 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     formal_experiment_identity = ""
     formal_experiment_manifest_sha256 = ""
     embedding_cache_audit_sha256 = ""
-    verify_frozen_qwen_cache = (
-        embedding_spec.get("provider") == "qwen3_embedding"
-        and (
-            formal
-            or getattr(args, "embedding_cache_read_only", False)
-        )
+    verify_frozen_qwen_cache = embedding_spec.get("provider") == "qwen3_embedding" and (
+        formal or getattr(args, "embedding_cache_read_only", False)
     )
     if verify_frozen_qwen_cache:
         (
@@ -1116,20 +1153,13 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     if (
         formal
         and task_id != META_TASK
-        and (
-            not args.review_split_revision
-            or not args.review_classify_revision
-        )
+        and (not args.review_split_revision or not args.review_classify_revision)
     ):
         raise SystemExit(
             "Formal specialist evolution requires immutable "
             "--review-split-revision and --review-classify-revision."
         )
-    if (
-        formal
-        and task_id != META_TASK
-        and not manifest.get("formal_ready")
-    ):
+    if formal and task_id != META_TASK and not manifest.get("formal_ready"):
         raise SystemExit(
             "Formal specialist evolution requires a complete, checksummed S2 "
             "cache covering every selected paper."
@@ -1141,9 +1171,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             raise SystemExit(
                 "Formal evolution requires the manifest-pinned frozen S2 pool."
             )
-    if formal and (
-        not args.embedding_adapter or not args.embedding_revision
-    ):
+    if formal and (not args.embedding_adapter or not args.embedding_revision):
         raise SystemExit(
             "Formal evolution requires --embedding-adapter and an immutable "
             "--embedding-revision."
@@ -1178,7 +1206,9 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         static_size=min(args.static_size, 2) if args.smoke else args.static_size,
         rotating_size=min(args.rotating_size, 1) if args.smoke else args.rotating_size,
         temperature=args.temperature,
-        episode_budget=min(args.episode_budget or 10, 10) if args.smoke else args.episode_budget,
+        episode_budget=min(args.episode_budget or 10, 10)
+        if args.smoke
+        else args.episode_budget,
         seed=seed,
         max_fix_attempts=args.max_fix_attempts,
         selection_repeats=1 if args.smoke else args.selection_repeats,
@@ -1216,7 +1246,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         formal_experiment_identity=formal_experiment_identity,
         formal_experiment_manifest_sha256=formal_experiment_manifest_sha256,
         formal=formal,
-        review_request_sha256=EXPECTED_REVIEW_REQUEST_SHA256,
+        reviewer_suite_identity_sha256=(load_reviewer_suite().suite_identity_sha256),
         data_manifest_sha256=_sha256(manifest_path) if manifest_path.is_file() else "",
         semantic_scholar_cache_sha256=str(
             manifest.get("semantic_scholar_cache_sha256") or ""
@@ -1255,8 +1285,15 @@ def _run_task(args, task_id: str, output: Path, seed: int):
     )
 
 
-def _selected_episodes(data_root: Path, source_run: str, task_id: str):
-    selection_path = Path(source_run) / "selection.json"
+def _selected_episodes(
+    data_root: Path,
+    source_run: str,
+    task_id: str,
+    promotion_manifest_path: Path,
+):
+    selection_path = (
+        resolve_manifest_path(promotion_manifest_path, source_run) / "selection.json"
+    )
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     selected_ids = set(selection.get("episode_ids") or [])
     episodes = [
@@ -1286,7 +1323,7 @@ def _validate_formal_runtime(args, specialists: bool = True):
 
 
 def _final_evaluate_suite(args):
-    """Execute the sealed test once: five specialists, then the sixth META task."""
+    """Execute the sealed CoCo-style D suite for five specialists and META."""
     _validate_formal_runtime(args)
     output = Path(args.output).expanduser().resolve()
     if output.exists():
@@ -1304,9 +1341,7 @@ def _final_evaluate_suite(args):
     ):
         if not required.is_file():
             raise FileNotFoundError(f"Required formal manifest missing: {required}")
-    suite_manifest = json.loads(
-        suite_manifest_path.read_text(encoding="utf-8")
-    )
+    suite_manifest = json.loads(suite_manifest_path.read_text(encoding="utf-8"))
     meta_manifest = json.loads(meta_manifest_path.read_text(encoding="utf-8"))
     test_manifest = json.loads(test_manifest_path.read_text(encoding="utf-8"))
     args.s2_retrieval_pool = str(test_manifest.get("semantic_scholar_cache") or "")
@@ -1394,16 +1429,15 @@ def _final_evaluate_suite(args):
             read_timeout=args.read_timeout,
         )
         if not quality.passed:
-            raise RuntimeError(
-                f"{task_id} failed quality gates: {quality.errors}"
-            )
+            raise RuntimeError(f"{task_id} failed quality gates: {quality.errors}")
         episodes, selection_path = _selected_episodes(
-            data_root, promoted["source_run"], task_id
+            data_root,
+            promoted["source_run"],
+            task_id,
+            suite_manifest_path,
         )
         eval_path = test_root / task_id / "test.jsonl"
-        eval_items = [
-            EvalItem.from_value(item) for item in _load_jsonl(str(eval_path))
-        ]
+        eval_items = [EvalItem.from_value(item) for item in _load_jsonl(str(eval_path))]
         evaluation = evaluate_program(
             str(program),
             episodes,
@@ -1446,21 +1480,27 @@ def _final_evaluate_suite(args):
             "evaluation": compact(evaluation),
         }
 
-    meta_references = _load_jsonl(
-        str(test_root / META_TASK / "references.jsonl")
-    )
+    meta_references = _load_jsonl(str(test_root / META_TASK / "references.jsonl"))
+    meta_context_values = _load_jsonl(str(test_root / META_TASK / "contexts.jsonl"))
+    meta_context_by_paper = {
+        str((value.get("metadata") or {}).get("paper_id") or ""): str(
+            value.get("paper_context") or ""
+        )
+        for value in meta_context_values
+    }
     meta_items = []
     for reference in meta_references:
         paper_id = str((reference.get("metadata") or {}).get("paper_id") or "")
         if not all(paper_id in specialist_answers[task] for task in SPECIALIST_TASKS):
             continue
-        question = (
-            f"Review task: META\nPaper id: {paper_id}\n\n"
-            + "\n\n".join(
-                f"=== {task} ===\n{specialist_answers[task][paper_id]}"
-                for task in SPECIALIST_TASKS
-            )
-            + "\n\nReturn the complete final meta-review."
+        if paper_id not in meta_context_by_paper:
+            raise RuntimeError(f"D META context is missing for {paper_id}")
+        question = build_meta_review_question(
+            paper_id=paper_id,
+            specialist_reviews={
+                task: specialist_answers[task][paper_id] for task in SPECIALIST_TASKS
+            },
+            paper_context=meta_context_by_paper[paper_id],
         )
         meta_items.append(
             EvalItem(
@@ -1478,13 +1518,13 @@ def _final_evaluate_suite(args):
         meta_program,
         args.embedding_model_name,
         args.embedding_revision,
-        str(
-            getattr(task_toolkit.embedding_client, "embedding_fingerprint", "")
-            or ""
-        ),
+        str(getattr(task_toolkit.embedding_client, "embedding_fingerprint", "") or ""),
     )
     meta_episodes, meta_selection_path = _selected_episodes(
-        data_root, meta_promoted["source_run"], META_TASK
+        data_root,
+        meta_promoted["source_run"],
+        META_TASK,
+        meta_manifest_path,
     )
     meta_evaluation = evaluate_program(
         str(meta_program),
@@ -1518,8 +1558,10 @@ def _final_evaluate_suite(args):
     report = {
         "provenance": experiment_provenance(),
         "final_test": True,
+        "evaluation_identity": "sealed_d_coco_style",
         "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
         "benchmark_adapter_bypassed": False,
+        "official_coco_adapter_entry": "python -m agentreview.coco_eval",
         "asset_gate": asset_gate,
         "formal_test_gate": formal_test_gate,
         "four_zone_temporal_audit": temporal_audit,
@@ -1591,9 +1633,8 @@ def main():
             args.output_dir,
         )
     elif args.command == "cache-meta-inputs":
-        if (
-            not _is_nonformal(args)
-            and (not args.embedding_adapter or not args.embedding_revision)
+        if not _is_nonformal(args) and (
+            not args.embedding_adapter or not args.embedding_revision
         ):
             raise SystemExit(
                 "Meta input caching requires the same frozen "
@@ -1623,47 +1664,32 @@ def main():
         for task_id in SPECIALIST_TASKS:
             results[task_id] = []
             for seed in seeds:
-                output = Path(args.output).expanduser().resolve() / task_id / f"seed_{seed}"
+                output = (
+                    Path(args.output).expanduser().resolve() / task_id / f"seed_{seed}"
+                )
                 results[task_id].append(
                     _run_task(args, task_id, output, seed).to_dict()
                 )
             winner = results[task_id][seeds.index(args.primary_seed)]
             promoted_path = (
-                Path(args.output).expanduser().resolve()
-                / task_id
-                / "best_program.py"
+                Path(args.output).expanduser().resolve() / task_id / "best_program.py"
             )
             promoted_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(winner["best_program_path"], promoted_path)
+            suite_root = Path(args.output).expanduser().resolve()
             promoted[task_id] = {
-                "program": str(promoted_path),
+                "program": record_manifest_path(promoted_path, suite_root),
                 "program_sha256": _sha256(promoted_path),
-                "source_run": winner["output_dir"],
+                "source_run": record_manifest_path(winner["output_dir"], suite_root),
                 "selection_mean": winner["best_score"],
                 "primary_seed": args.primary_seed,
             }
-            source_champions_path = Path(winner["output_dir"]) / "lineage_champions.json"
-            source_champions = json.loads(
-                source_champions_path.read_text(encoding="utf-8")
+            promoted_by_lineage[task_id] = _promote_lineage_champions(
+                winner,
+                suite_root,
+                task_id,
+                args.primary_seed,
             )
-            promoted_by_lineage[task_id] = {}
-            for lineage, entry in sorted(source_champions.items()):
-                lineage_program = (
-                    Path(args.output).expanduser().resolve()
-                    / "lineages"
-                    / lineage
-                    / task_id
-                    / "best_program.py"
-                )
-                lineage_program.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(entry["program"], lineage_program)
-                promoted_by_lineage[task_id][lineage] = {
-                    **entry,
-                    "program": str(lineage_program),
-                    "program_sha256": _sha256(lineage_program),
-                    "source_run": winner["output_dir"],
-                    "experiment_seed": args.primary_seed,
-                }
         result = {
             "provenance": experiment_provenance(),
             "experiment_seeds": seeds,
@@ -1673,7 +1699,7 @@ def main():
             "promoted_by_lineage": promoted_by_lineage,
             "meta_status": "run prepare-meta after freezing specialist winners",
         }
-        manifest_path = Path(args.output).expanduser().resolve() / "suite_manifest.json"
+        manifest_path = suite_root / "suite_manifest.json"
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(
             json.dumps(result, ensure_ascii=False, indent=2),
@@ -1685,30 +1711,39 @@ def main():
             raise SystemExit("--primary-seed must be included in --experiment-seeds")
         runs = []
         for seed in seeds:
-            output = Path(args.output).expanduser().resolve() / META_TASK / f"seed_{seed}"
+            output = (
+                Path(args.output).expanduser().resolve() / META_TASK / f"seed_{seed}"
+            )
             runs.append(_run_task(args, META_TASK, output, seed).to_dict())
         winner = runs[seeds.index(args.primary_seed)]
         promoted_path = (
-            Path(args.output).expanduser().resolve()
-            / META_TASK
-            / "best_program.py"
+            Path(args.output).expanduser().resolve() / META_TASK / "best_program.py"
         )
         promoted_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(winner["best_program_path"], promoted_path)
+        meta_root = Path(args.output).expanduser().resolve()
         result = {
             "provenance": experiment_provenance(),
             "experiment_seeds": seeds,
             "primary_seed": args.primary_seed,
             "results": runs,
             "promoted": {
-                "program": str(promoted_path),
+                "program": record_manifest_path(promoted_path, meta_root),
                 "program_sha256": _sha256(promoted_path),
-                "source_run": winner["output_dir"],
+                "source_run": record_manifest_path(winner["output_dir"], meta_root),
                 "selection_mean": winner["best_score"],
                 "primary_seed": args.primary_seed,
             },
+            "promoted_by_lineage": {
+                META_TASK: _promote_lineage_champions(
+                    winner,
+                    meta_root,
+                    META_TASK,
+                    args.primary_seed,
+                )
+            },
         }
-        manifest_path = Path(args.output).expanduser().resolve() / "meta_manifest.json"
+        manifest_path = meta_root / "meta_manifest.json"
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(
             json.dumps(result, ensure_ascii=False, indent=2),
@@ -1720,32 +1755,22 @@ def main():
         formal = not _is_nonformal(args)
         if args.final_test:
             raise SystemExit(
-                "evaluate --final-test is forbidden. The only formal D/Test "
-                "entry point is final-evaluate-suite, which enforces the formal "
-                "gate and CoCo Benchmark Adapter."
+                "final-evaluate-suite is the sealed D/Test entry point and "
+                "enforces the formal gate plus CoCo-style metric Adapter."
             )
-        if formal and (
-            not args.embedding_adapter or not args.embedding_revision
-        ):
+        if formal and (not args.embedding_adapter or not args.embedding_revision):
             raise SystemExit(
                 "Formal evaluation requires the frozen "
                 "--embedding-adapter and --embedding-revision."
             )
-        if (
-            formal
-            and args.task_id != META_TASK
-            and not args.classifier_adapter
-        ):
+        if formal and args.task_id != META_TASK and not args.classifier_adapter:
             raise SystemExit(
                 "Formal specialist evaluation requires --classifier-adapter."
             )
         if (
             formal
             and args.task_id != META_TASK
-            and (
-                not args.review_split_revision
-                or not args.review_classify_revision
-            )
+            and (not args.review_split_revision or not args.review_classify_revision)
         ):
             raise SystemExit(
                 "Formal specialist evaluation requires immutable ReviewSplit "
@@ -1773,7 +1798,9 @@ def main():
             read_timeout=args.read_timeout,
         )
         if not quality.passed:
-            raise SystemExit("Program failed quality gates:\n" + "\n".join(quality.errors))
+            raise SystemExit(
+                "Program failed quality gates:\n" + "\n".join(quality.errors)
+            )
         metric = get_metric(
             "coco_review",
             task_toolkit,
@@ -1793,9 +1820,7 @@ def main():
         )
         output = Path(args.output).expanduser().resolve()
         if output.exists() and formal:
-            raise SystemExit(
-                f"Refusing to overwrite formal test report: {output}"
-            )
+            raise SystemExit(f"Refusing to overwrite formal test report: {output}")
         output.parent.mkdir(parents=True, exist_ok=True)
         report = {
             "provenance": experiment_provenance(),
@@ -1813,21 +1838,15 @@ def main():
             ),
             "selected_episode_count": len(episodes),
             "evaluation_file": str(Path(args.eval).expanduser().resolve()),
-            "evaluation_file_sha256": _sha256(
-                Path(args.eval).expanduser().resolve()
-            ),
+            "evaluation_file_sha256": _sha256(Path(args.eval).expanduser().resolve()),
             "task_model_name": args.task_model_name,
             "judge_model_name": args.judge_model_name,
             "classifier_adapter": args.classifier_adapter,
-            "classifier_adapter_sha256": _adapter_sha256(
-                args.classifier_adapter
-            ),
+            "classifier_adapter_sha256": _adapter_sha256(args.classifier_adapter),
             "review_split_revision": args.review_split_revision,
             "review_classify_revision": args.review_classify_revision,
             "embedding_adapter": args.embedding_adapter,
-            "embedding_adapter_sha256": _adapter_sha256(
-                args.embedding_adapter
-            ),
+            "embedding_adapter_sha256": _adapter_sha256(args.embedding_adapter),
             "embedding_model_name": args.embedding_model_name,
             "embedding_revision": args.embedding_revision,
             "evaluation": evaluation.to_dict(),

@@ -1,8 +1,7 @@
-#AgentReview/agentreview/backends/bard.py
+# AgentReview/agentreview/backends/bard.py
 
 import os
 import re
-from typing import List
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -34,9 +33,9 @@ class Bard(IntelligenceBackend):
     type_name = "bard"
 
     def __init__(self, max_tokens: int = DEFAULT_MAX_TOKENS, **kwargs):
-        assert (
-            is_bard_available
-        ), "bard package is not installed or the API key is not set"
+        assert is_bard_available, (
+            "bard package is not installed or the API key is not set"
+        )
         super().__init__(max_tokens=max_tokens, **kwargs)
 
         self.max_tokens = max_tokens
@@ -56,7 +55,7 @@ class Bard(IntelligenceBackend):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,

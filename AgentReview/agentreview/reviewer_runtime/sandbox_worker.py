@@ -5,12 +5,11 @@ inside bubblewrap and has no project, network, environment, or writable host pat
 """
 
 import base64
-import hashlib
 import builtins
-from array import array
 import collections
 import dataclasses
 import datetime
+import hashlib
 import heapq
 import itertools
 import json
@@ -24,8 +23,8 @@ import time
 import traceback
 import types
 import typing
+from array import array
 from dataclasses import MISSING, fields
-
 
 _WIRE_OUT = sys.stdout
 sys.stdout = sys.stderr
@@ -151,9 +150,7 @@ class VectorCollection:
             reconstruction = (
                 "toolkit_embed_text_v1"
                 if self.toolkit is not None
-                and self.toolkit.is_toolkit_embedding(
-                    str(text), embedding_sha256
-                )
+                and self.toolkit.is_toolkit_embedding(str(text), embedding_sha256)
                 else "inline_float32_base64_v1"
             )
             self.ids.add(record_id)
@@ -183,9 +180,7 @@ class VectorCollection:
         if chroma_style:
             values = list(query_embeddings or [])
             if not values and query_texts:
-                values = _tool_call(
-                    "embed", [str(text) for text in query_texts]
-                )
+                values = _tool_call("embed", [str(text) for text in query_texts])
             query_embedding = values[0] if values else []
             top_k = n_results if n_results is not None else top_k
         query_embedding = _compact_embedding(query_embedding or [])
@@ -306,7 +301,9 @@ def _snapshot_value(value, toolkit):
     if isinstance(value, set):
         return {
             "__mstar_type__": "set",
-            "items": [_snapshot_value(item, toolkit) for item in sorted(value, key=repr)],
+            "items": [
+                _snapshot_value(item, toolkit) for item in sorted(value, key=repr)
+            ],
         }
     if isinstance(value, tuple):
         return {
@@ -316,14 +313,11 @@ def _snapshot_value(value, toolkit):
     if isinstance(value, list):
         return [_snapshot_value(item, toolkit) for item in value]
     if isinstance(value, dict):
-        return {
-            str(key): _snapshot_value(item, toolkit) for key, item in value.items()
-        }
+        return {str(key): _snapshot_value(item, toolkit) for key, item in value.items()}
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     raise TypeError(
-        "MemoryProgram state is not checkpoint-serializable: "
-        + type(value).__name__
+        "MemoryProgram state is not checkpoint-serializable: " + type(value).__name__
     )
 
 
@@ -414,9 +408,7 @@ def _restore_v1_collection(collection, payload, toolkit):
 
 def _restore_v2_collection(collection, payload, toolkit):
     records = list(payload.get("records") or [])
-    collection_reconstruction = str(
-        payload.get("embedding_reconstruction") or ""
-    )
+    collection_reconstruction = str(payload.get("embedding_reconstruction") or "")
     if collection_reconstruction not in {
         "per_record_v1",
         "toolkit_embed_text_v1",
@@ -439,25 +431,21 @@ def _restore_v2_collection(collection, payload, toolkit):
             not in toolkit.embedding_restore_cache
         ]
         embeddings = (
-            _tool_call(
-                "embed", [str(record.get("text") or "") for record in missing]
-            )
+            _tool_call("embed", [str(record.get("text") or "") for record in missing])
             if missing
             else []
         )
         if len(embeddings) != len(missing):
-            raise ValueError(
-                "Embedding reconstruction returned the wrong vector count"
+            raise ValueError("Embedding reconstruction returned the wrong vector count")
+        reconstructed = dict(
+            zip(
+                [str(record.get("embedding_sha256") or "") for record in missing],
+                embeddings,
             )
-        reconstructed = dict(zip(
-            [str(record.get("embedding_sha256") or "") for record in missing],
-            embeddings,
-        ))
+        )
         for record in batch:
             expected_sha256 = str(record.get("embedding_sha256") or "")
-            cached_embedding = toolkit.embedding_restore_cache.get(
-                expected_sha256
-            )
+            cached_embedding = toolkit.embedding_restore_cache.get(expected_sha256)
             compact = None
             embedding_norm = None
             if cached_embedding is None:
@@ -473,8 +461,7 @@ def _restore_v2_collection(collection, payload, toolkit):
                         )
                     except Exception as exc:
                         raise ValueError(
-                            "Invalid inline embedding for "
-                            f"record {record.get('id')!r}"
+                            f"Invalid inline embedding for record {record.get('id')!r}"
                         ) from exc
                     compact = _compact_embedding_from_bytes(embedding_bytes)
                 else:
@@ -640,6 +627,7 @@ def _run(program_path):
                 if not isinstance(value, str):
                     raise TypeError("KnowledgeBase.read() must return str")
             elif name == "schemas":
+
                 def schema(dataclass_type):
                     values = []
                     for field in fields(dataclass_type):

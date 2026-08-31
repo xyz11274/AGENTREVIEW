@@ -6,15 +6,14 @@ from unittest.mock import Mock, patch
 
 from memory_evolution.integration import MemoryHarnessAdapter
 from memory_evolution.metrics import exact_match
-from memory_evolution.models import Episode, EvalItem
+from memory_evolution.models import Episode, EvalItem, EvalResult
+from memory_evolution.quality import QualityResult
+from memory_evolution.reflector import ChangeLog, CompileFixResult, MutationResult
 from memory_evolution.search import (
     EvolutionConfig,
     run_embedding_closure_smoke,
     run_evolution,
 )
-from memory_evolution.quality import QualityResult
-from memory_evolution.reflector import ChangeLog, CompileFixResult, MutationResult
-from memory_evolution.models import EvalResult
 from memory_evolution.task_agent import TaskAgent, _parse_json_object
 from memory_evolution.toolkit import MemoryToolkit
 
@@ -65,18 +64,24 @@ class SearchLoopTest(unittest.TestCase):
     def test_evolution_propagates_sandbox_memory_limit_to_runtime_and_quality(self):
         root = Path(__file__).parents[1]
         seed_dir = root / "memory_evolution" / "seeds"
-        with tempfile.TemporaryDirectory(prefix="mstar_sandbox_memory_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ) as quality, patch(
-            "memory_evolution.search.evaluate_program",
-            return_value=EvalResult(mean_score=0.5),
-        ) as evaluate, patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_sandbox_memory_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ) as quality,
+            patch(
+                "memory_evolution.search.evaluate_program",
+                return_value=EvalResult(mean_score=0.5),
+            ) as evaluate,
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
         ):
             run_evolution(
                 [
@@ -161,9 +166,7 @@ class SearchLoopTest(unittest.TestCase):
 
         root = Path(__file__).parents[1]
         seed_dir = root / "memory_evolution" / "seeds"
-        child_code = (seed_dir / "experience_learner.py").read_text(
-            encoding="utf-8"
-        )
+        child_code = (seed_dir / "experience_learner.py").read_text(encoding="utf-8")
         toolkit = MemoryToolkit(
             llm_client=FakeLLM(child_code),
             embedding_client=RuntimeEmbedding(),
@@ -217,9 +220,7 @@ class SearchLoopTest(unittest.TestCase):
             )
 
             closure = json.loads(
-                (output / "embedding_closure_smoke.json").read_text(
-                    encoding="utf-8"
-                )
+                (output / "embedding_closure_smoke.json").read_text(encoding="utf-8")
             )
             self.assertTrue(closure["passed"])
             self.assertEqual(result.pool_size, 5)
@@ -227,7 +228,7 @@ class SearchLoopTest(unittest.TestCase):
     def test_structured_parser_accepts_json_after_qwen_style_braced_prose(self):
         response = (
             "I will use {schema} as requested.\n"
-            "```json\n{\"query_text\": \"QUAL ablations\"}\n```"
+            '```json\n{"query_text": "QUAL ablations"}\n```'
         )
 
         self.assertEqual(
@@ -285,9 +286,7 @@ class SearchLoopTest(unittest.TestCase):
                 if line.strip()
             ]
             self.assertTrue(candidate_reviews)
-            self.assertTrue(
-                all("provenance" in value for value in candidate_reviews)
-            )
+            self.assertTrue(all("provenance" in value for value in candidate_reviews))
             self.assertTrue((output / "best_program.py").is_file())
             trace_manifest = json.loads(
                 (output / "traces" / "manifest.json").read_text(encoding="utf-8")
@@ -372,23 +371,29 @@ class SearchLoopTest(unittest.TestCase):
                 change_log=ChangeLog(summary="successful fixture mutation"),
             )
 
-        with tempfile.TemporaryDirectory(prefix="mstar_fair_budget_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ), patch(
-            "memory_evolution.search.evaluate_program",
-            return_value=EvalResult(mean_score=0.5),
-        ), patch(
-            "memory_evolution.search.mutate_program", side_effect=mutate
-        ), patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_fair_budget_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ),
+            patch(
+                "memory_evolution.search.evaluate_program",
+                return_value=EvalResult(mean_score=0.5),
+            ),
+            patch("memory_evolution.search.mutate_program", side_effect=mutate),
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
         ):
             output = Path(directory) / "run"
             run_evolution(
@@ -458,22 +463,26 @@ class SearchLoopTest(unittest.TestCase):
                 change_log=ChangeLog(summary="global population fixture"),
             )
 
-        with tempfile.TemporaryDirectory(prefix="mstar_global_pool_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ), patch(
-            "memory_evolution.search.evaluate_program", side_effect=evaluate
-        ), patch(
-            "memory_evolution.search.mutate_program", side_effect=mutate
-        ), patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_global_pool_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ),
+            patch("memory_evolution.search.evaluate_program", side_effect=evaluate),
+            patch("memory_evolution.search.mutate_program", side_effect=mutate),
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
         ):
             output = Path(directory) / "run"
             run_evolution(
@@ -529,24 +538,32 @@ class SearchLoopTest(unittest.TestCase):
             str(seed_dir / "llm_summarizer.py"),
             str(seed_dir / "experience_learner.py"),
         ]
-        with tempfile.TemporaryDirectory(prefix="mstar_reflector_cap_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ), patch(
-            "memory_evolution.search.evaluate_program",
-            return_value=EvalResult(mean_score=0.5),
-        ), patch(
-            "memory_evolution.search.mutate_program",
-            side_effect=ValueError("repeated reflector rejection"),
-        ), patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_reflector_cap_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ),
+            patch(
+                "memory_evolution.search.evaluate_program",
+                return_value=EvalResult(mean_score=0.5),
+            ),
+            patch(
+                "memory_evolution.search.mutate_program",
+                side_effect=ValueError("repeated reflector rejection"),
+            ),
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
         ):
             output = Path(directory) / "run"
             result = run_evolution(
@@ -606,27 +623,32 @@ class SearchLoopTest(unittest.TestCase):
                 change_log=ChangeLog(summary="quality rejection fixture"),
             )
 
-        with tempfile.TemporaryDirectory(prefix="mstar_quality_cap_") as directory, patch(
-            "memory_evolution.search.check_program_path", side_effect=quality
-        ), patch(
-            "memory_evolution.search.evaluate_program",
-            return_value=EvalResult(mean_score=0.5),
-        ), patch(
-            "memory_evolution.search.mutate_program", side_effect=mutate
-        ), patch(
-            "memory_evolution.search.compile_fix_loop",
-            side_effect=lambda code, *args, **kwargs: CompileFixResult(
-                code, 0, False, ["fixture rejection"]
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_quality_cap_") as directory,
+            patch("memory_evolution.search.check_program_path", side_effect=quality),
+            patch(
+                "memory_evolution.search.evaluate_program",
+                return_value=EvalResult(mean_score=0.5),
             ),
-        ), patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
+            patch("memory_evolution.search.mutate_program", side_effect=mutate),
+            patch(
+                "memory_evolution.search.compile_fix_loop",
+                side_effect=lambda code, *args, **kwargs: CompileFixResult(
+                    code, 0, False, ["fixture rejection"]
+                ),
+            ),
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
         ):
             output = Path(directory) / "run"
             result = run_evolution(
@@ -694,22 +716,28 @@ class SearchLoopTest(unittest.TestCase):
                 raise KeyboardInterrupt("simulated SSH disconnect")
             return EvalResult(mean_score=0.5)
 
-        with tempfile.TemporaryDirectory(prefix="mstar_controller_resume_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ), patch(
-            "memory_evolution.search.evaluate_program",
-            side_effect=evaluate,
-        ), patch(
-            "memory_evolution.search.mutate_program", side_effect=mutate
-        ), patch(
-            "memory_evolution.search.build_static_validation_set", subset_builder
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_controller_resume_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ),
+            patch(
+                "memory_evolution.search.evaluate_program",
+                side_effect=evaluate,
+            ),
+            patch("memory_evolution.search.mutate_program", side_effect=mutate),
+            patch(
+                "memory_evolution.search.build_static_validation_set", subset_builder
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
         ):
             output = Path(directory) / "run"
             config = EvolutionConfig(
@@ -811,23 +839,29 @@ class SearchLoopTest(unittest.TestCase):
                 change_log=ChangeLog(summary="resumed attempt fixture"),
             )
 
-        with tempfile.TemporaryDirectory(prefix="mstar_attempt_resume_") as directory, patch(
-            "memory_evolution.search.check_program_path",
-            return_value=QualityResult(passed=True),
-        ), patch(
-            "memory_evolution.search.evaluate_program",
-            return_value=EvalResult(mean_score=0.5),
-        ), patch(
-            "memory_evolution.search.mutate_program", side_effect=mutate
-        ), patch(
-            "memory_evolution.search.build_static_validation_set",
-            side_effect=lambda values, *args, **kwargs: values[:1],
-        ), patch(
-            "memory_evolution.search.select_episode_subset",
-            side_effect=lambda values, *args, **kwargs: values,
-        ), patch(
-            "memory_evolution.search.sample_rotating_validation_set",
-            side_effect=rotating,
+        with (
+            tempfile.TemporaryDirectory(prefix="mstar_attempt_resume_") as directory,
+            patch(
+                "memory_evolution.search.check_program_path",
+                return_value=QualityResult(passed=True),
+            ),
+            patch(
+                "memory_evolution.search.evaluate_program",
+                return_value=EvalResult(mean_score=0.5),
+            ),
+            patch("memory_evolution.search.mutate_program", side_effect=mutate),
+            patch(
+                "memory_evolution.search.build_static_validation_set",
+                side_effect=lambda values, *args, **kwargs: values[:1],
+            ),
+            patch(
+                "memory_evolution.search.select_episode_subset",
+                side_effect=lambda values, *args, **kwargs: values,
+            ),
+            patch(
+                "memory_evolution.search.sample_rotating_validation_set",
+                side_effect=rotating,
+            ),
         ):
             output = Path(directory) / "run"
             config = EvolutionConfig(

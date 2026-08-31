@@ -1,10 +1,6 @@
 {
-  "asset": "/data0/xyj/shengao/AgentReview_0811/AgentReview/configs/frozen_s2_temporal_v2.jsonl",
+  "asset": "configs/frozen_s2_temporal_v2.jsonl",
   "asset_sha256": "367cdff9f2255e280ec2de2843e87d79d7d6cc8cbc08f626b0500a0d2482ef49",
-  "legacy_v1_policy": {
-    "deprecated_for_formal_use": true,
-    "reason": "query_title_serialization_contamination"
-  },
   "paper_count": 3889,
   "pool_version": "frozen-s2-temporal-v2",
   "query_integrity_audit": {
@@ -33,7 +29,7 @@
     "provenance_errors": [],
     "required_count": 3889
   },
-  "temporal_split_manifest": "/data0/xyj/shengao/AgentReview_0811/AgentReview/configs/coco_temporal_split_v2/manifest.json",
+  "temporal_split_manifest": "configs/coco_temporal_split_v2/manifest.json",
   "temporal_split_manifest_sha256": "65e524e644a58cac83aa5538f58c3bdc58528215640632d7c507cd8e51fefedb",
   "top_k": 10
 }

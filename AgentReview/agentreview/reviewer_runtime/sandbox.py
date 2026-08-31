@@ -10,18 +10,18 @@ import tempfile
 import threading
 from dataclasses import asdict, field, is_dataclass, make_dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
 from types import SimpleNamespace
+from typing import Any
 
 
 class SandboxError(RuntimeError):
     pass
 
 
-_BWRAP_USABLE: Optional[bool] = None
+_BWRAP_USABLE: bool | None = None
 
 
-def _bubblewrap_usable(binary: Optional[str]) -> bool:
+def _bubblewrap_usable(binary: str | None) -> bool:
     global _BWRAP_USABLE
     if _BWRAP_USABLE is not None:
         return _BWRAP_USABLE
@@ -64,7 +64,7 @@ def _limits(memory_mb: int, cpu_seconds: int):
     return apply
 
 
-def _value_dict(value: Any) -> Dict[str, Any]:
+def _value_dict(value: Any) -> dict[str, Any]:
     if is_dataclass(value):
         return asdict(value)
     if isinstance(value, dict):
@@ -92,8 +92,8 @@ class SandboxSession:
         self.require_bubblewrap = require_bubblewrap
         self._command_id = 0
         self._lock = threading.Lock()
-        self._tempdir: Optional[tempfile.TemporaryDirectory] = None
-        self._process: Optional[subprocess.Popen] = None
+        self._tempdir: tempfile.TemporaryDirectory | None = None
+        self._process: subprocess.Popen | None = None
         self.logs = []
         try:
             self._start()
@@ -193,9 +193,11 @@ class SandboxSession:
         first = self._read_line()
         if first.get("type") != "ready":
             self.close(force=True)
-            raise SandboxError(first.get("error") or "candidate sandbox failed to start")
+            raise SandboxError(
+                first.get("error") or "candidate sandbox failed to start"
+            )
 
-    def _read_line(self) -> Dict[str, Any]:
+    def _read_line(self) -> dict[str, Any]:
         if self._process is None or self._process.stdout is None:
             raise SandboxError("sandbox process is not available")
         line_holder = []
@@ -228,15 +230,17 @@ class SandboxSession:
         try:
             return json.loads(line)
         except json.JSONDecodeError as exc:
-            raise SandboxError(f"Invalid sandbox protocol output: {line[:500]}") from exc
+            raise SandboxError(
+                f"Invalid sandbox protocol output: {line[:500]}"
+            ) from exc
 
-    def _send(self, value: Dict[str, Any]):
+    def _send(self, value: dict[str, Any]):
         if self._process is None or self._process.stdin is None:
             raise SandboxError("sandbox process is not available")
         self._process.stdin.write(json.dumps(value, ensure_ascii=False) + "\n")
         self._process.stdin.flush()
 
-    def _handle_tool_call(self, message: Dict[str, Any]):
+    def _handle_tool_call(self, message: dict[str, Any]):
         call_id = message.get("id")
         name = message.get("name")
         args = list(message.get("args") or [])
@@ -249,11 +253,18 @@ class SandboxSession:
             elif name == "retrieve_s2":
                 value = self.toolkit.retrieve_s2(*args, **kwargs)
             elif name == "log":
-                self.logs.append({"event": args[0], "payload": args[1] if len(args) > 1 else None})
+                self.logs.append(
+                    {"event": args[0], "payload": args[1] if len(args) > 1 else None}
+                )
                 value = None
             else:
                 raise SandboxError(f"Candidate requested unknown capability: {name}")
-            response = {"type": "tool_result", "id": call_id, "ok": True, "value": value}
+            response = {
+                "type": "tool_result",
+                "id": call_id,
+                "ok": True,
+                "value": value,
+            }
         except BaseException as exc:
             response = {
                 "type": "tool_result",
@@ -281,7 +292,9 @@ class SandboxSession:
                     self._handle_tool_call(message)
                     continue
                 if message.get("type") == "fatal":
-                    raise SandboxError(message.get("error") or "candidate sandbox failed")
+                    raise SandboxError(
+                        message.get("error") or "candidate sandbox failed"
+                    )
                 if message.get("type") != "result" or message.get("id") != command_id:
                     raise SandboxError(f"Unexpected sandbox message: {message}")
                 if not message.get("ok"):
@@ -291,13 +304,13 @@ class SandboxSession:
     def schemas(self):
         return self._command("schemas")
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         value = self._command("snapshot")
         if not isinstance(value, dict):
             raise SandboxError("MemoryProgram snapshot must be a JSON object")
         return value
 
-    def restore(self, snapshot: Dict[str, Any]) -> None:
+    def restore(self, snapshot: dict[str, Any]) -> None:
         if not isinstance(snapshot, dict):
             raise TypeError("MemoryProgram snapshot must be a dict")
         self._command("restore", snapshot=snapshot)

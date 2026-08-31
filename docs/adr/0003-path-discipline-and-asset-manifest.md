@@ -1,16 +1,34 @@
-# 路径纪律与 Asset Manifest
+# ADR-0003：项目相对路径、显式外部根与 Asset Manifest
 
-本仓库以日期快照目录（`AgentReview_0722`、`AgentReview_0811`……）的方式演进，已有产物（`effectiveness_screening_v1.json`、`suite_manifest.json`、各 `config.json`）可能内嵌旧快照绝对路径，混用后实验结果将无法解释。为此决定：项目内部文件一律从当前 project root 相对解析；OpenReview / CoCoReviewBench 等外部数据根通过 CLI、环境变量或 Asset Manifest external-root resolver 显式传入；建立 Asset Manifest 记录每项资产最终解析后的路径、SHA256、版本和数据 split。任何资产不得从目录名推断。
+- 状态：Accepted
+- 适用范围：配置、冻结数据、Program、模型资产与运行产物
 
-## Considered Options
+## Context
 
-- **硬编码绝对路径**：被否决。快照复制后路径静默失效且不会报错（screening 配置指向 `_0722` 即是实例）；实验读错资产而不自知。
-- **仅用环境变量/CLI 参数**：被否决。能解路径，但没有 provenance——无法记录"这次实验到底用了哪个版本的语料/程序/论文集"，结果不可复核。
-- **相对路径 + 统一外部根配置 + Asset Manifest（SHA256 校验）**：被采纳。快照间可移植，资产身份由内容哈希锚定而非由位置暗示。
+仓库会在不同工作区、机器和归档位置运行。路径只表达位置，实验身份需要由内容、版本和数据分区共同确定。OpenReview、CoCoReviewBench 和模型缓存属于外部资产；Frozen Reviewer Identity、split、Frozen S2 和 Seed Program 属于项目资产。
+
+## Decision
+
+1. 项目内文件使用 AgentReview 项目根相对路径。
+2. 外部数据根通过 CLI、环境变量或 manifest 的 external_roots 显式配置。
+3. Asset Manifest 记录每个正式资产的相对路径、版本、用途分区和 SHA256。
+4. 模型资产额外记录 provider、model ID、immutable revision、维度、序列化规则与 fingerprint。
+5. 运行开始时 resolver 解析实际路径，formal gate 校验内容身份。
+6. 运行产物记录已解析资产、Program SHA、数据 manifest SHA 和配置身份。
+7. 生成目录使用运行 ID 隔离；正式归档保存完整 manifest 与 hash。
+8. Promotion writer 将套件树内的 `program` 与 `source_run` 写成 manifest 所在目录的相对路径。resolver 以 `manifest.parent` 解析相对路径；显式外部路径使用绝对路径。
+9. Promotion consumer 读取 `<source_run>/config.json` 和 `selection.json`，校验 embedding provenance 与冻结历史选择。
+
+## Rationale
+
+相对路径提供工作区可移植性。显式 external root 提供外部数据定位。内容 hash 和版本提供可复核身份。三者组合让同一实验在新路径中保持同一语义，并让资产变化形成新的明确身份。
 
 ## Consequences
 
-- 活跃配置与 README 示例已移除 `AgentReview_0722` 绝对路径；旧 run artifact 内的 recorded path 保持 immutable，仅由 resolver 显式映射。
-- Manifest 是实验资产的唯一权威来源：跑实验前解析并记录，跑完后产物目录里必须能回答"用了哪个语料/哪个 program 的哪个哈希/哪个 split"。
-- 评审口径统一：同一资产换版本（如重跑进化后的新 best_program.py）= 新 manifest 条目，而不是原地覆盖。
-- **历史 run artifact 不原地修改**：如 `runs/pilot_full_iter5_202607300117` 内嵌 `_0722` 旧绝对路径的 config / manifest 保持原样（它们是历史 provenance）。正确方式：新 Asset Manifest / resolver 记录 legacy recorded path → 解析到当前真实 asset，同时记录 SHA256 与 provenance relation。
+- configs/asset_manifest_v2.json 是 pre-evolution 正式资产索引。
+- configs/frozen_reviewer_identity_v2.json 是六任务 prompt 与 suite identity 的语义 manifest。
+- configs/formal_temporal_v3_qwen3e8b.json 记录正式 embedding 实验和 selection 资产状态。
+- temporal split、Frozen S2、Reviewer Identity 与 Seed Program 各自拥有独立版本和 SHA。
+- Program promotion 通过 suite_manifest.json 与 meta_manifest.json 绑定相对来源 run、源码 SHA、selection 和 source-run config。
+- runs/、outputs*/ 和 cache 作为可再生位置；外部归档承担正式运行留存。
+- 历史 provenance 字段保留原始来源信息，并由当前 resolver 解释位置。

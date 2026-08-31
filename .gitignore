@@ -2,3 +2,7 @@ AgentReview/cache/qwen3_embedding_8b_cache.sqlite3
 
 # Local runtime embedding caches
 AgentReview/cache/*.sqlite3
+
+# Workstation secrets and generated review outputs
+.vscode/
+outputs*/

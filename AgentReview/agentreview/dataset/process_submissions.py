@@ -13,17 +13,19 @@ It includes three main functions:
 - check_processed_paper: Verifies if all processed papers are valid JSON files.
 """
 
+import logging
 import os
 import sys
-import traceback
 from collections import Counter
 
 from tqdm import tqdm
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from agentreview.arguments import parse_args
 from agentreview.utility.utils import print_colored
+
+logger = logging.getLogger(__name__)
 
 decision_map = {
     # ICLR 2023
@@ -31,21 +33,17 @@ decision_map = {
     "Accept: poster": "Accept-poster",
     "Accept: notable-top-25%": "Accept-notable-top-25",
     "Accept: notable-top-5%": "Accept-notable-top-5",
-
     # ICLR 2022
     "Accept (Poster)": "Accept-poster",
     "Accept (Oral)": "Accept-oral",
     "Accept (Spotlight)": "Accept-spotlight",
-
     # ICLR 2021
     "Significant concerns (Do not publish)": "Significant-concerns",
     "Concerns raised (can publish with adjustment)": "Concerns-raised",
-
     # ICLR 2020
     "Accept (Talk)": "Accept-oral",  # We assume this signifies an oral presentation
-
     # ICLR 2018
-    "Invite to Workshop Track": "Reject"
+    "Invite to Workshop Track": "Reject",
 }
 
 
@@ -75,21 +73,23 @@ def categorize_ICLR_submissions_into_subdirectories():
         decision = None
 
         for line in tqdm(lines):
-            if "\"recommendation\"" in line:
-                assert Counter(line)["\""] == 4, "Unexpected format in recommendation line."
+            if '"recommendation"' in line:
+                assert Counter(line)['"'] == 4, (
+                    "Unexpected format in recommendation line."
+                )
                 print(line)
-                decision = line.split("\"recommendation\"")[1].split("\"")[1]
+                decision = line.split('"recommendation"')[1].split('"')[1]
                 break
 
-            elif "\"decision\"" in line:
-                assert Counter(line)["\""] == 4, "Unexpected format in decision line."
+            elif '"decision"' in line:
+                assert Counter(line)['"'] == 4, "Unexpected format in decision line."
                 print(line)
                 try:
-                    decision = line.split("\"decision\"")[1].split("\"")[1]
+                    decision = line.split('"decision"')[1].split('"')[1]
                     break
-                except Exception:
-                    traceback.print_exc()
-                    print_colored(line, 'red')
+                except IndexError:
+                    logger.exception("Could not parse the decision line")
+                    print_colored(line, "red")
 
         if decision is None:
             # Possibly withdrawn papers
@@ -102,7 +102,10 @@ def categorize_ICLR_submissions_into_subdirectories():
 
         paper_id = int(note.split(".json")[0])
         paper_path = os.path.join(paper_dir, f"{paper_id}.pdf")
-        os.rename(paper_path, os.path.join(paper_dir, decision_map[decision], f"{paper_id}.pdf"))
+        os.rename(
+            paper_path,
+            os.path.join(paper_dir, decision_map[decision], f"{paper_id}.pdf"),
+        )
 
 
 if __name__ == "__main__":

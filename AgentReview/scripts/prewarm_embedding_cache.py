@@ -5,23 +5,22 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from memory_evolution.embedding_adapter import (
-    DEFAULT_QWEN3_EMBEDDING_CACHE,
-    QWEN3_MODEL_BATCH_SIZE,
-    QWEN3_MODEL_ID,
-    create_qwen3_embedding,
-    embed_qwen3_on_devices,
-)
-
+_embedding_adapter = importlib.import_module("memory_evolution.embedding_adapter")
+DEFAULT_QWEN3_EMBEDDING_CACHE = _embedding_adapter.DEFAULT_QWEN3_EMBEDDING_CACHE
+QWEN3_MODEL_BATCH_SIZE = _embedding_adapter.QWEN3_MODEL_BATCH_SIZE
+QWEN3_MODEL_ID = _embedding_adapter.QWEN3_MODEL_ID
+create_qwen3_embedding = _embedding_adapter.create_qwen3_embedding
+embed_qwen3_on_devices = _embedding_adapter.embed_qwen3_on_devices
 
 DEFAULT_TASKS = ("CLAR", "SIGN", "ORIG", "QUAL", "POL")
 

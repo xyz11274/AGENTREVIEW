@@ -3,7 +3,7 @@ import unittest
 from memory_evolution.assets import FOUR_ZONES
 from scripts.build_coco_temporal_split import (
     _family_components,
-    compare_split_versions,
+    audit_family_accounting,
     extract_coco_paperhash,
     extract_coco_title,
     select_family_representative,
@@ -18,9 +18,7 @@ class TemporalSplitV2Test(unittest.TestCase):
         )
 
     def test_extract_coco_title_accepts_openreview_v2_object(self):
-        title = extract_coco_title(
-            {"title": {"value": "Actual Title"}}, "paper-1"
-        )
+        title = extract_coco_title({"title": {"value": "Actual Title"}}, "paper-1")
         self.assertEqual(title, "Actual Title")
         self.assertNotEqual(title, "{'value': 'Actual Title'}")
 
@@ -30,9 +28,7 @@ class TemporalSplitV2Test(unittest.TestCase):
             "author|paper",
         )
         self.assertEqual(
-            extract_coco_paperhash(
-                {"paperhash": {"value": "author|paper"}}, "paper-2"
-            ),
+            extract_coco_paperhash({"paperhash": {"value": "author|paper"}}, "paper-2"),
             "author|paper",
         )
 
@@ -66,33 +62,15 @@ class TemporalSplitV2Test(unittest.TestCase):
         )
         return zones
 
-    def test_comparison_allows_canonical_title_and_family_id_change(self):
-        old = self._zones("{'value': 'Actual Title'}", "old-family-hash")
-        new = self._zones("Actual Title", "new-family-hash")
-        audit = compare_split_versions(
-            old, new, expected_source_record_count=1
-        )
-        self.assertTrue(audit["passed"])
-        self.assertEqual(audit["title_changed_count"], 1)
-
-    def test_comparison_requires_every_source_record_to_be_accounted(self):
-        old = self._zones("Actual Title", "family", paper_id="paper-1")
-        old[FOUR_ZONES[0]].append(
-            {
-                **old[FOUR_ZONES[0]][0],
-                "paper_id": "paper-2",
-                "representative_paper_id": "paper-2",
-            }
-        )
+    def test_family_audit_requires_every_source_record_to_be_accounted(self):
+        source = [{"paper_id": "paper-1"}, {"paper_id": "paper-2"}]
         new = self._zones("Actual Title", "family", paper_id="paper-1")
-        audit = compare_split_versions(
-            old, new, expected_source_record_count=2
-        )
+        audit = audit_family_accounting(source, new)
         self.assertFalse(audit["passed"])
         self.assertEqual(audit["unaccounted_paper_ids"], ["paper-2"])
 
         new[FOUR_ZONES[0]][0]["excluded_paper_ids"] = ["paper-2"]
-        audit = compare_split_versions(old, new, expected_source_record_count=2)
+        audit = audit_family_accounting(source, new)
         self.assertTrue(audit["passed"])
 
     def test_representative_selection_prefers_accepted_submission_globally(self):

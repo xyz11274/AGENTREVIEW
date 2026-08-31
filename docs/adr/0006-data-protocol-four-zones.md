@@ -1,27 +1,96 @@
-# 实验数据协议：paper-level temporal split + 四区隔离
+# ADR-0006：Family-Deduplicated Temporal v2 四区数据协议
 
-状态：2026-08-18 修订。此前“CoCo 覆盖的 venue-year 全量 `benchmark_reserved`”规则已被本 ADR 明确取代，旧 manifest 只允许分析历史 run，禁止进入新的 formal pipeline。
+- 状态：Accepted
+- 适用范围：历史经验、Evolution、Effectiveness Screening 与正式 Benchmark
 
-CoCoReviewBench 的 3900 条 submission records 是只读 benchmark source pool，不等于 3900 个独立研究工作。正式单位是 `1 paper family = 1 representative target`，再通过 frozen manifest 一次性划为四个 family-level 区域：
+## Context
 
-- A. Historical / Experience：Candidate 按冻结顺序从 empty Memory 开始，自产 Review / trajectory / evidence，审完 Paper_i 后才写 Memory。
-- B. Evolution Validation：只用于 fitness、selection、mutation、promotion；human reference 仅 evaluator 可见；每篇 B 评估前恢复同一 A 状态，B 不写 Historical Memory。
-- C. Effectiveness Holdout：Program 冻结后的首次独立 development measurement，不反馈当前 Program。
-- D. Held-out CoCo Benchmark Test：从未进入 A/B/C，Program 与实验配置完全冻结后才通过 Benchmark Adapter 运行。
+CoCoReviewBench source pool 包含同一研究工作的多个 submission records。正式实验单位需要对应独立研究工作，并通过时间和用途隔离控制信息流。
 
-当前 v2 规则同时规范化 OpenReview API v2 的 title 与 paperhash。每族 representative 统一按 accepted/published 状态、venue year、PDF 显式版本号、稳定 paper ID/source hash 排序；禁止读取 benchmark score、review 或 metareview，也禁止单篇特判。只读审计得到 3900 records → 3889 families/targets，A/B/C/D=2391/299/300/899，共排除 11 条 duplicate submissions。同一 family 只出现一次；paper ID、normalized title、paper family 的 cross-zone overlap 必须为 0，并要求 `max(A/B/C paper_review_cutoff) <= min(D paper_review_cutoff)`。
+当前 v2 对 OpenReview API v2 title 与 paperhash 做规范化，以传递闭包形成 Paper Family，再为每个 family 选择一个 representative target。
 
-源数据没有精确 submission/review dates，因此当前 cutoff 明确采用保守 year-level fallback：每篇论文的 `paper_review_cutoff = venue year 前一年的 12-31`。未来补齐精确日期时必须创建新的 versioned manifest，不得原地改写 frozen v2。
+## Frozen assignment
 
-Semantic Scholar 同样受 cutoff 约束。每个 target 的 frozen entry 必须记录 target identity、pool version、retrieval method/version、paper_review_cutoff、top_k/config、result SHA256；publication date/year 缺失或晚于 cutoff 的结果必须拒绝。formal mode 缺 provenance、缺 target、SHA 不符或发现未来论文时 fail fast。S2 不默认注入，Candidate 只能选择是否读取当前 paper 对应的同一 frozen pool，禁止 live query 和跨 paper 读取。
+当前来源计数：
 
-Human Reference Boundary 对四区均不变：Candidate 只看论文和 candidate-visible metadata；human review、gold、taxonomy、judge rationale/full trace 永远留在 evaluator-only 边界。Reflector 只接收 scalar fitness、安全数值指标、预定义非 gold error category 与资源统计。
+| Item | Count |
+|---|---:|
+| CoCo source records | 3900 |
+| Paper families / representative targets | 3889 |
+| duplicate submission records merged | 11 |
 
-Formal 启动顺序固定为：Asset Manifest SHA/version 校验 → split v2 的 A/B/C/D paper/title/family + temporal + v1/v2 comparison audit → A/B 数据成员与 canonical preprocessing 校验 → Frozen S2 v2 future-leak + query-integrity audit → PASS 后才允许 Evolution。split v1 / S2 v1 因 `query_title_serialization_contamination` 明确拒绝。D 的正式路径固定为 `Frozen Reviewer → Review → Benchmark Adapter → CoCo evaluator`。
+四区分配：
+
+| Zone | Meaning | Family targets |
+|---|---|---:|
+| A | Historical Experience | 2391 |
+| B | Evolution Validation | 299 |
+| C | Effectiveness Holdout | 300 |
+| D | Held-out Benchmark Test | 899 |
+
+## Decision
+
+1. 一个 Paper Family 选择一个 representative target。
+2. 每个 family 固定属于一个 Zone。
+3. A 区按冻结顺序用于 Program-specific historical replay。
+4. B 区用于 static selection、rotating selection、fitness、mutation 与 promotion。
+5. C 区用于冻结 Program 的独立 proxy screening。
+6. D 区用于六任务 Program 与配置冻结后的 `sealed_d_coco_style` 内联测量；Reviewer Core 或部署执行面持久化的 D 区候选产物可进入独立 Official CoCo Adapter。
+7. Candidate-visible data 与 evaluator-only reference 分开物化、分开读取。
+8. paper ID、normalized title 与 family 三种跨区交集均为零。
+9. A/B/C 的最大 paper review cutoff 早于或等于 D 的最小 cutoff。
+
+## Family and representative rules
+
+family identity 由 normalized title 与 paperhash 的传递关系建立。Representative 依次按以下稳定字段排序：
+
+1. accepted/published 状态；
+2. venue year；
+3. PDF 显式版本；
+4. stable paper ID；
+5. source hash。
+
+同一规则适用于完整 source pool，并由 manifest 记录 family accounting audit。
+
+## Temporal cutoff
+
+当前源数据提供 year 粒度。每篇论文的 paper_review_cutoff 固定为 venue year 前一年的 12 月 31 日。未来精确 submission/review date 形成新的 versioned manifest 和资产身份。
+
+## Frozen S2 boundary
+
+每个 target 的 Frozen S2 entry 记录：
+
+- target identity 与 canonical query title；
+- pool 与 retrieval method version；
+- paper_review_cutoff；
+- top_k 和 query hash；
+- result records 与内容 SHA256。
+
+正式 capability 按当前 target scope 读取冻结 pool。publication time 满足 target cutoff。Pool v2 完整覆盖 3889 个 target。
+
+## Materialized experiment counts
+
+- 每个 Specialist bundle 包含 2391 个 A 区 Episode 与 150 个 B 区 Validation target。
+- B 区其余 149 个 family 构成 META Validation reserve；Specialist 与 META 两组 B family 互斥。
+- Qwen3 selection cache 覆盖五个 Specialist 的 `5 × (2391 + 150) = 12,705` 条文本，向量维度为 4096，截断数量为 0。
+- Effectiveness Screening 从 A 区选择 20 个历史目标、从 C 区选择 20 个评测目标；7 arms × 2 replicates 形成 280 个目标审稿包，六个 Program arms × 2 replicates 形成 12 条历史 replay 命令。
+
+## Human Reference Boundary
+
+Candidate 读取论文、candidate-visible metadata、source anchors 与显式 capability 结果。Human review、gold、taxonomy、judge rationale 和 benchmark score由 evaluator-only Adapter 管理。
+
+## Formal startup order
+
+1. 校验 Asset Manifest 的版本和 SHA。
+2. 校验 split v2 的 family accounting、四区 membership、cross-zone identity 与 temporal audit。
+3. 校验 A/B task bundle membership 与 canonical preprocessing。
+4. 校验 Frozen S2 v2 coverage、query identity、record hash 与 cutoff。
+5. 启动 Evolution 或 final evaluation。
 
 ## Consequences
 
-- 旧 `benchmark_reserved_venue_year_v1.json` 与 `asset_manifest_v1.json` 标记为 superseded，formal gate 不兼容。
-- CoCo 论文进入 A/B/C 后永久排除 D；看过 C/D 结果后不得回改当前 Program 并仍称其 untouched。
-- 3900 仅是 submission source pool；family dedup 后当前 D 为 899 targets。
-- 当前 formal blocker 由 Formal Readiness Audit 按实际 Asset Manifest 报告；不得用未完成/未审计的 S2 work records 解除 blocker。
+- configs/coco_temporal_split_v2/manifest.json 是当前冻结 split 身份。
+- configs/frozen_s2_temporal_v2.jsonl 与 sidecar 是当前冻结检索资产。
+- 3900 表达 source records；3889 表达正式 family targets；D 区规模为 899。
+- C 区测量结果只影响后续独立实验设计；当前冻结 Program 身份保持稳定。
+- D 区密封套件通过 `final-evaluate-suite` 生成 Review 并内联计分；CoCo 官方三阶段评测通过 `agentreview.coco_eval` 读取已持久化 Candidate Review 独立运行。

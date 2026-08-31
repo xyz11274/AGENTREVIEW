@@ -1,11 +1,9 @@
 import logging
-import traceback
-from typing import List
 
 from agentreview.environments import Conversation
-from .base import TimeStep
-from ..message import Message, MessagePool
 
+from ..message import Message, MessagePool
+from .base import TimeStep
 
 logger = logging.getLogger(__name__)
 
@@ -17,14 +15,15 @@ class PaperDecision(Conversation):
 
     type_name = "paper_decision"
 
-    def __init__(self,
-                 player_names: List[str],
-                 experiment_setting: dict,
-                 paper_ids: List[int] = None,
-                 metareviews: List[str] = None,
-                 parallel: bool = False,
-
-                 **kwargs):
+    def __init__(
+        self,
+        player_names: list[str],
+        experiment_setting: dict,
+        paper_ids: list[int] = None,
+        metareviews: list[str] = None,
+        parallel: bool = False,
+        **kwargs,
+    ):
         """
 
         Args:
@@ -34,7 +33,9 @@ class PaperDecision(Conversation):
         """
 
         # Inherit from the parent class of `class Conversation`
-        super(Conversation, self).__init__(player_names=player_names, parallel=parallel, **kwargs)
+        super(Conversation, self).__init__(
+            player_names=player_names, parallel=parallel, **kwargs
+        )
 
         self.paper_ids = paper_ids
         self.metareviews = metareviews
@@ -48,19 +49,17 @@ class PaperDecision(Conversation):
 
         self._current_turn = 0
         self._next_player_index = 0
-        self.phase_index = 5  # "ACs make decision based on meta review" is the last phase (Phase 5)
+        self.phase_index = (
+            5  # "ACs make decision based on meta review" is the last phase (Phase 5)
+        )
 
         self._phases = None
 
     @property
     def phases(self):
-
         if self._phases is None:
             self._phases = {
-                5: {
-                    "name": "ac_make_decisions",
-                    'speaking_order': ["AC"]
-                },
+                5: {"name": "ac_make_decisions", "speaking_order": ["AC"]},
             }
         return self._phases
 
@@ -73,8 +72,6 @@ class PaperDecision(Conversation):
             action: the action that the agents wants to take
         """
 
-
-
         message = Message(
             agent_name=player_name, content=action, turn=self._current_turn
         )
@@ -84,11 +81,15 @@ class PaperDecision(Conversation):
 
         # Reached the end of the speaking order. Move to the next phase.
 
-        logging.info(f"Phase {self.phase_index}: {self.phases[self.phase_index]['name']} "
-                     f"| Player {self._next_player_index}: {speaking_order[self._next_player_index]}")
+        logger.info(
+            f"Phase {self.phase_index}: {self.phases[self.phase_index]['name']} "
+            f"| Player {self._next_player_index}: {speaking_order[self._next_player_index]}"
+        )
         if self._next_player_index == len(speaking_order) - 1:
             self._next_player_index = 0
-            logger.info(f"Phase {self.phase_index}: end of the speaking order. Move to Phase {self.phase_index + 1}.")
+            logger.info(
+                f"Phase {self.phase_index}: end of the speaking order. Move to Phase {self.phase_index + 1}."
+            )
             self.phase_index += 1
             self._current_turn += 1
         else:
@@ -102,17 +103,15 @@ class PaperDecision(Conversation):
 
         return timestep
 
-
     def check_action(self, action: str, player_name: str) -> bool:
         """Check if the action is valid."""
 
         if player_name.startswith("AC"):
-
             try:
                 self.ac_decisions = self.parse_ac_decisions(action)
 
-            except:
-                traceback.print_exc()
+            except (IndexError, TypeError, ValueError):
+                logger.exception("Could not parse area-chair decisions")
                 return False
 
             if not isinstance(self.ac_decisions, dict):
@@ -140,16 +139,17 @@ class PaperDecision(Conversation):
         paper_id, rank = None, None
 
         for line in lines:
-
             if line.lower().startswith("paper id:"):
-                paper_id = int(line.split(":")[1].split('(')[0].strip())
-            elif self.ac_scoring_method == "ranking" and line.lower().startswith("willingness to accept:"):
+                paper_id = int(line.split(":")[1].split("(")[0].strip())
+            elif self.ac_scoring_method == "ranking" and line.lower().startswith(
+                "willingness to accept:"
+            ):
                 rank = int(line.split(":")[1].strip())
 
-            elif self.ac_scoring_method == "recommendation" and line.lower().startswith("decision"):
+            elif self.ac_scoring_method == "recommendation" and line.lower().startswith(
+                "decision"
+            ):
                 rank = line.split(":")[1].strip()
-
-
 
             if paper_id in paper2rating:
                 raise ValueError(f"Paper {paper_id} is assigned a rank twice.")

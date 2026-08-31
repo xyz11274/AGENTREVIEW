@@ -1,20 +1,30 @@
 # AgentReview/agentreview/environments/single_paper_review.py
 
 import logging
-from typing import List
 
-from .conversation import Conversation
-from .base import TimeStep
 from ..message import Message
 from ..paper_review_message import PaperReviewMessagePool  # 可复用现有池（最省事）
+from .base import TimeStep
+from .conversation import Conversation
 
 logger = logging.getLogger(__name__)
+
 
 class SinglePaperReview(Conversation):
     type_name = "single_paper_review"
 
-    def __init__(self, player_names: List[str], paper_md_path: str, experiment_setting: dict, args, parallel: bool = False, **kwargs):
-        super(Conversation, self).__init__(player_names=player_names, parallel=parallel, **kwargs)
+    def __init__(
+        self,
+        player_names: list[str],
+        paper_md_path: str,
+        experiment_setting: dict,
+        args,
+        parallel: bool = False,
+        **kwargs,
+    ):
+        super(Conversation, self).__init__(
+            player_names=player_names, parallel=parallel, **kwargs
+        )
         self.args = args
         self.paper_md_path = paper_md_path
         self.experiment_setting = experiment_setting
@@ -71,7 +81,7 @@ class SinglePaperReview(Conversation):
         speaking_order = self.phases[self.phase_index]["speaking_order"]
         return speaking_order[self._next_player_index]
 
-    def get_observation(self, player_name=None) -> List[Message]:
+    def get_observation(self, player_name=None) -> list[Message]:
         if player_name is None:
             return self.message_pool.get_all_messages()
 
@@ -81,6 +91,10 @@ class SinglePaperReview(Conversation):
             return messages
 
         if 1 <= self.phase_index <= 5:
-            return [message for message in messages if message.agent_name == "Paper Extractor"]
+            return [
+                message
+                for message in messages
+                if message.agent_name == "Paper Extractor"
+            ]
 
         return messages

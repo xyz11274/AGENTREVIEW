@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
 
 
-def load_content_list(paper_md_path: str) -> List[Dict]:
+def load_content_list(paper_md_path: str) -> list[dict]:
     paper_dir = Path(paper_md_path).resolve().parent
     content_list_path = paper_dir / "content_list.json"
     if not content_list_path.exists():
@@ -11,22 +10,26 @@ def load_content_list(paper_md_path: str) -> List[Dict]:
     return json.loads(content_list_path.read_text(encoding="utf-8"))
 
 
-def extract_title_from_content_list(content_list: List[Dict]) -> Optional[str]:
+def extract_title_from_content_list(content_list: list[dict]) -> str | None:
     for item in content_list:
         if item.get("type") == "text" and item.get("text_level") == 1:
-            text = " ".join(part.strip() for part in item.get("text", "").splitlines() if part.strip())
+            text = " ".join(
+                part.strip()
+                for part in item.get("text", "").splitlines()
+                if part.strip()
+            )
             if text and text.upper() not in {"ABSTRACT", "INTRODUCTION"}:
                 return text
     return None
 
 
 def build_source_anchors(
-    content_list: List[Dict],
+    content_list: list[dict],
     max_anchors: int = 80,
     max_text_chars: int = 500,
-    include_types: Optional[List[str]] = None,
-) -> List[Dict]:
-    anchors: List[Dict] = []
+    include_types: list[str] | None = None,
+) -> list[dict]:
+    anchors: list[dict] = []
     allowed_types = set(include_types or ["text", "image"])
 
     for item in content_list:
@@ -45,14 +48,16 @@ def build_source_anchors(
         if not text:
             continue
 
-        anchors.append({
-            "source_id": f"SRC-{len(anchors) + 1:03d}",
-            "type": item_type,
-            "page_idx": item.get("page_idx"),
-            "bbox": item.get("bbox"),
-            "text_level": item.get("text_level"),
-            "text": text[:max_text_chars],
-        })
+        anchors.append(
+            {
+                "source_id": f"SRC-{len(anchors) + 1:03d}",
+                "type": item_type,
+                "page_idx": item.get("page_idx"),
+                "bbox": item.get("bbox"),
+                "text_level": item.get("text_level"),
+                "text": text[:max_text_chars],
+            }
+        )
 
         if len(anchors) >= max_anchors:
             break
@@ -60,7 +65,7 @@ def build_source_anchors(
     return anchors
 
 
-def format_source_anchors(anchors: List[Dict]) -> str:
+def format_source_anchors(anchors: list[dict]) -> str:
     if not anchors:
         return "No structured source anchors available."
 

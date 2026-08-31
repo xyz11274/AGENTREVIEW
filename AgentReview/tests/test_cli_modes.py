@@ -1,16 +1,56 @@
+import hashlib
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from memory_evolution.cli import (
     _experiment_kind,
     _is_nonformal,
     _parse_experiment_seeds,
+    _promote_lineage_champions,
     build_parser,
     main,
 )
 
 
 class CliModeTest(unittest.TestCase):
+    def test_lineage_promotion_contract_is_shared_by_specialists_and_meta(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            suite_root = root / "suite"
+            source_run = suite_root / "META" / "seed_3"
+            source_run.mkdir(parents=True)
+            source_program = source_run / "best_program.py"
+            source_program.write_text("VALUE = 'program'\n", encoding="utf-8")
+            source_sha256 = hashlib.sha256(source_program.read_bytes()).hexdigest()
+            (source_run / "lineage_champions.json").write_text(
+                json.dumps(
+                    {
+                        "vector_search": {
+                            "program": "best_program.py",
+                            "program_sha256": source_sha256,
+                            "fitness": 0.75,
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            promoted = _promote_lineage_champions(
+                {"output_dir": str(source_run)}, suite_root, "META", 3
+            )
+
+            entry = promoted["vector_search"]
+            self.assertEqual(entry["program_sha256"], source_sha256)
+            self.assertEqual(entry["experiment_seed"], 3)
+            self.assertTrue(
+                entry["program"].endswith("lineages/vector_search/META/best_program.py")
+            )
+            self.assertFalse(Path(entry["program"]).is_absolute())
+            self.assertEqual(entry["source_run"], "META/seed_3")
+
     def test_all_evolution_llm_roles_default_to_local_qwen(self):
         args = build_parser().parse_args(
             [
@@ -75,11 +115,11 @@ class CliModeTest(unittest.TestCase):
         )
 
         self.assertNotEqual(args.embedding_cache, args.runtime_embedding_cache)
-        self.assertTrue(args.embedding_cache.endswith("qwen3_embedding_8b_cache.sqlite3"))
         self.assertTrue(
-            args.runtime_embedding_cache.endswith(
-                "qwen3_embedding_runtime.sqlite3"
-            )
+            args.embedding_cache.endswith("qwen3_embedding_8b_cache.sqlite3")
+        )
+        self.assertTrue(
+            args.runtime_embedding_cache.endswith("qwen3_embedding_runtime.sqlite3")
         )
 
     def test_pilot_preserves_requested_search_size(self):
@@ -163,8 +203,11 @@ class CliModeTest(unittest.TestCase):
             "report.json",
             "--final-test",
         ]
-        with patch("sys.argv", argv), self.assertRaisesRegex(
-            SystemExit, "only formal D/Test entry point is final-evaluate-suite"
+        with (
+            patch("sys.argv", argv),
+            self.assertRaisesRegex(
+                SystemExit, "final-evaluate-suite is the sealed D/Test entry point"
+            ),
         ):
             main()
 

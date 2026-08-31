@@ -1,11 +1,9 @@
 import time
+from collections.abc import Callable
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from .checkpoint import load_checkpoint, save_checkpoint
-from .benchmark_adapter import ReviewSubmission, evaluate_frozen_review
-from .models import Episode, EvalItem, EvalResult, to_serializable
 from agentreview.history_checkpoint import canonical_sha256
 from agentreview.reviewer_runtime.artifacts import CandidateReviewRecord
 from agentreview.reviewer_runtime.engine import (
@@ -16,8 +14,12 @@ from agentreview.reviewer_runtime.engine import (
 from agentreview.reviewer_runtime.models import ReviewRequest
 from agentreview.reviewer_runtime.tasks import ALL_TASKS
 
+from .benchmark_adapter import ReviewSubmission, evaluate_frozen_review
+from .checkpoint import load_checkpoint, save_checkpoint
+from .models import Episode, EvalItem, EvalResult, to_serializable
 
-def candidate_safe_case(case: Dict[str, Any]) -> Dict[str, Any]:
+
+def candidate_safe_case(case: dict[str, Any]) -> dict[str, Any]:
     """Reduce evaluator-side state to feedback that cannot reproduce gold."""
     error = str(case.get("error") or "")
     error_type = error.split(":", 1)[0] if error else ""
@@ -37,7 +39,7 @@ def candidate_safe_case(case: Dict[str, Any]) -> Dict[str, Any]:
     return output
 
 
-def candidate_safe_trace(trace: Dict[str, Any]) -> Dict[str, Any]:
+def candidate_safe_trace(trace: dict[str, Any]) -> dict[str, Any]:
     """Strip questions, answers, references and free-text judge rationales."""
     output = {
         "phase": str(trace.get("phase") or ""),
@@ -61,8 +63,8 @@ def _score_metric(metric, prediction: str, gold: str, item: EvalItem) -> float:
 
 def evaluate_program(
     program_path: str,
-    episodes: List[Episode],
-    eval_items: List[EvalItem],
+    episodes: list[Episode],
+    eval_items: list[EvalItem],
     task_agent,
     toolkit,
     metric: Callable,
@@ -72,16 +74,14 @@ def evaluate_program(
     sandbox_memory_mb: int = 1024,
     require_bubblewrap: bool = True,
     formal: bool = False,
-    checkpoint_path: Optional[str] = None,
-    run_identity: Optional[Dict[str, Any]] = None,
-    benchmark_adapter_factory: Optional[Callable] = None,
-    candidate_review_sink: Optional[Callable[[Dict[str, Any]], None]] = None,
+    checkpoint_path: str | None = None,
+    run_identity: dict[str, Any] | None = None,
+    benchmark_adapter_factory: Callable | None = None,
+    candidate_review_sink: Callable[[dict[str, Any]], None] | None = None,
 ) -> EvalResult:
     started = time.monotonic()
     resource_before = (
-        toolkit.resource_snapshot()
-        if hasattr(toolkit, "resource_snapshot")
-        else {}
+        toolkit.resource_snapshot() if hasattr(toolkit, "resource_snapshot") else {}
     )
     judge_toolkit = getattr(metric, "judge_toolkit", None)
     judge_resource_before = (
@@ -109,7 +109,6 @@ def evaluate_program(
             require_bubblewrap=require_bubblewrap,
         )
         session = reviewer_runtime.sandbox
-        program = reviewer_runtime.program
     except Exception as exc:
         if session is not None:
             session.close(force=True)
@@ -123,7 +122,7 @@ def evaluate_program(
     item_values = [EvalItem.from_value(value) for value in eval_items]
 
     frozen_episode_ids = [episode.id for episode in episode_values]
-    completed_ids: List[str] = []
+    completed_ids: list[str] = []
     if formal:
         if not checkpoint_path or not isinstance(run_identity, dict):
             session.close(force=True)
@@ -194,11 +193,13 @@ def evaluate_program(
                             paper_id=episode.id.split("::", 1)[0],
                             task_id=runtime_task_id,
                             question=episode.text,
-                            model=str(getattr(toolkit, "llm_model", "") or "unspecified"),
+                            model=str(
+                                getattr(toolkit, "llm_model", "") or "unspecified"
+                            ),
                             revision=str(
-                                ((run_identity or {}).get("generation_config") or {}).get(
-                                    "model_revision"
-                                )
+                                (
+                                    (run_identity or {}).get("generation_config") or {}
+                                ).get("model_revision")
                                 or "unspecified"
                             ),
                             run_identity=(
@@ -367,9 +368,7 @@ def evaluate_program(
                     "score": score,
                     "success": True,
                     "structured_metrics": (
-                        dict(metric_details)
-                        if isinstance(metric_details, dict)
-                        else {}
+                        dict(metric_details) if isinstance(metric_details, dict) else {}
                     ),
                 }
             )
@@ -435,8 +434,7 @@ def evaluate_program(
                 for case in evaluated_cases
             ),
             "memory_context_size": sum(
-                len(str(case.get("context") or ""))
-                for case in evaluated_cases
+                len(str(case.get("context") or "")) for case in evaluated_cases
             ),
             "resources": (
                 toolkit.resource_delta(resource_before)

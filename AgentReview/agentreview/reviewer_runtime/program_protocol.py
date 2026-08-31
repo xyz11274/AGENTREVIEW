@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-
 INSTRUCTION_KNOWLEDGE_ITEM: str = ""
 INSTRUCTION_QUERY: str = ""
 INSTRUCTION_RESPONSE: str = ""
@@ -27,11 +26,8 @@ class Query:
 class KnowledgeBase(Protocol):
     """Runtime interface for storage and retrieval logic."""
 
-    def __init__(self, toolkit: Any):
-        ...
+    def __init__(self, toolkit: Any): ...
 
-    def write(self, item: KnowledgeItem, raw_text: str) -> None:
-        ...
+    def write(self, item: KnowledgeItem, raw_text: str) -> None: ...
 
-    def read(self, query: Query) -> str:
-        ...
+    def read(self, query: Query) -> str: ...

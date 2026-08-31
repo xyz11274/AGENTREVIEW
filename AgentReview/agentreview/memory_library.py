@@ -1,18 +1,19 @@
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
+from agentreview.reviewer_identity import load_reviewer_suite
 
 
 def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())
 
 
-def tokenize_text(text: str) -> List[str]:
+def tokenize_text(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", normalize_text(text))
 
 
-def infer_reviewer_dimension(reviewer_name: Optional[str]) -> Optional[str]:
+def infer_reviewer_dimension(reviewer_name: str | None) -> str | None:
     if not reviewer_name:
         return None
     match = re.search(r"Reviewer\s+([A-Z]+)", reviewer_name)
@@ -30,11 +31,13 @@ def clip_text(text: str, max_chars: int) -> str:
     return text[: max(0, max_chars - 3)].rstrip() + "..."
 
 
-def extract_reviews_from_messages(messages: List[Dict]) -> Dict[str, str]:
+def extract_reviews_from_messages(messages: list[dict]) -> dict[str, str]:
     reviews = {}
     for message in messages:
         agent_name = message.get("agent_name")
-        if agent_name and (agent_name.startswith("Reviewer ") or agent_name == "Final Meta-Reviewer"):
+        if agent_name and (
+            agent_name.startswith("Reviewer ") or agent_name == "Final Meta-Reviewer"
+        ):
             reviews[agent_name] = message.get("content", "")
     return reviews
 
@@ -44,13 +47,14 @@ def build_memory_record(
     paper_title: str,
     paper_md_path: str,
     review_dir: str,
-    retrieved_papers: List[Dict],
+    retrieved_papers: list[dict],
     references_text: str,
-    source_anchors: List[Dict],
-    reviews: Dict[str, str],
-    keyword_model_name: Optional[str],
+    source_anchors: list[dict],
+    reviews: dict[str, str],
+    keyword_model_name: str | None,
     review_model_name: str,
-) -> Dict:
+    reviewer_suite_identity_sha256: str,
+) -> dict:
     return {
         "sample_id": sample_id,
         "paper_title": paper_title,
@@ -58,6 +62,7 @@ def build_memory_record(
         "review_dir": review_dir,
         "keyword_model_name": keyword_model_name,
         "review_model_name": review_model_name,
+        "reviewer_suite_identity_sha256": reviewer_suite_identity_sha256,
         "retrieved_papers": retrieved_papers,
         "references_text": references_text,
         "source_anchors": source_anchors,
@@ -67,7 +72,7 @@ def build_memory_record(
     }
 
 
-def update_memory_library(output_dir: str, memory_record: Dict) -> Dict[str, str]:
+def update_memory_library(output_dir: str, memory_record: dict) -> dict[str, str]:
     library_root = Path(output_dir) / "single_paper_review"
     library_root.mkdir(parents=True, exist_ok=True)
 
@@ -81,12 +86,19 @@ def update_memory_library(output_dir: str, memory_record: Dict) -> Dict[str, str
             if line:
                 records.append(json.loads(line))
 
-    records = [record for record in records if record.get("sample_id") != memory_record["sample_id"]]
+    suite_identity = load_reviewer_suite().suite_identity_sha256
+    records = [
+        record
+        for record in records
+        if record.get("reviewer_suite_identity_sha256") == suite_identity
+        and record.get("sample_id") != memory_record["sample_id"]
+    ]
     records.append(memory_record)
     records.sort(key=lambda item: item["sample_id"])
 
     jsonl_path.write_text(
-        "\n".join(json.dumps(record, ensure_ascii=False) for record in records) + ("\n" if records else ""),
+        "\n".join(json.dumps(record, ensure_ascii=False) for record in records)
+        + ("\n" if records else ""),
         encoding="utf-8",
     )
 
@@ -99,12 +111,16 @@ def update_memory_library(output_dir: str, memory_record: Dict) -> Dict[str, str
     for record in records:
         sample_id = record["sample_id"]
         index["by_sample_id"][sample_id] = record["review_dir"]
-        title_key = record.get("title_normalized") or normalize_text(record.get("paper_title", ""))
+        title_key = record.get("title_normalized") or normalize_text(
+            record.get("paper_title", "")
+        )
         index["by_title_normalized"].setdefault(title_key, []).append(sample_id)
         for reviewer_name in record.get("reviews", {}).keys():
             index["by_reviewer"].setdefault(reviewer_name, []).append(sample_id)
 
-    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    index_path.write_text(
+        json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return {
         "memory_library_jsonl": str(jsonl_path),
         "memory_index_json": str(index_path),
@@ -115,7 +131,7 @@ def memory_library_path(output_dir: str) -> Path:
     return Path(output_dir) / "single_paper_review" / "memory_library.jsonl"
 
 
-def load_memory_records(output_dir: str) -> List[Dict]:
+def load_memory_records(output_dir: str) -> list[dict]:
     jsonl_path = memory_library_path(output_dir)
     if not jsonl_path.exists():
         return []
@@ -124,16 +140,23 @@ def load_memory_records(output_dir: str) -> List[Dict]:
     for line in jsonl_path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line:
-            records.append(json.loads(line))
+            record = json.loads(line)
+            if (
+                record.get("reviewer_suite_identity_sha256")
+                == load_reviewer_suite().suite_identity_sha256
+            ):
+                records.append(record)
     return records
 
 
-def _record_search_text(record: Dict, reviewer_name: Optional[str]) -> str:
+def _record_search_text(record: dict, reviewer_name: str | None) -> str:
     parts = [
         record.get("paper_title", ""),
         record.get("references_text", ""),
     ]
-    retrieved_titles = [paper.get("title", "") for paper in record.get("retrieved_papers", [])]
+    retrieved_titles = [
+        paper.get("title", "") for paper in record.get("retrieved_papers", [])
+    ]
     parts.extend(retrieved_titles[:10])
 
     reviews = record.get("reviews", {})
@@ -144,7 +167,12 @@ def _record_search_text(record: Dict, reviewer_name: Optional[str]) -> str:
     return "\n".join(part for part in parts if part)
 
 
-def _score_record(record: Dict, query_tokens: List[str], reviewer_name: Optional[str], dimension: Optional[str]) -> float:
+def _score_record(
+    record: dict,
+    query_tokens: list[str],
+    reviewer_name: str | None,
+    dimension: str | None,
+) -> float:
     if not query_tokens:
         return 0.0
 
@@ -173,17 +201,17 @@ def _score_record(record: Dict, query_tokens: List[str], reviewer_name: Optional
 def retrieve_memory_context(
     output_dir: str,
     paper_title: str,
-    reviewer_name: Optional[str] = None,
-    dimension: Optional[str] = None,
-    exclude_sample_id: Optional[str] = None,
+    reviewer_name: str | None = None,
+    dimension: str | None = None,
+    exclude_sample_id: str | None = None,
     top_k: int = 3,
     max_chars: int = 5000,
-) -> Dict:
+) -> dict:
     records = load_memory_records(output_dir)
     dimension = dimension or infer_reviewer_dimension(reviewer_name)
     query_tokens = tokenize_text(paper_title)
 
-    scored: List[Tuple[float, Dict]] = []
+    scored: list[tuple[float, dict]] = []
     for record in records:
         if exclude_sample_id and record.get("sample_id") == exclude_sample_id:
             continue
@@ -203,7 +231,11 @@ def retrieve_memory_context(
             review_text = reviews[reviewer_name]
         elif dimension:
             matching_review = next(
-                ((name, text) for name, text in reviews.items() if name.endswith(dimension)),
+                (
+                    (name, text)
+                    for name, text in reviews.items()
+                    if name.endswith(dimension)
+                ),
                 None,
             )
             if matching_review:
@@ -248,9 +280,9 @@ def retrieve_memory_context(
 
 def format_memory_context(
     paper_title: str,
-    reviewer_name: Optional[str],
-    dimension: Optional[str],
-    entries: List[Dict],
+    reviewer_name: str | None,
+    dimension: str | None,
+    entries: list[dict],
     max_chars: int = 5000,
 ) -> str:
     role_label = reviewer_name or f"{dimension or 'general'} reviewer"

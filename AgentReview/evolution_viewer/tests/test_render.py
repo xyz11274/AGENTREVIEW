@@ -6,7 +6,6 @@ from evolution_viewer.render import (
     render_schema_changes,
     render_transition_header,
 )
-
 from evolution_viewer.tests.test_code_analysis import AFTER, BEFORE
 
 

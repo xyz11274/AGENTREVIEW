@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import hashlib
 import importlib.util
 import json
@@ -11,10 +12,9 @@ import re
 import sqlite3
 import struct
 import threading
-import gc
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
-
+from typing import Any
 
 BGE_M3_SEMANTICS_VERSION = "bge-m3-cls-l2norm-maxlen8192-v1"
 # Compatibility alias used by historical tests and cache inspection tools.
@@ -43,7 +43,7 @@ def _canonical_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def embedding_fingerprint(specification: Dict[str, Any]) -> str:
+def embedding_fingerprint(specification: dict[str, Any]) -> str:
     """Return the complete embedding specification's stable SHA-256 identity."""
     return hashlib.sha256(_canonical_json(specification).encode("utf-8")).hexdigest()
 
@@ -67,7 +67,7 @@ class CachedDenseEmbedding:
         cache_enabled: bool,
         expected_dimension: int,
         semantics_version: str,
-        specification: Dict[str, Any],
+        specification: dict[str, Any],
         fail_on_cache_miss: bool = False,
         cache_namespace: str = "selection",
     ):
@@ -95,13 +95,13 @@ class CachedDenseEmbedding:
         }
 
     @property
-    def truncation_stats(self) -> Dict[str, int]:
+    def truncation_stats(self) -> dict[str, int]:
         return dict(self._truncation_stats)
 
     def _load(self) -> None:
         raise NotImplementedError
 
-    def _embed_uncached_batch(self, batch: List[str]) -> List[List[float]]:
+    def _embed_uncached_batch(self, batch: list[str]) -> list[list[float]]:
         raise NotImplementedError
 
     def _connect_cache(self) -> sqlite3.Connection:
@@ -200,7 +200,10 @@ class CachedDenseEmbedding:
                     "Embedding cache schema mismatch: "
                     f"observed={row[0]!r}, expected={CACHE_SCHEMA_VERSION!r}"
                 )
-            if not self.fail_on_cache_miss and self.cache_namespace == "candidate_runtime_v1":
+            if (
+                not self.fail_on_cache_miss
+                and self.cache_namespace == "candidate_runtime_v1"
+            ):
                 expected_metadata = {
                     "cache_namespace": self.cache_namespace,
                     "embedding_fingerprint": self.embedding_fingerprint,
@@ -236,11 +239,11 @@ class CachedDenseEmbedding:
             raise
 
     @staticmethod
-    def _text_identity(text: str) -> Tuple[str, int]:
+    def _text_identity(text: str) -> tuple[str, int]:
         payload = text.encode("utf-8")
         return hashlib.sha256(payload).hexdigest(), len(payload)
 
-    def _canonical_float32_vector(self, vector) -> Tuple[List[float], bytes, str]:
+    def _canonical_float32_vector(self, vector) -> tuple[list[float], bytes, str]:
         values = [float(value) for value in vector]
         if len(values) != self.expected_dimension:
             raise ValueError(
@@ -258,7 +261,7 @@ class CachedDenseEmbedding:
         row,
         *,
         expected_text_bytes: int,
-    ) -> List[float] | None:
+    ) -> list[float] | None:
         if row is None:
             return None
         text_byte_length, dimension, payload, expected_vector_sha256 = row
@@ -281,9 +284,9 @@ class CachedDenseEmbedding:
     def _read_cache(
         self,
         connection: sqlite3.Connection,
-        identities: List[Tuple[str, int]],
-    ) -> Tuple[Dict[str, List[float]], int]:
-        cached: Dict[str, List[float]] = {}
+        identities: list[tuple[str, int]],
+    ) -> tuple[dict[str, list[float]], int]:
+        cached: dict[str, list[float]] = {}
         invalid = 0
         for text_sha256, text_byte_length in dict.fromkeys(identities):
             row = connection.execute(
@@ -360,14 +363,11 @@ class CachedDenseEmbedding:
                     model_revision, vector_sha256
                 ) VALUES (?, ?, ?, ?)
                 """,
-                [
-                    (row[3], self.embedding_fingerprint, row[1], row[7])
-                    for row in rows
-                ],
+                [(row[3], self.embedding_fingerprint, row[1], row[7]) for row in rows],
             )
         connection.commit()
 
-    def _cache_row(self, text: str, raw_vector) -> Tuple[List[float], tuple]:
+    def _cache_row(self, text: str, raw_vector) -> tuple[list[float], tuple]:
         text_sha256, text_byte_length = self._text_identity(text)
         vector, payload, vector_sha256 = self._canonical_float32_vector(raw_vector)
         return vector, (
@@ -398,7 +398,7 @@ class CachedDenseEmbedding:
         finally:
             connection.close()
 
-    def _embed_without_cache(self, texts: List[str]) -> List[List[float]]:
+    def _embed_without_cache(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
         self._load()
@@ -413,7 +413,7 @@ class CachedDenseEmbedding:
             output.extend(self._canonical_float32_vector(vector)[0] for vector in raw)
         return output
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
+    def embed(self, texts: list[str]) -> list[list[float]]:
         normalized = [str(value) for value in texts]
         with self._lock:
             if not self.cache_enabled:
@@ -554,9 +554,9 @@ class BgeM3Embedding(CachedDenseEmbedding):
         ).to(self._device)
         self._model.eval()
 
-    def _embed_uncached_batch(self, batch: List[str]) -> List[List[float]]:
+    def _embed_uncached_batch(self, batch: list[str]) -> list[list[float]]:
         import torch
-        import torch.nn.functional as functional
+        from torch.nn import functional
 
         with torch.inference_mode():
             encoded = self._tokenizer(
@@ -658,7 +658,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         try:
             import torchvision  # noqa: F401
         except (ImportError, RuntimeError):
-            import transformers.utils.import_utils as import_utils
+            from transformers.utils import import_utils
 
             import_utils._torchvision_available = False
 
@@ -737,7 +737,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
             "implementations: " + " | ".join(failures)
         )
 
-    def audit_token_lengths(self, texts: Iterable[str]) -> Dict[str, int]:
+    def audit_token_lengths(self, texts: Iterable[str]) -> dict[str, int]:
         if self._tokenizer is None:
             self._check_dependencies()
             self._disable_broken_optional_torchvision()
@@ -774,7 +774,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         }
         return self.truncation_stats
 
-    def _embed_uncached_batch(self, batch: List[str]) -> List[List[float]]:
+    def _embed_uncached_batch(self, batch: list[str]) -> list[list[float]]:
         import numpy as np
         import torch
 
@@ -796,7 +796,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         return values.tolist()
 
 
-_INSTANCES: Dict[tuple, CachedDenseEmbedding] = {}
+_INSTANCES: dict[tuple, CachedDenseEmbedding] = {}
 
 
 def create_bge_m3(
@@ -881,7 +881,7 @@ def embed_qwen3_on_devices(
     model_name: str = QWEN3_MODEL_ID,
     cache_path: str = "",
     batch_size: int = QWEN3_MODEL_BATCH_SIZE,
-) -> List[List[float]]:
+) -> list[list[float]]:
     """Encode deterministic round-robin shards with one model per CUDA device."""
     normalized = [str(text) for text in texts]
     device_values = [int(device) for device in devices]
@@ -910,7 +910,7 @@ def embed_qwen3_on_devices(
     context = multiprocessing.get_context("spawn")
     with context.Pool(processes=len(payloads)) as pool:
         worker_results = pool.map(_qwen3_device_worker, payloads)
-    merged: List[List[float] | None] = [None] * len(normalized)
+    merged: list[list[float] | None] = [None] * len(normalized)
     for worker_result in worker_results:
         for index, vector in worker_result:
             merged[index] = vector

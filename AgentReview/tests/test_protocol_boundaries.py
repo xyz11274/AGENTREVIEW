@@ -1,16 +1,30 @@
-import tempfile
 import unittest
-from pathlib import Path
 
 from agentreview.paper_context import (
     candidate_visible_metadata,
     format_canonical_paper_context,
+)
+from agentreview.reviewer_identity import load_reviewer_suite
+from agentreview.single_paper_review_roles import (
+    EXPECTED_REVIEW_REQUEST_SHA256,
+    get_meta_reviewer_description,
+    load_review_request_sections,
 )
 from memory_evolution.assets import audit_four_zone_isolation
 from memory_evolution.evaluator import candidate_safe_case, candidate_safe_trace
 
 
 class ProtocolBoundaryTest(unittest.TestCase):
+    def test_frozen_identity_covers_all_specialists_and_meta(self):
+        sections = load_review_request_sections()
+        self.assertEqual(set(sections), {"QUAL", "CLAR", "SIGN", "ORIG", "POL", "META"})
+        self.assertEqual(get_meta_reviewer_description(), sections["META"])
+        self.assertEqual(
+            load_reviewer_suite().task("META").system_prompt,
+            sections["META"],
+        )
+        self.assertEqual(len(EXPECTED_REVIEW_REQUEST_SHA256), 64)
+
     def test_canonical_context_rejects_internal_provenance(self):
         with self.assertRaisesRegex(ValueError, "Internal provenance"):
             format_canonical_paper_context(
@@ -55,10 +69,20 @@ class ProtocolBoundaryTest(unittest.TestCase):
         report = audit_four_zone_isolation(
             {
                 "historical_experience": [
-                    {"paper_id": "a", "title": "Same Paper", "work_family": "f1", "paper_review_cutoff": "2022-12-31"}
+                    {
+                        "paper_id": "a",
+                        "title": "Same Paper",
+                        "work_family": "f1",
+                        "paper_review_cutoff": "2022-12-31",
+                    }
                 ],
                 "evolution_validation": [
-                    {"paper_id": "b", "title": "Same-paper", "work_family": "f2", "paper_review_cutoff": "2022-12-31"}
+                    {
+                        "paper_id": "b",
+                        "title": "Same-paper",
+                        "work_family": "f2",
+                        "paper_review_cutoff": "2022-12-31",
+                    }
                 ],
                 "effectiveness_holdout": [],
                 "held_out_benchmark_test": [],

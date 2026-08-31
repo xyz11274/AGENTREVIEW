@@ -16,12 +16,12 @@ from .program_protocol import (
 
 __all__ = [
     "ALWAYS_ON_KNOWLEDGE",
-    "CandidateReviewRecord",
-    "CandidateReviewWriter",
-    "Episode",
     "INSTRUCTION_KNOWLEDGE_ITEM",
     "INSTRUCTION_QUERY",
     "INSTRUCTION_RESPONSE",
+    "CandidateReviewRecord",
+    "CandidateReviewWriter",
+    "Episode",
     "KnowledgeBase",
     "KnowledgeItem",
     "MemoryProgramIdentity",

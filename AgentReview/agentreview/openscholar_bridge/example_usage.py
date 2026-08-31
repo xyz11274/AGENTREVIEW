@@ -8,6 +8,7 @@ Before running this script, please ensure:
 2. OpenScholar API service is started
 3. Valid Semantic Scholar API key
 """
+
 '''
 import requests
 import json

@@ -3,7 +3,6 @@ from pathlib import Path
 
 from memory_evolution.quality import check_program_code, check_program_path
 
-
 VALID_PREFIX = """
 from dataclasses import dataclass
 

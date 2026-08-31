@@ -5,7 +5,8 @@ from __future__ import annotations
 import html
 import json
 import math
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from typing import Any
 
 try:
     from .code_analysis import changed_sections, compare_programs, word_diff
@@ -35,7 +36,7 @@ def _number(value: Any, digits: int = 4) -> str:
     return f"{float(value):.{digits}f}"
 
 
-def _delta(before: Any, after: Any) -> Tuple[str, str]:
+def _delta(before: Any, after: Any) -> tuple[str, str]:
     if not isinstance(before, (int, float)) or not isinstance(after, (int, float)):
         return "—", "neutral"
     value = float(after) - float(before)
@@ -50,14 +51,9 @@ def warnings_markdown(warnings: Iterable[str]) -> str:
     return "\n".join(["### 数据告警", *[f"- {value}" for value in values]])
 
 
-def render_run_overview(run: Dict[str, Any]) -> str:
+def render_run_overview(run: dict[str, Any]) -> str:
     config = run.get("config") or {}
     transformations = run.get("transformations") or []
-    successful = [
-        item
-        for item in transformations
-        if item.get("program_id") and item.get("status") in {"seed", "success"}
-    ]
     failures = [
         item
         for item in transformations
@@ -91,7 +87,7 @@ def render_run_overview(run: Dict[str, Any]) -> str:
 
 
 def _polyline_points(
-    records: List[Dict[str, Any]],
+    records: list[dict[str, Any]],
     field: str,
     width: int,
     height: int,
@@ -99,7 +95,7 @@ def _polyline_points(
     padding_y: int,
     *,
     skip_seed_zero: bool = False,
-) -> Tuple[List[str], List[Tuple[float, float, Dict[str, Any]]]]:
+) -> tuple[list[str], list[tuple[float, float, dict[str, Any]]]]:
     values = []
     count = max(1, len(records) - 1)
     for index, item in enumerate(records):
@@ -116,7 +112,7 @@ def _polyline_points(
     return points, values
 
 
-def render_score_chart(run: Dict[str, Any]) -> str:
+def render_score_chart(run: dict[str, Any]) -> str:
     records = list(run.get("transformations") or [])
     if not records:
         return '<div class="ev-empty">暂无分数记录。</div>'
@@ -138,13 +134,15 @@ def render_score_chart(run: Dict[str, Any]) -> str:
     for value in (0.0, 0.25, 0.5, 0.75, 1.0):
         y = height - pad_y - value * (height - 2 * pad_y)
         grid.append(
-            f'<line x1="{pad_x}" y1="{y:.1f}" x2="{width-pad_x}" y2="{y:.1f}" '
+            f'<line x1="{pad_x}" y1="{y:.1f}" x2="{width - pad_x}" y2="{y:.1f}" '
             'stroke="currentColor" opacity=".18"/>'
-            f'<text x="6" y="{y+4:.1f}" fill="currentColor" opacity=".82" '
+            f'<text x="6" y="{y + 4:.1f}" fill="currentColor" opacity=".82" '
             f'font-size="12" font-weight="600">{value:.2f}</text>'
         )
 
-    def circles(values: List[Tuple[float, float, Dict[str, Any]]], css: str, field: str) -> str:
+    def circles(
+        values: list[tuple[float, float, dict[str, Any]]], css: str, field: str
+    ) -> str:
         blocks = []
         for x, y, item in values:
             title = (
@@ -177,7 +175,7 @@ def render_score_chart(run: Dict[str, Any]) -> str:
       </div>
       <svg class="ev-chart" viewBox="0 0 {width} {height}" role="img"
            aria-label="Static and rotating score progression">
-        {''.join(grid)}
+        {"".join(grid)}
         {static_line}{rotating_line}
         {circles(static_values, "ev-point-static", "static_score")}
         {circles(rotating_values, "ev-point-rotating", "rotating_score")}
@@ -187,8 +185,8 @@ def render_score_chart(run: Dict[str, Any]) -> str:
 
 
 def comparison_for_transition(
-    run: Dict[str, Any], transformation: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
+    run: dict[str, Any], transformation: dict[str, Any]
+) -> dict[str, Any] | None:
     program_id = transformation.get("program_id")
     parent_id = transformation.get("parent_id")
     if not program_id:
@@ -211,8 +209,8 @@ def comparison_for_transition(
     )
 
 
-def transition_choices(run: Dict[str, Any]) -> List[Tuple[str, str]]:
-    choices: List[Tuple[str, str]] = []
+def transition_choices(run: dict[str, Any]) -> list[tuple[str, str]]:
+    choices: list[tuple[str, str]] = []
     for item in run.get("transformations") or []:
         iteration = int(item.get("iteration") or 0)
         program_id = item.get("program_id") or "未生成候选"
@@ -221,7 +219,9 @@ def transition_choices(run: Dict[str, Any]) -> List[Tuple[str, str]]:
         comparison = comparison_for_transition(run, item)
         sections = changed_sections(comparison) if comparison else []
         section_text = " · ".join(sections) if sections else status
-        delta_text, _ = _delta(item.get("parent_static_score"), item.get("static_score"))
+        delta_text, _ = _delta(
+            item.get("parent_static_score"), item.get("static_score")
+        )
         summary = " ".join(str(item.get("change_summary") or "").split())
         if len(summary) > 92:
             summary = summary[:89] + "..."
@@ -235,14 +235,14 @@ def transition_choices(run: Dict[str, Any]) -> List[Tuple[str, str]]:
     return choices
 
 
-def default_transition_uid(run: Dict[str, Any]) -> Optional[str]:
+def default_transition_uid(run: dict[str, Any]) -> str | None:
     values = list(run.get("transformations") or [])
     non_seed = [item for item in values if item.get("status") != "seed"]
     selected = non_seed[-1] if non_seed else (values[0] if values else None)
     return str(selected["uid"]) if selected else None
 
 
-def find_transformation(run: Dict[str, Any], uid: Optional[str]) -> Dict[str, Any]:
+def find_transformation(run: dict[str, Any], uid: str | None) -> dict[str, Any]:
     for item in run.get("transformations") or []:
         if str(item.get("uid")) == str(uid):
             return item
@@ -251,10 +251,14 @@ def find_transformation(run: Dict[str, Any], uid: Optional[str]) -> Dict[str, An
 
 def _status_badge(status: str) -> str:
     css = "ok" if status in {"seed", "success"} else "bad"
-    return f'<span class="ev-badge {css}">{_e(STATUS_LABELS.get(status, status))}</span>'
+    return (
+        f'<span class="ev-badge {css}">{_e(STATUS_LABELS.get(status, status))}</span>'
+    )
 
 
-def render_transition_header(item: Dict[str, Any], comparison: Optional[Dict[str, Any]]) -> str:
+def render_transition_header(
+    item: dict[str, Any], comparison: dict[str, Any] | None
+) -> str:
     if not item:
         return '<div class="ev-empty">请选择一条转变记录。</div>'
     delta_text, delta_css = _delta(
@@ -264,9 +268,7 @@ def render_transition_header(item: Dict[str, Any], comparison: Optional[Dict[str
     tags = "".join(f'<span class="ev-tag">{_e(value)}</span>' for value in sections)
     details = item.get("change_details") or []
     detail_list = (
-        "<ul>"
-        + "".join(f"<li>{_e(value)}</li>" for value in details)
-        + "</ul>"
+        "<ul>" + "".join(f"<li>{_e(value)}</li>" for value in details) + "</ul>"
         if details
         else '<p class="ev-muted">未记录 change_log.details。</p>'
     )
@@ -297,7 +299,7 @@ def render_transition_header(item: Dict[str, Any], comparison: Optional[Dict[str
     """
 
 
-def _tagged_tokens(tokens: Iterable[Tuple[str, str]]) -> str:
+def _tagged_tokens(tokens: Iterable[tuple[str, str]]) -> str:
     parts = []
     for status, token in tokens:
         css = {
@@ -309,14 +311,16 @@ def _tagged_tokens(tokens: Iterable[Tuple[str, str]]) -> str:
     return "".join(parts)
 
 
-def render_prompt_changes(comparison: Optional[Dict[str, Any]]) -> str:
+def render_prompt_changes(comparison: dict[str, Any] | None) -> str:
     if comparison is None:
         return '<div class="ev-empty">该记录没有可用的父子程序，无法生成 Prompt 对比。</div>'
     blocks = []
     for item in comparison.get("prompts") or []:
         status = item.get("status")
         changed = status != "unchanged"
-        old_tokens, new_tokens = word_diff(item.get("before", ""), item.get("after", ""))
+        old_tokens, new_tokens = word_diff(
+            item.get("before", ""), item.get("after", "")
+        )
         open_attr = " open" if changed else ""
         label = {
             "added": "新增",
@@ -358,7 +362,7 @@ def render_prompt_changes(comparison: Optional[Dict[str, Any]]) -> str:
     return "".join(blocks)
 
 
-def _field_description(value: Optional[Dict[str, Any]]) -> str:
+def _field_description(value: dict[str, Any] | None) -> str:
     if not value:
         return "—"
     annotation = value.get("annotation") or "未标注类型"
@@ -366,7 +370,7 @@ def _field_description(value: Optional[Dict[str, Any]]) -> str:
     return f"{annotation}" + (f" = {default}" if default else "")
 
 
-def render_schema_changes(comparison: Optional[Dict[str, Any]]) -> str:
+def render_schema_changes(comparison: dict[str, Any] | None) -> str:
     if comparison is None:
         return '<div class="ev-empty">没有可比较的 Schema。</div>'
     changes = comparison.get("schema") or []
@@ -390,7 +394,7 @@ def render_schema_changes(comparison: Optional[Dict[str, Any]]) -> str:
     )
 
 
-def _function_facts(item: Dict[str, Any]) -> str:
+def _function_facts(item: dict[str, Any]) -> str:
     facts = []
     if item.get("signature_before") != item.get("signature_after"):
         facts.append(
@@ -415,9 +419,7 @@ def _function_facts(item: Dict[str, Any]) -> str:
     return "".join(f"<li>{_e(value)}</li>" for value in facts)
 
 
-def _render_function_changes(
-    values: List[Dict[str, Any]], empty_message: str
-) -> str:
+def _render_function_changes(values: list[dict[str, Any]], empty_message: str) -> str:
     if not values:
         return f'<div class="ev-empty">{_e(empty_message)}</div>'
     blocks = []
@@ -427,7 +429,7 @@ def _render_function_changes(
             f"""
             <details class="ev-code-card" open>
               <summary><code>{_e(item.get("name"))}</code>
-                <span class="ev-change-state {item.get('status')}">{_e(labels.get(item.get("status"), item.get("status")))}</span>
+                <span class="ev-change-state {item.get("status")}">{_e(labels.get(item.get("status"), item.get("status")))}</span>
               </summary>
               <ul>{_function_facts(item)}</ul>
               <div class="ev-side-by-side ev-code-side">
@@ -440,7 +442,7 @@ def _render_function_changes(
     return "".join(blocks)
 
 
-def render_write_changes(comparison: Optional[Dict[str, Any]]) -> str:
+def render_write_changes(comparison: dict[str, Any] | None) -> str:
     if comparison is None:
         return '<div class="ev-empty">没有可比较的 write()。</div>'
     return _render_function_changes(
@@ -448,7 +450,7 @@ def render_write_changes(comparison: Optional[Dict[str, Any]]) -> str:
     )
 
 
-def render_read_changes(comparison: Optional[Dict[str, Any]]) -> str:
+def render_read_changes(comparison: dict[str, Any] | None) -> str:
     if comparison is None:
         return '<div class="ev-empty">没有可比较的 read()。</div>'
     return _render_function_changes(
@@ -456,7 +458,7 @@ def render_read_changes(comparison: Optional[Dict[str, Any]]) -> str:
     )
 
 
-def render_helper_changes(comparison: Optional[Dict[str, Any]]) -> str:
+def render_helper_changes(comparison: dict[str, Any] | None) -> str:
     if comparison is None:
         return '<div class="ev-empty">没有可比较的辅助代码。</div>'
     imports = comparison.get("imports") or {}
@@ -478,13 +480,11 @@ def render_helper_changes(comparison: Optional[Dict[str, Any]]) -> str:
     return import_html + helpers
 
 
-def render_parse_warnings(comparison: Optional[Dict[str, Any]]) -> str:
+def render_parse_warnings(comparison: dict[str, Any] | None) -> str:
     if not comparison:
         return ""
     errors = comparison.get("parse_errors") or {}
-    values = [
-        f"{side}: {message}" for side, message in errors.items() if message
-    ]
+    values = [f"{side}: {message}" for side, message in errors.items() if message]
     if not values:
         return ""
     return (
@@ -494,9 +494,7 @@ def render_parse_warnings(comparison: Optional[Dict[str, Any]]) -> str:
     )
 
 
-def render_diagnostics(
-    item: Dict[str, Any], trace: Dict[str, Any]
-) -> str:
+def render_diagnostics(item: dict[str, Any], trace: dict[str, Any]) -> str:
     if not item:
         return '<div class="ev-empty">请选择转变记录。</div>'
     quality = item.get("quality") or {}
@@ -509,7 +507,9 @@ def render_diagnostics(
         errors.insert(0, item["error"])
     unique_errors = list(dict.fromkeys(str(value) for value in errors if value))
     error_html = (
-        "<ul>" + "".join(f"<li><code>{_e(value)}</code></li>" for value in unique_errors) + "</ul>"
+        "<ul>"
+        + "".join(f"<li><code>{_e(value)}</code></li>" for value in unique_errors)
+        + "</ul>"
         if unique_errors
         else '<p class="ev-muted">未记录编译或质量门禁错误。</p>'
     )
@@ -553,7 +553,7 @@ def render_diagnostics(
     """
 
 
-def raw_record_json(item: Dict[str, Any]) -> str:
+def raw_record_json(item: dict[str, Any]) -> str:
     if not item:
         return "{}"
     return json.dumps(
@@ -567,8 +567,8 @@ def raw_record_json(item: Dict[str, Any]) -> str:
 
 
 def comparison_payload(
-    run: Dict[str, Any], before_id: Optional[str], after_id: Optional[str]
-) -> Optional[Dict[str, Any]]:
+    run: dict[str, Any], before_id: str | None, after_id: str | None
+) -> dict[str, Any] | None:
     programs = run.get("programs") or {}
     before = programs.get(before_id)
     after = programs.get(after_id)
@@ -583,10 +583,10 @@ def comparison_payload(
 
 
 def render_ab_header(
-    run: Dict[str, Any],
-    before_id: Optional[str],
-    after_id: Optional[str],
-    comparison: Optional[Dict[str, Any]],
+    run: dict[str, Any],
+    before_id: str | None,
+    after_id: str | None,
+    comparison: dict[str, Any] | None,
 ) -> str:
     if comparison is None:
         return '<div class="ev-empty">请选择两个具有 Python 文件的候选程序。</div>'

@@ -1,30 +1,28 @@
-#AgentReview/agentreview/database.py
+# AgentReview/agentreview/database.py
 """
 Datastore module for chat_arena.
 
 This module provides utilities for storing the messages and the game results into database.
 Currently, it supports Supabase.
 """
+
 import json
 import os
 import uuid
-from typing import List
 
 from .arena import Arena
 from .message import Message
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
+
 # Attempt importing Supabase
 try:
     import supabase
+except ImportError:
+    supabase = None
 
-    # Get the Supabase URL and secret key from environment variables
-    SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "")
-    assert SUPABASE_URL and SUPABASE_SECRET_KEY
-except Exception:
-    supabase_available = False
-else:
-    supabase_available = True
+supabase_available = bool(supabase and SUPABASE_URL and SUPABASE_SECRET_KEY)
 
 
 # Store the messages into the Supabase database
@@ -93,7 +91,7 @@ class SupabaseDB:
         self.client.table("Player").insert(player_rows).execute()
 
     # Save the messages
-    def save_messages(self, arena: Arena, messages: List[Message] = None):
+    def save_messages(self, arena: Arena, messages: list[Message] = None):
         if messages is None:
             messages = arena.environment.get_observation()
 
@@ -130,7 +128,7 @@ def log_arena(arena: Arena, database=None):
 
 
 # Log the messages into the Supabase database
-def log_messages(arena: Arena, messages: List[Message], database=None):
+def log_messages(arena: Arena, messages: list[Message], database=None):
     if database is None:
         pass
     else:

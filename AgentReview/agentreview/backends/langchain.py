@@ -1,8 +1,7 @@
-#AgentReview/agentreview/backends/langchain.py  
+# AgentReview/agentreview/backends/langchain.py
 
 import os
 import re
-from typing import List
 
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -55,9 +54,9 @@ class LangChainOpenAIChat(IntelligenceBackend):
             model: the model to use
             merge_other_agents_as_one_user: whether to merge messages from other agents as one user message
         """
-        assert (
-            is_langchain_openai_available
-        ), "langchain package is not installed or the API key is not set"
+        assert is_langchain_openai_available, (
+            "langchain package is not installed or the API key is not set"
+        )
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
@@ -86,7 +85,7 @@ class LangChainOpenAIChat(IntelligenceBackend):
         self,
         agent_name: str,
         role_desc: str,
-        history_messages: List[Message],
+        history_messages: list[Message],
         global_prompt: str = None,
         request_msg: Message = None,
         *args,
@@ -138,9 +137,9 @@ class LangChainOpenAIChat(IntelligenceBackend):
                 else:
                     if messages[-1]["role"] == "user":  # last message is from user
                         if self.merge_other_agent_as_user:
-                            messages[-1][
-                                "content"
-                            ] = f"{messages[-1]['content']}\n\n[{msg[0]}]: {msg[1]}"
+                            messages[-1]["content"] = (
+                                f"{messages[-1]['content']}\n\n[{msg[0]}]: {msg[1]}"
+                            )
                         else:
                             messages.append(
                                 {"role": "user", "content": f"[{msg[0]}]: {msg[1]}"}
@@ -161,9 +160,7 @@ class LangChainOpenAIChat(IntelligenceBackend):
 
         # Remove the agent name if the response starts with it
         response = re.sub(rf"^\s*\[.*]:", "", response).strip()  # noqa: F541
-        response = re.sub(
-            rf"^\s*{re.escape(agent_name)}\s*:", "", response
-        ).strip()  # noqa: F541
+        response = re.sub(rf"^\s*{re.escape(agent_name)}\s*:", "", response).strip()
 
         # Remove the tailing end of message token
         response = re.sub(rf"{END_OF_MESSAGE}$", "", response).strip()

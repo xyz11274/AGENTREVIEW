@@ -1,14 +1,14 @@
 """Canonical formatting for reviewer-memory episodes."""
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from agentreview.memory_library import infer_reviewer_dimension
 from agentreview.paper_context import DEFAULT_PAPER_CONTEXT_MAX_CHARS
 
 
 def build_reviewer_memory_episode_text(
-    record: Dict[str, Any], reviewer_name: str, review: str
+    record: dict[str, Any], reviewer_name: str, review: str
 ) -> str:
     """Format one self-generated experience through the canonical paper input."""
     dimension = infer_reviewer_dimension(reviewer_name) or "META"
@@ -27,17 +27,12 @@ def build_reviewer_memory_episode_text(
             year=visible.get("year") or "",
             reviewer_role=dimension,
             max_chars=int(
-                record.get("paper_context_max_chars")
-                or DEFAULT_PAPER_CONTEXT_MAX_CHARS
+                record.get("paper_context_max_chars") or DEFAULT_PAPER_CONTEXT_MAX_CHARS
             ),
             internal_provenance={"paper_md_path": str(paper_path.resolve())},
         ).text
     else:
-        canonical = (
-            f"paper_id: {paper_id}\n"
-            f"title: {title}\n"
-            f"reviewer_role: {dimension}"
-        )
+        canonical = f"paper_id: {paper_id}\ntitle: {title}\nreviewer_role: {dimension}"
     return (
         f"{canonical}\n\n"
         "SELF-GENERATED REVIEW EXPERIENCE\n"
