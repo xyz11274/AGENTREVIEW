@@ -1,5 +1,7 @@
 # Formal Memory Seed and Read-Mode Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen through Q527（2026-08-30）。本文冻结三个initial seed、Memory read modes、paper isolation、Review Memory budgets/ledger/context及Query Embedding的完整目标语义。首次formal必须实现的CORE_V1范围与后续HARDENING_V2恢复/HA范围见 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md`。旧seed code和旧run只作historical provenance，不得进入新formal authority。
 
 ## 1. New Formal Seed Versions

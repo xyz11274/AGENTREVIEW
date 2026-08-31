@@ -1,5 +1,7 @@
 # Final Suite Sealing and Official CoCo Authorization Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-30），Q142、Q145、Q150与Q269、Q274、Q280–Q527已接受。本文冻结suite-level controller、五role winner组装、Final Suite sealing、C/Human-reference访问授权、Official CoCo按授权部署与report-only边界。CORE_V1/HARDENING_V2实施阻塞范围见 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md`；任何Profile都不得在授权前访问C或Human/CoCo references。
 
 ## 1. Independent Suite-Level Authority

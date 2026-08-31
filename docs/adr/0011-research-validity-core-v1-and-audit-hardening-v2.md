@@ -1,59 +1,40 @@
-# ADR-0011: Research Validity Core v1 与 Audit Hardening v2 实施分层
+# ADR-0011：Research Validity Core v1 与 Audit Hardening v2 分层
 
-状态：accepted（2026-08-30）。本ADR记录Q526–Q527的实施层级决策；它不删除Q230–Q525的目标语义，而是决定哪些能力阻塞首次formal experiment。
+- 状态：Accepted
+- 日期：2026-08-30
+- 最近核验：2026-08-31
 
-## Context
+## 背景
 
-协议设计已经同时覆盖科研有效性、可重现decision lineage、故障恢复、高可用、report publication与post-terminal archive。若把全部多Journal mirror、generation replacement、cross-Journal recovery和publication HA都作为首次运行前置，工程量会重新成为实验吞吐与启动时间的主要瓶颈，违背最初缩短全流程、提升并发利用率的目标。
+研究有效性所需的最小闭包与生产级高可用能力具有不同交付节奏。把全部恢复、镜像、归档和发布治理设为首次实验前置，会扩大首轮实现面。
 
-另一方面，任何会改变数据可见性、Reviewer或Memory输入、Candidate生成、fitness、M★ search trajectory、winner、Final Suite、C/Human protected access或Official evaluation的简化都会直接损害科研有效性，不能以工程减负为理由推迟。
+## 决策
 
-## Decision
+### Core v1
 
-正式采用两个显式Implementation Profiles：
+首次正式实验以以下能力为闭包：
 
-### Research Validity Core v1
-
-首次formal experiment的hard-blocking profile。至少包含：
-
-- A/B/C与family/time split冻结，C untouched；
-- Human/OpenReview/CoCo在Evolution全程不可见；
-- reference-free role-specific evaluator、五角色rubric/applicability/fitness；
-- A区625条no-memory Canonical Full Review Corpus及deterministic Projection/Embedding/Review Memory；
-- 三种Memory seed、retrieval无隐藏LLM、post-retrieval Summarizer边界；
-- shared-pool M★、20 attempts、binary64 parent selection、Candidate/Program identity；
-- static/full-pool winner选择与Final Suite冻结；
-- raw-response-first必要provenance、Candidate independence和Candidate-visible input determinism；
-- Official前禁止C/Human，Protected Input preflight、Delivery Manifest与Actual Read Access Journal；
-- Official request/evaluation identity及结果只report、不反馈Evolution；
-- Protocol Root与benchmark-independent pre-birth validation；
-- 足以重现research decisions的最小append-only/single-writer Journal、normal-path Evidence与fail-stop。
-
-Core统一故障原则：
-
-> Normal path must be strict; complex infrastructure failure may fail-stop the current Formal Root instead of supporting in-place recovery.
-
-Core选择fail-stop不授权放松任何research/data-isolation semantics。
+- 冻结 Corpus、Projection、Fragment、Review Memory 与 Evidence；
+- 三枚 v2 seed、封闭 read mode、sandbox 和原子预算；
+- reference-free 两阶段 Evaluator 与 canonical fitness；
+- shared-pool attempts、Program/Candidate identity、global top-3 和 role winner；
+- 五 winner Final Suite 与冻结后 Protected Official Access；
+- 单进程共享 Qwen capacity、必要的 fail-stop、原子工件与最小 provenance；
+- G1、G2、G3 三层门禁。
 
 ### Audit Hardening v2
 
-Core科研闭环成功后实施。包括verified mirrors、activation barriers、Infrastructure generation replacement、Evidence terminalization、Root watchdog/mirror、复杂in-place recovery、availability-driven dependency closure/re-seal、Reporting ingress/Hold HA、Reporting Journal recovery、report replacement、formal publication promotion/replicas、post-terminal archive与external delivery audit。
+后续强化层包含：
 
-V2不得改变model requests、Memory delivered bytes、RNG、Candidate births、fitness、parent selection、winner、protected Official inputs或Official evaluation。若发生这些变化，必须形成新的Research Protocol Semantic Identity，而不能继续称为纯hardening。
+- journal mirror、复杂 recovery epoch 和 infrastructure generation replacement；
+- root watchdog、外部归档、外部交付和多副本审计；
+- Evidence terminalization、dependency re-seal 和 reporting ingress 恢复；
+- publication candidate、promotion 与长期保存治理。
 
-Q475/Q510的完整Formal Publication transaction、replica与archive硬要求仅适用于HARDENING_V2。CORE_V1成功至少要求immutable Official result manifest与deterministic report/result artifact合法commit。
+## 结果
 
-## Performance Gate
+Core v1 以研究可解释性和正式工件闭包为交付目标。Hardening v2 以长时间运行韧性与发布治理为交付目标。协议索引为每项语义标记当前实现层级。
 
-CORE_V1在formal前通过smoke/microbenchmark实测并冻结total wall-clock、storage、critical service capacity及timeout/read/write budgets。保留no-audit/minimal-instrumentation baseline作工程比较，但它不是formal result。Core超预算时只优化I/O batching、serializer、Journal、cache、scheduler和并发实现，不关闭Core semantics。
+## 替代方案
 
-Audit Hardening v2使用独立性能Profile，其未完成或性能未达标不阻塞首次CORE_V1 formal experiment。
-
-实施顺序固定为：Core Protocol Root → deterministic/unit/synthetic gates → Core smoke → Core性能预算冻结 → Core formal experiment → Audit Hardening v2。
-
-## Consequences
-
-- 已接受的Hardening条款保留并显式标记，不被静默遗忘。
-- CORE_V1实现范围必须由Profile Registry/manifest机器化，而不是靠文档阅读临时判断。
-- 同一Formal Root不得在运行中切换Profile或启用未在Protocol Root中冻结的部分Hardening能力。
-- V2实现不得读取CORE_V1、C/Human或Official结果来修改research semantics。
+单层交付模型会混合研究门禁与高可用目标。当前分层让首次正式实验拥有明确完成定义，并为后续强化保留稳定接口。

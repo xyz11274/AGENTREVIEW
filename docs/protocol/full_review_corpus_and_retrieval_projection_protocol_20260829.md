@@ -1,5 +1,7 @@
 # Full Review Corpus and Retrieval Projection Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen through Q392（2026-08-30）。本文冻结A区625条no-memory Full Review Records的独立formal build stage、strict record schema、2,875个primary subdimension projections、超长section的确定性fragmentation、三级内容identity、五个role-specific deterministic exact-flat vector indices、统一只读Review Memory API及atomic预算、transactional RetrievedMemoryLedger、immutable RetrievalResultManifest、strict CanonicalReviewerMemoryContext，以及“retrieval无LLM、显式Summarizer仅作post-retrieval condensation”的边界。Query Embedding另冻结occurrence-level logical request、batch/item raw-response-first transport transaction、all-or-none validation、self-contained batch-level atomic qemb生效、non-authoritative dedup observation、pure-content batch/independent execution commit、bounded materialization-attempt state machine/cutoff-recovery ordering/paused-owner recovery、actual-dispatch accounting、role-local idempotent workflow visibility、content-level `qemb_`、durable enqueue、独立Scheduler Journal、committed global service epoch/request-relative bounded recovery、deterministic cursor/recovery reassembly、sealed-role scheduler admission、suite-level one-shot compatibility lifecycle、role-local third-epoch failure scope、non-Candidate padding、closed terminal disposition、paper-terminal cache关闭和canonical vector byte-stability；三个v2 seed与read-mode完整contract见`formal_memory_seed_and_read_mode_protocol_20260829.md`。
 
 ## 1. Corpus Cardinality and Scope

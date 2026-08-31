@@ -1,5 +1,7 @@
 # Shared Qwen Scheduler and Parallel Pipeline Protocol
 
+> 本文保存语义合同；当前代码、生产接线与 G2 物化状态以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-30），Q146–Q155、Q167–Q174与Q230–Q392已接受。本文冻结single-Qwen mixed-workload capacity gate、global sequence budget、role round-robin/FIFO scheduler、logical request/transaction、paper DAG/active window、failure cancellation、Query Embedding occurrence/batch-item raw-response/all-or-none-validation/self-contained batch-results atomic commit/non-authoritative dedup observation/pure-content-vs-independent-commit identity/bounded materialization-attempt state machine/cutoff-recovered order/paused-owner recovery/actual-dispatch accounting/role-local idempotent workflow visibility/deterministic cursor/sealed-role scheduler admission/suite-level one-shot compatibility lifecycle/durable-enqueue/cache-resolution/closed-terminal/cache生命周期/独立scheduler/shared-failure/non-Candidate-padding/strict byte-stability gate与按授权部署CoCo/Embedding的边界；request事务完整规则见 `qwen_request_transaction_and_recovery_protocol_20260829.md`。Concrete mixed-workload assets、selected capacities/windows、scheduler implementation与gate results尚待物化。
 
 ## 1. One Shared Qwen Sequence Budget

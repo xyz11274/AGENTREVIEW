@@ -1,5 +1,7 @@
 # Shared-Pool M★ Attempt and Failure Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen contract（2026-08-29），Q116–Q140 已接受。本文取代此前per-lineage equal budget与lineage champion条款；global top-3 finalist完整规则见 `global_top3_finalist_selection_protocol_20260829.md`，canonical fitness/Program/Candidate identity见 `canonical_fitness_program_and_candidate_identity_protocol_20260829.md`，authoritative journal/recovery见 `formal_controller_journal_and_recovery_protocol_20260829.md`。
 
 ## 1. Shared Initial Pool and Global Search

@@ -1,5 +1,7 @@
 # Eight RTX 4090 Resource Topology Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-29），Q156–Q165已接受。本文冻结新formal在8×24GB RTX4090上的TP、GPU/NUMA assignment、context materialization、memory reserve、prefix cache、exclusive watchdog、phase restart与resource transition journal；具体 `max-model-len` 数值、capacity/window结果、process allowlist/cpuset与service lifecycle scripts尚待物化。本文不授权停止、迁移或复用当前运行服务。
 
 ## 1. Verified Hardware Topology

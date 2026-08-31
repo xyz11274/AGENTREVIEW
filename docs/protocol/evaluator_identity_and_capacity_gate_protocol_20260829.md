@@ -1,5 +1,7 @@
 # Evaluator Identity and Capacity Gate Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen contract（2026-08-29），Q101–Q105、Q146–Q154与Q156–Q165已接受。本文冻结model independence、semantic/runtime identity、identical retry、shared-Qwen mixed-workload capacity selection、8×RTX4090 runtime与formal model preflight；完整scheduler/DAG见 `shared_qwen_scheduler_and_parallel_pipeline_protocol_20260829.md`，resource topology见 `eight_rtx4090_resource_topology_protocol_20260829.md`。当前concrete manifests、artifact hashes与gate results尚未生成。
 
 ## 1. Model Independence Is Not Identity Equality
@@ -115,7 +117,7 @@ Served name、immutable revision、artifact SHA、semantic SHA 或 runtime SHA �
 
 截至本文创建时，旧 active `resume.cmd` 记录了 `qwen3.8-27b`、model source `/data/xyj/models/Qwen3.8-27B`、revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`、vLLM `0.27.1`、LLM temperature `0.0`、max tokens `8192` 与 retry max tokens `16384`。旧 server command 文档记录 TP=4、max-model-len=262144、max-num-seqs=1、gpu-memory-utilization=0.95、reasoning-parser=qwen3 与 prefix caching。
 
-这些记录不是新 formal Evaluator manifest，也不证明实际 artifact、tokenizer/template、dtype/quantization 或 runtime identity。`docs/LOCAL_QWEN_OPENAI_ALIGNMENT.md` 中存在旧 `qwen3.8-27b-fp8` served-name 示例，与 active command 的 `qwen3.8-27b` 不一致；新 preflight 必须通过 artifact manifests 消除该歧义，不能继承旧名称假设。
+这些记录属于历史运行信息。历史工件同时出现 `qwen3.8-27b-fp8` 与 `qwen3.8-27b` served name；新 preflight 通过 artifact manifest 明确 actual artifact、tokenizer/template、dtype/quantization、served name 与 runtime identity。当前差异集中记录在 [`STATUS.md`](../STATUS.md)。
 
 ## 7. Pending Materialization
 

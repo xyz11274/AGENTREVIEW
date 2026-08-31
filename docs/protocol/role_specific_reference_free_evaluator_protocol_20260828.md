@@ -1,5 +1,7 @@
 # Role-Specific Reference-Free Evaluator Protocol
 
+> 本文保持 draft 语义合同；当前代码与 G2 物化状态以本目录 [README](README.md) 为准。
+
 状态：draft（更新于 2026-08-29）。通用信息边界、聚合公式、Candidate Independence、两阶段 applicability、`0–4 + N/A` 外壳、smoke gate、23 个 subdimension anchors、B-local eligibility/denominator、canonical record/parser/judgment/evidence-support、machine-registry/gate、Evaluator Identity/capacity-gate 与 Frozen External Evidence Pool materialization/API/budget/state-isolation contract 已接受；Evaluator 的具体 manifests/gate results、role-specific threshold 具体整数、生成后的 machine registry/schema/parser artifacts，以及 Evidence Pool 的实际 records/manifests/budget整数尚未冻结，禁止据此启动 formal run。
 
 Shared-pool M★ attempt/failure semantics 见 `docs/protocol/shared_pool_mstar_attempt_and_failure_protocol_20260829.md`。三个memory方法是mandatory initial seeds，共享global candidate pool、softmax parent selection与每role 20个attempt slots；不再要求per-lineage equal evolution budget或lineage champion。两层fitness、canonical Decimal/binary64边界及Program/Candidate identity见 `docs/protocol/canonical_fitness_program_and_candidate_identity_protocol_20260829.md`。

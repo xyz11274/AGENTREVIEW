@@ -1,8 +1,10 @@
 # ORIG Subdimension Scoring Anchors
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen（2026-08-28），第 4/5 轮 Q61–Q65 已接受。本文的 “scoring anchors” 是 evaluator rubric，不是论文 Source Anchors。
 
-权威 rubric：`AgentReview/REVIEW_Request.md` 第 52–76 行，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`。通用协议继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
+Reviewer question taxonomy 以 `AgentReview/REVIEW_Request.md` 第 52–76 行为冻结基础，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`；本文件是详细 evaluator scoring anchors 的权威。通用协议继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
 
 Evaluator 评分对象是 **Candidate Review 对论文 originality 的审查表现**，不是直接给论文的新颖程度打分。Candidate 可以因准确说明某项贡献并不新而获得高分，也可以因准确识别有证据支持的原创性而获得高分。不得按“新颖点数量”、正面评价数量或 criticism 数量计分。
 

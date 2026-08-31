@@ -1,5 +1,7 @@
 # Global Top-3 Finalist Selection Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen contract（2026-08-29），Q121–Q140 已接受。本文冻结shared-pool unique-Program top-3、ordering、failure与winner规则；Program/Candidate machine artifacts与gate vectors仍待物化。完整identity和数值边界见 `canonical_fitness_program_and_candidate_identity_protocol_20260829.md`，journal authority见 `formal_controller_journal_and_recovery_protocol_20260829.md`。
 
 ## 1. Fixed Global Top-3

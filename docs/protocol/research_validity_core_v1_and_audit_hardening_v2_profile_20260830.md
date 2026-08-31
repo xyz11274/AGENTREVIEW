@@ -1,5 +1,7 @@
 # Research Validity Core v1 and Audit Hardening v2 Profile Amendment
 
+> 本文保存实施分层合同；当前代码与工件状态以本目录 [README](README.md) 为准。
+
 状态：frozen amendment（2026-08-30），Q514–Q527已接受。本文件决定实施阻塞范围；不删除或改写其他协议中的目标语义。发生冲突时，research-observable语义仍以原协议为准，而“是否阻塞首次formal run”以本Profile Amendment为准。
 
 ## 1. Profile Registry

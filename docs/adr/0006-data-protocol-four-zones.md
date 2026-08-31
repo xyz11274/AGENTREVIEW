@@ -1,38 +1,28 @@
-# 实验数据协议：paper-level temporal split + 四区隔离
+# ADR-0006：论文族级四区数据协议
 
-状态：2026-08-28 由 ADR-0010 部分取代。本文中“B 阶段 human reference 仅 evaluator 可见”“B-suite Global CoCo Suite Selection”以及把当前主实验 Official CoCo 放在 D 的条款，不再适用于当前主线；Evolution 必须完全 reference-free，Official CoCo 只在 Final Review Suite 完全冻结后于 untouched C 运行。B-suite 阶段取消，原 B-suite papers/families 保持 reserved，不并入 B-local 或 C。
+- 状态：Accepted
+- 日期：2026-08-18
+- 最近核验：2026-08-31
 
-状态：2026-08-27 由 ADR-0009 进一步细化 B zone：新主线将 B 拆为 paper/family 零重叠的 `B-local` 与 `B-suite`。四区隔离、temporal 约束和 Human Reference Boundary 仍完全有效。
+## 背景
 
-状态：2026-08-18 修订。此前“CoCo 覆盖的 venue-year 全量 `benchmark_reserved`”规则已被本 ADR 明确取代，旧 manifest 只允许分析历史 run，禁止进入新的 formal pipeline。
+Corpus 构建、Memory Program 进化和 Official 评价需要清晰的数据职责。论文修订版、标题近似项和同族记录必须落入同一区域。
 
-CoCoReviewBench 的 3900 条 submission records 是只读 benchmark source pool，不等于 3900 个独立研究工作。正式单位是 `1 paper family = 1 representative target`，再通过 frozen manifest 一次性划为四个 family-level 区域：
+## 决策
 
-- A. Historical / Experience：Candidate 按冻结顺序从 empty Memory 开始，自产 Review / trajectory / evidence，审完 Paper_i 后才写 Memory。
-- B. Evolution Validation：只用于 fitness、selection、mutation、promotion；human reference 仅 evaluator 可见；每篇 B 评估前恢复同一 A 状态，B 不写 Historical Memory。
-- C. Effectiveness Holdout：Program 冻结后的首次独立 development measurement，不反馈当前 Program。
-- D. Held-out CoCo Benchmark Test：从未进入 A/B/C，Program 与实验配置完全冻结后才通过 Benchmark Adapter 运行。
+1. 先按 paper family 聚合，再按时间规则形成 A、B、C、D 四区。
+2. A 是 historical source：Core v1 从中选择 125 篇，并按五角色构建 625 条 no-memory Full Review。
+3. B 是 evolution validation：每个角色从 B-local view 获得 static-25、rotating schedule 和 full pool。
+4. C 是 protected Official：Final Review Suite 冻结后才授权访问 C 与对应 Human/CoCo 参照。
+5. D 是 legacy benchmark reserved：它服务旧 CoCo 路径，并保持与 Core v1 Official 输入分离。
+6. 每个 split 物化 paper IDs、family IDs、生成规则、计数和内容校验值。
 
-当前 v2 规则同时规范化 OpenReview API v2 的 title 与 paperhash。每族 representative 统一按 accepted/published 状态、venue year、PDF 显式版本号、稳定 paper ID/source hash 排序；禁止读取 benchmark score、review 或 metareview，也禁止单篇特判。只读审计得到 3900 records → 3889 families/targets，A/B/C/D=2391/299/300/899，共排除 11 条 duplicate submissions。同一 family 只出现一次；paper ID、normalized title、paper family 的 cross-zone overlap 必须为 0，并要求 `max(A/B/C paper_review_cutoff) <= min(D paper_review_cutoff)`。
+当前 v2 zone 数据的实体计数为 A=2391、B=299、C=300、D=899。配置与 manifest 的当前完成度记录在系统状态文档。
 
-源数据没有精确 submission/review dates，因此当前 cutoff 明确采用保守 year-level fallback：每篇论文的 `paper_review_cutoff = venue year 前一年的 12-31`。未来补齐精确日期时必须创建新的 versioned manifest，不得原地改写 frozen v2。
+## 结果
 
-Semantic Scholar 同样受 cutoff 约束。每个 target 的 frozen entry 必须记录 target identity、pool version、retrieval method/version、paper_review_cutoff、top_k/config、result SHA256；publication date/year 缺失或晚于 cutoff 的结果必须拒绝。formal mode 缺 provenance、缺 target、SHA 不符或发现未来论文时 fail fast。S2 不默认注入，Candidate 只能选择是否读取当前 paper 对应的同一 frozen pool，禁止 live query 和跨 paper 读取。
+Corpus、Evolution 和 Official 的数据职责形成单向流程。Family-level 分组约束控制论文版本泄漏，受保护访问 seam 控制参照进入时点。
 
-Human Reference Boundary 对四区均不变：Candidate 只看论文和 candidate-visible metadata；human review、gold、taxonomy、judge rationale/full trace 永远留在 evaluator-only 边界。Reflector 只接收 scalar fitness、安全数值指标、预定义非 gold error category 与资源统计。
+## 替代方案
 
-新主线的 B zone 内部协议为：
-
-- `B-local` 冻结一个大于单次 evaluation 用量的 paper/family pool。`static=25` 是每次 local evaluation 的固定 static set 规模，`rotating_size=5` 是从其余 frozen rotating pool 中按预注册规则选取的单次规模；二者都不代表 B-local 总容量。
-- `B-suite` 仅用于五条 Specialist Evolution 完成后的 Global CoCo Suite Selection。
-- `B-local` 与 `B-suite` 在 paper ID 和 paper family 层面均零重叠；两者的 manifest 和抽样规则在运行前冻结。
-- C Holdout 不参与 Specialist Evolution、Suite Selection 或任何配置选择，保持完全 untouched。
-
-Formal 启动顺序固定为：Asset Manifest SHA/version 校验 → split v2 的 A/B/C/D paper/title/family + temporal + v1/v2 comparison audit → A/B 数据成员与 canonical preprocessing 校验 → Frozen S2 v2 future-leak + query-integrity audit → PASS 后才允许 Evolution。split v1 / S2 v1 因 `query_title_serialization_contamination` 明确拒绝。D 的正式路径固定为 `Frozen Reviewer → Review → Benchmark Adapter → CoCo evaluator`。
-
-## Consequences
-
-- 旧 `benchmark_reserved_venue_year_v1.json` 与 `asset_manifest_v1.json` 标记为 superseded，formal gate 不兼容。
-- CoCo 论文进入 A/B/C 后永久排除 D；看过 C/D 结果后不得回改当前 Program 并仍称其 untouched。
-- 3900 仅是 submission source pool；family dedup 后当前 D 为 899 targets。
-- 当前 formal blocker 由 Formal Readiness Audit 按实际 Asset Manifest 报告；不得用未完成/未审计的 S2 work records 解除 blocker。
+逐记录随机切分会把同族版本分散到多个区域。把 D 作为 Core Official 会混合 legacy benchmark 口径。当前四区职责为两条运行路径提供明确隔离。

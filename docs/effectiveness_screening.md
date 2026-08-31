@@ -1,171 +1,51 @@
-# MemoryProgram effectiveness screening
+# Effectiveness screening 接口状态
 
-This experiment is a **CoCo-style proxy screening**, not a reproduction of the
-official CoCoReviewBench benchmark. `Correctness_proxy` and
-`CoCo_Average_proxy` use `train_clean.jsonl` category references, which do not
-contain CoCoReviewBench's released `opinion_groups`, `conflicts_validation`, or
-`rebuttal_validation` correctness annotations.
+状态：保留接口，等待配置与身份统一。
 
-The frozen design is:
+运行路径：legacy direct review。
 
-- 20 pre-registered papers sampled only from frozen C;
-- 20 Historical papers sampled only from frozen A;
-- `no_memory`, lineage-specific `seed`, and lineage-specific `evolved`;
-- two unconditional replicates;
-- 120 complete AgentReview outputs;
-- no target writeback;
-- the five specialist reviews form the primary review package;
-- META is evaluated separately;
-- POL is byte-identical between seed and evolved and is not interpreted as an
-  evolution gain.
+Core v1 关系：独立实验 workflow。
 
-The single source of configuration is
-`configs/effectiveness_screening_v2.json`.
+## 设计链
 
-At any point, inspect readiness without printing credential values:
+~~~text
+frozen selection
+  → related-work retrieval
+  → context bundles
+  → Program/history freeze
+  → generation matrix
+  → proxy classification and judging
+  → blind pairs
+  → summary gate
+~~~
 
-```bash
-/data0/xyj/miniconda3/envs/env_shengao/bin/python \
-  -m effectiveness_screening.preflight \
-  --config configs/effectiveness_screening_v2.json
-```
+模块：
 
-## Temporal data preparation
+- prepare.py：selection、related work 与 bundle；
+- memory_cache.py：Program 与 history/cache 冻结；
+- run_matrix.py：设计冻结、命令矩阵与 run audit；
+- evaluate_proxy.py：proxy classify、judge 与 blind pairs；
+- summarize.py：指标汇总与 screening gate；
+- preflight.py：只读前置检查。
 
-After preparation, `data/effectiveness_screening_v2/selection_audit.json`
-records source checksums, sampling seeds, selected-set checksums, A/C membership
-and the four-zone temporal audit. The old v1 outputs are immutable legacy data
-and are not inputs to this design.
+## 当前阻塞
 
-The frozen source manifest already proves A/B/C/D paper ID, normalized title and
-paper-family overlap are zero. Sampling additionally verifies the chosen A and C
-subsets retain that isolation.
+1. configs/effectiveness_screening_v2.json 指向缺失的 v1 temporal manifest。
+2. Direct-review generation 默认输出五 specialist；proxy judge 读取 Final Meta-Reviewer。
+3. 三个 lineage 展开成七个实际 arm label；分类路径仍聚合到 seed/evolved，lineage 身份发生覆盖。
+4. Blind pair 与 summary 使用 seed、seed_experience 和 expanded label 三套命名。
 
-## Preparation and execution order
+完成条件是统一 temporal v2 manifest、META topology、arm identity、输出目录和 summary grouping，并重新 freeze design。
 
-Run commands from the AgentReview repository root with:
+## 当前诊断
 
-```bash
+以下命令复现 temporal manifest 阻塞：
+
+~~~bash
+cd /data0/xyj/shengao/AgentReview_0827/AgentReview
 PY=/data0/xyj/miniconda3/envs/env_shengao/bin/python
-CFG=configs/effectiveness_screening_v2.json
-```
+$PY -m effectiveness_screening.preflight \
+  --config configs/effectiveness_screening_v2.json
+~~~
 
-The paper IDs have already been sampled. Do not rerun `select` after the
-experiment is preregistered.
-
-Freeze program snapshots:
-
-```bash
-$PY -m effectiveness_screening.memory_cache freeze-programs --config "$CFG"
-```
-
-Lock the selected IDs, proxy references, programs, metrics, thresholds, config,
-CoCo commit, official judge prompt, and implementation hashes before any
-generation:
-
-```bash
-$PY -m effectiveness_screening.run_matrix freeze-design --config "$CFG"
-```
-
-Freeze related work once. Failed HTTP responses are rejected and are never
-accepted as empty retrievals:
-
-```bash
-export S2_API_KEY=...
-$PY -m effectiveness_screening.prepare retrieve-related --config "$CFG"
-$PY -m effectiveness_screening.prepare build-bundles --config "$CFG"
-```
-
-Print and run the one-time `no_memory` history-generation command:
-
-```bash
-$PY -m effectiveness_screening.run_matrix history-command --config "$CFG"
-```
-
-After all 20 historical reviews complete, freeze the shared raw library:
-
-```bash
-$PY -m effectiveness_screening.memory_cache freeze-memory-library \
-  --config "$CFG" \
-  --source-output-dir data/effectiveness_screening_v2/history_generation_no_memory
-```
-
-Compile the two program-specific KnowledgeItem caches offline:
-
-```bash
-$PY -m effectiveness_screening.memory_cache compile-cache \
-  --config "$CFG" --arm seed_experience
-$PY -m effectiveness_screening.memory_cache compile-cache \
-  --config "$CFG" --arm evolved
-```
-
-Write the immutable 120-cell matrix and run its six recorded batch commands:
-
-```bash
-$PY -m effectiveness_screening.run_matrix matrix --config "$CFG"
-```
-
-Every target command reads the same checksummed paper bundle, creates fresh
-MemoryProgram sandboxes, loads only the relevant read-only KnowledgeItem cache,
-and passes `--disable_memory_writeback`.
-
-Audit all generated targets:
-
-```bash
-$PY -m effectiveness_screening.run_matrix audit-runs --config "$CFG"
-```
-
-## CoCo-style proxy evaluation
-
-The official split and classify models are pinned in the config:
-
-- `hexuandeng/ReviewSplit@e405b49e472d1c4ddbf226eae7aded032a2d5c8a`
-- `hexuandeng/ReviewClassify@8607b97b893bf64be0de848609863093c7ecc095`
-
-Download each exact revision and serve it under the official model names and
-ports. Do not use `main` without the pinned revision:
-
-```bash
-hf download hexuandeng/ReviewSplit \
-  --revision e405b49e472d1c4ddbf226eae7aded032a2d5c8a \
-  --local-dir "$COCOREVIEWBENCH_ROOT/model/split_model"
-
-hf download hexuandeng/ReviewClassify \
-  --revision 8607b97b893bf64be0de848609863093c7ecc095 \
-  --local-dir "$COCOREVIEWBENCH_ROOT/model/classify_model"
-```
-
-Start the official vLLM services on ports 13099 and 13098, then run:
-
-```bash
-$PY -m effectiveness_screening.evaluate_proxy classify --config "$CFG"
-$PY -m effectiveness_screening.evaluate_proxy judge --config "$CFG"
-$PY -m effectiveness_screening.evaluate_proxy build-blind-pairs --config "$CFG"
-```
-
-The primary judge loads
-`CoCoReviewBench/src/evaluation/prompt/judge.txt` directly and records its SHA.
-It uses `gpt-5-mini` with temperature 0. The outputs remain explicitly marked
-as proxy because the human correctness references are not official enriched
-CoCoReviewBench references.
-
-Have an independent evaluator fill
-`data/effectiveness_screening_v2/evaluation/blind_judge_results.jsonl` with:
-
-```json
-{"pair_id": "...", "winner": "A"}
-```
-
-`winner` must be `A`, `B`, or `tie`. The independent evaluator receives only
-`blind_pairs.jsonl`, never the sealed key, arm labels, MSTAR fitness, or primary
-judge results.
-
-Finally:
-
-```bash
-$PY -m effectiveness_screening.summarize --config "$CFG"
-```
-
-The screening gate determines only whether to consider the separately frozen
-900-paper D manifest drawn from the 3,900-paper CoCo source pool. A failed gate requires component
-diagnosis and is not a conclusion that evolution is ineffective.
+当前配置在读取缺失的 v1 manifest 时抛出 FileNotFoundError，因此不会生成完整诊断 JSON。把配置统一到已物化的 temporal v2 manifest 后，再把该命令用作只读 preflight。正式矩阵在上述四项形成同一冻结身份后启动。该实验的 proxy 指标保持与 Official CoCo 结果分开报告。

@@ -1,5 +1,7 @@
 # Machine Registry and Formal Gate Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen contract（2026-08-28），Q96–Q100 已接受。本文冻结 registry namespace、允许的构建信息、fallback policy、entity merge、versioning 与 formal gate；具体 registry/schema/parser artifacts 尚待生成。
 
 ## 1. Fully Qualified Identity

@@ -1,5 +1,7 @@
 # Formal Controller Journal and Recovery Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-30），Q136–Q145、Q148–Q149与Q230–Q527已接受。本文冻结domain-separated identity、per-role append-only Controller Journal、durable event commit、resume/recovery、Program dependency closure、attempt terminal disposition、parallel-paper deterministic aggregate及完整目标态audit/recovery语义。首次formal run的阻塞范围由 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md` 决定：CORE_V1必须物化足以重现research decisions的最小append-only/single-writer Journal与fail-stop；mirror、generation replacement、复杂in-place recovery、Reporting/Publication/Archive HA属于HARDENING_V2，不阻塞首次CORE_V1。shared-Qwen DAG/scheduler见 `shared_qwen_scheduler_and_parallel_pipeline_protocol_20260829.md`，suite sealing与Official CoCo授权见 `final_suite_sealing_and_official_coco_authorization_protocol_20260829.md`。
 
 ## 1. Domain-Separated Identities

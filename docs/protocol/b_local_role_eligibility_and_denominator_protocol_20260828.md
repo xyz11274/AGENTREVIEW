@@ -1,5 +1,7 @@
 # B-local Role Eligibility and Denominator Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen（2026-08-28），Q71–Q75 已接受。本文冻结 eligibility、role-specific membership、threshold enforcement、applicability consistency 与 denominator audit 规则；五个 role 的具体整数、selection seed/hash 和生成后的 manifests 仍须在 formal run 前预注册。
 
 ## 1. Shared Full Pool and Role-Specific Membership

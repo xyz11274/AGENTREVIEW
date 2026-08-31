@@ -1,5 +1,7 @@
 # Canonical Fitness, Program, and Candidate Identity Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-30），Q126–Q140与Q230–Q527已接受。两层fitness、Canonical Decimal、M★ binary64 softmax、Program/Candidate identity与research-observable Query Embedding bindings属于CORE_V1；完整audit/recovery identities继续保留为HARDENING_V2目标。具体Profile见 `research_validity_core_v1_and_audit_hardening_v2_profile_20260830.md`。CORE_V1 canonical manifests/schema/gate未物化前不得启动formal run；HARDENING_V2未完成不阻塞首次Core。
 
 ## 1. Two-Level Fitness Aggregation

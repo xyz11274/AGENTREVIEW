@@ -1,5 +1,7 @@
 # Qwen Request Transaction and Recovery Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen semantic contract（2026-08-29），Q166–Q173及Q186–Q187已接受。本文冻结request-level events、raw-response-first commit、late-response arbitration、orthogonal semantic/transport retry identity、backend restart、request-class timeout、Qwen queue backpressure、endpoint isolation及LLM Summarizer request/result语义；concrete schemas、timeout table与gate vectors尚待物化。
 
 ## 1. Request-Level Lifecycle

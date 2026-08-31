@@ -1,8 +1,10 @@
 # CLAR Subdimension Scoring Anchors
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen（2026-08-28），第 2/5 轮 Q51–Q55 已接受。本文的 “scoring anchors” 是 evaluator rubric，不是论文 Source Anchors。
 
-权威 rubric：`AgentReview/REVIEW_Request.md` 第 22–34 行，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`。通用协议继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
+Reviewer question taxonomy 以 `AgentReview/REVIEW_Request.md` 第 22–34 行为冻结基础，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`；本文件是详细 evaluator scoring anchors 的权威。通用协议继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
 
 Evaluator 评分对象是 **Candidate Review 对论文清晰度的审查表现**，不是直接给论文写作质量打分。高分既可以准确肯定 material clarity strengths，也可以准确指出 material clarity weaknesses；当 weakness 存在时，grounded、可执行的改进建议是高分条件之一，但清晰论文不因“没有可批评内容”而失分。
 

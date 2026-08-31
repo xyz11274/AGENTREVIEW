@@ -1,5 +1,7 @@
 # Frozen External Evidence Pool Materialization Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen contract（2026-08-29），Q106–Q115、Q150与Q155已接受。本文冻结v1 evidence granularity、raw/projection identity、read-only API、cutoff validation、token-budget preflight、Candidate budget/error semantics、delivery framing与state isolation；实际records、manifests、预算整数与API artifacts尚待生成。
 
 ## 1. Set-Level and Item-Level Identity

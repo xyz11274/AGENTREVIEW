@@ -1,47 +1,27 @@
-# M★ seed baselines
+# Memory Program seeds
 
-The three population seeds implement distinct memory bottlenecks so their
-effects remain interpretable during evolution.
+本目录同时保存 Core v1 seed 与 legacy M★ seed。文件名中的版本号决定协议归属。
 
-## Vector search
+## Core v1
 
-`vector_search.py` performs lossless, chunked writes followed by selective
-dense-vector retrieval. It is the non-parametric retrieval baseline, following
-the retrieval-augmented generation design in Lewis et al.,
-[Retrieval-Augmented Generation for Knowledge-Intensive NLP
-Tasks](https://arxiv.org/abs/2005.11401).
+core_formal.core_v1_seed_paths() 按固定顺序加载：
 
-## LLM summarizer
+1. vector_search_v2.py
+2. llm_summarizer_v2.py
+3. experience_learner_v2.py
 
-`llm_summarizer.py` performs lossless writes followed by lossy,
-query-focused compression at read time. It retains the original episodes,
-builds a bounded and balanced view across them, and asks the LLM for a concise
-summary conditioned on the current query. This is the query-focused
-summarization baseline, related to Zhang et al.,
-[Beyond Relevant Documents: A Knowledge-Intensive Approach for Query-Focused
-Summarization using Large Language
-Models](https://arxiv.org/abs/2408.10357).
+三份 v2 Program 声明 research-validity-core-v1 协议和一个封闭 memory_read_mode，只返回 retrieval plan。Host 负责 Review Memory 检索、预算、ledger 和可选的一次检索后摘要。
 
-The write-side `KnowledgeItem` contains routing metadata only. The raw episode
-is already supplied separately to `KnowledgeBase.write`, so asking the model to
-copy it into a generated JSON field would add latency without adding memory.
-At read time, each stored episode receives an equal excerpt budget with both
-its beginning and ending represented. The aggregate history is capped at
-12,000 characters and the returned summary at 1,500 characters.
+| Seed | Read mode | 行为 |
+|---|---|---|
+| vector_search_v2.py | vector search | 生成有界查询并读取匹配片段 |
+| llm_summarizer_v2.py | post-retrieval LLM summary | 先读取片段，再由 Host 执行一次有界摘要 |
+| experience_learner_v2.py | structured experience | 读取确定性结构化经验视图 |
 
-## Experience learner
+它们共同进入每个角色的 shared candidate pool；seed 名称只表达初始读取策略。
 
-`experience_learner.py` performs lossy abstraction at write time and structured
-recall at read time. It stores reusable lessons and concrete facts rather than
-the original episode. This is the experiential-learning baseline, following
-the natural-language experience abstractions used by Zhao et al.,
-[ExpeL: LLM Agents Are Experiential
-Learners](https://arxiv.org/abs/2308.10144), and the verbal episodic memory in
-Shinn et al., [Reflexion: Language Agents with Verbal Reinforcement
-Learning](https://proceedings.neurips.cc/paper_files/paper/2023/hash/1b44b878bb782e6954cd888628510e90-Abstract-Conference.html).
+## Legacy M★
 
-Together the baselines compare:
+vector_search.py、llm_summarizer.py、experience_learner.py 实现旧 KnowledgeItem / Query / KnowledgeBase 协议。旧 memory_evolution.cli 和 standalone Reviewer 使用这组三份文件。
 
-1. lossless write and selective retrieval;
-2. lossless write and lossy read-time compression;
-3. lossy write-time abstraction and structured recall.
+Core v1 session 接受 v2 协议，legacy ReviewerSession 接受旧协议。两组 Program 保持独立身份。

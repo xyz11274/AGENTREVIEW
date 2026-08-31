@@ -1,8 +1,10 @@
 # QUAL Subdimension Scoring Anchors
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：frozen（2026-08-28），第 1/5 轮 Q46–Q50 已接受。本文的 “scoring anchors” 是 evaluator rubric，不是论文 Source Anchors。
 
-权威 rubric：`AgentReview/REVIEW_Request.md` 第 1–21 行，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`。通用信息边界、Evidence ID、Candidate Independence、两阶段 applicability、`0–4 + N/A` 外壳、validity rules 与聚合公式继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
+Reviewer question taxonomy 以 `AgentReview/REVIEW_Request.md` 第 1–21 行为冻结基础，SHA256 `609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42`；本文件是详细 evaluator scoring anchors 的权威。通用信息边界、Evidence ID、Candidate Independence、两阶段 applicability、`0–4 + N/A` 外壳、validity rules 与聚合公式继承自 `role_specific_reference_free_evaluator_protocol_20260828.md`。
 
 Evaluator 评分对象是 **Candidate Review 对论文质量问题的审查表现**，不是论文自身的质量。高分既可来自准确识别 material strengths，也可来自准确识别 material weaknesses；不得按 criticism 数量计分。
 

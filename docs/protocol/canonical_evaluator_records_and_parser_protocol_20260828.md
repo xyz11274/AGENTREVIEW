@@ -1,5 +1,7 @@
 # Canonical Evaluator Records and Parser Protocol
 
+> 本文保存语义合同；当前代码、G2 物化与延期项以本目录 [README](README.md) 为准。
+
 状态：contract frozen（2026-08-28），Q76–Q100 的 record/parser/judgment/evidence-support contract 与 machine-registry/gate 构建规则已接受。各 role 的完整 machine-readable registry artifacts、JSON Schema、serializer/parser artifacts 仍未生成，禁止据此启动 formal run。
 
 ## 1. Three Canonical Records
