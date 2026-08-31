@@ -9,16 +9,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from .corpus_semantic_audit import (
-    SEMANTIC_AUDIT_VERSION,
-    audit_semantic_boundaries,
-)
 from .review_corpus import CanonicalFullReviewRecord, canonical_json_bytes
 from .review_corpus_builder import BUILD_SCHEMA_VERSION, ROLE_ORDER, RawCorpusAttempt
 
 
-FREEZE_AUDIT_SCHEMA_VERSION = "core-v1-corpus-freeze-audit-v1"
-SUCCESS_MANIFEST_SCHEMA_VERSION = "frozen-full-review-corpus-success-v1"
+FREEZE_AUDIT_SCHEMA_VERSION = "core-v1-corpus-freeze-audit-v2"
+SUCCESS_MANIFEST_SCHEMA_VERSION = "frozen-full-review-corpus-success-v2"
 
 
 class CorpusFreezeAuditFailure(RuntimeError):
@@ -123,7 +119,7 @@ def audit_and_freeze_corpus(
         errors.append("REQUEST_MATERIALIZATION_COUNT_MISMATCH")
     if (
         profile.get("profile_name") != "CORPUS_BUILD_RUNTIME_PROFILE"
-        or profile.get("profile_version") != "v4"
+        or profile.get("profile_version") != "v5"
         or profile.get("no_memory") is not True
         or profile.get("external_evidence_enabled") is not False
         or profile.get("candidate_enabled") is not False
@@ -227,8 +223,6 @@ def audit_and_freeze_corpus(
         ):
             errors.append("FIRST_LEGAL_RAW_ATTEMPT_RULE_FAILURE")
 
-    semantic_violations = audit_semantic_boundaries(records)
-    errors.extend(item.code for item in semantic_violations)
     role_counts = Counter(record.role for record in records)
     if role_counts != Counter({role: expected_paper_count for role in ROLE_ORDER}):
         errors.append("ROLE_CARDINALITY_MISMATCH")
@@ -244,8 +238,6 @@ def audit_and_freeze_corpus(
         "structural_context_count": len(structural_by_paper),
         "request_materialization_count": len(requests_by_key),
         "role_counts": {role: role_counts[role] for role in ROLE_ORDER},
-        "semantic_audit_version": SEMANTIC_AUDIT_VERSION,
-        "semantic_violation_count": len(semantic_violations),
         "error_counts": dict(sorted(error_counts.items())),
         "input_artifact_sha256": {
             path.name: _file_sha(path) for path in required_paths

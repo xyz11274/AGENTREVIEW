@@ -1,0 +1,21 @@
+{
+  "schema_version": "postcorpus-capacity-diagnostic-schedule-v1",
+  "diagnostic_only": true,
+  "created_at": "2026-08-31T15:31:56.249218+08:00",
+  "earliest_start": "2026-08-31T17:40:00+08:00",
+  "actual_gate": "CORPUS_AND_PROJECTION_READY plus exclusive GPU resource",
+  "capacities": [
+    1,
+    2,
+    4
+  ],
+  "repetitions_per_capacity": 3,
+  "fresh_qwen_process_per_capacity": true,
+  "max_model_len": 32768,
+  "workload_sha256": "c0dad4548f46bc4943dfb6d57b430c1509a0f4f48f478a3b9ab90e288b6ffd9d",
+  "workload_token_audit_sha256": "a93102f106e99a204fd27a255fe2e81558a1caa5a6c36aac2c8959bee7d75978",
+  "runner_sha256": "fc365c66140f0fd830279998900436c39602f836274d54a5494922a9a74c574a",
+  "main_formal_runtime_profile_frozen": false,
+  "formal_started": false,
+  "note": "Execution-only diagnostic; real Memory/Evidence materialization and formal capacity gate remain separate."
+}

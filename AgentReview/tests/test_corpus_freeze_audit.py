@@ -13,7 +13,7 @@ from agentreview.review_corpus_builder import CorpusPaper, NoMemoryCorpusBuilder
 from tests.test_corpus_bootstrap import CorpusBootstrapTest, FakeTokenizer
 
 
-def semantic_legal_response(messages):
+def valid_response(messages):
     shape = messages[1]["content"].split("STRICT OUTPUT SHAPE:\n", 1)[1].split(
         "\n\nCANONICAL PAPER INPUT:", 1
     )[0]
@@ -67,7 +67,7 @@ class CorpusFreezeAuditTest(unittest.TestCase):
             ]
             generation_sha = bootstrap.request_manifest["generation_identity_sha256"]
             builder = NoMemoryCorpusBuilder(
-                complete=semantic_legal_response,
+                complete=valid_response,
                 reviewer_identity_sha256=generation_sha,
                 generation_identity_sha256=generation_sha,
                 max_workers=4,
@@ -87,6 +87,8 @@ class CorpusFreezeAuditTest(unittest.TestCase):
             )
             self.assertEqual(audit["status"], "PASS")
             self.assertEqual(audit["canonical_record_count"], 625)
+            self.assertNotIn("semantic_audit_version", audit)
+            self.assertNotIn("semantic_violation_count", audit)
 
 
 if __name__ == "__main__":

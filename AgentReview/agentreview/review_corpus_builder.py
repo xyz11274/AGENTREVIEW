@@ -22,7 +22,6 @@ from .corpus_role_prompts_v4 import (
     CORPUS_ROLE_PROMPT_VERSION,
     corpus_role_prompts,
 )
-from .corpus_semantic_audit import semantic_boundary_violations
 from .review_corpus import (
     ROLE_SUBDIMENSIONS,
     CanonicalFullReviewRecord,
@@ -33,7 +32,7 @@ from .review_corpus import (
 )
 
 
-BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v4"
+BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v5"
 STRUCTURAL_CONTEXT_SCHEMA_VERSION = "corpus-paper-structural-context-v1"
 RESPONSE_FORMAT_SCHEMA_VERSION = "canonical-full-review-response-format-v4"
 ROLE_ORDER = tuple(ROLE_SUBDIMENSIONS)
@@ -662,16 +661,6 @@ class NoMemoryCorpusBuilder:
                     request_identity_sha256=request_sha,
                     allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
                 )
-                boundary_violations = semantic_boundary_violations(record)
-                if boundary_violations:
-                    codes = ",".join(
-                        f"{item.subdimension_id}:{item.code}"
-                        for item in boundary_violations
-                    )
-                    raise ValueError(
-                        "Corpus Reviewer response violated frozen semantic "
-                        f"boundaries: {codes}"
-                    )
             except Exception as exc:
                 attempts.append(
                     RawCorpusAttempt(

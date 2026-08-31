@@ -1,5 +1,7 @@
 # AgentReview M★
 
+> **Status notice (2026-08-31):** The commands and architecture below document the legacy META/CoCo pipeline. They are not a production entry point for Research Validity Core v1. The Corpus lexical semantic gate that caused the latest false failure has been removed at its root; strict structural/identity/isolation validation remains and the complete 249-test suite passes. No new authoritative 625-review Corpus has been generated yet, and the Core Reviewer/Memory/reference-free Evaluator/shared-pool/Final-Suite path is not wired into a production CLI. Do not use `evolve-meta` or the legacy `final-evaluate-suite` as a substitute for a Core v1 formal run. See [`docs/整理/AGENTREVIEW_END_TO_END_BLOCKER_AUDIT_20260831.md`](../docs/整理/AGENTREVIEW_END_TO_END_BLOCKER_AUDIT_20260831.md).
+
 This repository implements one review architecture:
 
 ```text

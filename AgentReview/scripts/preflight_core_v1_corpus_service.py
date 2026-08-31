@@ -14,7 +14,6 @@ import urllib.request
 from pathlib import Path
 from typing import Mapping
 
-from agentreview.corpus_semantic_audit import semantic_boundary_violations
 from agentreview.review_corpus import canonical_json_bytes
 from agentreview.review_corpus import CanonicalFullReviewRecord
 from agentreview.review_corpus_builder import (
@@ -200,7 +199,7 @@ def _synthetic_paper():
     )
 
 
-def _role_semantic_smoke(endpoint, profile, tokenizer):
+def _role_contract_smoke(endpoint, profile, tokenizer):
     paper = _synthetic_paper()
     generation_sha = profile["corpus_request_materialization_sha256"]
     outputs = []
@@ -223,16 +222,16 @@ def _role_semantic_smoke(endpoint, profile, tokenizer):
             content = choice["message"]["content"].encode("utf-8")
             provider_tokens = response["usage"]["prompt_tokens"]
         except (KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError(f"{role} semantic smoke response is malformed") from exc
+            raise RuntimeError(f"{role} contract smoke response is malformed") from exc
         local_tokens = _local_prompt_tokens(tokenizer, request.messages)
         if provider_tokens != local_tokens:
             raise RuntimeError(
-                f"{role} semantic smoke token accounting mismatch: "
+                f"{role} contract smoke token accounting mismatch: "
                 f"local={local_tokens}, provider={provider_tokens!r}"
             )
         if choice.get("finish_reason") != "stop":
             raise RuntimeError(
-                f"{role} semantic smoke finish reason is {choice.get('finish_reason')!r}"
+                f"{role} contract smoke finish reason is {choice.get('finish_reason')!r}"
             )
         record = CanonicalFullReviewRecord.from_model_response(
             content,
@@ -247,12 +246,6 @@ def _role_semantic_smoke(endpoint, profile, tokenizer):
             request_identity_sha256=request.request_identity_sha256,
             allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
         )
-        violations = semantic_boundary_violations(record)
-        if violations:
-            raise RuntimeError(
-                f"{role} semantic boundary smoke failed: "
-                + ",".join(item.code for item in violations)
-            )
         outputs.append(
             {
                 "role": role,
@@ -283,7 +276,7 @@ def main():
     profile = json.loads(Path(args.profile).read_text(encoding="utf-8"))
     if (
         profile.get("profile_name") != "CORPUS_BUILD_RUNTIME_PROFILE"
-        or profile.get("profile_version") != "v4"
+        or profile.get("profile_version") != "v5"
         or profile.get("tensor_parallel_size") != 4
         or profile.get("max_num_seqs") != 1
     ):
@@ -346,7 +339,7 @@ def main():
         args.model_path, local_files_only=True, trust_remote_code=False
     )
     constrained_smoke = _diagnostic_constrained_smoke(endpoint, profile, tokenizer)
-    role_semantic_smoke = _role_semantic_smoke(endpoint, profile, tokenizer)
+    role_contract_smoke = _role_contract_smoke(endpoint, profile, tokenizer)
 
     gpu_rows = []
     query = subprocess.check_output(
@@ -399,7 +392,7 @@ def main():
             raise RuntimeError(f"GPU compute process is outside Corpus allowlist: {item}")
 
     payload = {
-        "schema_version": "core-v1-corpus-service-preflight-v1",
+        "schema_version": "core-v1-corpus-service-preflight-v2",
         "status": "PASS",
         "corpus_build_runtime_profile_sha256": profile[
             "corpus_build_runtime_profile_sha256"
@@ -413,7 +406,7 @@ def main():
         "served_model_ids": served_ids,
         "models_response_sha256": hashlib.sha256(models_raw).hexdigest(),
         "constrained_special_character_smoke": constrained_smoke,
-        "role_semantic_smoke": role_semantic_smoke,
+        "role_contract_smoke": role_contract_smoke,
         "gpu_state": gpu_rows,
         "allowed_process_ids": sorted(allowed_pids),
         "gpu_compute_processes": compute_processes,

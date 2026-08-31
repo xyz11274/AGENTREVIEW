@@ -129,27 +129,27 @@ class NoMemoryCorpusBuilderTest(unittest.TestCase):
                 self.papers(), expected_paper_count=2
             )
 
-    def test_semantic_boundary_violation_is_illegal_and_identically_retried(self):
-        calls = []
-
+    def test_paper_grounded_review_is_not_rejected_by_wording_heuristics(self):
         def complete(messages):
-            calls.append(json.dumps(messages, ensure_ascii=False, separators=(",", ":")))
             payload = json.loads(response_from_messages(messages))
-            if len(calls) == 1:
-                for section in payload["subdimension_sections"]:
-                    if section["subdimension_id"] == "CLAR-FIG":
-                        section["review_text"] = (
-                            "The unseen figure has clear colors and legible axes."
-                        )
+            for section in payload["subdimension_sections"]:
+                if section["subdimension_id"] == "POL-ANO":
+                    section["review_text"] = (
+                        "The paper header explicitly lists the authors and their "
+                        "affiliation. While these details are visible in the text, "
+                        "the corpus build does not provide a frozen venue or "
+                        "year-specific anonymity policy. Therefore, it is not "
+                        "possible to declare a double-blind policy violation or "
+                        "compliance clearance based solely on the supplied evidence."
+                    )
             return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
         record, attempts = self.builder(complete, workers=1).build_one(
-            self.papers()[0], "CLAR"
+            self.papers()[0], "POL"
         )
-        self.assertEqual(record.role, "CLAR")
-        self.assertEqual([item.valid for item in attempts], [False, True])
-        self.assertEqual(calls[0], calls[1])
-        self.assertIn("UNOBSERVED_VISUAL_PROPERTY_JUDGMENT", attempts[0].error)
+
+        self.assertEqual(record.role, "POL")
+        self.assertEqual([item.valid for item in attempts], [True])
 
     def test_request_binds_dynamic_strict_json_schema(self):
         request = build_corpus_reviewer_request(

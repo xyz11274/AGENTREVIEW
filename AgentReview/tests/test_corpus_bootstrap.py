@@ -113,13 +113,13 @@ class CorpusBootstrapTest(unittest.TestCase):
                 profile["corpus_build_max_model_len"],
                 profile["required_context_tokens"],
             )
-            self.assertEqual(profile["profile_version"], "v4")
+            self.assertEqual(profile["profile_version"], "v5")
             semantic_implementation = profile["generation_semantics"][
                 "corpus_builder_semantic_implementation"
             ]
             self.assertEqual(
-                semantic_implementation["semantic_audit_version"],
-                "core-v1-corpus-semantic-boundary-audit-v2",
+                semantic_implementation["manifest_version"],
+                "corpus-builder-semantic-implementation-v2",
             )
             self.assertEqual(
                 profile["generation_semantics"]["frozen_review_request_sha256"],
@@ -139,7 +139,6 @@ class CorpusBootstrapTest(unittest.TestCase):
                     "review_corpus.py",
                     "review_corpus_builder.py",
                     "corpus_role_prompts_v4.py",
-                    "corpus_semantic_audit.py",
                 },
             )
             self.assertEqual(result.requests[0].response_format["type"], "json_schema")

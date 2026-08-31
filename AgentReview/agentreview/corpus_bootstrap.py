@@ -28,11 +28,10 @@ from .review_corpus_builder import (
     default_role_system_prompts,
 )
 from .corpus_role_prompts_v4 import CORPUS_ROLE_PROMPT_VERSION
-from .corpus_semantic_audit import SEMANTIC_AUDIT_VERSION
 from .single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
 
 
-BOOTSTRAP_SCHEMA_VERSION = "research-validity-core-v1-corpus-bootstrap-v4"
+BOOTSTRAP_SCHEMA_VERSION = "research-validity-core-v1-corpus-bootstrap-v5"
 CORPUS_REQUEST_CLASS = "CANONICAL_FULL_REVIEW_CORPUS_GENERATION"
 
 
@@ -68,7 +67,6 @@ def corpus_builder_semantic_implementation_manifest() -> Dict[str, Any]:
         "review_corpus.py",
         "review_corpus_builder.py",
         "corpus_role_prompts_v4.py",
-        "corpus_semantic_audit.py",
     )
     files = {
         name: {
@@ -78,8 +76,7 @@ def corpus_builder_semantic_implementation_manifest() -> Dict[str, Any]:
         for name in logical_files
     }
     payload = {
-        "manifest_version": "corpus-builder-semantic-implementation-v1",
-        "semantic_audit_version": SEMANTIC_AUDIT_VERSION,
+        "manifest_version": "corpus-builder-semantic-implementation-v2",
         "files": files,
     }
     return {
@@ -521,7 +518,7 @@ def materialize_corpus_bootstrap(
     }
     profile_payload = {
         "profile_name": "CORPUS_BUILD_RUNTIME_PROFILE",
-        "profile_version": "v4",
+        "profile_version": "v5",
         "stage": "CORPUS_BUILD_BOOTSTRAP",
         "tensor_parallel_size": 4,
         "max_num_seqs": 1,

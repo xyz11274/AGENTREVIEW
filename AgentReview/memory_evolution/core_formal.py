@@ -116,6 +116,8 @@ class CoreRoleEvolutionRunner:
         validate_program: Callable[[bytes], None],
         behavior_manifest: Callable[[bytes], Mapping[str, Any]],
         attempts: int = 20,
+        min_static_evaluable: int = 0,
+        min_full_pool_evaluable: int = 0,
     ):
         if role not in ROLE_SUBDIMENSIONS:
             raise ValueError(f"Unknown specialist role: {role}")
@@ -136,6 +138,12 @@ class CoreRoleEvolutionRunner:
         self.validate_program = validate_program
         self.behavior_manifest = behavior_manifest
         self.attempts = int(attempts)
+        self.min_static_evaluable = int(min_static_evaluable)
+        self.min_full_pool_evaluable = int(min_full_pool_evaluable)
+        if not 0 <= self.min_static_evaluable <= len(self.static_papers):
+            raise ValueError("min_static_evaluable is outside the static paper set")
+        if not 0 <= self.min_full_pool_evaluable <= len(self.full_pool_papers):
+            raise ValueError("min_full_pool_evaluable is outside the full paper set")
         self.applicability_gate = ApplicabilityConsistencyGate()
         self._evaluations = []
 
@@ -184,12 +192,21 @@ class CoreRoleEvolutionRunner:
                     scoring,
                 )
             )
+        evaluable_count = sum(item.scoring.paper_fraction is not None for item in records)
+        if stage == "STATIC_25" and evaluable_count < self.min_static_evaluable:
+            raise RoleFormalValidityFailure("STATIC_EVALUABLE_PAPER_THRESHOLD_NOT_MET")
+        if stage == "FULL_POOL_FINALIST" and evaluable_count < self.min_full_pool_evaluable:
+            raise RoleFormalValidityFailure("FULL_POOL_EVALUABLE_PAPER_THRESHOLD_NOT_MET")
+        if not evaluable_count and stage.startswith("ROTATING_"):
+            fitness = "N_A"
+        else:
+            fitness = canonical_fitness(item.scoring for item in records)
         result = CandidateBatchEvaluation(
             candidate_id=candidate_id,
             stage=stage,
             paper_ids=tuple(item.paper_id for item in papers),
             records=tuple(records),
-            fitness=canonical_fitness(item.scoring for item in records),
+            fitness=fitness,
         )
         self._evaluations.append(result)
         return result
@@ -208,6 +225,8 @@ class CoreRoleEvolutionRunner:
                 if decision.score is not None:
                     by_subdimension[decision.subdimension_id].append(decision.score)
                 event_codes.update(event["code"] for event in decision.events)
+        if not any(item.scoring.paper_fraction is not None for item in batch.records):
+            event_codes["NO_EVALUABLE_ROTATING_PAPERS"] += 1
         return {
             "role": self.role,
             "overall_fitness": batch.fitness,

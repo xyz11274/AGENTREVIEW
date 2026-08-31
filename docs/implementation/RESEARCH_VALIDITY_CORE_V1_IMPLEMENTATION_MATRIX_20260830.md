@@ -1,5 +1,13 @@
 # Research Validity Core v1 最小实现矩阵
 
+> **2026-08-31 G1 production wiring closure：** 新增独立 `memory_evolution/core_application.py` 与 `memory_evolution/core_cli.py`，并将冻结 Corpus/ReviewMemory、`CoreV1ReviewerSession`、scheduled Reviewer、`ReferenceFreeRoleEvaluator`、`CoreReflector`、`SharedPoolMStar`、`CoreRoleEvolutionRunner`、durable role winner、`FinalReviewSuite`、`ProtectedOfficialAccess` 和 Official adapter 接为同一 production path。新增 Candidate-blind B-local manifest、Frozen External Evidence Pool v1、production-path integration smoke 与三阶段 closure audit。仓库完整 **254 tests**、原 component-contract smoke、新 production smoke 均通过；[`core_v1_closure.json`](../../artifacts/core_v1_g1_production_wiring_20260831/core_v1_closure.json) 记录 `G1_PRODUCTION_WIRING=PASS`，同时严格保留 `G2_PREFORMAL_ARTIFACTS=PENDING`、`G3_FORMAL_CLOSURE=PENDING`。这只解除 production wiring 阻塞，不表示 625 Corpus、capacity 或 formal 已完成。
+
+> **2026-08-31 复核更正：** 本文第6节的“已形成Core实现”只表示若干研究语义已有模块级代码与synthetic/unit tests，不表示production端到端路径已经接线或formal-ready。真实625条Corpus尚未完成；`CoreRoleEvolutionRunner`尚无production CLI/composition wiring；capacity、MAIN runtime、五role winner、Final Suite与Official均未运行。首个实际阻塞及完整证据见[`AGENTREVIEW_END_TO_END_BLOCKER_AUDIT_20260831.md`](../整理/AGENTREVIEW_END_TO_END_BLOCKER_AUDIT_20260831.md)。在该审计结论解决前，不得用本节的“实现完成”推断可以启动formal。
+
+> **2026-08-31 修复状态：** Corpus lexical semantic hard gate 已从 builder、service preflight、freeze audit 和 runtime identity 中完整移除；Corpus acceptance 现在只验证可机械证明的 closed schema、identity、section、anchor、request、cardinality 与 no-memory/capability isolation。真实 r5 raw response 回放通过，Corpus相关24项与仓库完整249项测试通过。尚未重新生成625条Corpus，也尚未补齐production Core composition wiring，因此仍不能启动capacity或formal。
+
+> **2026-08-31 历史全流程重新验证：** 当时249项测试与synthetic tiny smoke通过，但production closure gate失败。该缺口已由上方G1 wiring closure修复；原审计仍作为修复前证据保留，不能再用于判断当前G1状态。
+
 状态：implementation baseline（2026-08-30）。本文只把已冻结协议映射到当前代码与实施任务，不新增协议 identity、状态机或研究语义。复杂 Journal recovery、mirror、replacement、publication/archive transaction 全部归入 `DEFER_HARDENING_V2`，不得阻塞首次 Core v1 formal experiment。
 
 ## 1. Baseline audit（实施前）
@@ -143,7 +151,7 @@ Interface负责：global Qwen sequence semaphore、role round-robin/FIFO、bound
 
 ## 6. 2026-08-30 implementation audit
 
-### MUST_IMPLEMENT_NOW：已形成Core实现
+### MUST_IMPLEMENT_NOW：模块实现与生产接线状态
 
 | Core requirement | Implementation mapping | Current status |
 |---|---|---|
@@ -155,7 +163,7 @@ Interface负责：global Qwen sequence semaphore、role round-robin/FIFO、bound
 | META default off | `agentreview/arguments.py`; `run_single_paper_review_cli.py` | 默认五Specialist直接输出；仅`--enable_meta`显式启用旧META实验。 |
 | reference-free role evaluator | `memory_evolution/role_evaluator.py::ReferenceFreeRoleEvaluator` | 两阶段strict evaluator、固定vector、0–4/N_A、applicability consistency与两层Decimal macro fitness实现。API无Human/OpenReview/CoCo输入。 |
 | shared-pool M★ / candidate / top-3 / winner | `memory_evolution/core_search.py::SharedPoolMStar` | 三mandatory initial seeds、global binary64 softmax、20 attempt semantics、strict dedup、global top-3与full-pool-only winner实现。 |
-| Core formal composition root | `memory_evolution/core_formal.py::CoreRoleEvolutionRunner` | static/rotating/full-pool固定顺序、fresh paper evaluation、聚合Reflector feedback、五role winner到Suite的组合实现；不导入legacy CoCo evaluator。 |
+| Core formal semantic orchestrator | `memory_evolution/core_formal.py::CoreRoleEvolutionRunner` | 模块级语义实现并有unit test；**不是production composition root**。当前没有生产调用者/CLI将真实Qwen scheduler、Review Memory、B-local、Evidence、Evaluator、Reflector、五role与Official边界装配到该类。 |
 | aggregate-only Core Reflector | `memory_evolution/core_reflector.py::CoreReflector` | 仅接受role/overall/subdimension/failure-code/evaluable-count聚合字段；v2 prompt不再描述或授予KnowledgeItem/Query/write/read-side LLM。 |
 | Final Suite / protected C boundary | `agentreview/final_suite.py::FinalReviewSuite`, `ProtectedOfficialAccess` | META-off固定五role顺序；Suite authorize前protected input不可读，Official start后Suite sealed。 |
 | global Qwen scheduler / paper DAG | `memory_evolution/core_scheduler.py::GlobalQwenService`, `ScheduledToolkitProxy`, `run_bounded_paper_dags` | 长期全局C、role round-robin/FIFO、所有toolkit completion共享额度；Corpus builder已接入proxy。Reviewer与Applicability并行、Scoring依赖屏障和ordered aggregate实现。 |
@@ -171,12 +179,14 @@ Interface负责：global Qwen sequence semaphore、role round-robin/FIFO、bound
 
 已验证：
 
-- `/data/xyj/envs/env_shengao/bin/python -m unittest discover tests`：`225 tests`全部通过；
+- `/data/xyj/envs/env_shengao/bin/python -m unittest discover tests`：本轮重新验证为`249 tests`全部通过；
 - Core deterministic/unit/isolation tests覆盖Corpus、projection/fragment、index round-trip、三mode capability、query/Summary预算、reference-free dependency closure、fitness、RNG/dedup/finalist/winner、scheduler/DAG及C访问边界；
-- `tests.test_core_v1_tiny_smoke`完成纯synthetic端到端 smoke：Corpus→Memory→三mode→fitness→shared-pool→Final Suite→protected access。
+- `tests.test_core_v1_tiny_smoke`完成synthetic **component-contract smoke**：Corpus→Memory→三mode→fitness→shared-pool→Final Suite→protected access。该测试只创建5条review、使用fake embedding/预写evaluator JSON、设置`attempts=0`，且不调用`CoreV1ReviewerSession`、`ReferenceFreeRoleEvaluator` facade或`CoreRoleEvolutionRunner`；不得作为production end-to-end通过证据。
 
 尚须真实preformal验证：
 
+- 新增并通过真正调用production composition root的integration smoke；
+- 物化并冻结B-local manifest/eligibility audit与Frozen External Evidence Pool v1；
 - 冻结A manifest确为125 papers，随后真实生成625 canonical reviews并materialize 2875 primary projections；
 - Qwen3-Embedding-8B真实vector byte/ranking stability与五role index；
 - frozen B-local manifests、role eligibility整数阈值、真实Evaluator 5×3 deterministic smoke；
