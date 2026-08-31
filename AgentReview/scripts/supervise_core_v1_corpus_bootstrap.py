@@ -40,6 +40,15 @@ def _alive(pid: int) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
+    try:
+        # kill(pid, 0) also succeeds for an unreaped zombie.  Such a process
+        # can no longer produce a Corpus result and is terminal for supervision.
+        stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return False
+    state = stat.rsplit(")", 1)[1].strip().split()[0]
+    if state in {"Z", "X"}:
+        return False
     return True
 
 

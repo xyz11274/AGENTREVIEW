@@ -175,6 +175,10 @@ class NoMemoryCorpusBuilderTest(unittest.TestCase):
             "uniqueItems",
             sections["items"]["properties"]["paper_anchor_ids"],
         )
+        self.assertEqual(
+            sections["items"]["properties"]["paper_anchor_ids"]["items"]["enum"],
+            ["SRC-001"],
+        )
         self.assertEqual(len(request.response_format_sha256), 64)
 
     def test_clar_request_places_text_only_boundary_next_to_paper_input(self):

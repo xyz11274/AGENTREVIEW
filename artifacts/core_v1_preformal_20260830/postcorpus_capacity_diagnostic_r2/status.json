@@ -1,0 +1,9 @@
+{
+  "schema_version": "postcorpus-capacity-diagnostic-status-v1",
+  "diagnostic_only": true,
+  "state": "WAITING_FOR_CORPUS_AND_PROJECTION",
+  "detail": "",
+  "updated_at": "2026-08-31T17:54:36.005875+08:00",
+  "main_formal_runtime_profile_frozen": false,
+  "formal_started": false
+}

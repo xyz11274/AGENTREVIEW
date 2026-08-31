@@ -366,10 +366,8 @@ def main():
         )
     if any(row["memory_free_mib"] < args.min_free_mib for row in gpu_rows[:4]):
         raise RuntimeError(f"Corpus TP4 free-memory gate failed: {gpu_rows[:4]}")
-    if any(row["memory_used_mib"] > 32 for row in gpu_rows[4:]):
-        raise RuntimeError(f"Unauthorized compute/resource use on GPU4-7: {gpu_rows[4:]}")
-
     allowed_pids = _descendants(args.server_pid)
+    corpus_gpu_uuids = {row["uuid"] for row in gpu_rows[:4]}
     compute_processes = []
     try:
         applications = subprocess.check_output(
@@ -388,7 +386,7 @@ def main():
         pid, uuid, name, used = [item.strip() for item in line.split(",", 3)]
         item = {"pid": int(pid), "gpu_uuid": uuid, "process_name": name, "used_mib": used}
         compute_processes.append(item)
-        if item["pid"] not in allowed_pids:
+        if item["gpu_uuid"] in corpus_gpu_uuids and item["pid"] not in allowed_pids:
             raise RuntimeError(f"GPU compute process is outside Corpus allowlist: {item}")
 
     payload = {

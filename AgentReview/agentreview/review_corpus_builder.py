@@ -32,9 +32,9 @@ from .review_corpus import (
 )
 
 
-BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v5"
+BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v6"
 STRUCTURAL_CONTEXT_SCHEMA_VERSION = "corpus-paper-structural-context-v1"
-RESPONSE_FORMAT_SCHEMA_VERSION = "canonical-full-review-response-format-v4"
+RESPONSE_FORMAT_SCHEMA_VERSION = "canonical-full-review-response-format-v5"
 ROLE_ORDER = tuple(ROLE_SUBDIMENSIONS)
 
 _SOURCE_ANCHOR_LINE_RE = re.compile(
@@ -426,16 +426,21 @@ def default_role_system_prompts() -> Dict[str, str]:
     return prompts
 
 
-def corpus_response_schema(*, paper_id: str, role: str) -> Dict[str, Any]:
+def corpus_response_schema(
+    *, paper_id: str, role: str, allowed_paper_anchor_ids: Sequence[str]
+) -> Dict[str, Any]:
     """Build the strict per-paper, per-role JSON representation schema."""
 
     if role not in ROLE_SUBDIMENSIONS:
         raise ValueError(f"Unknown Corpus response-schema role: {role}")
+    allowed_anchors = list(allowed_paper_anchor_ids)
+    if not allowed_anchors or len(allowed_anchors) != len(set(allowed_anchors)):
+        raise ValueError("Corpus response schema requires unique paper anchor ids")
     anchor_schema = {
         "type": "array",
         "items": {
             "type": "string",
-            "pattern": r"^SRC-\d{3}(?:\(page=\d+\))?$",
+            "enum": allowed_anchors,
         },
     }
     section_schema = {
@@ -475,13 +480,19 @@ def corpus_response_schema(*, paper_id: str, role: str) -> Dict[str, Any]:
     }
 
 
-def corpus_response_format(*, paper_id: str, role: str) -> Dict[str, Any]:
+def corpus_response_format(
+    *, paper_id: str, role: str, allowed_paper_anchor_ids: Sequence[str]
+) -> Dict[str, Any]:
     return {
         "type": "json_schema",
         "json_schema": {
-            "name": f"canonical_full_review_{role.lower()}_v4",
+            "name": f"canonical_full_review_{role.lower()}_v5",
             "strict": True,
-            "schema": corpus_response_schema(paper_id=paper_id, role=role),
+            "schema": corpus_response_schema(
+                paper_id=paper_id,
+                role=role,
+                allowed_paper_anchor_ids=allowed_paper_anchor_ids,
+            ),
         },
     }
 
@@ -569,7 +580,11 @@ def build_corpus_reviewer_request(
         {"role": "system", "content": prompts[role]},
         {"role": "user", "content": _reviewer_user_prompt(paper, role)},
     )
-    response_format = corpus_response_format(paper_id=paper.paper_id, role=role)
+    response_format = corpus_response_format(
+        paper_id=paper.paper_id,
+        role=role,
+        allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
+    )
     response_format_sha = _sha(canonical_json_bytes(response_format))
     prompt_sha = _sha(canonical_json_bytes(list(messages)))
     request_sha = _sha(

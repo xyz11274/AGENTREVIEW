@@ -1,7 +1,9 @@
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 
 
@@ -17,6 +19,23 @@ SPEC.loader.exec_module(MODULE)
 
 
 class CorpusSupervisorTests(unittest.TestCase):
+    def test_alive_rejects_zombie_process(self):
+        pid = os.fork()
+        if pid == 0:
+            os._exit(0)
+        try:
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+                if stat.rsplit(")", 1)[1].strip().split()[0] == "Z":
+                    break
+                time.sleep(0.01)
+            else:
+                self.fail("child did not reach zombie state")
+            self.assertFalse(MODULE._alive(pid))
+        finally:
+            os.waitpid(pid, 0)
+
     def test_atomic_json_replaces_complete_record(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "status.json"

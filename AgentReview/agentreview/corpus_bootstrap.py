@@ -341,7 +341,9 @@ def materialize_corpus_bootstrap(
     )
     dynamic_response_formats = {
         (paper.paper_id, role): corpus_response_format(
-            paper_id=paper.paper_id, role=role
+            paper_id=paper.paper_id,
+            role=role,
+            allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
         )
         for paper in papers
         for role in ROLE_ORDER
@@ -452,7 +454,9 @@ def materialize_corpus_bootstrap(
                     requested_output_token_cap=int(output_token_cap),
                     maximum_request_tokens=prompt_tokens + int(output_token_cap),
                     expected_response_schema=corpus_response_schema(
-                        paper_id=paper.paper_id, role=role
+                        paper_id=paper.paper_id,
+                        role=role,
+                        allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
                     ),
                     source_artifact_identities={
                         **source_identities,
