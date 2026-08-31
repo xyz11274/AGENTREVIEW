@@ -1,7 +1,12 @@
 {
-  "state": "WAITING_FOR_CORPUS_BUILD",
-  "builder_pid": 2207970,
-  "qwen_pid": 2201571,
-  "corpus_build": "/data/xyj/shengao/AgentReview_0811/artifacts/core_v1_preformal_20260830/corpus_build_review_request_r7",
-  "projection_output": "/data/xyj/shengao/AgentReview_0811/artifacts/core_v1_preformal_20260830/corpus_projection_review_request_r7"
+  "state": "CORPUS_BUILD_FAILED",
+  "failure_record": "/data/xyj/shengao/AgentReview_0811/artifacts/core_v1_preformal_20260830/corpus_build_review_request_r7/checkpoint/CORPUS_BUILD_FAILED.json",
+  "qwen_stop": {
+    "qwen_pid": 2201571,
+    "tmux_session": "core_v1_corpus_review_request_r10_qwen",
+    "sigint_sent": true,
+    "sigterm_sent": false,
+    "stopped": true
+  },
+  "capacity_or_formal_started": false
 }
