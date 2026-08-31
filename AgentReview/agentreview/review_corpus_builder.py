@@ -18,11 +18,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Mapping, Sequence, Tuple
 
-from agentreview.single_paper_review_roles import (
-    REVIEWER_SPECS,
-    load_review_request_sections,
+from .corpus_role_prompts_v4 import (
+    CORPUS_ROLE_PROMPT_VERSION,
+    corpus_role_prompts,
 )
-
+from .corpus_semantic_audit import semantic_boundary_violations
 from .review_corpus import (
     ROLE_SUBDIMENSIONS,
     CanonicalFullReviewRecord,
@@ -33,8 +33,17 @@ from .review_corpus import (
 )
 
 
-BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v2"
+BUILD_SCHEMA_VERSION = "no-memory-full-review-corpus-build-v4"
+STRUCTURAL_CONTEXT_SCHEMA_VERSION = "corpus-paper-structural-context-v1"
+RESPONSE_FORMAT_SCHEMA_VERSION = "canonical-full-review-response-format-v4"
 ROLE_ORDER = tuple(ROLE_SUBDIMENSIONS)
+
+_SOURCE_ANCHOR_LINE_RE = re.compile(
+    r"^(?P<anchor_id>SRC-\d{3}(?:\(page=\d+\))?)"
+    r"\s*\|\s*page=(?P<page>\d+)"
+    r"\s*\|\s*type=(?P<content_type>[^|\r\n]+?)"
+    r"\s*\|\s*text=(?P<text>.*)$"
+)
 
 
 def _sha(value: bytes) -> str:
@@ -46,6 +55,8 @@ class CorpusPaper:
     paper_id: str
     canonical_paper_context: str
     structural_context_sha256: str
+    structural_context_canonical_json: bytes
+    allowed_paper_anchor_ids: Tuple[str, ...]
     paper_identity_sha256: str
 
     @classmethod
@@ -54,16 +65,154 @@ class CorpusPaper:
         *,
         paper_id: str,
         canonical_paper_context: str,
-        structural_context: str = "",
     ) -> "CorpusPaper":
         if not paper_id or not canonical_paper_context:
             raise ValueError("Corpus paper id/context are required")
+        structural_context = _structural_context_payload(
+            paper_id=paper_id,
+            canonical_paper_context=canonical_paper_context,
+        )
+        structural_bytes = canonical_json_bytes(structural_context)
         return cls(
             paper_id=paper_id,
             canonical_paper_context=canonical_paper_context,
-            structural_context_sha256=_sha(structural_context.encode("utf-8")),
+            structural_context_sha256=_sha(structural_bytes),
+            structural_context_canonical_json=structural_bytes,
+            allowed_paper_anchor_ids=tuple(
+                item["anchor_id"] for item in structural_context["source_anchors"]
+            ),
             paper_identity_sha256=_sha(canonical_paper_context.encode("utf-8")),
         )
+
+
+def _line_records(text: str) -> Tuple[Dict[str, Any], ...]:
+    records = []
+    char_cursor = 0
+    byte_cursor = 0
+    for ordinal, raw_line in enumerate(text.splitlines(keepends=True)):
+        content = raw_line.rstrip("\r\n")
+        content_bytes = content.encode("utf-8")
+        raw_bytes = raw_line.encode("utf-8")
+        records.append(
+            {
+                "ordinal": ordinal,
+                "content": content,
+                "char_start": char_cursor,
+                "char_end": char_cursor + len(content),
+                "byte_start": byte_cursor,
+                "byte_end": byte_cursor + len(content_bytes),
+            }
+        )
+        char_cursor += len(raw_line)
+        byte_cursor += len(raw_bytes)
+    if not records and text:
+        raise RuntimeError("Structural line materialization failed")
+    return tuple(records)
+
+
+def _structural_context_payload(
+    *, paper_id: str, canonical_paper_context: str
+) -> Dict[str, Any]:
+    """Project deterministic paper-derived structure without semantic judgment."""
+
+    lines = _line_records(canonical_paper_context)
+    context_protocol = ""
+    metadata = []
+    sections = []
+    anchors = []
+    source_anchor_preamble = []
+    in_metadata = False
+    in_anchors = False
+    for line in lines:
+        content = line["content"]
+        if line["ordinal"] == 0 and content.startswith("Context protocol:"):
+            context_protocol = content.split(":", 1)[1].strip()
+        if content == "=== CANDIDATE-VISIBLE METADATA ===":
+            in_metadata = True
+        elif content == "=== END CANDIDATE-VISIBLE METADATA ===":
+            in_metadata = False
+        elif in_metadata and ":" in content:
+            key, value = content.split(":", 1)
+            metadata.append({"key": key.strip(), "value": value.strip()})
+
+        if content == "=== SOURCE ANCHORS ===":
+            in_anchors = True
+        elif content == "=== END SOURCE ANCHORS ===":
+            in_anchors = False
+        elif in_anchors and content:
+            match = _SOURCE_ANCHOR_LINE_RE.fullmatch(content)
+            if match is None:
+                if content == "Structured source anchors from the original paper extraction:":
+                    source_anchor_preamble.append(
+                        {
+                            "text": content,
+                            "line_ordinal": line["ordinal"],
+                            "char_start": line["char_start"],
+                            "char_end": line["char_end"],
+                            "byte_start": line["byte_start"],
+                            "byte_end": line["byte_end"],
+                        }
+                    )
+                    continue
+                raise ValueError(
+                    f"Malformed Source Anchor line for {paper_id}: {content[:120]!r}"
+                )
+            groups = match.groupdict()
+            anchors.append(
+                {
+                    "anchor_id": groups["anchor_id"],
+                    "page": int(groups["page"]),
+                    "content_type": groups["content_type"].strip(),
+                    "line_ordinal": line["ordinal"],
+                    "char_start": line["char_start"],
+                    "char_end": line["char_end"],
+                    "byte_start": line["byte_start"],
+                    "byte_end": line["byte_end"],
+                    "text_sha256": _sha(groups["text"].encode("utf-8")),
+                    "text_char_length": len(groups["text"]),
+                    "text_byte_length": len(groups["text"].encode("utf-8")),
+                }
+            )
+
+        heading = re.fullmatch(r"(?P<marks>#{1,6})\s+(?P<title>.+)", content)
+        is_boundary = content.startswith("===") and content.endswith("===")
+        if heading or is_boundary:
+            sections.append(
+                {
+                    "kind": "MARKDOWN_HEADING" if heading else "CONTEXT_BOUNDARY",
+                    "level": len(heading.group("marks")) if heading else 0,
+                    "label": heading.group("title") if heading else content,
+                    "line_ordinal": line["ordinal"],
+                    "char_start": line["char_start"],
+                    "char_end": line["char_end"],
+                    "byte_start": line["byte_start"],
+                    "byte_end": line["byte_end"],
+                }
+            )
+    if not context_protocol:
+        raise ValueError(f"Corpus paper {paper_id} lacks Context protocol identity")
+    metadata_map = {item["key"]: item["value"] for item in metadata}
+    if metadata_map.get("paper_id") not in (None, paper_id):
+        raise ValueError(
+            f"Corpus paper metadata identity mismatch: {metadata_map.get('paper_id')} != {paper_id}"
+        )
+    anchor_ids = [item["anchor_id"] for item in anchors]
+    if len(anchor_ids) != len(set(anchor_ids)):
+        raise ValueError(f"Duplicate Source Anchor IDs in paper context: {paper_id}")
+    if not anchors:
+        raise ValueError(f"Corpus paper lacks Source Anchor registry: {paper_id}")
+    return {
+        "schema_version": STRUCTURAL_CONTEXT_SCHEMA_VERSION,
+        "paper_id": paper_id,
+        "context_protocol": context_protocol,
+        "canonical_context_sha256": _sha(canonical_paper_context.encode("utf-8")),
+        "canonical_context_char_length": len(canonical_paper_context),
+        "canonical_context_byte_length": len(canonical_paper_context.encode("utf-8")),
+        "metadata": metadata,
+        "sections": sections,
+        "source_anchor_preamble": source_anchor_preamble,
+        "source_anchors": anchors,
+    }
 
 
 @dataclass(frozen=True)
@@ -192,6 +341,8 @@ class CorpusReviewerRequest:
     paper_id: str
     role: str
     messages: Tuple[Dict[str, str], ...]
+    response_format: Mapping[str, Any]
+    response_format_sha256: str
     prompt_identity_sha256: str
     request_identity_sha256: str
 
@@ -200,6 +351,8 @@ class CorpusReviewerRequest:
             "paper_id": self.paper_id,
             "role": self.role,
             "messages": [dict(message) for message in self.messages],
+            "response_format": dict(self.response_format),
+            "response_format_sha256": self.response_format_sha256,
             "prompt_identity_sha256": self.prompt_identity_sha256,
             "request_identity_sha256": self.request_identity_sha256,
         }
@@ -266,50 +419,72 @@ class CorpusBuildResult:
 
 
 def default_role_system_prompts() -> Dict[str, str]:
-    """Return Corpus-specific role prompts with one unambiguous output contract.
+    """Return the versioned Core-v1 Corpus prompts, not legacy review text."""
 
-    The ordinary Specialist prompts intentionally request a human-readable
-    review with scores.  Reusing that output contract here would conflict with
-    the closed Canonical Full Review schema.  The Corpus keeps the same frozen
-    role rubric and focus, while this prompt removes scoring, applicability and
-    Markdown-output instructions.
-    """
-
-    sections = load_review_request_sections()
-    prompts: Dict[str, str] = {}
-    for spec in REVIEWER_SPECS:
-        role = spec["dimension"]
-        prompts[role] = (
-            f"You are the no-memory specialist Corpus Reviewer for the {role} "
-            "dimension of a machine-learning research paper. "
-            f"Your expertise focus is {spec['focus']}.\n\n"
-            "## Frozen role rubric\n"
-            f"{sections[role]}\n\n"
-            "## Corpus review rules\n"
-            f"- Review only through the {role} lens and cover every fixed "
-            "subdimension supplied by the request.\n"
-            "- Use only the paper text and STRUCTURAL/Source Anchors in the "
-            "request. No Review Memory, external evidence, Human/OpenReview "
-            "reference, CoCo asset, or unstated outside fact is available.\n"
-            "- Describe grounded strengths, weaknesses, limitations, and useful "
-            "improvements. Do not reward criticism count and do not manufacture "
-            "a weakness when the paper supports a positive assessment.\n"
-            "- Do not output a score, recommendation, confidence, applicability "
-            "decision, event code, or private reasoning.\n"
-            "- For text-only figure/table evidence, judge only machine-readable "
-            "captions, references, tables, or descriptions; never claim to have "
-            "observed image pixels.\n"
-            "- Any paper_anchor_ids must be copied exactly from the request's "
-            "Source Anchor registry. An empty array is legal when no anchor can "
-            "ground a section. Every non-empty paper_anchor_ids array must be "
-            "lexicographically ascending and contain no duplicate. For example, "
-            '["SRC-002","SRC-011","SRC-103"] is valid, while '
-            '["SRC-011","SRC-002","SRC-103"] is invalid. Before returning, '
-            "check this ordering independently in every section.\n"
-            "- Return only the single strict JSON object required by the user "
-            "message, with no Markdown fence, preface, or trailing text."
-        )
+    prompts = corpus_role_prompts()
+    if set(prompts) != set(ROLE_ORDER):
+        raise RuntimeError("Versioned Corpus prompt role set mismatch")
     return prompts
+
+
+def corpus_response_schema(*, paper_id: str, role: str) -> Dict[str, Any]:
+    """Build the strict per-paper, per-role JSON representation schema."""
+
+    if role not in ROLE_SUBDIMENSIONS:
+        raise ValueError(f"Unknown Corpus response-schema role: {role}")
+    anchor_schema = {
+        "type": "array",
+        "items": {
+            "type": "string",
+            "pattern": r"^SRC-\d{3}(?:\(page=\d+\))?$",
+        },
+    }
+    section_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["subdimension_id", "review_text", "paper_anchor_ids"],
+        "properties": {
+            "subdimension_id": {
+                "type": "string",
+                "enum": list(ROLE_SUBDIMENSIONS[role]),
+            },
+            "review_text": {"type": "string", "minLength": 1},
+            "paper_anchor_ids": anchor_schema,
+        },
+    }
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "role",
+            "paper_id",
+            "subdimension_sections",
+            "overall_assessment",
+        ],
+        "properties": {
+            "role": {"type": "string", "const": role},
+            "paper_id": {"type": "string", "const": paper_id},
+            "subdimension_sections": {
+                "type": "array",
+                "minItems": len(ROLE_SUBDIMENSIONS[role]),
+                "maxItems": len(ROLE_SUBDIMENSIONS[role]),
+                "items": section_schema,
+            },
+            "overall_assessment": {"type": ["string", "null"]},
+        },
+    }
+
+
+def corpus_response_format(*, paper_id: str, role: str) -> Dict[str, Any]:
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": f"canonical_full_review_{role.lower()}_v4",
+            "strict": True,
+            "schema": corpus_response_schema(paper_id=paper_id, role=role),
+        },
+    }
 
 
 def _role_paper_context(paper: CorpusPaper, role: str) -> str:
@@ -335,13 +510,37 @@ def _reviewer_user_prompt(paper: CorpusPaper, role: str) -> str:
         "subdimension_sections": sections,
         "overall_assessment": "optional role-level assessment or null",
     }
+    role_input_boundary = ""
+    if role == "CLAR":
+        role_input_boundary = (
+            "\nCURRENT INPUT MODALITY (MANDATORY): This request contains text-only "
+            "Markdown and no figure/image pixels. For CLAR-FIG, assess only "
+            "machine-readable tables, caption text, figure/table references, and "
+            "explicit textual descriptions. Do not state or imply that a figure/image "
+            "is clear, legible, well-labeled, informative, visually useful, or visually "
+            "misleading. A caption's description is not observation of the image. Apply "
+            "this restriction to overall_assessment as well. Use the observed text object "
+            "as the grammatical subject: for example, write that caption text is detailed, "
+            "a Markdown table is readable, or a figure reference is consistent. Never "
+            "write that figures or images are well-labeled or informative. If pixels are "
+            "absent, do not infer the presence or absence of colors, axes, fonts, layouts, "
+            "or other pixel-level properties; only assess whether the visible caption or "
+            "textual description contains information explicitly present in the Markdown.\n"
+        )
     return (
         "Create the canonical no-memory specialist Full Review for the paper below.\n"
         "You have no Review Memory and no external evidence capability. Evaluate only "
         "the paper and visible structural/source anchors. Output exactly one JSON "
         "object: no markdown fence, reasoning preface, score, applicability decision, "
         "or extra field. Include every fixed role subdimension in the shown order, "
-        "even when no weakness is found. paper_anchor_ids must be sorted and unique.\n\n"
+        "even when no weakness is found. paper_anchor_ids must contain no duplicates; "
+        "their emission order is semantically irrelevant and is canonicalized by the "
+        "strict parser. For strict JSON transport, review_text and overall_assessment "
+        "must not contain any backslash character or LaTeX command; write mathematical "
+        "symbols with Unicode or plain words (for example, write 'theta', not a LaTeX "
+        "command).\n\n"
+        + role_input_boundary
+        + "\n"
         "STRICT OUTPUT SHAPE:\n"
         + json.dumps(example, ensure_ascii=False, separators=(",", ":"))
         + "\n\nCANONICAL PAPER INPUT:\n"
@@ -371,6 +570,8 @@ def build_corpus_reviewer_request(
         {"role": "system", "content": prompts[role]},
         {"role": "user", "content": _reviewer_user_prompt(paper, role)},
     )
+    response_format = corpus_response_format(paper_id=paper.paper_id, role=role)
+    response_format_sha = _sha(canonical_json_bytes(response_format))
     prompt_sha = _sha(canonical_json_bytes(list(messages)))
     request_sha = _sha(
         canonical_json_bytes(
@@ -380,6 +581,7 @@ def build_corpus_reviewer_request(
                 "paper_id": paper.paper_id,
                 "role": role,
                 "messages_sha256": prompt_sha,
+                "response_format_sha256": response_format_sha,
                 "generation_identity_sha256": generation_identity_sha256,
             }
         )
@@ -388,6 +590,8 @@ def build_corpus_reviewer_request(
         paper_id=paper.paper_id,
         role=role,
         messages=messages,
+        response_format=response_format,
+        response_format_sha256=response_format_sha,
         prompt_identity_sha256=prompt_sha,
         request_identity_sha256=request_sha,
     )
@@ -456,7 +660,18 @@ class NoMemoryCorpusBuilder:
                     reviewer_identity_sha256=self.reviewer_identity_sha256,
                     prompt_identity_sha256=prompt_sha,
                     request_identity_sha256=request_sha,
+                    allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
                 )
+                boundary_violations = semantic_boundary_violations(record)
+                if boundary_violations:
+                    codes = ",".join(
+                        f"{item.subdimension_id}:{item.code}"
+                        for item in boundary_violations
+                    )
+                    raise ValueError(
+                        "Corpus Reviewer response violated frozen semantic "
+                        f"boundaries: {codes}"
+                    )
             except Exception as exc:
                 attempts.append(
                     RawCorpusAttempt(

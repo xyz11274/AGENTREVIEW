@@ -1,0 +1,652 @@
+test_b_allocation_fails_fast_when_b_is_smaller_than_requested (test_agentreview_data.AgentReviewDataTest.test_b_allocation_fails_fast_when_b_is_smaller_than_requested) ... ok
+test_coco_opinions_adapter_reconstructs_qual_reference (test_agentreview_data.AgentReviewDataTest.test_coco_opinions_adapter_reconstructs_qual_reference) ... ok
+test_coco_reference_is_evaluator_only_and_never_enters_candidate_input (test_agentreview_data.AgentReviewDataTest.test_coco_reference_is_evaluator_only_and_never_enters_candidate_input) ... ok
+test_formal_coco_path_does_not_load_duplicate_openreview_exports (test_agentreview_data.AgentReviewDataTest.test_formal_coco_path_does_not_load_duplicate_openreview_exports) ... ok
+test_frozen_s2_cache_is_optional_capability_and_hashed (test_agentreview_data.AgentReviewDataTest.test_frozen_s2_cache_is_optional_capability_and_hashed) ... ok
+test_historical_episode_excludes_human_reference (test_agentreview_data.AgentReviewDataTest.test_historical_episode_excludes_human_reference) ... ok
+test_historical_task_needs_no_human_reference_or_category_adapter (test_agentreview_data.AgentReviewDataTest.test_historical_task_needs_no_human_reference_or_category_adapter) ... ok
+test_leak_gate_rejects_field_and_reference_text_injection (test_agentreview_data.AgentReviewDataTest.test_leak_gate_rejects_field_and_reference_text_injection) ... ok
+test_leak_gate_whitelists_authorized_paper_lines (test_agentreview_data.AgentReviewDataTest.test_leak_gate_whitelists_authorized_paper_lines) ... ok
+test_manifest_title_is_canonical_when_source_title_is_structured (test_agentreview_data.AgentReviewDataTest.test_manifest_title_is_canonical_when_source_title_is_structured) ... ok
+test_meta_validation_defaults_to_remaining_b_families (test_agentreview_data.AgentReviewDataTest.test_meta_validation_defaults_to_remaining_b_families) ... ok
+test_official_coco_reference_projection_does_not_repeat_selection_logic (test_agentreview_data.AgentReviewDataTest.test_official_coco_reference_projection_does_not_repeat_selection_logic) ... ok
+test_prepare_fails_closed_when_markdown_is_missing (test_agentreview_data.AgentReviewDataTest.test_prepare_fails_closed_when_markdown_is_missing) ... ok
+test_prepare_isolates_work_families_and_test (test_agentreview_data.AgentReviewDataTest.test_prepare_isolates_work_families_and_test) ... ok
+test_train_defaults_to_all_manifest_a_families (test_agentreview_data.AgentReviewDataTest.test_train_defaults_to_all_manifest_a_families) ... ok
+test_preflight_checks_served_model_and_sdk_chat (test_api_preflight.ApiPreflightTest.test_preflight_checks_served_model_and_sdk_chat) ... ok
+test_preflight_reports_route_without_exposing_key (test_api_preflight.ApiPreflightTest.test_preflight_reports_route_without_exposing_key) ... ok
+test_context_window_active_window_and_timeout_are_measured_derivations (test_capacity_gate.CapacityGateTest.test_context_window_active_window_and_timeout_are_measured_derivations) ... ok
+test_falls_back_from_unstable_or_low_memory_capacity_four (test_capacity_gate.CapacityGateTest.test_falls_back_from_unstable_or_low_memory_capacity_four) ... ok
+test_selects_highest_stable_passing_capacity (test_capacity_gate.CapacityGateTest.test_selects_highest_stable_passing_capacity) ... ok
+test_all_evolution_llm_roles_default_to_local_qwen (test_cli_modes.CliModeTest.test_all_evolution_llm_roles_default_to_local_qwen) ... ok
+test_evaluate_final_test_is_always_forbidden (test_cli_modes.CliModeTest.test_evaluate_final_test_is_always_forbidden) ... ok
+test_evolution_sandbox_memory_limit_is_explicitly_configurable (test_cli_modes.CliModeTest.test_evolution_sandbox_memory_limit_is_explicitly_configurable) ... ok
+test_formal_cli_defaults_to_the_paper_iteration_budget (test_cli_modes.CliModeTest.test_formal_cli_defaults_to_the_paper_iteration_budget) ... ok
+test_formal_suite_defaults_to_one_outer_experiment_seed (test_cli_modes.CliModeTest.test_formal_suite_defaults_to_one_outer_experiment_seed) ... ok
+test_outer_experiment_seed_count_is_parameterized_but_nonempty (test_cli_modes.CliModeTest.test_outer_experiment_seed_count_is_parameterized_but_nonempty) ... ok
+test_pilot_preserves_requested_search_size (test_cli_modes.CliModeTest.test_pilot_preserves_requested_search_size) ... ok
+test_selection_and_runtime_embedding_caches_have_distinct_defaults (test_cli_modes.CliModeTest.test_selection_and_runtime_embedding_caches_have_distinct_defaults) ... ok
+test_smoke_and_pilot_are_mutually_exclusive (test_cli_modes.CliModeTest.test_smoke_and_pilot_are_mutually_exclusive) ... usage: python3 -m unittest evolve-task [-h] --task-id
+                                       {QUAL,CLAR,SIGN,ORIG,POL,META}
+                                       --data-root DATA_ROOT --output OUTPUT
+                                       [--iterations ITERATIONS]
+                                       [--static-size STATIC_SIZE]
+                                       [--rotating-size ROTATING_SIZE]
+                                       [--temperature TEMPERATURE]
+                                       [--episode-budget EPISODE_BUDGET]
+                                       [--seed SEED]
+                                       [--selection-repeats SELECTION_REPEATS]
+                                       [--selection-top-k SELECTION_TOP_K]
+                                       [--max-fix-attempts MAX_FIX_ATTEMPTS]
+                                       [--sandbox-memory-mb SANDBOX_MEMORY_MB]
+                                       [--parent-policy {softmax,best}]
+                                       [--mutation-scope {full,schema_logic,instructions_only}]
+                                       [--smoke | --pilot]
+                                       [--task-model-name TASK_MODEL_NAME]
+                                       [--reflector-model-name REFLECTOR_MODEL_NAME]
+                                       [--judge-model-name JUDGE_MODEL_NAME]
+                                       [--classifier-adapter CLASSIFIER_ADAPTER]
+                                       [--review-split-revision REVIEW_SPLIT_REVISION]
+                                       [--review-classify-revision REVIEW_CLASSIFY_REVISION]
+                                       [--embedding-adapter EMBEDDING_ADAPTER]
+                                       [--embedding-model-name EMBEDDING_MODEL_NAME]
+                                       [--embedding-cache EMBEDDING_CACHE]
+                                       [--runtime-embedding-cache RUNTIME_EMBEDDING_CACHE]
+                                       [--embedding-cache-audit EMBEDDING_CACHE_AUDIT]
+                                       [--disable-embedding-cache]
+                                       [--embedding-cache-read-only | --no-embedding-cache-read-only]
+                                       [--embedding-device EMBEDDING_DEVICE]
+                                       [--embedding-batch-size EMBEDDING_BATCH_SIZE]
+                                       [--s2-retrieval-pool S2_RETRIEVAL_POOL]
+                                       [--asset-manifest ASSET_MANIFEST]
+                                       [--formal-experiment-manifest FORMAL_EXPERIMENT_MANIFEST]
+                                       [--temporal-split-manifest TEMPORAL_SPLIT_MANIFEST]
+                                       [--coco-root COCO_ROOT]
+                                       [--embedding-revision EMBEDDING_REVISION]
+                                       [--openai-client-type {openai,azure_openai}]
+                                       [--openai-base-url OPENAI_BASE_URL]
+                                       [--generation-model-source GENERATION_MODEL_SOURCE]
+                                       [--generation-model-revision GENERATION_MODEL_REVISION]
+                                       [--vllm-version VLLM_VERSION]
+                                       [--llm-temperature LLM_TEMPERATURE]
+                                       [--max-tokens MAX_TOKENS]
+                                       [--retry-max-tokens RETRY_MAX_TOKENS]
+                                       [--reasoning-effort {none,minimal,low,medium,high}]
+                                       [--reasoning-effort-supported | --no-reasoning-effort-supported]
+                                       [--api-request-timeout-seconds API_REQUEST_TIMEOUT_SECONDS]
+                                       [--api-connect-timeout-seconds API_CONNECT_TIMEOUT_SECONDS]
+                                       [--api-read-timeout-seconds API_READ_TIMEOUT_SECONDS]
+                                       [--api-write-timeout-seconds API_WRITE_TIMEOUT_SECONDS]
+                                       [--api-pool-timeout-seconds API_POOL_TIMEOUT_SECONDS]
+                                       [--api-max-retries API_MAX_RETRIES]
+                                       [--write-timeout WRITE_TIMEOUT]
+                                       [--read-timeout READ_TIMEOUT]
+python3 -m unittest evolve-task: error: argument --pilot: not allowed with argument --smoke
+ok
+test_clients_disable_sdk_retry_storm_and_run_generation_preflight (test_coco_adapter.CoCoAdapterTest.test_clients_disable_sdk_retry_storm_and_run_generation_preflight) ... [COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=split_preflight, elapsed=0.0s, finish_reason=stop, completion_tokens=1
+[COCO START] phase=classify_preflight, endpoint=http://localhost:13098/v1, model=Qwen3-8B-Classify, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=classify_preflight, elapsed=0.0s, finish_reason=stop, completion_tokens=1
+ok
+test_frozen_split_uses_direct_output_with_official_sampling (test_coco_adapter.CoCoAdapterTest.test_frozen_split_uses_direct_output_with_official_sampling) ... [COCO START] phase=split_penalty_0, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_0, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+[COCO START] phase=split_penalty_0.5, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_0.5, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+[COCO START] phase=split_penalty_1, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_1, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+ok
+test_preflight_error_identifies_exact_coco_phase (test_coco_adapter.CoCoAdapterTest.test_preflight_error_identifies_exact_coco_phase) ... [COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+ok
+test_preflight_rejects_truncated_semantic_output (test_coco_adapter.CoCoAdapterTest.test_preflight_rejects_truncated_semantic_output) ... [COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=split_preflight, elapsed=0.0s, finish_reason=length, completion_tokens=512
+ok
+test_served_model_revision_is_read_from_huggingface_metadata (test_coco_adapter.CoCoAdapterTest.test_served_model_revision_is_read_from_huggingface_metadata) ... ok
+test_benchmark_outside_coco_root_is_rejected (test_coco_independent.IndependentCoCoAdapterTest.test_benchmark_outside_coco_root_is_rejected) ... ok
+test_candidate_jsonl_enters_adapter_without_lineage_or_checkpoint (test_coco_independent.IndependentCoCoAdapterTest.test_candidate_jsonl_enters_adapter_without_lineage_or_checkpoint) ... ok
+test_duplicate_paper_after_task_filter_is_rejected (test_coco_independent.IndependentCoCoAdapterTest.test_duplicate_paper_after_task_filter_is_rejected) ... ok
+test_official_three_stage_commands_keep_default_evaluation_flags (test_coco_independent.IndependentCoCoAdapterTest.test_official_three_stage_commands_keep_default_evaluation_flags) ... ok
+test_bridge_reuses_left_out_artifact_and_official_loader (test_coco_reference.CoCoReferenceReuseTest.test_bridge_reuses_left_out_artifact_and_official_loader) ... ok
+test_five_role_results_freeze_direct_suite (test_core_formal.CoreFormalTest.test_five_role_results_freeze_direct_suite) ... ok
+test_role_runner_uses_shared_pool_and_full_pool_winner (test_core_formal.CoreFormalTest.test_role_runner_uses_shared_pool_and_full_pool_winner) ... ok
+test_rotating_feedback_is_batch_aggregate_only (test_core_formal.CoreFormalTest.test_rotating_feedback_is_batch_aggregate_only) ... ok
+test_feedback_is_aggregate_only_closed_schema (test_core_reflector.CoreReflectorTest.test_feedback_is_aggregate_only_closed_schema) ... ok
+test_reflector_mutates_v2_program_without_legacy_contract (test_core_reflector.CoreReflectorTest.test_reflector_mutates_v2_program_without_legacy_contract) ... ok
+test_long_lived_toolkit_proxies_share_one_global_capacity (test_core_scheduler.CoreSchedulerTest.test_long_lived_toolkit_proxies_share_one_global_capacity) ... ok
+test_paper_dag_scoring_waits_for_reviewer_and_applicability (test_core_scheduler.CoreSchedulerTest.test_paper_dag_scoring_waits_for_reviewer_and_applicability) ... ok
+test_role_round_robin_fifo_and_global_capacity (test_core_scheduler.CoreSchedulerTest.test_role_round_robin_fifo_and_global_capacity) ... ok
+test_failed_mutation_consumes_attempt_without_pool_entry (test_core_search.CoreSearchTest.test_failed_mutation_consumes_attempt_without_pool_entry) ... ok
+test_parent_rng_and_candidate_birth_are_reproducible (test_core_search.CoreSearchTest.test_parent_rng_and_candidate_birth_are_reproducible) ... ok
+test_role_and_infrastructure_failures_are_not_consumed (test_core_search.CoreSearchTest.test_role_and_infrastructure_failures_are_not_consumed) ... ok
+test_shared_pool_attempts_dedup_top3_and_full_pool_winner (test_core_search.CoreSearchTest.test_shared_pool_attempts_dedup_top3_and_full_pool_winner) ... ok
+test_core_formal_dependency_closure_does_not_load_legacy_coco_evaluator (test_core_v1_isolation.CoreV1IsolationTest.test_core_formal_dependency_closure_does_not_load_legacy_coco_evaluator) ... ok
+test_core_modules_do_not_name_human_or_coco_as_input_fields (test_core_v1_isolation.CoreV1IsolationTest.test_core_modules_do_not_name_human_or_coco_as_input_fields) ... ok
+test_v2_seeds_have_no_hidden_query_or_knowledge_llm_contract (test_core_v1_isolation.CoreV1IsolationTest.test_v2_seeds_have_no_hidden_query_or_knowledge_llm_contract) ... ok
+test_corpus_memory_fitness_search_suite_and_protected_boundary (test_core_v1_tiny_smoke.CoreV1TinySmokeTest.test_corpus_memory_fitness_search_suite_and_protected_boundary) ... ok
+test_materializes_exact_625_requests_and_runtime_profile (test_corpus_bootstrap.CorpusBootstrapTest.test_materializes_exact_625_requests_and_runtime_profile) ... ok
+test_rejects_non_a_or_old_memory_input (test_corpus_bootstrap.CorpusBootstrapTest.test_rejects_non_a_or_old_memory_input) ... ok
+test_default_corpus_prompt_has_only_json_output_contract (test_corpus_checkpoint.CorpusCheckpointTest.test_default_corpus_prompt_has_only_json_output_contract) ... ok
+test_resume_reuses_all_durable_items_without_model_calls (test_corpus_checkpoint.CorpusCheckpointTest.test_resume_reuses_all_durable_items_without_model_calls) ... ok
+test_two_illegal_outputs_create_sealed_fail_fast_record (test_corpus_checkpoint.CorpusCheckpointTest.test_two_illegal_outputs_create_sealed_fail_fast_record) ... ok
+test_materializes_exact_625_requests_and_runtime_profile (tests.test_corpus_bootstrap.CorpusBootstrapTest.test_materializes_exact_625_requests_and_runtime_profile) ... ok
+test_rejects_non_a_or_old_memory_input (tests.test_corpus_bootstrap.CorpusBootstrapTest.test_rejects_non_a_or_old_memory_input) ... ok
+test_complete_offline_freeze_audit_commits_success_only_after_pass (test_corpus_freeze_audit.CorpusFreezeAuditTest.test_complete_offline_freeze_audit_commits_success_only_after_pass) ... ok
+test_clar_allows_actionable_future_figure_suggestion (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_clar_allows_actionable_future_figure_suggestion) ... ok
+test_clar_does_not_treat_visual_evidence_phrase_as_pixel_judgment (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_clar_does_not_treat_visual_evidence_phrase_as_pixel_judgment) ... ok
+test_clar_text_only_boundary_accepts_caption_review_and_rejects_pixels (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_clar_text_only_boundary_accepts_caption_review_and_rejects_pixels) ... ok
+test_external_novelty_and_sota_must_be_attributed (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_external_novelty_and_sota_must_be_attributed) ... ok
+test_pol_accepts_equivalent_grounded_limitation_wording (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_accepts_equivalent_grounded_limitation_wording) ... ok
+test_pol_accepts_supplied_evidence_does_not_include_auditable_overlap (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_accepts_supplied_evidence_does_not_include_auditable_overlap) ... ok
+test_pol_accepts_without_a_frozen_venue_year_anonymity_policy (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_accepts_without_a_frozen_venue_year_anonymity_policy) ... ok
+test_pol_ano_section_level_policy_limitation_scopes_prior_description (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_ano_section_level_policy_limitation_scopes_prior_description) ... ok
+test_pol_eth_accepts_no_material_pathway_and_rejects_external_standard (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_eth_accepts_no_material_pathway_and_rejects_external_standard) ... ok
+test_pol_imp_accepts_corresponding_frozen_policy_limitation (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_imp_accepts_corresponding_frozen_policy_limitation) ... ok
+test_pol_imp_section_level_policy_limitation_scopes_prior_description (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_imp_section_level_policy_limitation_scopes_prior_description) ... ok
+test_pol_overall_accepts_explicit_insufficient_evidence_boundary (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_overall_accepts_explicit_insufficient_evidence_boundary) ... ok
+test_pol_overall_assessment_obeys_same_evidence_boundaries (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_overall_assessment_obeys_same_evidence_boundaries) ... ok
+test_pol_requires_evidence_limitations_and_rejects_clearance (test_corpus_semantic_audit.CorpusSemanticAuditTest.test_pol_requires_evidence_limitations_and_rejects_clearance) ... ok
+test_atomic_json_replaces_complete_record (test_corpus_supervisor.CorpusSupervisorTests.test_atomic_json_replaces_complete_record) ... ok
+test_validate_success_rejects_incomplete_corpus (test_corpus_supervisor.CorpusSupervisorTests.test_validate_success_rejects_incomplete_corpus) ... ok
+test_validate_success_requires_manifest_and_625_lines (test_corpus_supervisor.CorpusSupervisorTests.test_validate_success_requires_manifest_and_625_lines) ... ok
+test_rejects_token_accounting_mismatch (test_corpus_transport.CorpusTransportTest.test_rejects_token_accounting_mismatch) ... ok
+test_retains_raw_response_and_enforces_prompt_count (test_corpus_transport.CorpusTransportTest.test_retains_raw_response_and_enforces_prompt_count) ... ok
+test_history_is_split_by_reviewer_task (test_effectiveness_memory_cache.EffectivenessMemoryCacheTest.test_history_is_split_by_reviewer_task) ... ok
+test_author_and_score_parsing (test_effectiveness_prepare.EffectivenessPrepareTest.test_author_and_score_parsing) ... ok
+test_decision_stratum (test_effectiveness_prepare.EffectivenessPrepareTest.test_decision_stratum) ... ok
+test_design_version_is_frozen (test_effectiveness_prepare.EffectivenessPrepareTest.test_design_version_is_frozen) ... ok
+test_semantic_scholar_query_fallback_is_deterministic (test_effectiveness_prepare.EffectivenessPrepareTest.test_semantic_scholar_query_fallback_is_deterministic) ... ok
+test_semantic_scholar_search_retries_429 (test_effectiveness_prepare.EffectivenessPrepareTest.test_semantic_scholar_search_retries_429) ... S2 HTTP 429; retrying in 2s (1/2)
+ok
+test_manifest_discovery_verifies_bundle_and_markdown (test_effectiveness_runtime.EffectivenessRuntimeTest.test_manifest_discovery_verifies_bundle_and_markdown) ... ok
+test_matrix_enforces_fresh_replay_and_no_writeback (test_effectiveness_runtime.EffectivenessRuntimeTest.test_matrix_enforces_fresh_replay_and_no_writeback) ... ok
+test_cache_path_is_excluded_from_formal_resume_identity (test_embedding_cache.EmbeddingCacheTest.test_cache_path_is_excluded_from_formal_resume_identity) ... ok
+test_cache_toggle_preserves_vectors_and_retrieval_ranking (test_embedding_cache.EmbeddingCacheTest.test_cache_toggle_preserves_vectors_and_retrieval_ranking) ... [EMBED CACHE] provider=bge_m3 disabled requested=3
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=3 hits=0 misses=3
+[EMBED CACHE] progress=3/3 committed=3
+[EMBED CACHE] provider=bge_m3 disabled requested=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=1 misses=0
+ok
+test_corrupt_or_wrong_dimension_entry_is_never_used (test_embedding_cache.EmbeddingCacheTest.test_corrupt_or_wrong_dimension_entry_is_never_used) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] invalid=1 treated_as_miss=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] invalid=1 treated_as_miss=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_different_embedding_semantics_does_not_hit (test_embedding_cache.EmbeddingCacheTest.test_different_embedding_semantics_does_not_hit) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_different_model_revision_does_not_hit (test_embedding_cache.EmbeddingCacheTest.test_different_model_revision_does_not_hit) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=506d990fc7dd requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_duplicate_text_semantics_are_preserved (test_embedding_cache.EmbeddingCacheTest.test_duplicate_text_semantics_are_preserved) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=5 hits=0 misses=5
+[EMBED CACHE] progress=5/5 committed=3
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=5 hits=5 misses=0
+ok
+test_formal_qwen_cache_hit_never_loads_model (test_embedding_cache.EmbeddingCacheTest.test_formal_qwen_cache_hit_never_loads_model) ... [EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=1 misses=0
+ok
+test_formal_qwen_cache_miss_fails_without_loading_or_writing (test_embedding_cache.EmbeddingCacheTest.test_formal_qwen_cache_miss_fails_without_loading_or_writing) ... [EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+ok
+test_one_character_change_is_a_cache_miss (test_embedding_cache.EmbeddingCacheTest.test_one_character_change_is_a_cache_miss) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_partial_batches_are_committed_and_reused_after_interruption (test_embedding_cache.EmbeddingCacheTest.test_partial_batches_are_committed_and_reused_after_interruption) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=10 hits=0 misses=10
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=10 hits=8 misses=2
+[EMBED CACHE] progress=10/10 committed=2
+ok
+test_qwen_cache_identity_cannot_hit_bge_vector (test_embedding_cache.EmbeddingCacheTest.test_qwen_cache_identity_cannot_hit_bge_vector) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_qwen_identity_contains_complete_formal_fingerprint (test_embedding_cache.EmbeddingCacheTest.test_qwen_identity_contains_complete_formal_fingerprint) ... ok
+test_result_order_is_preserved (test_embedding_cache.EmbeddingCacheTest.test_result_order_is_preserved) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=3 hits=0 misses=3
+[EMBED CACHE] progress=3/3 committed=3
+ok
+test_runtime_qwen_cache_computes_miss_and_records_audit_identity (test_embedding_cache.EmbeddingCacheTest.test_runtime_qwen_cache_computes_miss_and_records_audit_identity) ... [EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+ok
+test_second_embed_does_not_call_underlying_bge (test_embedding_cache.EmbeddingCacheTest.test_second_embed_does_not_call_underlying_bge) ... [EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=1 misses=0
+ok
+test_official_bundle_is_direct_five_role_composition_without_meta (test_final_suite.FinalSuiteTest.test_official_bundle_is_direct_five_role_composition_without_meta) ... ok
+test_protected_inputs_are_unreadable_before_suite_authorization (test_final_suite.FinalSuiteTest.test_protected_inputs_are_unreadable_before_suite_authorization) ... ok
+test_suite_is_five_winners_in_fixed_order_with_meta_off (test_final_suite.FinalSuiteTest.test_suite_is_five_winners_in_fixed_order_with_meta_off) ... ok
+test_asset_result_count_does_not_modify_legacy_work_record (test_frozen_s2_pool.FrozenS2PoolTest.test_asset_result_count_does_not_modify_legacy_work_record) ... ok
+test_missing_or_invalid_total_is_malformed_and_retried (test_frozen_s2_pool.FrozenS2PoolTest.test_missing_or_invalid_total_is_malformed_and_retried) ... ok
+test_non_list_data_is_malformed_and_retried (test_frozen_s2_pool.FrozenS2PoolTest.test_non_list_data_is_malformed_and_retried) ... ok
+test_positive_total_without_data_is_malformed_and_retried (test_frozen_s2_pool.FrozenS2PoolTest.test_positive_total_without_data_is_malformed_and_retried) ... ok
+test_unparseable_json_is_malformed_and_retried (test_frozen_s2_pool.FrozenS2PoolTest.test_unparseable_json_is_malformed_and_retried) ... ok
+test_zero_total_with_empty_data_is_valid (test_frozen_s2_pool.FrozenS2PoolTest.test_zero_total_with_empty_data_is_valid) ... ok
+test_zero_total_without_data_is_normalized_to_empty_results (test_frozen_s2_pool.FrozenS2PoolTest.test_zero_total_without_data_is_normalized_to_empty_results) ... ok
+test_canonical_audit_ignores_valid_pool_records_outside_required_scope (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_canonical_audit_ignores_valid_pool_records_outside_required_scope) ... ok
+test_canonical_audit_still_rejects_wrong_required_title (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_canonical_audit_still_rejects_wrong_required_title) ... ok
+test_clean_actual_v1_query_can_be_reused_even_if_v1_manifest_was_dirty (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_clean_actual_v1_query_can_be_reused_even_if_v1_manifest_was_dirty) ... ok
+test_legacy_final_and_work_may_differ_only_by_derived_result_count (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_legacy_final_and_work_may_differ_only_by_derived_result_count) ... ok
+test_polluted_v1_query_is_not_reusable (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_polluted_v1_query_is_not_reusable) ... ok
+test_query_plan_uses_actual_v1_query_and_detects_affected_target (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_query_plan_uses_actual_v1_query_and_detects_affected_target) ... ok
+test_v2_pool_audit_requires_canonical_query_identity (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_v2_pool_audit_requires_canonical_query_identity) ... ok
+test_v2_zero_result_record_binds_query_and_record_identity (test_frozen_s2_pool_v2.FrozenS2PoolV2Test.test_v2_zero_result_record_binds_query_and_record_identity) ... ok
+test_base_url_priority_is_cli_then_primary_then_legacy_env (test_local_openai_runtime.LocalOpenAIRuntimeTest.test_base_url_priority_is_cli_then_primary_then_legacy_env) ... ok
+test_dummy_key_initializes_local_client (test_local_openai_runtime.LocalOpenAIRuntimeTest.test_dummy_key_initializes_local_client) ... ok
+test_formal_runtime_without_endpoint_fails_closed (test_local_openai_runtime.LocalOpenAIRuntimeTest.test_formal_runtime_without_endpoint_fails_closed) ... ok
+test_port_change_preserves_identity_and_secret_is_absent (test_local_openai_runtime.LocalOpenAIRuntimeTest.test_port_change_preserves_identity_and_secret_is_absent) ... ok
+test_remote_client_keeps_environment_proxy_policy (test_local_openai_runtime.LocalOpenAIRuntimeTest.test_remote_client_keeps_environment_proxy_policy) ... ok
+test_llm_summarizer_has_bounded_balanced_read_context (test_memory_program_protocol.MemoryProgramProtocolTest.test_llm_summarizer_has_bounded_balanced_read_context) ... ok
+test_seed_programs_import_and_smoke (test_memory_program_protocol.MemoryProgramProtocolTest.test_seed_programs_import_and_smoke) ... ok
+test_toolkit_forwards_structured_generation_options (test_memory_program_protocol.MemoryProgramProtocolTest.test_toolkit_forwards_structured_generation_options) ... ok
+test_direct_retrieval_has_no_query_or_retrieval_llm (test_memory_program_v2.MemoryProgramV2Test.test_direct_retrieval_has_no_query_or_retrieval_llm) ... ok
+test_structured_full_record_projection_preserves_each_section_once (test_memory_program_v2.MemoryProgramV2Test.test_structured_full_record_projection_preserves_each_section_once) ... ok
+test_summary_mode_has_exactly_one_explicit_post_retrieval_llm (test_memory_program_v2.MemoryProgramV2Test.test_summary_mode_has_exactly_one_explicit_post_retrieval_llm) ... ok
+test_summary_query_total_budget_has_no_truncation_or_fallback (test_memory_program_v2.MemoryProgramV2Test.test_summary_query_total_budget_has_no_truncation_or_fallback) ... ok
+test_v2_seeds_compile_and_return_capability_free_plans (test_memory_program_v2.MemoryProgramV2Test.test_v2_seeds_compile_and_return_capability_free_plans) ... ok
+test_contextual_v4a_patch_is_applied (test_mstar_fidelity.MstarFidelityTest.test_contextual_v4a_patch_is_applied) ... ok
+test_reflector_requests_non_thinking_structured_output (test_mstar_fidelity.MstarFidelityTest.test_reflector_requests_non_thinking_structured_output) ... ok
+test_specialist_coverage_is_bounded_intersection_recall (test_mstar_fidelity.MstarFidelityTest.test_specialist_coverage_is_bounded_intersection_recall) ... ok
+test_empty_success_response_is_rejected_with_diagnostics (test_openai_backend.OpenAIBackendTest.test_empty_success_response_is_rejected_with_diagnostics) ... ok
+test_exception_chain_includes_transport_root_cause (test_openai_backend.OpenAIBackendTest.test_exception_chain_includes_transport_root_cause) ... ok
+test_gpt5_uses_max_completion_tokens (test_openai_backend.OpenAIBackendTest.test_gpt5_uses_max_completion_tokens) ... ok
+test_length_limited_empty_response_at_max_budget_fails_closed_once (test_openai_backend.OpenAIBackendTest.test_length_limited_empty_response_at_max_budget_fails_closed_once) ... [API START] Memory Response: model=gpt-5, endpoint=https://example.test/v1, messages=1, prompt_chars=5, output_limit=16384, token_parameter=max_completion_tokens, reasoning_effort_supported=false, reasoning_effort=low, enable_thinking=provider_default, timeouts=connect:10s/read:10s/write:10s/pool:10s, max_retries=0, empty_response_attempts=3
+[API FAILED][EMPTY RESPONSE][REASONING TOKEN EXHAUSTED][MAX_COMPLETION_TOKENS EXHAUSTED] Memory Response: response remained length-limited at retry_max_tokens=16384 after 0.0s - Provider returned an empty assistant message (finish_reason=length, completion_tokens=16384, reasoning_tokens=16384, requested_tokens=16384, refusal=None, reasoning_content_chars=0, reasoning_chars=0, raw_content_chars=0). The provider returned an invalid success response; retrying may recover from gateway routing or token exhaustion.
+ok
+test_length_limited_empty_response_increases_budget_and_preserves_effort (test_openai_backend.OpenAIBackendTest.test_length_limited_empty_response_increases_budget_and_preserves_effort) ... ok
+test_length_limited_partial_response_at_max_budget_fails_closed (test_openai_backend.OpenAIBackendTest.test_length_limited_partial_response_at_max_budget_fails_closed) ... [API START] Memory Response: model=qwen3.8-27b, endpoint=https://example.test/v1, messages=1, prompt_chars=5, output_limit=16384, token_parameter=max_tokens, reasoning_effort_supported=false, reasoning_effort=low, enable_thinking=provider_default, timeouts=connect:10s/read:10s/write:10s/pool:10s, max_retries=0, empty_response_attempts=3
+[API FAILED][TRUNCATED RESPONSE] Memory Response: response remained length-limited at retry_max_tokens=16384 after 0.0s - Provider returned a truncated assistant message (finish_reason=length, completion_tokens=16384, reasoning_tokens=None, requested_tokens=16384, partial_response_chars=14). The partial response was discarded.
+ok
+test_length_limited_partial_response_is_discarded_and_retried_at_max_budget (test_openai_backend.OpenAIBackendTest.test_length_limited_partial_response_is_discarded_and_retried_at_max_budget) ... ok
+test_qwen_chat_template_options_are_sent_in_extra_body (test_openai_backend.OpenAIBackendTest.test_qwen_chat_template_options_are_sent_in_extra_body) ... ok
+test_qwen_reasoning_effort_follows_explicit_capability (test_openai_backend.OpenAIBackendTest.test_qwen_reasoning_effort_follows_explicit_capability) ... ok
+test_reasoning_fields_are_audited_but_not_used_as_review_text (test_openai_backend.OpenAIBackendTest.test_reasoning_fields_are_audited_but_not_used_as_review_text) ... ok
+test_supported_reasoning_effort_rejection_is_not_retried_without_it (test_openai_backend.OpenAIBackendTest.test_supported_reasoning_effort_rejection_is_not_retried_without_it) ... ok
+test_canonical_context_rejects_internal_provenance (test_protocol_boundaries.ProtocolBoundaryTest.test_canonical_context_rejects_internal_provenance) ... ok
+test_feedback_strips_gold_and_free_text (test_protocol_boundaries.ProtocolBoundaryTest.test_feedback_strips_gold_and_free_text) ... ok
+test_four_zone_audit_detects_title_family_overlap (test_protocol_boundaries.ProtocolBoundaryTest.test_four_zone_audit_detects_title_family_overlap) ... ok
+test_builtins_import_escape_is_rejected (test_quality_gates.QualityGatesTest.test_builtins_import_escape_is_rejected) ... ok
+test_missing_knowledge_base_is_rejected (test_quality_gates.QualityGatesTest.test_missing_knowledge_base_is_rejected) ... ok
+test_non_whitelisted_import_is_rejected (test_quality_gates.QualityGatesTest.test_non_whitelisted_import_is_rejected) ... ok
+test_normal_seed_passes (test_quality_gates.QualityGatesTest.test_normal_seed_passes) ... ok
+test_overlong_read_is_rejected (test_quality_gates.QualityGatesTest.test_overlong_read_is_rejected) ... ok
+test_4096_dimension_selection_is_reproducible (test_qwen_subset_selection.QwenSubsetSelectionTest.test_4096_dimension_selection_is_reproducible) ... ok
+test_selection_rejects_mixed_embedding_dimensions (test_qwen_subset_selection.QwenSubsetSelectionTest.test_selection_rejects_mixed_embedding_dimensions) ... ok
+test_clip_context_keeps_head_and_tail (test_review_context.ReviewContextTest.test_clip_context_keeps_head_and_tail) ... ok
+test_first_invalid_response_is_repaired_once (test_review_context.ReviewContextTest.test_first_invalid_response_is_repaired_once) ... [Review] Reviewer SIGN: paper_context_chars=5->5
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-INTRO(page=2)'; expected SRC-<digits>(page=<digits>)
+[Anchor] Reviewer SIGN: repaired response passed
+[Review] Checkpoint saved: Reviewer SIGN (1/5 specialists available)
+[Review] Specialist stage completed: 1/5 reviews in 0.0s
+ok
+test_invalid_specialist_keeps_checkpoint_and_blocks_all_commits (test_review_context.ReviewContextTest.test_invalid_specialist_keeps_checkpoint_and_blocks_all_commits) ... Running extractor for paper-1
+Memory retrieval disabled for paper-1
+[Review] Starting 5 specialist reviewers (parallelism=1)
+[Review] Reviewer QUAL: paper_context_chars=81->81
+[Review] Reviewer CLAR: paper_context_chars=81->81
+[Review] Reviewer SIGN: paper_context_chars=81->81
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-ABST(page=1)'; expected SRC-<digits>(page=<digits>)
+[Review] Reviewer ORIG: paper_context_chars=81->81
+[Review] Reviewer POL: paper_context_chars=81->81
+[Review] Checkpoint saved: Reviewer QUAL (1/5 specialists available)
+[Review] Checkpoint saved: Reviewer CLAR (2/5 specialists available)
+[Review] Checkpoint saved: Reviewer ORIG (3/5 specialists available)
+[Review] Checkpoint saved: Reviewer POL (4/5 specialists available)
+[Review] Partial specialist run saved: successful=['Reviewer QUAL', 'Reviewer CLAR', 'Reviewer ORIG', 'Reviewer POL'], failed=['Reviewer SIGN'], checkpoint=/tmp/tmp2_dn8ym8/single_paper_review/paper-1/specialist_checkpoint.json
+[Review] Resume only failed reviewers with:
+/data/xyj/envs/env_shengao/bin/python3 /data/xyj/shengao/AgentReview_0811/AgentReview/run_single_paper_review_cli.py --paper_md_path /tmp/tmp2_dn8ym8/paper.md --output_dir /tmp/tmp2_dn8ym8 --model_name fake-model --review_temperature 0.3 --keyword_model_name fake-model --max_retrieved_refs 2 --reviewer_workers 1 --api_min_interval_seconds 0 --api_request_timeout_seconds 600 --api_connect_timeout_seconds 30 --review_max_tokens 8192 --review_retry_max_tokens 16384 --reviewer_reasoning_effort low --paper_context_max_chars 60000 --meta_review_max_tokens 4096 --memory_mode none --memory_top_k 1 --memory_max_chars 1000 --reuse_completed_specialists --overwrite --memory_embedding_mode frozen
+ok
+test_named_anchor_fails (test_review_context.ReviewContextTest.test_named_anchor_fails) ... ok
+test_partial_failure_saves_checkpoint_and_prints_resume (test_review_context.ReviewContextTest.test_partial_failure_saves_checkpoint_and_prints_resume) ... ok
+test_partial_specialist_checkpoint_is_reusable (test_review_context.ReviewContextTest.test_partial_specialist_checkpoint_is_reusable) ... ok
+test_repair_still_invalid_marks_reviewer_failed (test_review_context.ReviewContextTest.test_repair_still_invalid_marks_reviewer_failed) ... [Review] Reviewer SIGN: paper_context_chars=5->5
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-EXP(page=4)'; expected SRC-<digits>(page=<digits>)
+[Review] Partial specialist run saved: successful=[], failed=['Reviewer SIGN'], checkpoint=disabled
+ok
+test_short_context_is_unchanged (test_review_context.ReviewContextTest.test_short_context_is_unchanged) ... ok
+test_source_anchor_normalization_expands_ranges_and_adds_pages (test_review_context.ReviewContextTest.test_source_anchor_normalization_expands_ranges_and_adds_pages) ... ok
+test_specialist_paper_context_is_clipped (test_review_context.ReviewContextTest.test_specialist_paper_context_is_clipped) ... [Review] Reviewer CLAR: paper_context_chars=1010->200
+[Review] Checkpoint saved: Reviewer CLAR (1/5 specialists available)
+[Review] Specialist stage completed: 1/5 reviews in 0.0s
+ok
+test_unknown_numeric_anchor_fails (test_review_context.ReviewContextTest.test_unknown_numeric_anchor_fails) ... ok
+test_valid_numeric_anchor_passes (test_review_context.ReviewContextTest.test_valid_numeric_anchor_passes) ... ok
+test_code_fence_is_not_repaired (test_review_corpus.ReviewCorpusTest.test_code_fence_is_not_repaired) ... ok
+test_duplicate_anchor_ids_fail_instead_of_being_silently_deduplicated (test_review_corpus.ReviewCorpusTest.test_duplicate_anchor_ids_fail_instead_of_being_silently_deduplicated) ... ok
+test_foreign_anchor_id_fails_scope_validation (test_review_corpus.ReviewCorpusTest.test_foreign_anchor_id_fails_scope_validation) ... ok
+test_fragmentation_is_contiguous_byte_preserving_and_anchor_conservative (test_review_corpus.ReviewCorpusTest.test_fragmentation_is_contiguous_byte_preserving_and_anchor_conservative) ... ok
+test_materialization_is_stable_on_disk (test_review_corpus.ReviewCorpusTest.test_materialization_is_stable_on_disk) ... ok
+test_one_paper_all_roles_produces_23_primary_projections (test_review_corpus.ReviewCorpusTest.test_one_paper_all_roles_produces_23_primary_projections) ... ok
+test_strict_full_review_schema_and_order (test_review_corpus.ReviewCorpusTest.test_strict_full_review_schema_and_order) ... ok
+test_strict_json_special_characters_round_trip_without_repair (test_review_corpus.ReviewCorpusTest.test_strict_json_special_characters_round_trip_without_repair) ... ok
+test_unsorted_unique_anchor_ids_are_canonicalized_as_an_unordered_set (test_review_corpus.ReviewCorpusTest.test_unsorted_unique_anchor_ids_are_canonicalized_as_an_unordered_set) ... ok
+test_clar_request_places_text_only_boundary_next_to_paper_input (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_clar_request_places_text_only_boundary_next_to_paper_input) ... ok
+test_corpus_role_prompts_freeze_reference_free_semantic_boundaries (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_corpus_role_prompts_freeze_reference_free_semantic_boundaries) ... ok
+test_request_binds_dynamic_strict_json_schema (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_request_binds_dynamic_strict_json_schema) ... ok
+test_request_forbids_raw_latex_backslashes_in_strict_json_text (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_request_forbids_raw_latex_backslashes_in_strict_json_text) ... ok
+test_retry_is_identical_and_first_legal_response_is_canonical (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_retry_is_identical_and_first_legal_response_is_canonical) ... ok
+test_semantic_boundary_violation_is_illegal_and_identically_retried (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_semantic_boundary_violation_is_illegal_and_identically_retried) ... ok
+test_structural_context_identity_is_paper_specific_and_stable (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_structural_context_identity_is_paper_specific_and_stable) ... ok
+test_structural_context_records_only_the_frozen_anchor_preamble (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_structural_context_records_only_the_frozen_anchor_preamble) ... ok
+test_two_invalid_outputs_fail_fast_without_partial_corpus (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_two_invalid_outputs_fail_fast_without_partial_corpus) ... ok
+test_two_papers_build_ten_reviews_and_46_primary_projections (test_review_corpus_builder.NoMemoryCorpusBuilderTest.test_two_papers_build_ten_reviews_and_46_primary_projections) ... ok
+test_budget_exhaustion_is_atomic_and_charges_only_call (test_review_memory.ReviewMemoryTest.test_budget_exhaustion_is_atomic_and_charges_only_call) ... ok
+test_cross_role_ids_and_closed_sessions_are_rejected (test_review_memory.ReviewMemoryTest.test_cross_role_ids_and_closed_sessions_are_rejected) ... ok
+test_exact_flat_search_is_role_scoped_and_audited (test_review_memory.ReviewMemoryTest.test_exact_flat_search_is_role_scoped_and_audited) ... ok
+test_float32_vector_bytes_are_stable (test_review_memory.ReviewMemoryTest.test_float32_vector_bytes_are_stable) ... ok
+test_full_review_hydration_is_one_occurrence (test_review_memory.ReviewMemoryTest.test_full_review_hydration_is_one_occurrence) ... ok
+test_index_round_trip_preserves_vector_bytes_and_identity (test_review_memory.ReviewMemoryTest.test_index_round_trip_preserves_vector_bytes_and_identity) ... ok
+test_overlong_query_is_candidate_invalid_before_embedding (test_review_memory.ReviewMemoryTest.test_overlong_query_is_candidate_invalid_before_embedding) ... ok
+test_candidate_schema_keeps_evolution_provenance_optional (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_candidate_schema_keeps_evolution_provenance_optional) ... ok
+test_core_import_does_not_load_memory_evolution (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_core_import_does_not_load_memory_evolution) ... ok
+test_core_v1_seed_is_not_silently_loaded_by_legacy_engine (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_core_v1_seed_is_not_silently_loaded_by_legacy_engine) ... ok
+test_existing_best_program_reviewer_only (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_existing_best_program_reviewer_only) ... ok
+test_future_optimizer_program_runs_without_optimizer_metadata (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_future_optimizer_program_runs_without_optimizer_metadata) ... ok
+test_legacy_seed_reviewer_only (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_legacy_seed_reviewer_only) ... ok
+test_old_evolution_generation_and_core_are_semantically_equal (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_old_evolution_generation_and_core_are_semantically_equal) ... ok
+test_temporal_batch_requires_explicit_history_unless_debug_override (test_reviewer_runtime_decoupling.ReviewerRuntimeDecouplingTest.test_temporal_batch_requires_explicit_history_unless_debug_override) ... ok
+test_applicability_inconsistency_fails_the_gate (test_role_evaluator.RoleEvaluatorTest.test_applicability_inconsistency_fails_the_gate) ... ok
+test_facade_never_injects_human_openreview_or_coco_assets (test_role_evaluator.RoleEvaluatorTest.test_facade_never_injects_human_openreview_or_coco_assets) ... ok
+test_fitness_is_two_layer_macro_average_not_flattened (test_role_evaluator.RoleEvaluatorTest.test_fitness_is_two_layer_macro_average_not_flattened) ... ok
+test_strict_integer_score_rejects_float_and_unknown_fields (test_role_evaluator.RoleEvaluatorTest.test_strict_integer_score_rejects_float_and_unknown_fields) ... ok
+test_dry_run_skips_reflector (test_search_loop.SearchLoopTest.test_dry_run_skips_reflector) ... [MSTAR] Starting evolution: iterations=5, static_size=1, rotating_size=5, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=1
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+ok
+test_evolution_propagates_sandbox_memory_limit_to_runtime_and_quality (test_search_loop.SearchLoopTest.test_evolution_propagates_sandbox_memory_limit_to_runtime_and_quality) ... [MSTAR] Starting evolution: iterations=0, static_size=1, rotating_size=5, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=1
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_formal_controller_resume_commits_an_attempt_after_static_evaluation (test_search_loop.SearchLoopTest.test_formal_controller_resume_commits_an_attempt_after_static_evaluation) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=0.5000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Resuming inflight Candidate program_004_child static evaluation
+[MSTAR] Iteration 3: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_formal_controller_retries_an_uncommitted_attempt_after_interruption (test_search_loop.SearchLoopTest.test_formal_controller_retries_an_uncommitted_attempt_after_interruption) ... [MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_formal_iteration_budget_counts_failed_attempts (test_search_loop.SearchLoopTest.test_formal_iteration_budget_counts_failed_attempts) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: reflector failed: ValueError: protocol guard rejected fixture
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Iteration 2: child_score=0.5000
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_formal_parent_selection_uses_the_global_program_pool (test_search_loop.SearchLoopTest.test_formal_parent_selection_uses_the_global_program_pool) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_000_seed_vector_search, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 2: rotating_score=1.0000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Iteration 2: child_score=1.0000
+[MSTAR] Iteration 3: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 3: rotating_score=1.0000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+ok
+test_formal_repeated_quality_rejection_discards_children (test_search_loop.SearchLoopTest.test_formal_repeated_quality_rejection_discards_children) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 1: child quality failed: ['fixture rejection']
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 2: child quality failed: ['fixture rejection']
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 3: child quality failed: ['fixture rejection']
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_formal_repeated_reflector_failure_consumes_fixed_attempt_budget (test_search_loop.SearchLoopTest.test_formal_repeated_reflector_failure_consumes_fixed_attempt_budget) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+ok
+test_one_iteration_writes_child_and_artifacts (test_search_loop.SearchLoopTest.test_one_iteration_writes_child_and_artifacts) ... [MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+ok
+test_structured_parser_accepts_json_after_qwen_style_braced_prose (test_search_loop.SearchLoopTest.test_structured_parser_accepts_json_after_qwen_style_braced_prose) ... ok
+test_three_iteration_formal_run_executes_embedding_closure (test_search_loop.SearchLoopTest.test_three_iteration_formal_run_executes_embedding_closure) ... [MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Embedding closure smoke passed: episode=A::QUAL, validation=B2::QUAL
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 2: rotating_score=1.0000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: reflector failed: ValueError: Reflector response is missing V4A patch markers after 3 reflector attempts
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=1.0000
+[MSTAR] Iteration 3: rotating_score=1.0000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+ok
+test_vector_embedding_closure_smoke_writes_and_reads_real_items (test_search_loop.SearchLoopTest.test_vector_embedding_closure_smoke_writes_and_reads_real_items) ... ok
+test_adjacent_uncommitted_record_is_cleaned_but_future_is_rejected (test_temporal_protocol.TemporalProtocolTest.test_adjacent_uncommitted_record_is_cleaned_but_future_is_rejected) ... ok
+test_asset_manifest_rejects_wrong_required_s2_version (test_temporal_protocol.TemporalProtocolTest.test_asset_manifest_rejects_wrong_required_s2_version) ... ok
+test_checkpoint_requires_prefix_and_rejects_future_record (test_temporal_protocol.TemporalProtocolTest.test_checkpoint_requires_prefix_and_rejects_future_record) ... ok
+test_current_formal_versions_reject_frozen_v1_manifest (test_temporal_protocol.TemporalProtocolTest.test_current_formal_versions_reject_frozen_v1_manifest) ... ok
+test_explicit_vector_snapshot_restores_without_embedding_backend (test_temporal_protocol.TemporalProtocolTest.test_explicit_vector_snapshot_restores_without_embedding_backend) ... ok
+test_formal_replay_writes_A_and_keeps_B_read_only (test_temporal_protocol.TemporalProtocolTest.test_formal_replay_writes_A_and_keeps_B_read_only) ... ok
+test_formal_required_versions_explicitly_reject_v1_versions (test_temporal_protocol.TemporalProtocolTest.test_formal_required_versions_explicitly_reject_v1_versions) ... ok
+test_formal_v2_sidecar_requires_passed_query_and_temporal_audits (test_temporal_protocol.TemporalProtocolTest.test_formal_v2_sidecar_requires_passed_query_and_temporal_audits) ... ok
+test_fresh_formal_run_rejects_residual_memory_without_checkpoint (test_temporal_protocol.TemporalProtocolTest.test_fresh_formal_run_rejects_residual_memory_without_checkpoint) ... ok
+test_frozen_coco_path_escape_fails (test_temporal_protocol.TemporalProtocolTest.test_frozen_coco_path_escape_fails) ... ok
+test_frozen_coco_provenance_changed_benchmark_sha_fails (test_temporal_protocol.TemporalProtocolTest.test_frozen_coco_provenance_changed_benchmark_sha_fails) ... ok
+test_frozen_coco_provenance_changed_implementation_sha_fails (test_temporal_protocol.TemporalProtocolTest.test_frozen_coco_provenance_changed_implementation_sha_fails) ... ok
+test_frozen_coco_provenance_missing_mapped_file_fails (test_temporal_protocol.TemporalProtocolTest.test_frozen_coco_provenance_missing_mapped_file_fails) ... ok
+test_frozen_coco_provenance_remaps_same_relative_paths_and_sha (test_temporal_protocol.TemporalProtocolTest.test_frozen_coco_provenance_remaps_same_relative_paths_and_sha) ... ok
+test_large_vector_snapshot_is_compact_and_restores_same_retrieval (test_temporal_protocol.TemporalProtocolTest.test_large_vector_snapshot_is_compact_and_restores_same_retrieval) ... ok
+test_legacy_vector_snapshot_restores_through_current_runtime (test_temporal_protocol.TemporalProtocolTest.test_legacy_vector_snapshot_restores_through_current_runtime) ... ok
+test_memory_snapshot_round_trip (test_temporal_protocol.TemporalProtocolTest.test_memory_snapshot_round_trip) ... ok
+test_metric_failure_trace_preserves_generated_answer (test_temporal_protocol.TemporalProtocolTest.test_metric_failure_trace_preserves_generated_answer) ... ok
+test_mutation_feedback_guard_is_fail_closed (test_temporal_protocol.TemporalProtocolTest.test_mutation_feedback_guard_is_fail_closed) ... ok
+test_readiness_manifest_registration_is_explicit_and_versioned (test_temporal_protocol.TemporalProtocolTest.test_readiness_manifest_registration_is_explicit_and_versioned) ... ok
+test_real_frozen_split_passes_temporal_audit (test_temporal_protocol.TemporalProtocolTest.test_real_frozen_split_passes_temporal_audit) ... ok
+test_s2_future_result_is_rejected (test_temporal_protocol.TemporalProtocolTest.test_s2_future_result_is_rejected) ... ok
+test_same_session_restore_reuses_verified_snapshot_embeddings (test_temporal_protocol.TemporalProtocolTest.test_same_session_restore_reuses_verified_snapshot_embeddings) ... ok
+test_strict_history_identity_reads_v2_pool_version_from_asset (test_temporal_protocol.TemporalProtocolTest.test_strict_history_identity_reads_v2_pool_version_from_asset) ... ok
+test_unrelated_absolute_path_cannot_use_coco_root_remap (test_temporal_protocol.TemporalProtocolTest.test_unrelated_absolute_path_cannot_use_coco_root_remap) ... ok
+test_comparison_allows_canonical_title_and_family_id_change (test_temporal_split_v2.TemporalSplitV2Test.test_comparison_allows_canonical_title_and_family_id_change) ... ok
+test_comparison_requires_every_source_record_to_be_accounted (test_temporal_split_v2.TemporalSplitV2Test.test_comparison_requires_every_source_record_to_be_accounted) ... ok
+test_extract_coco_paperhash_accepts_both_source_schemas (test_temporal_split_v2.TemporalSplitV2Test.test_extract_coco_paperhash_accepts_both_source_schemas) ... ok
+test_extract_coco_title_accepts_legacy_string (test_temporal_split_v2.TemporalSplitV2Test.test_extract_coco_title_accepts_legacy_string) ... ok
+test_extract_coco_title_accepts_openreview_v2_object (test_temporal_split_v2.TemporalSplitV2Test.test_extract_coco_title_accepts_openreview_v2_object) ... ok
+test_extract_coco_title_rejects_malformed_values (test_temporal_split_v2.TemporalSplitV2Test.test_extract_coco_title_rejects_malformed_values) ... ok
+test_family_clustering_uses_canonical_title_or_paperhash (test_temporal_split_v2.TemporalSplitV2Test.test_family_clustering_uses_canonical_title_or_paperhash) ... ok
+test_representative_selection_prefers_accepted_submission_globally (test_temporal_split_v2.TemporalSplitV2Test.test_representative_selection_prefers_accepted_submission_globally) ... ok
+test_representative_selection_prefers_explicit_pdf_version (test_temporal_split_v2.TemporalSplitV2Test.test_representative_selection_prefers_explicit_pdf_version) ... ok
+test_representative_selection_prefers_later_venue_year (test_temporal_split_v2.TemporalSplitV2Test.test_representative_selection_prefers_later_venue_year) ... ok
+test_representative_selection_uses_stable_id_tie_break (test_temporal_split_v2.TemporalSplitV2Test.test_representative_selection_uses_stable_id_tie_break) ... ok
+test_checkpoint_result_is_exposed (test_viewer_data.ViewerDataTest.test_checkpoint_result_is_exposed) ... ok
+test_complete_result (test_viewer_data.ViewerDataTest.test_complete_result) ... ok
+test_corrupt_json_is_reported_without_crashing (test_viewer_data.ViewerDataTest.test_corrupt_json_is_reported_without_crashing) ... ok
+test_empty_memory_is_compatible (test_viewer_data.ViewerDataTest.test_empty_memory_is_compatible) ... ok
+test_missing_files_use_history_timing_fallback (test_viewer_data.ViewerDataTest.test_missing_files_use_history_timing_fallback) ... ok
+
+----------------------------------------------------------------------
+Ran 263 tests in 16.456s
+
+OK

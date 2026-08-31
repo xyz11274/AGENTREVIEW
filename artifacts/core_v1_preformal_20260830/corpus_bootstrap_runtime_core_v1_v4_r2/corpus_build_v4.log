@@ -1,0 +1,50 @@
+{"completed": 1, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "QUAL:generated"}
+{"completed": 2, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "CLAR:generated"}
+{"completed": 3, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "SIGN:generated"}
+{"completed": 4, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "ORIG:generated"}
+{"completed": 5, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "POL:generated"}
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/build_core_v1_review_corpus.py", line 157, in <module>
+    main()
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/build_core_v1_review_corpus.py", line 122, in main
+    result = run_checkpointed_corpus_build(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/corpus_checkpoint.py", line 169, in run_checkpointed_corpus_build
+    record, attempts = builder.build_one(paper, role)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/review_corpus_builder.py", line 680, in build_one
+    return self._one(paper, role)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/review_corpus_builder.py", line 622, in _one
+    response = _completion_response(completion(messages))
+                                    ^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/corpus_transport.py", line 71, in __call__
+    with self._opener.open(request, timeout=self.timeout_seconds) as response:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/urllib/request.py", line 515, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/urllib/request.py", line 532, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/urllib/request.py", line 1373, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/urllib/request.py", line 1348, in do_open
+    r = h.getresponse()
+        ^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/http/client.py", line 1450, in getresponse
+    response.begin()
+  File "/data/xyj/envs/env_shengao/lib/python3.12/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

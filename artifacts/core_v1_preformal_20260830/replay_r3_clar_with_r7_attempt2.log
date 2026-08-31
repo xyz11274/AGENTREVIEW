@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/replay_failed_corpus_item_tmp.py", line 78, in <module>
+    "assistant_content_sha256": attempt.assistant_content_sha256,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'RawCorpusAttempt' object has no attribute 'assistant_content_sha256'. Did you mean: 'assistant_content'?

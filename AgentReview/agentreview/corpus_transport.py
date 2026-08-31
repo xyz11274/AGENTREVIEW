@@ -22,6 +22,7 @@ class CorpusOpenAICompatibleAdapter:
         endpoint: str,
         request_config: Mapping[str, Any],
         expected_prompt_tokens_by_messages_sha256: Mapping[str, int],
+        response_formats_by_messages_sha256: Mapping[str, Mapping[str, Any]],
         timeout_seconds: float,
         transport_attempts: int = 2,
     ):
@@ -33,6 +34,14 @@ class CorpusOpenAICompatibleAdapter:
             str(key): int(value)
             for key, value in expected_prompt_tokens_by_messages_sha256.items()
         }
+        self.response_formats = {
+            str(key): dict(value)
+            for key, value in response_formats_by_messages_sha256.items()
+        }
+        if set(self.response_formats) != set(self.expected_prompt_tokens):
+            raise ValueError(
+                "Corpus response-format set must exactly match frozen requests"
+            )
         self.timeout_seconds = float(timeout_seconds)
         self.transport_attempts = int(transport_attempts)
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -44,7 +53,11 @@ class CorpusOpenAICompatibleAdapter:
         messages_sha = hashlib.sha256(canonical_json_bytes(message_values)).hexdigest()
         if messages_sha not in self.expected_prompt_tokens:
             raise RuntimeError("Corpus live request is absent from frozen materialization")
-        body = {**self.request_config, "messages": message_values}
+        body = {
+            **self.request_config,
+            "messages": message_values,
+            "response_format": self.response_formats[messages_sha],
+        }
         wire = canonical_json_bytes(body)
         last_error = None
         for attempt in range(self.transport_attempts):

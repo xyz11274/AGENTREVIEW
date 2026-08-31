@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 440, in <module>
+    main()
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 349, in main
+    role_semantic_smoke = _role_semantic_smoke(endpoint, profile, tokenizer)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 252, in _role_semantic_smoke
+    raise RuntimeError(
+RuntimeError: POL semantic boundary smoke failed: DOCUMENTATION_OBLIGATION_WITHOUT_FROZEN_POLICY

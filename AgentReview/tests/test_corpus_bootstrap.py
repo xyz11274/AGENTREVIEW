@@ -45,8 +45,16 @@ class CorpusBootstrapTest(unittest.TestCase):
                     "id": f"{paper_id}::QUAL",
                     "text": (
                         "prefix\nContext protocol: frozen\n"
-                        "reviewer_role: QUAL\nSRC-001 evidence " + ("x" * index)
-                        + "\n\nReturn the complete QUAL specialist review"
+                        "=== CANDIDATE-VISIBLE METADATA ===\n"
+                        f"paper_id: {paper_id}\nreviewer_role: QUAL\n"
+                        "=== END CANDIDATE-VISIBLE METADATA ===\n"
+                        "=== BEGIN PAPER (MD) ===\n# METHOD\n"
+                        + ("x" * index)
+                        + "\n=== END PAPER (MD) ===\n"
+                        "=== SOURCE ANCHORS ===\n"
+                        "SRC-001 | page=1 | type=text | text=evidence\n"
+                        "=== END SOURCE ANCHORS ==="
+                        "\n\nReturn the complete QUAL specialist review"
                     ),
                     "metadata": {
                         "work_family": f"family-{index:03d}",
@@ -105,11 +113,50 @@ class CorpusBootstrapTest(unittest.TestCase):
                 profile["corpus_build_max_model_len"],
                 profile["required_context_tokens"],
             )
+            self.assertEqual(profile["profile_version"], "v4")
+            semantic_implementation = profile["generation_semantics"][
+                "corpus_builder_semantic_implementation"
+            ]
+            self.assertEqual(
+                semantic_implementation["semantic_audit_version"],
+                "core-v1-corpus-semantic-boundary-audit-v2",
+            )
+            self.assertEqual(
+                profile["generation_semantics"]["frozen_review_request_sha256"],
+                "609eb9308b21b327716e0ae4ed60697be4922f3c829a7def2ea8d2ff0e7cbe42",
+            )
+            self.assertEqual(
+                len(
+                    semantic_implementation[
+                        "corpus_builder_semantic_implementation_sha256"
+                    ]
+                ),
+                64,
+            )
+            self.assertEqual(
+                set(semantic_implementation["files"]),
+                {
+                    "review_corpus.py",
+                    "review_corpus_builder.py",
+                    "corpus_role_prompts_v4.py",
+                    "corpus_semantic_audit.py",
+                },
+            )
+            self.assertEqual(result.requests[0].response_format["type"], "json_schema")
+            self.assertEqual(len(result.structural_contexts), 125)
+            self.assertEqual(
+                len({item["structural_context_sha256"] for item in result.structural_contexts}),
+                125,
+            )
             target = root / "output"
             result.write(target)
             self.assertEqual(
                 len((target / "corpus_request_materialization.jsonl").read_text().splitlines()),
                 625,
+            )
+            self.assertEqual(
+                len((target / "structural_contexts.jsonl").read_text().splitlines()),
+                125,
             )
 
     def test_rejects_non_a_or_old_memory_input(self):

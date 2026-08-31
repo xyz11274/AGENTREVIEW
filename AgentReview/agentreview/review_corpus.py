@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple
 
 
-CORPUS_SCHEMA_VERSION = "agentreview-full-review-corpus-v2"
+CORPUS_SCHEMA_VERSION = "agentreview-full-review-corpus-v4"
 PROJECTION_SCHEMA_VERSION = "agentreview-review-projection-v1"
 FRAGMENT_SCHEMA_VERSION = "agentreview-review-fragment-v1"
 DEFAULT_MAX_PROJECTION_TOKENS = 2048
@@ -71,16 +71,25 @@ def _strict_object(value: Any, *, fields: set[str], label: str) -> Dict[str, Any
     return value
 
 
-def _anchor_tuple(values: Any) -> Tuple[str, ...]:
+def _anchor_tuple(
+    values: Any, *, allowed_paper_anchor_ids: Sequence[str] | None = None
+) -> Tuple[str, ...]:
     if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
         raise TypeError("paper_anchor_ids must be a JSON string array")
     invalid = [value for value in values if not _ANCHOR_RE.fullmatch(value)]
     if invalid:
         raise ValueError(f"Invalid paper anchor ids: {invalid}")
+    if len(values) != len(set(values)):
+        raise ValueError("Duplicate paper anchor ids are forbidden")
+    if allowed_paper_anchor_ids is not None:
+        allowed = set(allowed_paper_anchor_ids)
+        foreign = sorted(set(values) - allowed)
+        if foreign:
+            raise ValueError(f"Foreign or unknown paper anchor ids: {foreign}")
     # Anchor IDs are an unordered evidence set. Canonicalization, rather than
     # the model's incidental emission order, determines their stored bytes.
     # The exact raw model output remains immutable in the build audit.
-    return tuple(sorted(set(values)))
+    return tuple(sorted(values))
 
 
 @dataclass(frozen=True)
@@ -90,7 +99,12 @@ class SubdimensionSection:
     paper_anchor_ids: Tuple[str, ...]
 
     @classmethod
-    def from_value(cls, value: Any) -> "SubdimensionSection":
+    def from_value(
+        cls,
+        value: Any,
+        *,
+        allowed_paper_anchor_ids: Sequence[str] | None = None,
+    ) -> "SubdimensionSection":
         item = _strict_object(
             value,
             fields={"subdimension_id", "review_text", "paper_anchor_ids"},
@@ -102,7 +116,14 @@ class SubdimensionSection:
             raise TypeError("subdimension_id must be a non-empty string")
         if not isinstance(review_text, str) or not review_text.strip():
             raise TypeError("review_text must be a non-empty string")
-        return cls(subdimension_id, review_text, _anchor_tuple(item["paper_anchor_ids"]))
+        return cls(
+            subdimension_id,
+            review_text,
+            _anchor_tuple(
+                item["paper_anchor_ids"],
+                allowed_paper_anchor_ids=allowed_paper_anchor_ids,
+            ),
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -208,6 +229,7 @@ class CanonicalFullReviewRecord:
         reviewer_identity_sha256: str,
         prompt_identity_sha256: str,
         request_identity_sha256: str,
+        allowed_paper_anchor_ids: Sequence[str] | None = None,
     ) -> "CanonicalFullReviewRecord":
         try:
             text = raw_response.decode("utf-8", errors="strict")
@@ -227,7 +249,10 @@ class CanonicalFullReviewRecord:
         if not isinstance(payload["subdimension_sections"], list):
             raise TypeError("subdimension_sections must be an array")
         sections = tuple(
-            SubdimensionSection.from_value(value)
+            SubdimensionSection.from_value(
+                value,
+                allowed_paper_anchor_ids=allowed_paper_anchor_ids,
+            )
             for value in payload["subdimension_sections"]
         )
         record = cls(

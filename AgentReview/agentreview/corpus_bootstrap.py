@@ -15,18 +15,24 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
 
-from .review_corpus import ROLE_SUBDIMENSIONS, canonical_json_bytes
+from .review_corpus import canonical_json_bytes
 from .review_corpus_builder import (
     BUILD_SCHEMA_VERSION,
+    RESPONSE_FORMAT_SCHEMA_VERSION,
     ROLE_ORDER,
     CorpusPaper,
     CorpusReviewerRequest,
     build_corpus_reviewer_request,
+    corpus_response_format,
+    corpus_response_schema,
     default_role_system_prompts,
 )
+from .corpus_role_prompts_v4 import CORPUS_ROLE_PROMPT_VERSION
+from .corpus_semantic_audit import SEMANTIC_AUDIT_VERSION
+from .single_paper_review_roles import EXPECTED_REVIEW_REQUEST_SHA256
 
 
-BOOTSTRAP_SCHEMA_VERSION = "research-validity-core-v1-corpus-bootstrap-v1"
+BOOTSTRAP_SCHEMA_VERSION = "research-validity-core-v1-corpus-bootstrap-v4"
 CORPUS_REQUEST_CLASS = "CANONICAL_FULL_REVIEW_CORPUS_GENERATION"
 
 
@@ -52,6 +58,36 @@ def _identity(identity_type: str, payload: Any) -> str:
             }
         )
     )
+
+
+def corpus_builder_semantic_implementation_manifest() -> Dict[str, Any]:
+    """Bind every local module that can change canonical Corpus semantics."""
+
+    package_root = Path(__file__).resolve().parent
+    logical_files = (
+        "review_corpus.py",
+        "review_corpus_builder.py",
+        "corpus_role_prompts_v4.py",
+        "corpus_semantic_audit.py",
+    )
+    files = {
+        name: {
+            "byte_length": (package_root / name).stat().st_size,
+            "sha256": _sha_file(package_root / name),
+        }
+        for name in logical_files
+    }
+    payload = {
+        "manifest_version": "corpus-builder-semantic-implementation-v1",
+        "semantic_audit_version": SEMANTIC_AUDIT_VERSION,
+        "files": files,
+    }
+    return {
+        **payload,
+        "corpus_builder_semantic_implementation_sha256": _identity(
+            "corpus_builder_semantic_implementation", payload
+        ),
+    }
 
 
 def _read_jsonl(path: Path) -> Iterable[Dict[str, Any]]:
@@ -120,6 +156,8 @@ class CorpusBootstrapRequestRecord:
     paper_ordinal: int
     messages: Tuple[Dict[str, str], ...]
     messages_sha256: str
+    response_format: Mapping[str, Any]
+    response_format_sha256: str
     rendered_prompt_sha256: str
     prompt_token_count: int
     requested_output_token_cap: int
@@ -132,6 +170,7 @@ class CorpusBootstrapRequestRecord:
     def to_dict(self) -> Dict[str, Any]:
         value = asdict(self)
         value["messages"] = [dict(message) for message in self.messages]
+        value["response_format"] = dict(self.response_format)
         value["expected_response_schema"] = dict(self.expected_response_schema)
         value["source_artifact_identities"] = dict(self.source_artifact_identities)
         return value
@@ -140,6 +179,7 @@ class CorpusBootstrapRequestRecord:
 @dataclass(frozen=True)
 class CorpusBootstrapMaterialization:
     a_manifest: Mapping[str, Any]
+    structural_contexts: Tuple[Mapping[str, Any], ...]
     requests: Tuple[CorpusBootstrapRequestRecord, ...]
     request_manifest: Mapping[str, Any]
     runtime_profile: Mapping[str, Any]
@@ -149,6 +189,10 @@ class CorpusBootstrapMaterialization:
         target.mkdir(parents=True, exist_ok=True)
         values = {
             "a_manifest.json": canonical_json_bytes(self.a_manifest),
+            "structural_contexts.jsonl": b"".join(
+                canonical_json_bytes(record) + b"\n"
+                for record in self.structural_contexts
+            ),
             "corpus_request_materialization.jsonl": b"".join(
                 canonical_json_bytes(record.to_dict()) + b"\n"
                 for record in self.requests
@@ -217,26 +261,6 @@ def model_tokenizer_identity(model_path: str | Path) -> Dict[str, Any]:
     }
 
 
-def _expected_schema(role: str) -> Dict[str, Any]:
-    return {
-        "closed_object_fields": [
-            "role",
-            "paper_id",
-            "subdimension_sections",
-            "overall_assessment",
-        ],
-        "role": role,
-        "subdimension_order": list(ROLE_SUBDIMENSIONS[role]),
-        "section_fields": [
-            "subdimension_id",
-            "review_text",
-            "paper_anchor_ids",
-        ],
-        "overall_assessment": "string_or_null",
-        "parser_schema_version": BUILD_SCHEMA_VERSION,
-    }
-
-
 def materialize_corpus_bootstrap(
     *,
     episodes_root: str | Path,
@@ -278,6 +302,7 @@ def materialize_corpus_bootstrap(
     }
     paper_entries = []
     papers = []
+    structural_contexts = []
     for ordinal, paper_id in enumerate(ids):
         episode = by_id[paper_id]
         metadata = dict(episode.get("metadata") or {})
@@ -287,9 +312,19 @@ def materialize_corpus_bootstrap(
         paper = CorpusPaper.from_context(
             paper_id=paper_id,
             canonical_paper_context=context,
-            structural_context="source anchors embedded in canonical paper context",
         )
         papers.append(paper)
+        structural_payload = json.loads(
+            paper.structural_context_canonical_json.decode("utf-8", errors="strict")
+        )
+        structural_contexts.append(
+            {
+                "paper_ordinal": ordinal,
+                "paper_id": paper_id,
+                "structural_context_sha256": paper.structural_context_sha256,
+                "structural_context": structural_payload,
+            }
+        )
         paper_entries.append(
             {
                 "ordinal": ordinal,
@@ -304,9 +339,33 @@ def materialize_corpus_bootstrap(
     role_prompt_sha = {
         role: _sha_bytes(prompts[role].encode("utf-8")) for role in ROLE_ORDER
     }
+    builder_semantic_implementation = (
+        corpus_builder_semantic_implementation_manifest()
+    )
+    dynamic_response_formats = {
+        (paper.paper_id, role): corpus_response_format(
+            paper_id=paper.paper_id, role=role
+        )
+        for paper in papers
+        for role in ROLE_ORDER
+    }
     schema_identity = _identity(
         "canonical_full_review_output_schema",
-        {role: _expected_schema(role) for role in ROLE_ORDER},
+        {
+            "response_format_schema_version": RESPONSE_FORMAT_SCHEMA_VERSION,
+            "formats": [
+                {
+                    "paper_id": paper.paper_id,
+                    "role": role,
+                    "response_format": dynamic_response_formats[(paper.paper_id, role)],
+                }
+                for paper in papers
+                for role in ROLE_ORDER
+            ],
+        },
+    )
+    structural_context_manifest_sha = _identity(
+        "corpus_structural_context_manifest", structural_contexts
     )
     a_payload = {
         "schema_version": BOOTSTRAP_SCHEMA_VERSION,
@@ -316,6 +375,7 @@ def materialize_corpus_bootstrap(
         "expected_canonical_review_count": len(paper_entries) * len(ROLE_ORDER),
         "papers": paper_entries,
         "source_artifact_identities": source_identities,
+        "structural_context_manifest_sha256": structural_context_manifest_sha,
         "selection_rule": "pre-registered frozen facility-location selection; preserve source order",
         "selection_fingerprint": json.loads(selection.read_text(encoding="utf-8")).get(
             "selection_fingerprint"
@@ -330,7 +390,12 @@ def materialize_corpus_bootstrap(
         "model_revision": model_revision,
         "tokenizer_identity_sha256": identities["tokenizer_identity_sha256"],
         "role_prompt_sha256": role_prompt_sha,
+        "role_prompt_version": CORPUS_ROLE_PROMPT_VERSION,
+        "frozen_review_request_sha256": EXPECTED_REVIEW_REQUEST_SHA256,
         "output_schema_identity_sha256": schema_identity,
+        "response_format_schema_version": RESPONSE_FORMAT_SCHEMA_VERSION,
+        "per_request_strict_json_schema": True,
+        "corpus_builder_semantic_implementation": builder_semantic_implementation,
         "request_json": {
             "model": served_model_name,
             "temperature": 0,
@@ -383,17 +448,29 @@ def materialize_corpus_bootstrap(
                     paper_ordinal=paper_ordinal,
                     messages=production.messages,
                     messages_sha256=production.prompt_identity_sha256,
+                    response_format=production.response_format,
+                    response_format_sha256=production.response_format_sha256,
                     rendered_prompt_sha256=_sha_bytes(rendered),
                     prompt_token_count=prompt_tokens,
                     requested_output_token_cap=int(output_token_cap),
                     maximum_request_tokens=prompt_tokens + int(output_token_cap),
-                    expected_response_schema=_expected_schema(role),
+                    expected_response_schema=corpus_response_schema(
+                        paper_id=paper.paper_id, role=role
+                    ),
                     source_artifact_identities={
                         **source_identities,
                         "a_manifest_sha256": a_manifest_sha,
                         "paper_identity_sha256": paper.paper_identity_sha256,
+                        "structural_context_sha256": paper.structural_context_sha256,
+                        "structural_context_manifest_sha256": structural_context_manifest_sha,
                         "role_prompt_sha256": role_prompt_sha[role],
                         "output_schema_identity_sha256": schema_identity,
+                        "corpus_builder_semantic_implementation_sha256": (
+                            builder_semantic_implementation[
+                                "corpus_builder_semantic_implementation_sha256"
+                            ]
+                        ),
+                        "response_format_sha256": production.response_format_sha256,
                         "generation_identity_sha256": generation_identity,
                     },
                     tokenizer_identity=identities["tokenizer_identity_sha256"],
@@ -444,6 +521,7 @@ def materialize_corpus_bootstrap(
     }
     profile_payload = {
         "profile_name": "CORPUS_BUILD_RUNTIME_PROFILE",
+        "profile_version": "v4",
         "stage": "CORPUS_BUILD_BOOTSTRAP",
         "tensor_parallel_size": 4,
         "max_num_seqs": 1,
@@ -473,6 +551,7 @@ def materialize_corpus_bootstrap(
     }
     return CorpusBootstrapMaterialization(
         a_manifest=a_manifest,
+        structural_contexts=tuple(structural_contexts),
         requests=tuple(records),
         request_manifest=request_manifest,
         runtime_profile=runtime_profile,

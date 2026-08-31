@@ -1,0 +1,389 @@
+............................usage: python3 -m unittest evolve-task [-h] --task-id
+                                       {QUAL,CLAR,SIGN,ORIG,POL,META}
+                                       --data-root DATA_ROOT --output OUTPUT
+                                       [--iterations ITERATIONS]
+                                       [--static-size STATIC_SIZE]
+                                       [--rotating-size ROTATING_SIZE]
+                                       [--temperature TEMPERATURE]
+                                       [--episode-budget EPISODE_BUDGET]
+                                       [--seed SEED]
+                                       [--selection-repeats SELECTION_REPEATS]
+                                       [--selection-top-k SELECTION_TOP_K]
+                                       [--max-fix-attempts MAX_FIX_ATTEMPTS]
+                                       [--sandbox-memory-mb SANDBOX_MEMORY_MB]
+                                       [--parent-policy {softmax,best}]
+                                       [--mutation-scope {full,schema_logic,instructions_only}]
+                                       [--smoke | --pilot]
+                                       [--task-model-name TASK_MODEL_NAME]
+                                       [--reflector-model-name REFLECTOR_MODEL_NAME]
+                                       [--judge-model-name JUDGE_MODEL_NAME]
+                                       [--classifier-adapter CLASSIFIER_ADAPTER]
+                                       [--review-split-revision REVIEW_SPLIT_REVISION]
+                                       [--review-classify-revision REVIEW_CLASSIFY_REVISION]
+                                       [--embedding-adapter EMBEDDING_ADAPTER]
+                                       [--embedding-model-name EMBEDDING_MODEL_NAME]
+                                       [--embedding-cache EMBEDDING_CACHE]
+                                       [--runtime-embedding-cache RUNTIME_EMBEDDING_CACHE]
+                                       [--embedding-cache-audit EMBEDDING_CACHE_AUDIT]
+                                       [--disable-embedding-cache]
+                                       [--embedding-cache-read-only | --no-embedding-cache-read-only]
+                                       [--embedding-device EMBEDDING_DEVICE]
+                                       [--embedding-batch-size EMBEDDING_BATCH_SIZE]
+                                       [--s2-retrieval-pool S2_RETRIEVAL_POOL]
+                                       [--asset-manifest ASSET_MANIFEST]
+                                       [--formal-experiment-manifest FORMAL_EXPERIMENT_MANIFEST]
+                                       [--temporal-split-manifest TEMPORAL_SPLIT_MANIFEST]
+                                       [--coco-root COCO_ROOT]
+                                       [--embedding-revision EMBEDDING_REVISION]
+                                       [--openai-client-type {openai,azure_openai}]
+                                       [--openai-base-url OPENAI_BASE_URL]
+                                       [--generation-model-source GENERATION_MODEL_SOURCE]
+                                       [--generation-model-revision GENERATION_MODEL_REVISION]
+                                       [--vllm-version VLLM_VERSION]
+                                       [--llm-temperature LLM_TEMPERATURE]
+                                       [--max-tokens MAX_TOKENS]
+                                       [--retry-max-tokens RETRY_MAX_TOKENS]
+                                       [--reasoning-effort {none,minimal,low,medium,high}]
+                                       [--reasoning-effort-supported | --no-reasoning-effort-supported]
+                                       [--api-request-timeout-seconds API_REQUEST_TIMEOUT_SECONDS]
+                                       [--api-connect-timeout-seconds API_CONNECT_TIMEOUT_SECONDS]
+                                       [--api-read-timeout-seconds API_READ_TIMEOUT_SECONDS]
+                                       [--api-write-timeout-seconds API_WRITE_TIMEOUT_SECONDS]
+                                       [--api-pool-timeout-seconds API_POOL_TIMEOUT_SECONDS]
+                                       [--api-max-retries API_MAX_RETRIES]
+                                       [--write-timeout WRITE_TIMEOUT]
+                                       [--read-timeout READ_TIMEOUT]
+python3 -m unittest evolve-task: error: argument --pilot: not allowed with argument --smoke
+.[COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=split_preflight, elapsed=0.0s, finish_reason=stop, completion_tokens=1
+[COCO START] phase=classify_preflight, endpoint=http://localhost:13098/v1, model=Qwen3-8B-Classify, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=classify_preflight, elapsed=0.0s, finish_reason=stop, completion_tokens=1
+.[COCO START] phase=split_penalty_0, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_0, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+[COCO START] phase=split_penalty_0.5, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_0.5, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+[COCO START] phase=split_penalty_1, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=32768, enable_thinking=False
+[COCO DONE] phase=split_penalty_1, elapsed=0.0s, finish_reason=stop, completion_tokens=4
+.[COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+.[COCO START] phase=split_preflight, endpoint=http://localhost:13099/v1, model=Qwen3-8B-Split, max_tokens=512, enable_thinking=False
+[COCO DONE] phase=split_preflight, elapsed=0.0s, finish_reason=length, completion_tokens=512
+......................................................S2 HTTP 429; retrying in 2s (1/2)
+....[EMBED CACHE] provider=bge_m3 disabled requested=3
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=3 hits=0 misses=3
+[EMBED CACHE] progress=3/3 committed=3
+[EMBED CACHE] provider=bge_m3 disabled requested=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=1 misses=0
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] invalid=1 treated_as_miss=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] invalid=1 treated_as_miss=1
+[EMBED CACHE] progress=1/1 committed=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=506d990fc7dd requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=5 hits=0 misses=5
+[EMBED CACHE] progress=5/5 committed=3
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=5 hits=5 misses=0
+.[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=1 misses=0
+.[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=10 hits=0 misses=10
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=10 hits=8 misses=2
+[EMBED CACHE] progress=10/10 committed=2
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+..[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=3 hits=0 misses=3
+[EMBED CACHE] progress=3/3 committed=3
+.[EMBED CACHE] provider=qwen3_embedding fingerprint=7d4c5b0a2b76 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+.[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=bge_m3 fingerprint=1adebefa7db9 requested=1 hits=1 misses=0
+......................................[API START] Memory Response: model=gpt-5, endpoint=https://example.test/v1, messages=1, prompt_chars=5, output_limit=16384, token_parameter=max_completion_tokens, reasoning_effort_supported=false, reasoning_effort=low, enable_thinking=provider_default, timeouts=connect:10s/read:10s/write:10s/pool:10s, max_retries=0, empty_response_attempts=3
+[API FAILED][EMPTY RESPONSE][REASONING TOKEN EXHAUSTED][MAX_COMPLETION_TOKENS EXHAUSTED] Memory Response: response remained length-limited at retry_max_tokens=16384 after 0.0s - Provider returned an empty assistant message (finish_reason=length, completion_tokens=16384, reasoning_tokens=16384, requested_tokens=16384, refusal=None, reasoning_content_chars=0, reasoning_chars=0, raw_content_chars=0). The provider returned an invalid success response; retrying may recover from gateway routing or token exhaustion.
+..[API START] Memory Response: model=qwen3.8-27b, endpoint=https://example.test/v1, messages=1, prompt_chars=5, output_limit=16384, token_parameter=max_tokens, reasoning_effort_supported=false, reasoning_effort=low, enable_thinking=provider_default, timeouts=connect:10s/read:10s/write:10s/pool:10s, max_retries=0, empty_response_attempts=3
+[API FAILED][TRUNCATED RESPONSE] Memory Response: response remained length-limited at retry_max_tokens=16384 after 0.0s - Provider returned a truncated assistant message (finish_reason=length, completion_tokens=16384, reasoning_tokens=None, requested_tokens=16384, partial_response_chars=14). The partial response was discarded.
+.................[Review] Reviewer SIGN: paper_context_chars=5->5
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-INTRO(page=2)'; expected SRC-<digits>(page=<digits>)
+[Anchor] Reviewer SIGN: repaired response passed
+[Review] Checkpoint saved: Reviewer SIGN (1/5 specialists available)
+[Review] Specialist stage completed: 1/5 reviews in 0.0s
+.Running extractor for paper-1
+Memory retrieval disabled for paper-1
+[Review] Starting 5 specialist reviewers (parallelism=1)
+[Review] Reviewer QUAL: paper_context_chars=81->81
+[Review] Reviewer CLAR: paper_context_chars=81->81
+[Review] Reviewer SIGN: paper_context_chars=81->81
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-ABST(page=1)'; expected SRC-<digits>(page=<digits>)
+[Review] Reviewer ORIG: paper_context_chars=81->81
+[Review] Reviewer POL: paper_context_chars=81->81
+[Review] Checkpoint saved: Reviewer QUAL (1/5 specialists available)
+[Review] Checkpoint saved: Reviewer CLAR (2/5 specialists available)
+[Review] Checkpoint saved: Reviewer ORIG (3/5 specialists available)
+[Review] Checkpoint saved: Reviewer POL (4/5 specialists available)
+[Review] Partial specialist run saved: successful=['Reviewer QUAL', 'Reviewer CLAR', 'Reviewer ORIG', 'Reviewer POL'], failed=['Reviewer SIGN'], checkpoint=/tmp/tmpjvugpu8b/single_paper_review/paper-1/specialist_checkpoint.json
+[Review] Resume only failed reviewers with:
+/data/xyj/envs/env_shengao/bin/python3 /data/xyj/shengao/AgentReview_0811/AgentReview/run_single_paper_review_cli.py --paper_md_path /tmp/tmpjvugpu8b/paper.md --output_dir /tmp/tmpjvugpu8b --model_name fake-model --review_temperature 0.3 --keyword_model_name fake-model --max_retrieved_refs 2 --reviewer_workers 1 --api_min_interval_seconds 0 --api_request_timeout_seconds 600 --api_connect_timeout_seconds 30 --review_max_tokens 8192 --review_retry_max_tokens 16384 --reviewer_reasoning_effort low --paper_context_max_chars 60000 --meta_review_max_tokens 4096 --memory_mode none --memory_top_k 1 --memory_max_chars 1000 --reuse_completed_specialists --overwrite --memory_embedding_mode frozen
+....[Review] Reviewer SIGN: paper_context_chars=5->5
+[Anchor] Reviewer SIGN: invalid first response; requesting one repair: invalid format 'SRC-EXP(page=4)'; expected SRC-<digits>(page=<digits>)
+[Review] Partial specialist run saved: successful=[], failed=['Reviewer SIGN'], checkpoint=disabled
+...[Review] Reviewer CLAR: paper_context_chars=1010->200
+[Review] Checkpoint saved: Reviewer CLAR (1/5 specialists available)
+[Review] Specialist stage completed: 1/5 reviews in 0.0s
+.........................................[MSTAR] Starting evolution: iterations=5, static_size=1, rotating_size=5, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=1
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+.[MSTAR] Starting evolution: iterations=0, static_size=1, rotating_size=5, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=1
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=0.5000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Resuming inflight Candidate program_004_child static evaluation
+[MSTAR] Iteration 3: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: reflector failed: ValueError: protocol guard rejected fixture
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Iteration 2: child_score=0.5000
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=0.5000
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.0000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_000_seed_vector_search, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 2: rotating_score=1.0000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: static evaluation started
+[MSTAR] Iteration 2: child_score=1.0000
+[MSTAR] Iteration 3: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 3: rotating_score=1.0000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+.[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 1: child quality failed: ['fixture rejection']
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 2: child quality failed: ['fixture rejection']
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: compile-fix started: ['fixture rejection']
+[MSTAR] Iteration 3: child quality failed: ['fixture rejection']
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=None
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=0.5000, traces=0, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 1: rotating_score=0.5000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Iteration 2: parent=program_002_seed_experience_learner, parent_static_score=0.5000
+[MSTAR] Iteration 2: rotating_score=0.5000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=0.5000
+[MSTAR] Iteration 3: rotating_score=0.5000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: reflector failed: ValueError: repeated reflector rejection
+[MSTAR] Best program=program_000_seed_vector_search, score=0.5000
+.[MSTAR] Starting evolution: iterations=1, static_size=1, rotating_size=1, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+..[MSTAR] Starting evolution: iterations=3, static_size=1, rotating_size=1, episode_budget=1
+[MSTAR] Loaded data: episodes=1, validation=2
+[MSTAR] Embedding closure smoke passed: episode=A::QUAL, validation=B2::QUAL
+[MSTAR] Selected static_validation=1, selected_episodes=1
+[MSTAR] Seed program_000_seed_vector_search: quality check started
+[MSTAR] Seed program_000_seed_vector_search: static evaluation started
+[MSTAR] Seed program_000_seed_vector_search: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_001_seed_llm_summarizer: quality check started
+[MSTAR] Seed program_001_seed_llm_summarizer: static evaluation started
+[MSTAR] Seed program_001_seed_llm_summarizer: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Seed program_002_seed_experience_learner: quality check started
+[MSTAR] Seed program_002_seed_experience_learner: static evaluation started
+[MSTAR] Seed program_002_seed_experience_learner: score=1.0000, traces=2, failed_cases=0, error=none
+[MSTAR] Iteration 1: parent=program_002_seed_experience_learner, parent_static_score=1.0000
+[MSTAR] Iteration 1: rotating_score=1.0000
+[MSTAR] Iteration 1: reflector mutation started
+[MSTAR] Iteration 1: static evaluation started
+[MSTAR] Iteration 1: child_score=1.0000
+[MSTAR] Iteration 2: parent=program_003_child, parent_static_score=1.0000
+[MSTAR] Iteration 2: rotating_score=1.0000
+[MSTAR] Iteration 2: reflector mutation started
+[MSTAR] Iteration 2: reflector failed: ValueError: Reflector response is missing V4A patch markers after 3 reflector attempts
+[MSTAR] Iteration 3: parent=program_001_seed_llm_summarizer, parent_static_score=1.0000
+[MSTAR] Iteration 3: rotating_score=1.0000
+[MSTAR] Iteration 3: reflector mutation started
+[MSTAR] Iteration 3: static evaluation started
+[MSTAR] Iteration 3: child_score=1.0000
+[MSTAR] Best program=program_000_seed_vector_search, score=1.0000
+...........................................
+----------------------------------------------------------------------
+Ran 262 tests in 17.650s
+
+OK

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/supervise_core_v1_corpus_bootstrap.py", line 218, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/supervise_core_v1_corpus_bootstrap.py", line 126, in main
+    time.sleep(args.poll_seconds)
+KeyboardInterrupt

@@ -14,7 +14,14 @@ import urllib.request
 from pathlib import Path
 from typing import Mapping
 
+from agentreview.corpus_semantic_audit import semantic_boundary_violations
 from agentreview.review_corpus import canonical_json_bytes
+from agentreview.review_corpus import CanonicalFullReviewRecord
+from agentreview.review_corpus_builder import (
+    ROLE_ORDER,
+    CorpusPaper,
+    build_corpus_reviewer_request,
+)
 
 
 def _http_json(url: str, body=None, timeout=30):
@@ -59,6 +66,208 @@ def _status_field(pid: int, name: str):
     raise RuntimeError(f"Missing {name} for PID {pid}")
 
 
+def _local_prompt_tokens(tokenizer, messages):
+    input_ids = tokenizer.apply_chat_template(
+        messages,
+        tokenize=True,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
+    if isinstance(input_ids, Mapping):
+        input_ids = input_ids["input_ids"]
+    return len(input_ids)
+
+
+def _diagnostic_constrained_smoke(endpoint, profile, tokenizer):
+    expected = {
+        "latex": r"\circledast",
+        "quotes": 'a "quoted" value',
+        "slash_backslash": "/ and \\",
+        "newline": "line one\nline two",
+        "crlf": "line one\r\nline two",
+        "unicode": "中文 reviewer",
+        "anchors": ["SRC-001", "SRC-002"],
+    }
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Benchmark-independent constrained JSON transport smoke. "
+                "Return only the requested object."
+            ),
+        },
+        {
+            "role": "user",
+            "content": "Return this exact logical payload:\n"
+            + json.dumps(expected, ensure_ascii=False, separators=(",", ":")),
+        },
+    ]
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(expected),
+        "properties": {
+            "latex": {"type": "string", "const": expected["latex"]},
+            "quotes": {"type": "string", "const": expected["quotes"]},
+            "slash_backslash": {
+                "type": "string",
+                "const": expected["slash_backslash"],
+            },
+            "newline": {"type": "string", "const": expected["newline"]},
+            "crlf": {"type": "string", "const": expected["crlf"]},
+            "unicode": {"type": "string", "const": expected["unicode"]},
+            "anchors": {
+                "type": "array",
+                "const": expected["anchors"],
+                "items": {"type": "string", "pattern": r"^SRC-\d{3}$"},
+                "minItems": 2,
+                "maxItems": 2,
+            },
+        },
+    }
+    body = {
+        **profile["generation_semantics"]["request_json"],
+        "messages": messages,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "corpus_special_character_smoke_v4",
+                "strict": True,
+                "schema": schema,
+            },
+        },
+    }
+    raw, response = _http_json(
+        endpoint + "/chat/completions", body, timeout=600
+    )
+    try:
+        choice = response["choices"][0]
+        content = choice["message"]["content"]
+        actual = json.loads(content)
+        prompt_tokens = response["usage"]["prompt_tokens"]
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Constrained special-character smoke returned invalid JSON") from exc
+    if choice.get("finish_reason") != "stop" or actual != expected:
+        raise RuntimeError(
+            "Constrained special-character smoke changed logical bytes: "
+            f"finish_reason={choice.get('finish_reason')!r}, actual={actual!r}"
+        )
+    local_tokens = _local_prompt_tokens(tokenizer, messages)
+    if prompt_tokens != local_tokens:
+        raise RuntimeError(
+            "Strict token accounting mismatch in constrained smoke: "
+            f"local={local_tokens}, provider={prompt_tokens!r}"
+        )
+    return {
+        "status": "PASS",
+        "logical_payload_sha256": hashlib.sha256(
+            canonical_json_bytes(actual)
+        ).hexdigest(),
+        "raw_response_base64": base64.b64encode(raw).decode("ascii"),
+        "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
+        "local_prompt_tokens": local_tokens,
+        "provider_prompt_tokens": prompt_tokens,
+        "finish_reason": choice.get("finish_reason"),
+    }
+
+
+def _synthetic_paper():
+    context = (
+        "Context protocol: benchmark-independent-corpus-smoke-v1\n"
+        "=== CANDIDATE-VISIBLE METADATA ===\n"
+        "paper_id: SYNTH-CORPUS-V4\n"
+        "title: Synthetic Structured Review Case\n"
+        "venue: synthetic\n"
+        "year: 2000\n"
+        "reviewer_role: QUAL\n"
+        "=== END CANDIDATE-VISIBLE METADATA ===\n\n"
+        "=== BEGIN PAPER (MD) ===\n"
+        "# METHOD\n"
+        "The paper presents a deterministic method called \\circledast and claims a novel contribution.\n"
+        "# EXPERIMENT\n"
+        "The paper reports a benchmark improvement and describes it as state-of-the-art, using one synthetic run.\n"
+        "Figure 1 is provided only as a link. Caption: Reported synthetic score. No image pixels are included.\n"
+        "The text contains author names but supplies no venue policy, overlap evidence, compliance rule, human data, or material ethical-risk pathway.\n"
+        "=== END PAPER (MD) ===\n\n"
+        "=== SOURCE ANCHORS ===\n"
+        "SRC-001 | page=1 | type=text | text=Method \\circledast with a quoted \"term\".\n"
+        "SRC-002 | page=1 | type=image | text=Figure 1 caption only; no pixels.\n"
+        "SRC-003 | page=1 | type=text | text=Reported benchmark and novelty claims.\n"
+        "=== END SOURCE ANCHORS ==="
+    )
+    return CorpusPaper.from_context(
+        paper_id="SYNTH-CORPUS-V4", canonical_paper_context=context
+    )
+
+
+def _role_semantic_smoke(endpoint, profile, tokenizer):
+    paper = _synthetic_paper()
+    generation_sha = profile["corpus_request_materialization_sha256"]
+    outputs = []
+    for role in ROLE_ORDER:
+        request = build_corpus_reviewer_request(
+            paper,
+            role,
+            generation_identity_sha256=generation_sha,
+        )
+        body = {
+            **profile["generation_semantics"]["request_json"],
+            "messages": [dict(item) for item in request.messages],
+            "response_format": request.response_format,
+        }
+        raw, response = _http_json(
+            endpoint + "/chat/completions", body, timeout=600
+        )
+        try:
+            choice = response["choices"][0]
+            content = choice["message"]["content"].encode("utf-8")
+            provider_tokens = response["usage"]["prompt_tokens"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(f"{role} semantic smoke response is malformed") from exc
+        local_tokens = _local_prompt_tokens(tokenizer, request.messages)
+        if provider_tokens != local_tokens:
+            raise RuntimeError(
+                f"{role} semantic smoke token accounting mismatch: "
+                f"local={local_tokens}, provider={provider_tokens!r}"
+            )
+        if choice.get("finish_reason") != "stop":
+            raise RuntimeError(
+                f"{role} semantic smoke finish reason is {choice.get('finish_reason')!r}"
+            )
+        record = CanonicalFullReviewRecord.from_model_response(
+            content,
+            expected_role=role,
+            expected_paper_id=paper.paper_id,
+            paper_identity_sha256=paper.paper_identity_sha256,
+            structural_context_sha256=paper.structural_context_sha256,
+            reviewer_identity_sha256=profile["generation_semantics"][
+                "model_artifact_identity_sha256"
+            ],
+            prompt_identity_sha256=request.prompt_identity_sha256,
+            request_identity_sha256=request.request_identity_sha256,
+            allowed_paper_anchor_ids=paper.allowed_paper_anchor_ids,
+        )
+        violations = semantic_boundary_violations(record)
+        if violations:
+            raise RuntimeError(
+                f"{role} semantic boundary smoke failed: "
+                + ",".join(item.code for item in violations)
+            )
+        outputs.append(
+            {
+                "role": role,
+                "request_identity_sha256": request.request_identity_sha256,
+                "canonical_payload_sha256": record.canonical_payload_sha256,
+                "raw_response_base64": base64.b64encode(raw).decode("ascii"),
+                "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
+                "local_prompt_tokens": local_tokens,
+                "provider_prompt_tokens": provider_tokens,
+                "finish_reason": choice.get("finish_reason"),
+            }
+        )
+    return {"status": "PASS", "roles": outputs}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", required=True)
@@ -74,9 +283,9 @@ def main():
     profile = json.loads(Path(args.profile).read_text(encoding="utf-8"))
     if (
         profile.get("profile_name") != "CORPUS_BUILD_RUNTIME_PROFILE"
+        or profile.get("profile_version") != "v4"
         or profile.get("tensor_parallel_size") != 4
         or profile.get("max_num_seqs") != 1
-        or profile.get("corpus_build_max_model_len") != 32768
     ):
         raise RuntimeError("Corpus runtime profile is not the frozen bootstrap profile")
     command = Path(f"/proc/{args.server_pid}/cmdline").read_bytes().split(b"\0")
@@ -136,36 +345,8 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_path, local_files_only=True, trust_remote_code=False
     )
-    messages = [
-        {
-            "role": "system",
-            "content": "Benchmark-independent Corpus token-accounting preflight.",
-        },
-        {"role": "user", "content": "Return the single word READY."},
-    ]
-    input_ids = tokenizer.apply_chat_template(
-        messages,
-        tokenize=True,
-        add_generation_prompt=True,
-        enable_thinking=False,
-    )
-    if isinstance(input_ids, Mapping):
-        input_ids = input_ids["input_ids"]
-    local_prompt_tokens = len(input_ids)
-    smoke_request = {
-        **profile["generation_semantics"]["request_json"],
-        "messages": messages,
-        "max_tokens": 8,
-    }
-    response_raw, response = _http_json(
-        endpoint + "/chat/completions", smoke_request, timeout=600
-    )
-    provider_prompt_tokens = response.get("usage", {}).get("prompt_tokens")
-    if provider_prompt_tokens != local_prompt_tokens:
-        raise RuntimeError(
-            "Strict token accounting mismatch: "
-            f"local={local_prompt_tokens}, provider={provider_prompt_tokens!r}"
-        )
+    constrained_smoke = _diagnostic_constrained_smoke(endpoint, profile, tokenizer)
+    role_semantic_smoke = _role_semantic_smoke(endpoint, profile, tokenizer)
 
     gpu_rows = []
     query = subprocess.check_output(
@@ -231,12 +412,8 @@ def main():
         "observed_memory_policies": sorted(numa_policies),
         "served_model_ids": served_ids,
         "models_response_sha256": hashlib.sha256(models_raw).hexdigest(),
-        "token_accounting": {
-            "local_prompt_tokens": local_prompt_tokens,
-            "provider_prompt_tokens": provider_prompt_tokens,
-            "response_raw_base64": base64.b64encode(response_raw).decode("ascii"),
-            "response_raw_sha256": hashlib.sha256(response_raw).hexdigest(),
-        },
+        "constrained_special_character_smoke": constrained_smoke,
+        "role_semantic_smoke": role_semantic_smoke,
         "gpu_state": gpu_rows,
         "allowed_process_ids": sorted(allowed_pids),
         "gpu_compute_processes": compute_processes,

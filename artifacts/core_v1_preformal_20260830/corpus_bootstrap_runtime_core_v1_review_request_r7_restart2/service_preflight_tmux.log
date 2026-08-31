@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/data/xyj/envs/env_shengao/lib/python3.12/importlib/metadata/__init__.py", line 397, in from_name
+    return next(cls.discover(name=name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 440, in <module>
+    main()
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 421, in main
+    name: importlib.metadata.version(name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/importlib/metadata/__init__.py", line 889, in version
+    return distribution(distribution_name).version
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/importlib/metadata/__init__.py", line 862, in distribution
+    return Distribution.from_name(distribution_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/envs/env_shengao/lib/python3.12/importlib/metadata/__init__.py", line 399, in from_name
+    raise PackageNotFoundError(name)
+importlib.metadata.PackageNotFoundError: No package metadata was found for vllm

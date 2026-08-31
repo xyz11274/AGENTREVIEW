@@ -1,0 +1,2 @@
+    PID    PPID STAT                  STARTED CMD
+1638604 1638599 Sl+  Sun Aug 30 23:23:51 2026 /data/xyj/envs/qwen38serve/bin/python /data/xyj/envs/qwen38serve/bin/vllm serve /data/xyj/models/Qwen3.8-27B --served-model-name qwen3.8-27b --host 127.0.0.1 --port 8000 --tensor-parallel-size 4 --dtype bfloat16 --max-model-len 32768 --max-num-seqs 1 --gpu-memory-utilization 0.939 --language-model-only --reasoning-parser qwen3 --enable-prefix-caching --disable-custom-all-reduce

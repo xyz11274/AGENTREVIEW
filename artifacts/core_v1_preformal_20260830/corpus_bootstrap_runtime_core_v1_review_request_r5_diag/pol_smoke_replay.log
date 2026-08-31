@@ -1,0 +1,51 @@
+{
+  "overall_assessment": "The supplied paper-only evidence is insufficient to determine the corresponding privacy/data compliance, anonymity, plagiarism, or policy judgment. The text explicitly notes the presence of author names but lacks the necessary venue policy, overlap evidence, compliance rules, human data, or material ethical-risk pathways to support a definitive policy or compliance assessment.",
+  "paper_id": "SYNTH-CORPUS-V4",
+  "role": "POL",
+  "subdimension_sections": [
+    {
+      "paper_anchor_ids": [
+        "SRC-003"
+      ],
+      "review_text": "The paper does not describe a material ethical-risk pathway, such as concrete harm, fairness, bias, or dual use. The text explicitly states that no material ethical-risk pathway is supplied, and the method is described as a deterministic synthetic case. Therefore, no specific ethical concerns or mitigation strategies are observable in the provided text.",
+      "subdimension_id": "POL-ETH"
+    },
+    {
+      "paper_anchor_ids": [
+        "SRC-003"
+      ],
+      "review_text": "The paper does not indicate the use of human, personal, sensitive, or restricted data. The text explicitly notes that no human data is supplied. Consequently, there is no visible evidence of privacy violations, data consent issues, or licensing terms within the provided text.",
+      "subdimension_id": "POL-DAT"
+    },
+    {
+      "paper_anchor_ids": [
+        "SRC-003"
+      ],
+      "review_text": "The text contains author names, which could potentially compromise anonymity. However, the paper does not supply a venue policy or double-blind rule. Without a frozen venue/year anonymity policy, the presence of author names cannot be declared a policy violation or a compliance clearance.",
+      "subdimension_id": "POL-ANO"
+    },
+    {
+      "paper_anchor_ids": [
+        "SRC-003"
+      ],
+      "review_text": "The paper does not provide auditable evidence of plagiarism, self-plagiarism, or dual submission. The text explicitly states that no overlap evidence is supplied. The absence of such evidence in the provided text is insufficient to prove originality or to rule out duplicate submission.",
+      "subdimension_id": "POL-PLG"
+    },
+    {
+      "paper_anchor_ids": [
+        "SRC-003"
+      ],
+      "review_text": "The paper does not include a broader-impact statement, required checklist, or compliance documentation. The text explicitly notes that no compliance rule is supplied. Without a frozen policy obligation or a paper-contained compliance claim, the absence of these documents cannot be evaluated as a policy violation.",
+      "subdimension_id": "POL-IMP"
+    }
+  ]
+}
+{
+  "finish_reason": "stop",
+  "violations": [
+    {
+      "subdimension": "POL-IMP",
+      "code": "DOCUMENTATION_OBLIGATION_WITHOUT_FROZEN_POLICY"
+    }
+  ]
+}

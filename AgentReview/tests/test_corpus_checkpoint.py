@@ -21,7 +21,19 @@ def legal_response(messages):
     )[0]
     value = json.loads(shape)
     for section in value["subdimension_sections"]:
-        section["review_text"] = "Grounded role-local assessment."
+        subdimension = section["subdimension_id"]
+        section["review_text"] = {
+            "CLAR-FIG": (
+                "The text-only input exposes no image pixels; only the "
+                "machine-readable caption can be assessed."
+            ),
+            "POL-PLG": (
+                "Frozen overlap evidence is not available, so plagiarism or "
+                "dual submission cannot be assessed."
+            ),
+            "POL-ANO": "Without frozen policy, anonymity compliance cannot be assessed.",
+            "POL-IMP": "Without frozen policy, documentation obligations cannot be assessed.",
+        }.get(subdimension, "Grounded role-local assessment.")
     value["overall_assessment"] = None
     return json.dumps(value, separators=(",", ":"))
 
@@ -30,8 +42,17 @@ class CorpusCheckpointTest(unittest.TestCase):
     def paper(self):
         return CorpusPaper.from_context(
             paper_id="A-1",
-            canonical_paper_context="reviewer_role: QUAL\nSRC-001 evidence",
-            structural_context="SRC-001 evidence",
+            canonical_paper_context=(
+                "Context protocol: synthetic-v1\n"
+                "=== CANDIDATE-VISIBLE METADATA ===\n"
+                "paper_id: A-1\nreviewer_role: QUAL\n"
+                "=== END CANDIDATE-VISIBLE METADATA ===\n"
+                "=== BEGIN PAPER (MD) ===\n# METHOD\ntext\n"
+                "=== END PAPER (MD) ===\n"
+                "=== SOURCE ANCHORS ===\n"
+                "SRC-001 | page=1 | type=text | text=evidence\n"
+                "=== END SOURCE ANCHORS ==="
+            ),
         )
 
     def builder(self, complete):
@@ -92,8 +113,8 @@ class CorpusCheckpointTest(unittest.TestCase):
         prompts = default_role_system_prompts()
         self.assertEqual(set(prompts), set(ROLES))
         for prompt in prompts.values():
-            self.assertIn("single strict JSON object", prompt)
-            self.assertIn("lexicographically ascending", prompt)
+            self.assertIn("single JSON object", prompt)
+            self.assertIn("unordered evidence set", prompt)
             self.assertNotIn("Dimension score (1-10)", prompt)
             self.assertNotIn("Recommendation: Accept", prompt)
 

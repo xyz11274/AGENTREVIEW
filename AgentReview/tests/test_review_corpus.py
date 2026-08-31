@@ -78,12 +78,11 @@ class ReviewCorpusTest(unittest.TestCase):
                 request_identity_sha256=DIGEST,
             )
 
-    def test_anchor_ids_are_canonicalized_as_an_unordered_set(self):
+    def test_unsorted_unique_anchor_ids_are_canonicalized_as_an_unordered_set(self):
         payload = full_review("QUAL").canonical_payload
         payload["subdimension_sections"][0]["paper_anchor_ids"] = [
             "SRC-011",
             "SRC-002",
-            "SRC-011",
         ]
         record = CanonicalFullReviewRecord.from_model_response(
             json.dumps(payload).encode(),
@@ -94,11 +93,67 @@ class ReviewCorpusTest(unittest.TestCase):
             reviewer_identity_sha256=DIGEST,
             prompt_identity_sha256=DIGEST,
             request_identity_sha256=DIGEST,
+            allowed_paper_anchor_ids=("SRC-001(page=1)", "SRC-002", "SRC-011"),
         )
         self.assertEqual(
             record.subdimension_sections[0].paper_anchor_ids,
             ("SRC-002", "SRC-011"),
         )
+
+    def test_duplicate_anchor_ids_fail_instead_of_being_silently_deduplicated(self):
+        payload = full_review("QUAL").canonical_payload
+        payload["subdimension_sections"][0]["paper_anchor_ids"] = [
+            "SRC-002",
+            "SRC-002",
+        ]
+        with self.assertRaisesRegex(ValueError, "Duplicate paper anchor"):
+            CanonicalFullReviewRecord.from_model_response(
+                json.dumps(payload).encode(),
+                expected_role="QUAL",
+                expected_paper_id="paper-1",
+                paper_identity_sha256=DIGEST,
+                structural_context_sha256=DIGEST,
+                reviewer_identity_sha256=DIGEST,
+                prompt_identity_sha256=DIGEST,
+                request_identity_sha256=DIGEST,
+                allowed_paper_anchor_ids=("SRC-002",),
+            )
+
+    def test_foreign_anchor_id_fails_scope_validation(self):
+        payload = full_review("CLAR").canonical_payload
+        payload["subdimension_sections"][0]["paper_anchor_ids"] = ["SRC-999"]
+        with self.assertRaisesRegex(ValueError, "Foreign or unknown paper anchor"):
+            CanonicalFullReviewRecord.from_model_response(
+                json.dumps(payload).encode(),
+                expected_role="CLAR",
+                expected_paper_id="paper-1",
+                paper_identity_sha256=DIGEST,
+                structural_context_sha256=DIGEST,
+                reviewer_identity_sha256=DIGEST,
+                prompt_identity_sha256=DIGEST,
+                request_identity_sha256=DIGEST,
+                allowed_paper_anchor_ids=("SRC-001",),
+            )
+
+    def test_strict_json_special_characters_round_trip_without_repair(self):
+        payload = full_review("CLAR").canonical_payload
+        payload["subdimension_sections"][0]["review_text"] = (
+            'Unicode 中文, quote "x", slash /, backslash \\circledast, '
+            "newline\nCRLF\r\nend"
+        )
+        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
+        record = CanonicalFullReviewRecord.from_model_response(
+            raw,
+            expected_role="CLAR",
+            expected_paper_id="paper-1",
+            paper_identity_sha256=DIGEST,
+            structural_context_sha256=DIGEST,
+            reviewer_identity_sha256=DIGEST,
+            prompt_identity_sha256=DIGEST,
+            request_identity_sha256=DIGEST,
+            allowed_paper_anchor_ids=("SRC-001(page=1)",),
+        )
+        self.assertIn("\\circledast", record.subdimension_sections[0].review_text)
 
     def test_one_paper_all_roles_produces_23_primary_projections(self):
         tokenizer = FrozenTokenizer(list, "char-tokenizer-v1")

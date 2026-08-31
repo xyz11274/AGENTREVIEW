@@ -1,0 +1,24 @@
+{"completed": 1, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "QUAL:generated"}
+{"completed": 2, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "CLAR:generated"}
+{"completed": 3, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "SIGN:generated"}
+{"completed": 4, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "ORIG:generated"}
+{"completed": 5, "total": 625, "paper_id": "B1-Hhnslg", "disposition": "POL:generated"}
+{"completed": 6, "total": 625, "paper_id": "B1-q5Pqxl", "disposition": "QUAL:generated"}
+{"completed": 7, "total": 625, "paper_id": "B1-q5Pqxl", "disposition": "CLAR:generated"}
+{"completed": 8, "total": 625, "paper_id": "B1-q5Pqxl", "disposition": "SIGN:generated"}
+{"completed": 9, "total": 625, "paper_id": "B1-q5Pqxl", "disposition": "ORIG:generated"}
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/build_core_v1_review_corpus.py", line 157, in <module>
+    main()
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/build_core_v1_review_corpus.py", line 122, in main
+    result = run_checkpointed_corpus_build(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/corpus_checkpoint.py", line 169, in run_checkpointed_corpus_build
+    record, attempts = builder.build_one(paper, role)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/review_corpus_builder.py", line 713, in build_one
+    return self._one(paper, role)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/agentreview/review_corpus_builder.py", line 706, in _one
+    raise CorpusBuildFailure(paper.paper_id, role, attempts)
+agentreview.review_corpus_builder.CorpusBuildFailure: Corpus build fail-fast: two illegal Reviewer outputs for B1-q5Pqxl × POL

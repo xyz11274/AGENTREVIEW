@@ -39,6 +39,16 @@ class CorpusTransportTest(unittest.TestCase):
             endpoint="http://127.0.0.1:8000/v1",
             request_config={"model": "qwen", "max_tokens": 10},
             expected_prompt_tokens_by_messages_sha256={message_sha: 7},
+            response_formats_by_messages_sha256={
+                message_sha: {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "test",
+                        "strict": True,
+                        "schema": {"type": "object"},
+                    },
+                }
+            },
             timeout_seconds=1,
         )
         adapter._opener = mock.Mock()
@@ -47,6 +57,8 @@ class CorpusTransportTest(unittest.TestCase):
         self.assertEqual(result.raw_provider_response, raw)
         self.assertEqual(result.assistant_content, b"{}")
         self.assertEqual(result.finish_reason, "stop")
+        wire = json.loads(adapter._opener.open.call_args.args[0].data)
+        self.assertEqual(wire["response_format"]["type"], "json_schema")
 
     def test_rejects_token_accounting_mismatch(self):
         messages = [{"role": "user", "content": "frozen"}]
@@ -65,6 +77,16 @@ class CorpusTransportTest(unittest.TestCase):
             endpoint="http://127.0.0.1:8000/v1",
             request_config={"model": "qwen", "max_tokens": 10},
             expected_prompt_tokens_by_messages_sha256={message_sha: 7},
+            response_formats_by_messages_sha256={
+                message_sha: {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "test",
+                        "strict": True,
+                        "schema": {"type": "object"},
+                    },
+                }
+            },
             timeout_seconds=1,
         )
         adapter._opener = mock.Mock()

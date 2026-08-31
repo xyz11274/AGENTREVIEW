@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 440, in <module>
+    main()
+  File "/data/xyj/shengao/AgentReview_0811/AgentReview/scripts/preflight_core_v1_corpus_service.py", line 330, in main
+    raise RuntimeError(
+RuntimeError: NUMA affinity mismatch: cpus='0-143', allowed_memory_nodes='0-1', memory_policies=['default', 'local']

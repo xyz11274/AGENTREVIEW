@@ -26,7 +26,7 @@ from .review_corpus_builder import (
 )
 
 
-CHECKPOINT_SCHEMA_VERSION = "corpus-build-bootstrap-checkpoint-v1"
+CHECKPOINT_SCHEMA_VERSION = "corpus-build-bootstrap-checkpoint-v4"
 
 
 def _sha(value: bytes) -> str:
@@ -199,4 +199,3 @@ def run_checkpointed_corpus_build(
     if result.manifest["canonical_record_count"] != total:
         raise RuntimeError("Checkpointed Corpus did not reach complete cardinality")
     return result
-

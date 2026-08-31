@@ -14,6 +14,7 @@ from agentreview.corpus_bootstrap import (
 )
 from agentreview.corpus_transport import CorpusOpenAICompatibleAdapter
 from agentreview.corpus_checkpoint import run_checkpointed_corpus_build
+from agentreview.corpus_freeze_audit import audit_and_freeze_corpus
 from agentreview.review_corpus_builder import CorpusPaper, NoMemoryCorpusBuilder
 
 
@@ -93,7 +94,6 @@ def main():
         CorpusPaper.from_context(
             paper_id=paper_id,
             canonical_paper_context=canonical_context(by_id[paper_id]),
-            structural_context="source anchors embedded in canonical paper context",
         )
         for paper_id in ids
     ]
@@ -101,10 +101,14 @@ def main():
     expected_tokens = {
         item.messages_sha256: item.prompt_token_count for item in recomputed.requests
     }
+    response_formats = {
+        item.messages_sha256: item.response_format for item in recomputed.requests
+    }
     backend = CorpusOpenAICompatibleAdapter(
         endpoint=args.endpoint,
         request_config=generation["request_json"],
         expected_prompt_tokens_by_messages_sha256=expected_tokens,
+        response_formats_by_messages_sha256=response_formats,
         timeout_seconds=args.request_timeout,
         transport_attempts=2,
     )
@@ -134,10 +138,18 @@ def main():
         ),
     )
     result.write_audit(output)
+    frozen = audit_and_freeze_corpus(
+        corpus_build_directory=output,
+        bootstrap_directory=bootstrap_dir,
+        expected_paper_count=125,
+    )
     print(json.dumps({
         "canonical_reviews": len(result.records),
         "raw_attempts": len(result.raw_attempts),
         "build_manifest_sha256": result.manifest["build_manifest_sha256"],
+        "frozen_corpus_success_manifest_sha256": frozen[
+            "frozen_corpus_success_manifest_sha256"
+        ],
     }, ensure_ascii=False))
 
 
