@@ -1269,6 +1269,7 @@ def run_coco_review_batch(
                             paper=paper,
                             role_runtime=runtime.roles[item.role],
                         ),
+                        allow_legacy_missing_require_bubblewrap=False,
                     )
                     _validate_task_sources(
                         runtime=runtime,
@@ -2044,6 +2045,7 @@ def _validated_specialist_payload(
     committed_request = _load_review_request(
         request_path,
         input_identity=request_body["input_identity"],
+        allow_legacy_missing_require_bubblewrap=False,
     )
     if committed_request != {
         **request_body,
