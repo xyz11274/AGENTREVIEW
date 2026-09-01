@@ -24,7 +24,7 @@ from .evolution import (
     validate_pool_entry_snapshot,
 )
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
-from .llm import CompletionClient
+from .llm import CompletionClient, complete_with_response_format
 from .memory import SEED_NAMES, build_memory_snapshot, seed_program_path
 from .models import Paper
 from .program_checks import program_capability_manifest
@@ -749,12 +749,15 @@ class BoundedCompletionClient:
         *,
         max_tokens: int,
         component: str,
+        response_format: dict[str, Any] | None = None,
     ) -> str:
         with self._semaphore:
-            return self.client.complete(
+            return complete_with_response_format(
+                self.client,
                 messages,
                 max_tokens=max_tokens,
                 component=component,
+                response_format=response_format,
             )
 
     def count_chat_tokens(

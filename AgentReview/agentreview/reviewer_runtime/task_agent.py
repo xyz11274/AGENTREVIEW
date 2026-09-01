@@ -1,23 +1,74 @@
 import json
 import re
-from dataclasses import MISSING, fields
-from typing import Any
+import types
+from dataclasses import fields
+from typing import Any, Union, get_args, get_origin
 
-def _annotation_name(annotation: Any) -> str:
-    return getattr(annotation, "__name__", str(annotation).replace("typing.", ""))
+
+def _annotation_schema(annotation: Any) -> dict[str, Any]:
+    if isinstance(annotation, str):
+        normalized = annotation.replace("typing.", "").replace(" ", "")
+        string_schemas = {
+            "str": {"type": "string"},
+            "int": {"type": "integer"},
+            "float": {"type": "number"},
+            "bool": {"type": "boolean"},
+            "list": {"type": "array", "items": {"type": "string"}},
+            "list[str]": {"type": "array", "items": {"type": "string"}},
+            "List[str]": {"type": "array", "items": {"type": "string"}},
+            "Optional[str]": {
+                "anyOf": [{"type": "string"}, {"type": "null"}]
+            },
+            "str|None": {
+                "anyOf": [{"type": "string"}, {"type": "null"}]
+            },
+            "None|str": {
+                "anyOf": [{"type": "string"}, {"type": "null"}]
+            },
+        }
+        if normalized not in string_schemas:
+            raise TypeError(f"Unsupported dataclass field annotation: {annotation!r}")
+        return string_schemas[normalized]
+
+    if annotation is str:
+        return {"type": "string"}
+    if annotation is int:
+        return {"type": "integer"}
+    if annotation is float:
+        return {"type": "number"}
+    if annotation is bool:
+        return {"type": "boolean"}
+    if annotation is list:
+        # The candidate sandbox permits only list[str] and preserves it as list.
+        return {"type": "array", "items": {"type": "string"}}
+
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if origin is list:
+        item_annotation = arguments[0] if arguments else str
+        return {"type": "array", "items": _annotation_schema(item_annotation)}
+    if origin in {Union, types.UnionType}:
+        return {
+            "anyOf": [
+                {"type": "null"}
+                if argument is type(None)
+                else _annotation_schema(argument)
+                for argument in arguments
+            ]
+        }
+    raise TypeError(f"Unsupported dataclass field annotation: {annotation!r}")
 
 
 def dataclass_schema(dataclass_type: type) -> dict[str, Any]:
     properties = {}
-    required = []
     for item in fields(dataclass_type):
-        properties[item.name] = {"type": _annotation_name(item.type)}
-        if item.default is MISSING and item.default_factory is MISSING:
-            required.append(item.name)
+        properties[item.name] = _annotation_schema(item.type)
     return {
         "type": "object",
         "properties": properties,
-        "required": required,
+        # OpenAI strict structured output requires every property to be required;
+        # nullable annotations express nullability in the property's own schema.
+        "required": list(properties),
         "additionalProperties": False,
     }
 
@@ -48,18 +99,43 @@ def _parse_json_object(response: str) -> dict[str, Any]:
 
 
 def _matches_annotation(value: Any, annotation: Any) -> bool:
-    name = getattr(annotation, "__name__", str(annotation)).lower()
-    if "list" in name:
-        return isinstance(value, list)
-    if "dict" in name:
-        return isinstance(value, dict)
-    if "bool" in name:
+    if isinstance(annotation, str):
+        normalized = annotation.replace("typing.", "").replace(" ", "")
+        if normalized in {"Optional[str]", "str|None", "None|str"}:
+            return value is None or isinstance(value, str)
+        if normalized in {"list", "list[str]", "List[str]"}:
+            return isinstance(value, list) and all(
+                isinstance(item, str) for item in value
+            )
+        annotation = {"str": str, "int": int, "float": float, "bool": bool}.get(
+            normalized, annotation
+        )
+
+    origin = get_origin(annotation)
+    arguments = get_args(annotation)
+    if origin is list:
+        item_annotation = arguments[0] if arguments else str
+        return isinstance(value, list) and all(
+            _matches_annotation(item, item_annotation) for item in value
+        )
+    if origin in {Union, types.UnionType}:
+        return any(
+            value is None
+            if argument is type(None)
+            else _matches_annotation(value, argument)
+            for argument in arguments
+        )
+    if annotation is list:
+        return isinstance(value, list) and all(isinstance(item, str) for item in value)
+    if annotation is bool:
         return isinstance(value, bool)
-    if "int" in name:
+    if annotation is int:
         return isinstance(value, int) and not isinstance(value, bool)
-    if "float" in name:
+    if annotation is float:
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    return isinstance(value, str)
+    if annotation is str:
+        return isinstance(value, str)
+    return False
 
 
 class TaskAgent:
@@ -76,18 +152,36 @@ class TaskAgent:
         self.task_id = task_id
         self.last_parser_debug: dict[str, Any] = {}
 
-    def _complete(self, prompt: str, agent_name: str = "Memory Harness") -> str:
+    def _complete(
+        self,
+        prompt: str,
+        agent_name: str = "Memory Harness",
+        response_format: dict[str, Any] | None = None,
+    ) -> str:
+        kwargs: dict[str, Any] = {"agent_name": agent_name}
+        if response_format is not None:
+            kwargs["response_format"] = response_format
         return self.toolkit.llm_completion(
             [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": prompt},
             ],
-            agent_name=agent_name,
+            **kwargs,
         )
 
     def _structured_completion(self, prompt: str, dataclass_type: type):
+        schema = dataclass_schema(dataclass_type)
         response = self._complete(
-            prompt, agent_name=f"Memory {dataclass_type.__name__}"
+            prompt,
+            agent_name=f"Memory {dataclass_type.__name__}",
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": dataclass_type.__name__,
+                    "strict": True,
+                    "schema": schema,
+                },
+            },
         )
         self.last_parser_debug = {
             "schema": dataclass_type.__name__,
@@ -101,11 +195,7 @@ class TaskAgent:
             raise
         items = list(fields(dataclass_type))
         expected = {item.name for item in items}
-        required = {
-            item.name
-            for item in items
-            if item.default is MISSING and item.default_factory is MISSING
-        }
+        required = set(schema["required"])
         actual = set(value)
         missing = required - actual
         extra = actual - expected

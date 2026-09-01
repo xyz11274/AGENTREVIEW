@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import urllib.error
@@ -22,7 +23,35 @@ class CompletionClient(Protocol):
         *,
         max_tokens: int,
         component: str,
+        response_format: dict[str, Any] | None = None,
     ) -> str: ...
+
+
+def complete_with_response_format(
+    client: Any,
+    messages: list[dict[str, str]],
+    *,
+    max_tokens: int,
+    component: str,
+    response_format: dict[str, Any] | None = None,
+) -> str:
+    """Use structured output when supported without breaking strict test clients."""
+    arguments: dict[str, Any] = {
+        "max_tokens": max_tokens,
+        "component": component,
+    }
+    if response_format is not None:
+        try:
+            parameters = inspect.signature(client.complete).parameters.values()
+        except (TypeError, ValueError):
+            parameters = ()
+        if any(
+            parameter.name == "response_format"
+            or parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        ):
+            arguments["response_format"] = response_format
+    return client.complete(messages, **arguments)
 
 
 class OpenAICompletionClient:
@@ -84,17 +113,23 @@ class OpenAICompletionClient:
         *,
         max_tokens: int,
         component: str,
+        response_format: dict[str, Any] | None = None,
     ) -> str:
-        response = self.client.chat.completions.create(
-            model=self.config.model,
-            messages=messages,
-            temperature=self.config.temperature,
-            max_tokens=max_tokens,
-            extra_body={
+        request: dict[str, Any] = {
+            "model": self.config.model,
+            "messages": messages,
+            "temperature": self.config.temperature,
+            "max_tokens": max_tokens,
+            "extra_body": {
                 "chat_template_kwargs": {
                     "enable_thinking": self.config.enable_thinking,
                 }
             },
+        }
+        if response_format is not None:
+            request["response_format"] = response_format
+        response = self.client.chat.completions.create(
+            **request,
         )
         text = response.choices[0].message.content
         if not isinstance(text, str) or not text.strip():
@@ -111,8 +146,10 @@ class ToolkitCompletionAdapter:
         self.component = component
 
     def llm_completion(self, messages: list[dict[str, str]], **_: Any) -> str:
-        return self.client.complete(
+        return complete_with_response_format(
+            self.client,
             messages,
             max_tokens=self.max_tokens,
             component=self.component,
+            response_format=_.get("response_format"),
         )

@@ -1,8 +1,12 @@
 import json
 import tempfile
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
+from agentreview.reviewer_runtime.task_agent import dataclass_schema
+from agentreview.research_v2.formal_evolution import BoundedCompletionClient
 from agentreview.research_v2.io import atomic_write_json, read_json
 from agentreview.research_v2.memory import (
     DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY,
@@ -26,9 +30,43 @@ class InterruptingCompletion:
         return self.responses.pop(0)
 
 
+class StructuredCompletion:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = []
+
+    def complete(
+        self,
+        messages,
+        *,
+        max_tokens,
+        component,
+        response_format,
+    ):
+        self.calls.append(
+            {
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "component": component,
+                "response_format": response_format,
+            }
+        )
+        return self.responses.pop(0)
+
+
 class FixedEmbedding:
     def embed(self, texts):
         return [[1.0, float(bool(str(text).strip()))] for text in texts]
+
+
+@dataclass
+class MixedKnowledgeItem:
+    text: str
+    count: int
+    ratio: float
+    enabled: bool
+    tags: list[str]
+    note: Optional[str]
 
 
 def _experience_payload(label):
@@ -145,6 +183,51 @@ class ResumableMemoryBuildTest(unittest.TestCase):
         no_op = InterruptingCompletion([])
         self.assertEqual(self._build(interrupted_output, no_op), resumed_snapshot)
         self.assertEqual(no_op.calls, [])
+
+    def test_memory_induction_uses_one_strict_json_schema_call_per_item(self):
+        transport = StructuredCompletion(
+            [_experience_payload("zero"), _experience_payload("one")]
+        )
+        snapshot = self._build(
+            self.root / "structured" / "snapshot.json",
+            BoundedCompletionClient(transport, 1),
+        )
+
+        self.assertEqual(len(transport.calls), 2)
+        self.assertEqual(len(snapshot["items"]), 2)
+        for call in transport.calls:
+            response_format = call["response_format"]
+            self.assertEqual(response_format["type"], "json_schema")
+            specification = response_format["json_schema"]
+            self.assertEqual(specification["name"], "KnowledgeItem")
+            self.assertTrue(specification["strict"])
+            schema = specification["schema"]
+            self.assertEqual(schema["type"], "object")
+            self.assertFalse(schema["additionalProperties"])
+            self.assertEqual(schema["required"], list(schema["properties"]))
+            self.assertEqual(
+                {value["type"] for value in schema["properties"].values()},
+                {"string"},
+            )
+
+    def test_dataclass_schema_maps_supported_python_annotations(self):
+        schema = dataclass_schema(MixedKnowledgeItem)
+
+        self.assertEqual(
+            schema["properties"],
+            {
+                "text": {"type": "string"},
+                "count": {"type": "integer"},
+                "ratio": {"type": "number"},
+                "enabled": {"type": "boolean"},
+                "tags": {"type": "array", "items": {"type": "string"}},
+                "note": {
+                    "anyOf": [{"type": "string"}, {"type": "null"}]
+                },
+            },
+        )
+        self.assertEqual(schema["required"], list(schema["properties"]))
+        self.assertFalse(schema["additionalProperties"])
 
     def test_checkpoint_rejects_changed_embedding_or_source_artifact(self):
         output = self.root / "strict" / "snapshot.json"
