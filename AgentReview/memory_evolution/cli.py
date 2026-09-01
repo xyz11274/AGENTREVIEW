@@ -943,12 +943,53 @@ def build_parser():
 
     final_suite = subparsers.add_parser(
         "final-evaluate-suite",
-        help="Run the formal-gated sealed D suite with the CoCo-style metric.",
+        help=(
+            "Run the formal-gated sealed D suite with the CoCo-style metric; "
+            "optionally evaluate only the five promoted Specialists."
+        ),
     )
     final_suite.add_argument("--data-root", required=True)
     final_suite.add_argument("--test-data-root", required=True)
     final_suite.add_argument("--program-root", required=True)
     final_suite.add_argument("--output", required=True)
+    final_suite.add_argument(
+        "--specialists-only",
+        action="store_true",
+        help=(
+            "Evaluate the five suite_manifest promoted Specialist champions on D "
+            "and do not require or execute META. The result receives a distinct "
+            "sealed_d_specialists_coco_style identity."
+        ),
+    )
+    final_suite.add_argument(
+        "--max-specialist-test-items",
+        type=int,
+        default=None,
+        help=(
+            "Deterministically cap each Specialist D dataset at this many items. "
+            "Requires --specialists-only and produces a non-reportable D-subset "
+            "pilot rather than a sealed final-test result."
+        ),
+    )
+    final_suite.add_argument(
+        "--specialist-test-subset-seed",
+        type=int,
+        default=0,
+        help=(
+            "Seed used only for deterministic --max-specialist-test-items "
+            "selection (default: 0)."
+        ),
+    )
+    final_suite.add_argument(
+        "--specialist-test-item-ids",
+        default="",
+        help=(
+            "JSON mapping of Specialist task ids to explicit D EvalItem ids for "
+            "a non-reportable failure-retry diagnostic. Requires "
+            "--specialists-only and is mutually exclusive with "
+            "--max-specialist-test-items."
+        ),
+    )
     _add_runtime_args(final_suite)
     return parser
 
@@ -1322,9 +1363,79 @@ def _validate_formal_runtime(args, specialists: bool = True):
         )
 
 
+def _deterministic_eval_subset(eval_items, task_id: str, limit: int, seed: int):
+    """Select a stable D subset without relying on source JSONL ordering."""
+    if limit <= 0:
+        raise ValueError("Specialist D subset size must be positive.")
+
+    def rank(item):
+        item_id = str(item.id)
+        digest = hashlib.sha256(
+            f"specialist-d-subset-v1:{seed}:{task_id}:{item_id}".encode()
+        ).hexdigest()
+        return digest, item_id
+
+    return sorted(eval_items, key=rank)[:limit]
+
+
 def _final_evaluate_suite(args):
-    """Execute the sealed CoCo-style D suite for five specialists and META."""
+    """Execute the sealed CoCo-style D suite for promoted programs."""
     _validate_formal_runtime(args)
+    specialists_only = bool(getattr(args, "specialists_only", False))
+    subset_limit = getattr(args, "max_specialist_test_items", None)
+    subset_seed = int(getattr(args, "specialist_test_subset_seed", 0))
+    retry_ids_value = str(getattr(args, "specialist_test_item_ids", "") or "")
+    retry_ids_path = (
+        Path(retry_ids_value).expanduser().resolve() if retry_ids_value else None
+    )
+    if retry_ids_path is not None:
+        if not specialists_only:
+            raise SystemExit("--specialist-test-item-ids requires --specialists-only.")
+        if subset_limit is not None:
+            raise SystemExit(
+                "--specialist-test-item-ids is mutually exclusive with "
+                "--max-specialist-test-items."
+            )
+        if not retry_ids_path.is_file():
+            raise FileNotFoundError(
+                f"Specialist D retry id manifest missing: {retry_ids_path}"
+            )
+        retry_ids_raw = json.loads(retry_ids_path.read_text(encoding="utf-8"))
+        if not isinstance(retry_ids_raw, dict) or not retry_ids_raw:
+            raise ValueError("Specialist D retry id manifest must be a nonempty object.")
+        unexpected_tasks = sorted(set(retry_ids_raw) - set(SPECIALIST_TASKS))
+        if unexpected_tasks:
+            raise ValueError(
+                f"Unexpected Specialist tasks in retry manifest: {unexpected_tasks}"
+            )
+        retry_ids_by_task = {}
+        for task_id in SPECIALIST_TASKS:
+            values = retry_ids_raw.get(task_id)
+            if values is None:
+                continue
+            if not isinstance(values, list) or not values:
+                raise ValueError(f"Retry ids for {task_id} must be a nonempty list.")
+            ids = [str(value) for value in values]
+            if len(ids) != len(set(ids)) or any(not value for value in ids):
+                raise ValueError(f"Retry ids for {task_id} must be unique and nonempty.")
+            retry_ids_by_task[task_id] = ids
+    else:
+        retry_ids_by_task = {}
+    if subset_limit is not None:
+        if not specialists_only:
+            raise SystemExit(
+                "--max-specialist-test-items requires --specialists-only."
+            )
+        if subset_limit <= 0:
+            raise SystemExit("--max-specialist-test-items must be positive.")
+    subset_mode = subset_limit is not None
+    retry_mode = retry_ids_path is not None
+    nonreportable_mode = subset_mode or retry_mode
+    active_specialist_tasks = (
+        [task_id for task_id in SPECIALIST_TASKS if task_id in retry_ids_by_task]
+        if retry_mode
+        else list(SPECIALIST_TASKS)
+    )
     output = Path(args.output).expanduser().resolve()
     if output.exists():
         raise SystemExit(f"Refusing to overwrite formal suite test report: {output}")
@@ -1334,15 +1445,18 @@ def _final_evaluate_suite(args):
     suite_manifest_path = program_root / "suite_manifest.json"
     meta_manifest_path = program_root / "meta_manifest.json"
     test_manifest_path = test_root / "manifest.json"
-    for required in (
-        suite_manifest_path,
-        meta_manifest_path,
-        test_manifest_path,
-    ):
+    required_manifests = [suite_manifest_path, test_manifest_path]
+    if not specialists_only:
+        required_manifests.append(meta_manifest_path)
+    for required in required_manifests:
         if not required.is_file():
             raise FileNotFoundError(f"Required formal manifest missing: {required}")
     suite_manifest = json.loads(suite_manifest_path.read_text(encoding="utf-8"))
-    meta_manifest = json.loads(meta_manifest_path.read_text(encoding="utf-8"))
+    meta_manifest = (
+        None
+        if specialists_only
+        else json.loads(meta_manifest_path.read_text(encoding="utf-8"))
+    )
     test_manifest = json.loads(test_manifest_path.read_text(encoding="utf-8"))
     args.s2_retrieval_pool = str(test_manifest.get("semantic_scholar_cache") or "")
     formal_test_gate = run_formal_test_gate(
@@ -1355,12 +1469,33 @@ def _final_evaluate_suite(args):
     task_toolkit, _, judge_toolkit = _toolkits(args)
     specialist_results = {}
     specialist_answers = {}
+    subset_protocol = (
+        {
+            "selection_identity": "specialist-d-subset-v1-sha256-rank",
+            "seed": subset_seed,
+            "max_items_per_task": subset_limit,
+            "tasks": {},
+        }
+        if subset_mode
+        else None
+    )
+    if retry_mode:
+        subset_protocol = {
+            "selection_identity": "explicit-specialist-d-failure-retry-v1",
+            "selection_manifest": str(retry_ids_path),
+            "selection_manifest_sha256": _sha256(retry_ids_path),
+            "tasks": {},
+        }
 
     def final_identity(task_id, program, selection_path, lineage):
         config_identity = {
             "suite_manifest_sha256": _sha256(suite_manifest_path),
-            "meta_manifest_sha256": _sha256(meta_manifest_path),
             "test_manifest_sha256": _sha256(test_manifest_path),
+            "evaluation_scope": (
+                "five_specialist_champions"
+                if specialists_only
+                else "five_specialists_and_meta"
+            ),
             "task_model_name": args.task_model_name,
             "judge_model_name": args.judge_model_name,
             "generation": {
@@ -1369,6 +1504,15 @@ def _final_evaluate_suite(args):
                 "reasoning_effort": args.reasoning_effort,
             },
         }
+        if nonreportable_mode:
+            config_identity["evaluation_scope"] = (
+                "selected_specialist_failures_d_retry"
+                if retry_mode
+                else "five_specialist_champions_d_subset"
+            )
+            config_identity["test_subset"] = subset_protocol["tasks"][task_id]
+        if not specialists_only:
+            config_identity["meta_manifest_sha256"] = _sha256(meta_manifest_path)
         return {
             "candidate_id": f"frozen-{task_id}",
             "lineage": str(lineage or "frozen-promoted"),
@@ -1408,7 +1552,7 @@ def _final_evaluate_suite(args):
             "case_content_hidden": True,
         }
 
-    for task_id in SPECIALIST_TASKS:
+    for task_id in active_specialist_tasks:
         promoted = (suite_manifest.get("promoted") or {}).get(task_id) or {}
         program = resolve_program_path(str(program_root), task_id)
         verify_promoted_program(
@@ -1438,6 +1582,49 @@ def _final_evaluate_suite(args):
         )
         eval_path = test_root / task_id / "test.jsonl"
         eval_items = [EvalItem.from_value(item) for item in _load_jsonl(str(eval_path))]
+        if subset_mode:
+            source_item_count = len(eval_items)
+            eval_items = _deterministic_eval_subset(
+                eval_items,
+                task_id,
+                subset_limit,
+                subset_seed,
+            )
+            selected_ids = [str(item.id) for item in eval_items]
+            subset_protocol["tasks"][task_id] = {
+                "source_item_count": source_item_count,
+                "selected_item_count": len(eval_items),
+                "selected_ids": selected_ids,
+                "selected_ids_sha256": hashlib.sha256(
+                    json.dumps(
+                        selected_ids,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode()
+                ).hexdigest(),
+            }
+        elif retry_mode:
+            source_item_count = len(eval_items)
+            eval_items_by_id = {str(item.id): item for item in eval_items}
+            requested_ids = retry_ids_by_task[task_id]
+            missing_ids = [value for value in requested_ids if value not in eval_items_by_id]
+            if missing_ids:
+                raise ValueError(
+                    f"Specialist D retry ids missing from {eval_path}: {missing_ids}"
+                )
+            eval_items = [eval_items_by_id[value] for value in requested_ids]
+            subset_protocol["tasks"][task_id] = {
+                "source_item_count": source_item_count,
+                "selected_item_count": len(eval_items),
+                "selected_ids": requested_ids,
+                "selected_ids_sha256": hashlib.sha256(
+                    json.dumps(
+                        requested_ids,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode()
+                ).hexdigest(),
+            }
         evaluation = evaluate_program(
             str(program),
             episodes,
@@ -1478,6 +1665,74 @@ def _final_evaluate_suite(args):
             "test_file_sha256": _sha256(eval_path),
             "selection_sha256": _sha256(selection_path),
             "evaluation": compact(evaluation),
+        }
+
+    if specialists_only:
+        evaluation_identity = (
+            "d_retry_specialists_coco_style"
+            if retry_mode
+            else (
+                "d_subset_specialists_coco_style"
+                if subset_mode
+                else "sealed_d_specialists_coco_style"
+            )
+        )
+        report = {
+            "provenance": experiment_provenance(),
+            "final_test": not nonreportable_mode,
+            "non_reportable": nonreportable_mode,
+            "evaluation_identity": evaluation_identity,
+            "evaluation_scope": (
+                "selected_specialist_failures_d_retry"
+                if retry_mode
+                else (
+                    "five_specialist_champions_d_subset"
+                    if subset_mode
+                    else "five_specialist_champions"
+                )
+            ),
+            "program_selection": "suite_manifest.promoted overall champions",
+            "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
+            "benchmark_adapter_bypassed": False,
+            "official_coco_adapter_entry": "python -m agentreview.coco_eval",
+            "asset_gate": asset_gate,
+            "formal_test_gate": formal_test_gate,
+            "four_zone_temporal_audit": temporal_audit,
+            "test_feedback_used_for_evolution": False,
+            "test_manifest": str(test_manifest_path),
+            "test_manifest_sha256": _sha256(test_manifest_path),
+            "suite_manifest_sha256": _sha256(suite_manifest_path),
+            "source_suite_provenance": suite_manifest.get("provenance"),
+            "subset_protocol": subset_protocol,
+            "task_model_name": args.task_model_name,
+            "judge_model_name": args.judge_model_name,
+            "classifier_adapter": args.classifier_adapter,
+            "classifier_adapter_sha256": _adapter_sha256(args.classifier_adapter),
+            "review_split_revision": args.review_split_revision,
+            "review_classify_revision": args.review_classify_revision,
+            "embedding_adapter": args.embedding_adapter,
+            "embedding_adapter_sha256": _adapter_sha256(args.embedding_adapter),
+            "embedding_model_name": args.embedding_model_name,
+            "embedding_revision": args.embedding_revision,
+            "specialists": specialist_results,
+            "meta": {
+                "enabled": False,
+                "status": "disabled_by_configuration",
+            },
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return {
+            "output": str(output),
+            "specialist_mean_scores": {
+                task: value["evaluation"]["mean_score"]
+                for task, value in specialist_results.items()
+            },
+            "meta_enabled": False,
+            "final_test": not nonreportable_mode,
+            "non_reportable": nonreportable_mode,
         }
 
     meta_references = _load_jsonl(str(test_root / META_TASK / "references.jsonl"))

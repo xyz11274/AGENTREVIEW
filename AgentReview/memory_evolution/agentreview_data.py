@@ -1188,8 +1188,10 @@ def prepare_held_out_test_data(
         filename = str(entry["source_asset"]).rsplit("/", 1)[-1]
         by_source.setdefault(filename, set()).add(str(entry["paper_id"]))
     raw_by_id = {}
+    benchmark_source_paths = []
     for filename, paper_ids in by_source.items():
         source_path = source_root / "benchmark" / filename
+        benchmark_source_paths.append(source_path.resolve())
         for value in _iter_jsonl(source_path):
             paper_id = str(value.get("id") or "")
             if paper_id in paper_ids:
@@ -1197,6 +1199,11 @@ def prepare_held_out_test_data(
     missing = sorted({str(value["paper_id"]) for value in d_entries} - set(raw_by_id))
     if missing:
         raise ValueError(f"Frozen CoCo source is missing {len(missing)} D papers")
+    official_references, official_reference_provenance = (
+        load_official_coco_human_references(
+            str(source_root), raw_by_id, benchmark_source_paths
+        )
+    )
     records = []
     family_keys = []
     for entry in d_entries:
@@ -1260,7 +1267,9 @@ def prepare_held_out_test_data(
         year_match = re.search(r"(?:19|20)\d{2}", venue)
         year = str(record.get("year") or (year_match.group(0) if year_match else ""))
         for task_id in SPECIALIST_TASKS:
-            reference, categories = _category_reference(record, task_id)
+            reference, categories = _official_task_reference(
+                official_references[paper_id], task_id
+            )
             if not reference:
                 continue
             per_task[task_id].append(
@@ -1388,6 +1397,7 @@ def prepare_held_out_test_data(
         "benchmark_source_pool_count": int(
             split_summary.get("source_record_count", split_summary["source_pool_count"])
         ),
+        "evaluator_reference_source": official_reference_provenance,
         "formal_target_count": int(
             split_summary.get("formal_target_count", split_summary["source_pool_count"])
         ),

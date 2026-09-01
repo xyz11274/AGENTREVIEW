@@ -8,6 +8,7 @@ import importlib
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from agentreview.utility.authentication_utils import get_openai_client
@@ -22,6 +23,7 @@ COCO_REQUEST_TIMEOUT_SECONDS = 600.0
 COCO_PREFLIGHT_TIMEOUT_SECONDS = 30.0
 SPLIT_ENABLE_THINKING = False
 CLASSIFY_ENABLE_THINKING = True
+DEFAULT_CLASSIFY_WORKERS = 4
 
 
 def _head_commit(root: Path) -> str:
@@ -84,6 +86,14 @@ class FrozenCoCoAdapter:
             timeout=COCO_REQUEST_TIMEOUT_SECONDS,
         )
         self.allowed_categories, _ = self.utils.classify_categories()
+        try:
+            self.classify_workers = int(
+                os.environ.get("COCO_CLASSIFY_WORKERS", DEFAULT_CLASSIFY_WORKERS)
+            )
+        except ValueError as exc:
+            raise ValueError("COCO_CLASSIFY_WORKERS must be an integer") from exc
+        if self.classify_workers < 1:
+            raise ValueError("COCO_CLASSIFY_WORKERS must be at least 1")
         self._verify_served_revision(
             self.split_client,
             SPLIT_MODEL,
@@ -284,50 +294,60 @@ class FrozenCoCoAdapter:
                 opinions.append(text)
         return opinions
 
-    def classify_opinions(self, opinions: list[str]):
+    def _classify_opinion(self, opinion: str):
         system_prompt, prompt_body = self.prompts.classify_reviews_prompt()
-        output = []
-        for opinion in opinions:
-            candidates = []
-            for penalty in (0.0, 0.5, 1.0):
-                response = self._request(
-                    self.classify_client,
-                    f"classify_penalty_{penalty:g}",
-                    CLASSIFY_BASE_URL,
-                    model=CLASSIFY_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {
-                            "role": "user",
-                            "content": (
-                                prompt_body.strip()
-                                + "\n\n\nReviewer Comment:\n"
-                                + str(opinion)
-                            ),
-                        },
-                    ],
-                    temperature=0.6,
-                    presence_penalty=penalty,
-                    max_tokens=12288,
-                    extra_body={
-                        "chat_template_kwargs": {
-                            "enable_thinking": CLASSIFY_ENABLE_THINKING
-                        }
+        candidates = []
+        for penalty in (0.0, 0.5, 1.0):
+            response = self._request(
+                self.classify_client,
+                f"classify_penalty_{penalty:g}",
+                CLASSIFY_BASE_URL,
+                model=CLASSIFY_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": (
+                            prompt_body.strip()
+                            + "\n\n\nReviewer Comment:\n"
+                            + str(opinion)
+                        ),
                     },
-                )
-                content = self._content(response)
-                labels, valid = self.classify_code.parse_labels_from_llm(
-                    content, self.allowed_categories
-                )
-                if content and valid and "</think>" in content:
-                    candidates.append(labels or ["N/A"])
-            if not candidates or any(
-                self.classify_code._is_na_labelset(set(value)) for value in candidates
-            ):
-                output.append(["N/A"])
-            else:
-                output.append(min(candidates, key=len))
-        return output
+                ],
+                temperature=0.6,
+                presence_penalty=penalty,
+                max_tokens=12288,
+                extra_body={
+                    "chat_template_kwargs": {
+                        "enable_thinking": CLASSIFY_ENABLE_THINKING
+                    }
+                },
+            )
+            content = self._content(response)
+            labels, valid = self.classify_code.parse_labels_from_llm(
+                content, self.allowed_categories
+            )
+            if content and valid and "</think>" in content:
+                candidates.append(labels or ["N/A"])
+        if not candidates or any(
+            self.classify_code._is_na_labelset(set(value)) for value in candidates
+        ):
+            return ["N/A"]
+        return min(candidates, key=len)
+
+    def classify_opinions(self, opinions: list[str]):
+        if not opinions:
+            return []
+        workers = min(
+            len(opinions),
+            getattr(self, "classify_workers", DEFAULT_CLASSIFY_WORKERS),
+        )
+        if workers == 1:
+            return [self._classify_opinion(opinion) for opinion in opinions]
+        with ThreadPoolExecutor(
+            max_workers=workers, thread_name_prefix="coco-classify"
+        ) as executor:
+            return list(executor.map(self._classify_opinion, opinions))
 
 
 _INSTANCES = {}

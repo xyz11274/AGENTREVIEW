@@ -190,6 +190,16 @@ Effectiveness Screening 使用的 CoCo-style 代理指标流程，用于 C 区�
 
 `final-evaluate-suite` 在 formal gate 后运行的六任务 D 区测量。它在 Review 生成后通过冻结 ReviewSplit/ReviewClassify、`CoCoMetricBenchmarkAdapter` 与 `CoCoReviewFitness` 内联计分，并持久化紧凑套件报告；结果身份为 `sealed_d_coco_style`。
 
+**Specialists-Only Sealed D Evaluation**
+
+`final-evaluate-suite --specialists-only` 在同一 formal gate 后，只运行 `suite_manifest.promoted` 绑定的五个 overall Specialist champion，不要求或执行 META。结果身份为 `sealed_d_specialists_coco_style`，不得与六任务套件结果混称。
+
+为端到端时延试验，可在 `--specialists-only` 下使用
+`--max-specialist-test-items N --specialist-test-subset-seed S`。它仍执行完整的历史
+memory replay、D 生成和 CoCo Adapter 评分，但按任务、seed 与 EvalItem ID 的稳定
+SHA-256 排序只取 D 子集；结果身份为 `d_subset_specialists_coco_style`，且
+`final_test=false`、`non_reportable=true`，不得作为 sealed-D 正式结果。
+
 **Official CoCo Evaluation**
 
 `agentreview.coco_eval` 读取已持久化的 `candidate_reviews.jsonl`，调用 CoCoReviewBench 自带 split、classify 和 evaluation 程序，并持久化各阶段产物形成的外部评测结果。

@@ -201,6 +201,20 @@ python -m memory_evolution.cli final-evaluate-suite --help
 
 该入口执行 formal protocol gate，在每份 Review 生成后通过 `CoCoMetricBenchmarkAdapter` 与 `CoCoReviewFitness` 内联计分，最终持久化紧凑的 `sealed_d_coco_style` 套件报告。`evaluate` 服务单任务开发评估。
 
+只评测五个 promoted Specialist overall champions、明确关闭 META 时使用：
+
+```bash
+python -m memory_evolution.cli final-evaluate-suite --specialists-only --help
+```
+
+该模式不要求 `meta_manifest.json`，结果身份为 `sealed_d_specialists_coco_style`，与默认六任务结果分开报告。
+
+若只需先验证五个冠军、memory replay、D 评审和 CoCo 评分是否端到端贯通，可加
+`--max-specialist-test-items N --specialist-test-subset-seed 0`。该模式按任务和
+EvalItem ID 做稳定 SHA-256 排序，每个角色最多取 N 项；输出身份为
+`d_subset_specialists_coco_style`，并明确记录 `final_test=false`、
+`non_reportable=true`，不能替代完整 sealed-D 结果。
+
 CoCoReviewBench 自带的 split、classify、evaluation 三阶段由独立官方 Adapter 执行：
 
 ```bash

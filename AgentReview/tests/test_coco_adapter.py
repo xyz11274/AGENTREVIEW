@@ -1,4 +1,6 @@
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -41,6 +43,25 @@ class RecordingOpenAI:
         self.completions = RecordingCompletions()
         self.chat = SimpleNamespace(completions=self.completions)
         self.__class__.instances.append(self)
+
+
+class ConcurrentEchoCompletions:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.active = 0
+        self.max_active = 0
+        self.calls = []
+
+    def create(self, **kwargs):
+        opinion = kwargs["messages"][1]["content"].rsplit("\n", 1)[-1]
+        with self.lock:
+            self.active += 1
+            self.max_active = max(self.max_active, self.active)
+            self.calls.append(kwargs)
+        time.sleep(0.01 if opinion == "first" else 0.02)
+        with self.lock:
+            self.active -= 1
+        return _response(content=f"{opinion}</think>")
 
 
 class CoCoAdapterTest(unittest.TestCase):
@@ -220,6 +241,31 @@ class CoCoAdapterTest(unittest.TestCase):
                 call["extra_body"],
                 {"chat_template_kwargs": {"enable_thinking": False}},
             )
+
+    def test_classify_opinions_uses_bounded_concurrency_and_preserves_order(self):
+        calls = ConcurrentEchoCompletions()
+        adapter = object.__new__(FrozenCoCoAdapter)
+        adapter.classify_client = SimpleNamespace(
+            chat=SimpleNamespace(completions=calls)
+        )
+        adapter.classify_code = SimpleNamespace(
+            parse_labels_from_llm=lambda content, categories: (
+                [content.removesuffix("</think>")],
+                True,
+            ),
+            _is_na_labelset=lambda labels: False,
+        )
+        adapter.prompts = SimpleNamespace(
+            classify_reviews_prompt=lambda: ("classify system", "taxonomy")
+        )
+        adapter.allowed_categories = {"first", "second", "third"}
+        adapter.classify_workers = 2
+
+        labels = adapter.classify_opinions(["first", "second", "third"])
+
+        self.assertEqual(labels, [["first"], ["second"], ["third"]])
+        self.assertEqual(len(calls.calls), 9)
+        self.assertEqual(calls.max_active, 2)
 
 
 if __name__ == "__main__":

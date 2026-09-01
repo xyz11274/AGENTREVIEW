@@ -9,6 +9,7 @@ from memory_evolution.agentreview_data import (
     _official_task_reference,
     assert_no_human_reference_leak,
     build_coco_evaluator_reference,
+    prepare_held_out_test_data,
     prepare_openreview_data,
 )
 from memory_evolution.cli import _load_evaluator_validation
@@ -16,6 +17,78 @@ from memory_evolution.tasks import SPECIALIST_TASKS
 
 
 class AgentReviewDataTest(unittest.TestCase):
+    def test_prepare_d_uses_official_coco_left_out_references(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_d_official_refs_") as directory:
+            root = Path(directory)
+            coco_root = root / "coco"
+            benchmark_root = coco_root / "benchmark"
+            markdown_root = coco_root / "train" / "MD" / "d0"
+            benchmark_root.mkdir(parents=True)
+            markdown_root.mkdir(parents=True)
+            (markdown_root / "md_content.md").write_text(
+                "# D Paper\nMethod and experiments.", encoding="utf-8"
+            )
+            record = self._record("d0", "D Paper", "work-d")
+            record.pop("opinions_md_by_category_dict")
+            record["sentence_texts"] = ["Legacy opinion must not be selected."]
+            record["opinions"] = []
+            benchmark = benchmark_root / "benchmark_fixture.jsonl"
+            benchmark.write_text(json.dumps(record) + "\n", encoding="utf-8")
+            temporal = self._temporal_manifest(
+                root,
+                [],
+                [],
+                d_ids=["d0"],
+                source_asset="benchmark_fixture.jsonl",
+            )
+            s2 = root / "s2.jsonl"
+            s2.write_text("{}\n", encoding="utf-8")
+            official = {
+                "d0": {
+                    "category_correct": {
+                        task + "-FIX": [f"official {task} reference"]
+                        for task in SPECIALIST_TASKS
+                    }
+                }
+            }
+            with (
+                patch(
+                    "memory_evolution.agentreview_data.load_official_coco_human_references",
+                    return_value=(
+                        official,
+                        {"implementation": "official fixture", "requested_paper_count": 1},
+                    ),
+                ) as loader,
+                patch(
+                    "memory_evolution.agentreview_data._load_s2_cache",
+                    return_value=({"d0": {}}, "a" * 64),
+                ),
+                patch(
+                    "memory_evolution.agentreview_data.validate_frozen_s2_pool",
+                    return_value={"passed": True},
+                ),
+            ):
+                manifest = prepare_held_out_test_data(
+                    str(coco_root),
+                    str(root / "prepared"),
+                    str(s2),
+                    str(temporal),
+                )
+
+            loader.assert_called_once()
+            for task in SPECIALIST_TASKS:
+                self.assertEqual(manifest["tasks"][task]["count"], 1)
+                row = json.loads(
+                    (root / "prepared" / task / "test.jsonl")
+                    .read_text(encoding="utf-8")
+                    .strip()
+                )
+                self.assertEqual(row["answer"], f"[{{task}}-FIX]\nofficial {{task}} reference".format(task=task))
+            self.assertEqual(
+                manifest["evaluator_reference_source"]["implementation"],
+                "official fixture",
+            )
+
     def _temporal_manifest(
         self,
         root,
