@@ -116,3 +116,45 @@ def write_derived_jsonl(path: str | Path, values: Iterable[dict[str, Any]]) -> P
         if temporary.exists():
             temporary.unlink()
     return target
+
+
+def write_immutable_jsonl(
+    path: str | Path,
+    values: Iterable[dict[str, Any]],
+) -> Path:
+    """Commit one JSONL artifact; replay is allowed only for identical bytes."""
+    target = Path(path).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    rendered = b"".join(
+        json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8") + b"\n"
+        for value in values
+    )
+    if target.exists():
+        if target.read_bytes() == rendered:
+            return target
+        raise FileExistsError(
+            f"Immutable JSONL artifact already exists with new content: {target}"
+        )
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            os.link(temporary, target)
+        except FileExistsError:
+            if target.read_bytes() == rendered:
+                return target
+            raise FileExistsError(
+                f"Immutable JSONL artifact already exists with new content: {target}"
+            ) from None
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return target

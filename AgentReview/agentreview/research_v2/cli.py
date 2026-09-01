@@ -187,8 +187,9 @@ def _base_parser() -> argparse.ArgumentParser:
     coco_reviews.add_argument("--max-workers", type=int, default=8)
 
     coco = stages.add_parser("coco-eval")
-    coco.add_argument("--final-reviews", nargs="+", required=True)
     coco.add_argument("--frozen-system", required=True)
+    coco.add_argument("--winner-run-id", required=True)
+    coco.add_argument("--final-mode", choices=("meta", "concat"), required=True)
     coco.add_argument("--output", required=True)
     coco.add_argument("command", nargs=argparse.REMAINDER)
 
@@ -760,8 +761,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     elif args.stage == "coco-eval":
         result = run_coco_evaluation(
-            final_review_paths=args.final_reviews,
             frozen_system_path=args.frozen_system,
+            winner_output_root=output_root,
+            winner_run_id=args.winner_run_id,
+            final_mode=args.final_mode,
             coco_root=config.coco_root,
             output_root=args.output,
             command=args.command,

@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
-import os
+import fcntl
 import math
+import os
 import re
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
+from .coco_review_batch import validate_completed_coco_review_batch
 from .io import (
     atomic_write_json,
     file_sha256,
     read_json,
     read_jsonl,
     value_sha256,
-    write_derived_jsonl,
+    write_immutable_jsonl,
 )
 
 COCO_RUNNER_ARTIFACT = "candidate_official_runner.json"
@@ -28,6 +31,8 @@ COCO_STAGE_ROOT = ".candidate_official_stages"
 COCO_STAGE_CHECKPOINT = "stage.json"
 EXTERNAL_COCO_IDENTITY_PROTOCOL = "research-v2-external-coco-identity-v1"
 EXTERNAL_COCO_RUNNER_RELATIVE_PATH = Path("scripts/run_official_candidate.py")
+COCO_EVALUATION_LOCK = ".agentreview-coco-evaluation.lock"
+COCO_EVALUATION_ATTEMPT_ROOT = ".agentreview-coco-evaluation-attempts"
 TABLE_1_COLUMNS = {
     "BLEU",
     "ROUGE-L",
@@ -407,23 +412,141 @@ def prepare_coco_input(
             raise ValueError(f"Duplicate Final Review paper_id: {paper_id}")
         seen.add(paper_id)
         values.append({"id": paper_id, "text": text})
-    return write_derived_jsonl(output_path, values)
+    return write_immutable_jsonl(output_path, values)
+
+
+@contextmanager
+def _exclusive_evaluation_lock(output_root: Path) -> Iterator[None]:
+    output_root.mkdir(parents=True, exist_ok=True)
+    lock_path = output_root / COCO_EVALUATION_LOCK
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError(
+                f"Another AgentReview CoCo evaluation owns this output root: {output_root}"
+            ) from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _scoring_source_binding(
+    source: dict[str, Any],
+    *,
+    final_mode: str,
+) -> dict[str, Any]:
+    arm = (source.get("arms") or {}).get(final_mode)
+    if not isinstance(arm, dict):
+        raise ValueError(f"Winner batch lacks the {final_mode} Final Review arm")
+    return {
+        "source_id": source["source_id"],
+        "winner_run_id": source["run_id"],
+        "final_mode": final_mode,
+        "final_run_id": arm["run_id"],
+        "count": arm["count"],
+        "paper_ids_sha256": arm["paper_ids_sha256"],
+        "final_review_ids_sha256": arm["final_review_ids_sha256"],
+        "source_review_ids_sha256": arm["source_review_ids_sha256"],
+        "records_sha256": arm["records_sha256"],
+        "files_sha256": arm["files_sha256"],
+    }
+
+
+def _validate_output_isolation(*, output: Path, winner_root: Path) -> None:
+    protected = (
+        "reviews",
+        "final_reviews",
+        "evolution",
+        "memories",
+        "data",
+        "s2",
+        "frozen",
+        "runs",
+    )
+    for name in protected:
+        path = (winner_root / name).resolve()
+        if output == path or output.is_relative_to(path) or path.is_relative_to(output):
+            raise ValueError(
+                "CoCo scoring output must be isolated from Review/Evolution artifacts: "
+                f"{output}"
+            )
+
+
+def _persist_failed_attempt(output: Path, report: dict[str, Any]) -> Path:
+    attempt = {
+        **report,
+        "attempt_id": value_sha256(report),
+    }
+    path = (
+        output
+        / COCO_EVALUATION_ATTEMPT_ROOT
+        / f"{attempt['attempt_id']}.json"
+    )
+    atomic_write_json(path, attempt)
+    return path
+
+
+def _validate_existing_complete_report(
+    *,
+    path: Path,
+    system: dict[str, Any],
+    frozen_system_path: str | Path,
+    manifest_binding: dict[str, Any],
+    source_binding: dict[str, Any],
+    external_coco_identity: dict[str, Any],
+    expected_ids: set[str],
+    candidate_input: Path,
+    output: Path,
+) -> dict[str, Any]:
+    report = read_json(path)
+    if (
+        not isinstance(report, dict)
+        or report.get("protocol") != "research-v2-external-coco-v1"
+        or report.get("status") != "complete"
+        or report.get("returncode") != 0
+        or report.get("frozen_system_id") != system["system_id"]
+        or report.get("frozen_system_sha256") != file_sha256(frozen_system_path)
+        or report.get("coco_1300_manifest_sha256") != manifest_binding["sha256"]
+        or report.get("scoring_source") != source_binding
+        or report.get("candidate_input") != str(candidate_input)
+        or report.get("candidate_input_sha256") != file_sha256(candidate_input)
+        or report.get("external_coco_identity") != external_coco_identity
+        or report.get("artifact_validation_error") != ""
+        or report.get("runtime_validation_error") != ""
+    ):
+        raise RuntimeError("Completed AgentReview CoCo report identity differs")
+    artifacts = _validate_coco_artifacts(
+        output,
+        expected_ids=expected_ids,
+        candidate_input=candidate_input,
+    )
+    if report.get("artifacts") != artifacts:
+        raise RuntimeError("Completed AgentReview CoCo artifact bindings differ")
+    return report
 
 
 def run_coco_evaluation(
     *,
-    final_review_paths: list[str | Path],
     frozen_system_path: str | Path,
+    winner_output_root: str | Path,
+    winner_run_id: str,
+    final_mode: str,
     coco_root: str | Path,
     output_root: str | Path,
     command: list[str],
 ) -> dict[str, Any]:
     """Launch an explicit external command; Review/Evolution modules never import CoCo."""
+    if final_mode not in {"meta", "concat"}:
+        raise ValueError("CoCo Evaluation final_mode must be meta or concat")
     system = read_json(frozen_system_path)
     if not system.get("system_id"):
         raise ValueError("CoCo Evaluation requires a Frozen System Bundle")
     root = Path(coco_root).expanduser().resolve()
     output = Path(output_root).expanduser().resolve()
+    winner_root = Path(winner_output_root).expanduser().resolve()
+    _validate_output_isolation(output=output, winner_root=winner_root)
     manifest_binding = (
         (system.get("external_evaluation") or {}).get("coco_1300_manifest") or {}
     )
@@ -435,103 +558,143 @@ def run_coco_evaluation(
     expected_ids = {str(value.get("paper_id") or "") for value in manifest_records}
     if "" in expected_ids or len(expected_ids) != len(manifest_records):
         raise ValueError("Frozen CoCo-1300 manifest contains missing or duplicate paper IDs")
-    supplied_ids = {
-        str(read_json(path).get("paper_id") or "") for path in final_review_paths
-    }
-    if supplied_ids != expected_ids or len(final_review_paths) != len(expected_ids):
-        missing = sorted(expected_ids - supplied_ids)
-        extra = sorted(supplied_ids - expected_ids)
-        raise ValueError(
-            "CoCo Evaluation requires the exact frozen paper set: "
-            f"expected={len(expected_ids)}, supplied={len(final_review_paths)}, "
-            f"missing={missing[:5]}, extra={extra[:5]}"
+    with _exclusive_evaluation_lock(output):
+        source = validate_completed_coco_review_batch(
+            frozen_system_path=frozen_system_path,
+            coco_manifest_path=manifest_path,
+            output_root=winner_root,
+            run_id=winner_run_id,
         )
-    external_coco_identity, normalized_command = _validate_external_coco_runtime(
-        system=system,
-        root=root,
-        command=command,
-    )
-    input_path = prepare_coco_input(
-        final_review_paths,
-        output / "candidate_official_input.jsonl",
-    )
-    environment = {
-        "PATH": os.environ.get("PATH", ""),
-        "PYTHONHASHSEED": "0",
-        "COCO_CANDIDATE_INPUT": str(input_path),
-        "COCO_OUTPUT_ROOT": str(output),
-    }
-    environment.update(
-        {name: os.environ[name] for name in COCO_FORWARDED_ENV if name in os.environ}
-    )
-    completed = subprocess.run(
-        normalized_command,
-        cwd=str(root),
-        env=environment,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    artifacts: dict[str, dict[str, str]] = {}
-    artifact_error: RuntimeError | None = None
-    runtime_error: RuntimeError | None = None
-    if completed.returncode == 0:
-        try:
-            artifacts = _validate_coco_artifacts(
-                output,
-                expected_ids=expected_ids,
-                candidate_input=input_path,
+        arm = source["arms"][final_mode]
+        final_review_paths = list(arm["paths"])
+        source_binding = _scoring_source_binding(source, final_mode=final_mode)
+        source_ids = {
+            str(read_json(path).get("paper_id") or "")
+            for path in final_review_paths
+        }
+        if source_ids != expected_ids or len(final_review_paths) != len(expected_ids):
+            raise ValueError(
+                "Validated winner arm differs from the exact frozen CoCo paper set"
             )
-        except Exception as exc:
-            artifact_error = (
-                exc
-                if isinstance(exc, RuntimeError)
-                else RuntimeError("External CoCo artifact validation failed")
-            )
-    try:
-        confirmed_identity, _ = _validate_external_coco_runtime(
+        external_coco_identity, normalized_command = _validate_external_coco_runtime(
             system=system,
             root=root,
-            command=normalized_command,
+            command=command,
         )
-        if confirmed_identity != external_coco_identity:
-            raise RuntimeError("External CoCo runtime identity changed during scoring")
-    except Exception as exc:
-        runtime_error = (
-            exc
-            if isinstance(exc, RuntimeError)
-            else RuntimeError("External CoCo runtime validation failed")
+        input_path = prepare_coco_input(
+            final_review_paths,
+            output / "candidate_official_input.jsonl",
         )
-    report = {
-        "protocol": "research-v2-external-coco-v1",
-        "frozen_system_id": system["system_id"],
-        "frozen_system_sha256": file_sha256(frozen_system_path),
-        "coco_1300_manifest_sha256": manifest_binding["sha256"],
-        "candidate_input": str(input_path),
-        "candidate_input_sha256": file_sha256(input_path),
-        "external_coco_identity": external_coco_identity,
-        "command": normalized_command,
-        "returncode": completed.returncode,
-        "stdout": completed.stdout,
-        "stderr": completed.stderr,
-        "status": (
-            "complete"
-            if (
-                completed.returncode == 0
-                and artifact_error is None
-                and runtime_error is None
+        confirmed_source = validate_completed_coco_review_batch(
+            frozen_system_path=frozen_system_path,
+            coco_manifest_path=manifest_path,
+            output_root=winner_root,
+            run_id=winner_run_id,
+        )
+        if confirmed_source.get("source_id") != source.get("source_id"):
+            raise RuntimeError("Winner scoring source changed while sealing candidate input")
+        complete_report_path = output / "run.json"
+        if complete_report_path.is_file():
+            return _validate_existing_complete_report(
+                path=complete_report_path,
+                system=system,
+                frozen_system_path=frozen_system_path,
+                manifest_binding=manifest_binding,
+                source_binding=source_binding,
+                external_coco_identity=external_coco_identity,
+                expected_ids=expected_ids,
+                candidate_input=input_path,
+                output=output,
             )
-            else "failed"
-        ),
-        "artifacts": artifacts,
-        "artifact_validation_error": str(artifact_error or ""),
-        "runtime_validation_error": str(runtime_error or ""),
-    }
-    atomic_write_json(output / "run.json", report)
-    if completed.returncode != 0:
-        raise RuntimeError(f"External CoCo process failed: {completed.returncode}")
-    if artifact_error is not None:
-        raise artifact_error
-    if runtime_error is not None:
-        raise runtime_error
-    return report
+        environment = {
+            "PATH": os.environ.get("PATH", ""),
+            "PYTHONHASHSEED": "0",
+            "COCO_CANDIDATE_INPUT": str(input_path),
+            "COCO_OUTPUT_ROOT": str(output),
+        }
+        environment.update(
+            {name: os.environ[name] for name in COCO_FORWARDED_ENV if name in os.environ}
+        )
+        completed = subprocess.run(
+            normalized_command,
+            cwd=str(root),
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        artifacts: dict[str, dict[str, str]] = {}
+        artifact_error: RuntimeError | None = None
+        runtime_error: RuntimeError | None = None
+        if completed.returncode == 0:
+            try:
+                artifacts = _validate_coco_artifacts(
+                    output,
+                    expected_ids=expected_ids,
+                    candidate_input=input_path,
+                )
+            except Exception as exc:
+                artifact_error = (
+                    exc
+                    if isinstance(exc, RuntimeError)
+                    else RuntimeError("External CoCo artifact validation failed")
+                )
+        try:
+            confirmed_identity, _ = _validate_external_coco_runtime(
+                system=system,
+                root=root,
+                command=normalized_command,
+            )
+            if confirmed_identity != external_coco_identity:
+                raise RuntimeError("External CoCo runtime identity changed during scoring")
+            final_source = validate_completed_coco_review_batch(
+                frozen_system_path=frozen_system_path,
+                coco_manifest_path=manifest_path,
+                output_root=winner_root,
+                run_id=winner_run_id,
+            )
+            if final_source.get("source_id") != source.get("source_id"):
+                raise RuntimeError("Winner scoring source changed during scoring")
+        except Exception as exc:
+            runtime_error = (
+                exc
+                if isinstance(exc, RuntimeError)
+                else RuntimeError("External CoCo runtime validation failed")
+            )
+        report = {
+            "protocol": "research-v2-external-coco-v1",
+            "frozen_system_id": system["system_id"],
+            "frozen_system_sha256": file_sha256(frozen_system_path),
+            "coco_1300_manifest_sha256": manifest_binding["sha256"],
+            "scoring_source": source_binding,
+            "candidate_input": str(input_path),
+            "candidate_input_sha256": file_sha256(input_path),
+            "external_coco_identity": external_coco_identity,
+            "command": normalized_command,
+            "returncode": completed.returncode,
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+            "status": (
+                "complete"
+                if (
+                    completed.returncode == 0
+                    and artifact_error is None
+                    and runtime_error is None
+                )
+                else "failed"
+            ),
+            "artifacts": artifacts,
+            "artifact_validation_error": str(artifact_error or ""),
+            "runtime_validation_error": str(runtime_error or ""),
+        }
+        if report["status"] == "complete":
+            atomic_write_json(complete_report_path, report)
+        else:
+            _persist_failed_attempt(output, report)
+        if completed.returncode != 0:
+            raise RuntimeError(f"External CoCo process failed: {completed.returncode}")
+        if artifact_error is not None:
+            raise artifact_error
+        if runtime_error is not None:
+            raise runtime_error
+        return report

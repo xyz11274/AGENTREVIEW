@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from agentreview.research_v2.evaluation import run_internal_evaluation
 from agentreview.research_v2.coco_protocol import proportional_quotas
@@ -140,6 +141,24 @@ class ResearchV2Test(unittest.TestCase):
             },
         }
         return root, runner, identity
+
+    def _scoring_source(self, final_path, *, mode="meta"):
+        arm = {
+            "mode": mode,
+            "run_id": f"winner-v1-{mode}",
+            "count": 1,
+            "paper_ids_sha256": "paper-ids",
+            "final_review_ids_sha256": "final-review-ids",
+            "source_review_ids_sha256": "source-review-ids",
+            "records_sha256": "records",
+            "files_sha256": "files",
+            "paths": [str(Path(final_path).resolve())],
+        }
+        return {
+            "source_id": "source-id",
+            "run_id": "winner-v1",
+            "arms": {mode: arm},
+        }
 
     def _review_artifact(self, role="QUAL", review_id="r1", text="review"):
         return {
@@ -363,13 +382,19 @@ stage_checkpoints = {{
                 },
             },
         )
-        result = run_coco_evaluation(
-            final_review_paths=[final_path],
-            frozen_system_path=system_path,
-            coco_root=coco_root,
-            output_root=self.root / "coco-output",
-            command=[str(fake_coco)],
-        )
+        with patch(
+            "agentreview.research_v2.coco.validate_completed_coco_review_batch",
+            return_value=self._scoring_source(final_path),
+        ):
+            result = run_coco_evaluation(
+                frozen_system_path=system_path,
+                winner_output_root=self.root / "winner",
+                winner_run_id="winner-v1",
+                final_mode="meta",
+                coco_root=coco_root,
+                output_root=self.root / "coco-output",
+                command=[str(fake_coco)],
+            )
         self.assertEqual(result["status"], "complete")
         self.assertEqual(
             set(result["artifacts"]),
@@ -381,20 +406,36 @@ stage_checkpoints = {{
                 for value in result["artifacts"].values()
             )
         )
-        with self.assertRaisesRegex(RuntimeError, "artifact bindings"):
+        with (
+            patch(
+                "agentreview.research_v2.coco.validate_completed_coco_review_batch",
+                return_value=self._scoring_source(final_path),
+            ),
+            self.assertRaisesRegex(RuntimeError, "artifact bindings"),
+        ):
             run_coco_evaluation(
-                final_review_paths=[final_path],
                 frozen_system_path=system_path,
+                winner_output_root=self.root / "winner",
+                winner_run_id="winner-v1",
+                final_mode="meta",
                 coco_root=coco_root,
                 output_root=self.root / "missing-evaluation-output",
                 command=[str(fake_coco)],
             )
         wrong = self.root / "wrong-final.json"
         atomic_write_json(wrong, {"paper_id": "wrong", "review_text": "final"})
-        with self.assertRaisesRegex(ValueError, "exact frozen paper set"):
+        with (
+            patch(
+                "agentreview.research_v2.coco.validate_completed_coco_review_batch",
+                return_value=self._scoring_source(wrong),
+            ),
+            self.assertRaisesRegex(ValueError, "exact frozen CoCo paper set"),
+        ):
             run_coco_evaluation(
-                final_review_paths=[wrong],
                 frozen_system_path=system_path,
+                winner_output_root=self.root / "winner",
+                winner_run_id="winner-v1",
+                final_mode="meta",
                 coco_root=self.root,
                 output_root=self.root / "wrong-output",
                 command=["/bin/true"],
@@ -432,17 +473,34 @@ stage_checkpoints = {{
         final_path = self.root / "missing-artifacts-final.json"
         atomic_write_json(final_path, {"paper_id": "p1", "review_text": "final"})
 
-        with self.assertRaisesRegex(RuntimeError, "contract artifact"):
+        with (
+            patch(
+                "agentreview.research_v2.coco.validate_completed_coco_review_batch",
+                return_value=self._scoring_source(final_path),
+            ),
+            self.assertRaisesRegex(RuntimeError, "contract artifact"),
+        ):
             run_coco_evaluation(
-                final_review_paths=[final_path],
                 frozen_system_path=system_path,
+                winner_output_root=self.root / "winner",
+                winner_run_id="winner-v1",
+                final_mode="meta",
                 coco_root=coco_root,
                 output_root=self.root / "missing-artifacts-output",
                 command=[str(fake_coco)],
             )
-        failed_report = read_json(self.root / "missing-artifacts-output" / "run.json")
+        attempt_paths = list(
+            (
+                self.root
+                / "missing-artifacts-output"
+                / ".agentreview-coco-evaluation-attempts"
+            ).glob("*.json")
+        )
+        self.assertEqual(len(attempt_paths), 1)
+        failed_report = read_json(attempt_paths[0])
         self.assertEqual(failed_report["status"], "failed")
         self.assertIn("contract artifact", failed_report["artifact_validation_error"])
+        self.assertFalse((self.root / "missing-artifacts-output" / "run.json").exists())
 
     def test_vector_memory_is_role_local_deterministic_and_non_generative(self):
         review = self._review_path(text="Check ablations and statistical variance.")

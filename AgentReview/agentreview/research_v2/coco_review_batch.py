@@ -69,6 +69,7 @@ COCO_1300_PROTOCOL = "coco_1300_protocol_compatible_resample_v1"
 COCO_1300_COUNT = 1300
 BATCH_PROTOCOL = "research-v2-coco-review-batch-v1"
 FAILURE_PROTOCOL = "research-v2-coco-review-failure-v1"
+SCORING_SOURCE_PROTOCOL = "research-v2-coco-scoring-source-v1"
 _SUMMARY_CHECKPOINT_INTERVAL = 100
 _PAPER_FIELDS = {
     "schema_version",
@@ -2039,6 +2040,16 @@ def _validated_specialist_payload(
         "request_sha256": request_sha256,
     }
     preparation_sha256 = value_sha256(request_body)
+    request_path = invocation.output_path.with_name(f"{invocation.role}.request.json")
+    committed_request = _load_review_request(
+        request_path,
+        input_identity=request_body["input_identity"],
+    )
+    if committed_request != {
+        **request_body,
+        "preparation_sha256": preparation_sha256,
+    }:
+        raise ValueError("Specialist Review request content identity mismatch")
     generation = specialist_generation_identity(invocation.model_identity)
     config = value.get("generation_config")
     attempts = config.get("attempts") if isinstance(config, dict) else None
@@ -2619,6 +2630,323 @@ def _validate_completed_batch_state(
                 raise CocoReviewInfrastructureFailure(
                     f"Completed {label} artifact failed terminal revalidation: {key}"
                 )
+
+
+def _validate_scoring_output_tree(
+    *,
+    runtime: _FrozenRuntime,
+    output_root: Path,
+    run_id: str,
+) -> None:
+    expected_paper_ids = {paper.paper_id for paper in runtime.papers}
+    review_root = output_root / "reviews" / run_id
+    if not review_root.is_dir():
+        raise FileNotFoundError(f"Completed Specialist Review root is missing: {review_root}")
+    review_children = list(review_root.iterdir())
+    if (
+        any(not path.is_dir() for path in review_children)
+        or {path.name for path in review_children} != expected_paper_ids
+    ):
+        raise ValueError("Specialist Review tree differs from the exact frozen paper set")
+    expected_specialist_names = {
+        filename
+        for role in ROLES
+        for filename in (f"{role}.json", f"{role}.raw.json", f"{role}.request.json")
+    }
+    for paper in runtime.papers:
+        paper_root = review_root / paper.paper_id
+        children = list(paper_root.iterdir())
+        if (
+            any(not path.is_file() for path in children)
+            or {path.name for path in children} != expected_specialist_names
+        ):
+            raise ValueError(
+                "Specialist Review files differ from the exact committed schema: "
+                f"{paper.paper_id}"
+            )
+
+    for mode in ("meta", "concat"):
+        final_root = output_root / "final_reviews" / f"{run_id}-{mode}"
+        if not final_root.is_dir():
+            raise FileNotFoundError(f"Completed Final Review root is missing: {final_root}")
+        children = list(final_root.iterdir())
+        if any(not path.is_file() for path in children):
+            raise ValueError(f"Final Review root contains a non-file entry: {final_root}")
+        expected_final_names = {f"{paper_id}.json" for paper_id in expected_paper_ids}
+        allowed_names = set(expected_final_names)
+        if mode == "meta":
+            allowed_names.update(
+                f"{paper_id}.meta.raw.{attempt}.json"
+                for paper_id in expected_paper_ids
+                for attempt in range(1, META_MAX_ATTEMPTS + 1)
+            )
+        observed_names = {path.name for path in children}
+        if not expected_final_names.issubset(observed_names) or not observed_names.issubset(
+            allowed_names
+        ):
+            raise ValueError(
+                f"{mode} Final Review tree differs from the exact committed schema"
+            )
+
+
+def _completed_progress(
+    value: Any,
+    *,
+    planned: int,
+    label: str,
+) -> None:
+    expected_fields = {
+        "planned",
+        "completed",
+        "resumed",
+        "failed",
+        "blocked",
+        "pending",
+    }
+    if (
+        not isinstance(value, dict)
+        or set(value) != expected_fields
+        or any(type(value[name]) is not int for name in expected_fields)
+        or value["planned"] != planned
+        or value["completed"] + value["resumed"] != planned
+        or any(value[name] != 0 for name in ("failed", "blocked", "pending"))
+    ):
+        raise ValueError(f"Completed CoCo Review {label} progress is not exact")
+
+
+def validate_completed_coco_review_batch(
+    *,
+    frozen_system_path: str | Path,
+    coco_manifest_path: str | Path,
+    output_root: str | Path,
+    run_id: str,
+) -> dict[str, Any]:
+    """Revalidate the complete winner batch before any external scoring call."""
+    root = Path(output_root).expanduser().resolve()
+    run_dir = root / "runs" / run_id
+    summary_path = run_dir / "coco_review_batch.json"
+    with _exclusive_run_lock(run_dir):
+        runtime = _load_frozen_runtime(
+            frozen_system_path=frozen_system_path,
+            coco_manifest_path=coco_manifest_path,
+        )
+        if not summary_path.is_file():
+            raise FileNotFoundError(
+                f"Completed CoCo Review batch summary is missing: {summary_path}"
+            )
+        summary_sha256 = file_sha256(summary_path)
+        summary = read_json(summary_path)
+        expected_summary_fields = {
+            "protocol",
+            "stage",
+            "run_id",
+            "status",
+            "max_workers",
+            "run_spec",
+            "run_spec_sha256",
+            "progress",
+            "failure_count",
+            "failures",
+            "infrastructure_failures",
+            "started_at",
+            "updated_at",
+            "completed_at",
+        }
+        max_workers = summary.get("max_workers") if isinstance(summary, dict) else None
+        if (
+            not isinstance(summary, dict)
+            or set(summary) != expected_summary_fields
+            or summary.get("protocol") != BATCH_PROTOCOL
+            or summary.get("stage") != "generate-coco-1300-reviews"
+            or summary.get("run_id") != run_id
+            or summary.get("status") != "complete"
+            or type(max_workers) is not int
+            or not 1 <= max_workers <= 8
+            or summary.get("failure_count") != 0
+            or summary.get("failures") != []
+            or summary.get("infrastructure_failures") != []
+            or not _is_nonempty_text(summary.get("started_at"))
+            or not _is_nonempty_text(summary.get("updated_at"))
+            or not _is_nonempty_text(summary.get("completed_at"))
+        ):
+            raise ValueError("CoCo Review batch is not a complete failure-free winner batch")
+        options = CocoReviewBatchOptions(run_id=run_id, max_workers=max_workers)
+        run_spec = _run_spec(runtime, options)
+        run_spec_sha256 = value_sha256(run_spec)
+        if (
+            summary.get("run_spec") != run_spec
+            or summary.get("run_spec_sha256") != run_spec_sha256
+        ):
+            raise ValueError("Completed CoCo Review batch run specification differs")
+        progress = summary.get("progress")
+        if not isinstance(progress, dict) or set(progress) != {
+            "specialist",
+            "meta",
+            "concat",
+        }:
+            raise ValueError("Completed CoCo Review batch progress is incomplete")
+        _completed_progress(
+            progress["specialist"],
+            planned=COCO_1300_COUNT * len(ROLES),
+            label="Specialist",
+        )
+        _completed_progress(
+            progress["meta"], planned=COCO_1300_COUNT, label="Meta"
+        )
+        _completed_progress(
+            progress["concat"], planned=COCO_1300_COUNT, label="concat"
+        )
+        specialist, meta, concat, pending, ready_meta = _load_existing_artifacts(
+            runtime=runtime,
+            output_root=root,
+            run_id=run_id,
+        )
+        if (
+            len(specialist) != COCO_1300_COUNT * len(ROLES)
+            or len(meta) != COCO_1300_COUNT
+            or len(concat) != COCO_1300_COUNT
+            or pending
+            or ready_meta
+            or any(value.get("status") != "resumed" for value in specialist.values())
+            or any(value.get("status") != "resumed" for value in meta.values())
+            or any(value.get("status") != "resumed" for value in concat.values())
+        ):
+            raise ValueError("Completed CoCo Review artifacts do not cover the exact batch")
+        _validate_completed_batch_state(
+            runtime=runtime,
+            output_root=root,
+            run_id=run_id,
+            specialist=specialist,
+            meta=meta,
+            concat=concat,
+        )
+        _validate_scoring_output_tree(
+            runtime=runtime,
+            output_root=root,
+            run_id=run_id,
+        )
+
+        specialist_records: list[dict[str, Any]] = []
+        arm_records: dict[str, list[dict[str, Any]]] = {"meta": [], "concat": []}
+        for paper in runtime.papers:
+            reviews: dict[str, dict[str, Any]] = {}
+            for role in ROLES:
+                invocation = _specialist_invocation(
+                    runtime=runtime,
+                    output_root=root,
+                    run_id=run_id,
+                    paper=paper,
+                    role=role,
+                )
+                value = _validated_specialist_payload(
+                    read_json(invocation.output_path),
+                    invocation=invocation,
+                    paper=paper,
+                    role_runtime=runtime.roles[role],
+                )
+                reviews[role] = value
+                specialist_records.append(
+                    {
+                        "paper_id": paper.paper_id,
+                        "role": role,
+                        "review_id": value["review_id"],
+                        "path": str(invocation.output_path),
+                        "sha256": file_sha256(invocation.output_path),
+                    }
+                )
+            for mode in ("meta", "concat"):
+                invocation = _final_invocation(
+                    runtime=runtime,
+                    output_root=root,
+                    run_id=run_id,
+                    paper=paper,
+                    mode=mode,
+                )
+                value = _validated_final_payload(
+                    read_json(invocation.output_path),
+                    invocation=invocation,
+                    reviews=reviews,
+                )
+                arm_records[mode].append(
+                    {
+                        "paper_id": paper.paper_id,
+                        "final_review_id": value["final_review_id"],
+                        "source_review_ids": list(value["source_review_ids"]),
+                        "path": str(invocation.output_path),
+                        "sha256": file_sha256(invocation.output_path),
+                    }
+                )
+
+        confirmed_runtime = _load_frozen_runtime(
+            frozen_system_path=frozen_system_path,
+            coco_manifest_path=coco_manifest_path,
+        )
+        if (
+            _run_spec(confirmed_runtime, options) != run_spec
+            or file_sha256(summary_path) != summary_sha256
+            or read_json(summary_path) != summary
+        ):
+            raise RuntimeError("CoCo Review scoring sources changed during validation")
+
+        paper_ids = [paper.paper_id for paper in runtime.papers]
+        arms: dict[str, Any] = {}
+        for mode, records in arm_records.items():
+            arms[mode] = {
+                "mode": mode,
+                "run_id": f"{run_id}-{mode}",
+                "count": len(records),
+                "paper_ids_sha256": value_sha256(
+                    [record["paper_id"] for record in records]
+                ),
+                "final_review_ids_sha256": value_sha256(
+                    [record["final_review_id"] for record in records]
+                ),
+                "source_review_ids_sha256": value_sha256(
+                    [record["source_review_ids"] for record in records]
+                ),
+                "records_sha256": value_sha256(records),
+                "files_sha256": value_sha256(
+                    [
+                        {"path": record["path"], "sha256": record["sha256"]}
+                        for record in records
+                    ]
+                ),
+                "paths": [record["path"] for record in records],
+            }
+        body = {
+            "protocol": SCORING_SOURCE_PROTOCOL,
+            "run_id": run_id,
+            "system": {
+                "path": str(runtime.system_path),
+                "sha256": runtime.system_sha256,
+                "system_id": runtime.system_id,
+                "spec_id": runtime.formal_spec_id,
+            },
+            "coco_manifest": {
+                "path": str(runtime.manifest_path),
+                "sha256": runtime.manifest_sha256,
+                "manifest_sha256": runtime.manifest_id,
+                "count": len(runtime.papers),
+                "paper_ids_sha256": value_sha256(paper_ids),
+            },
+            "summary": {"path": str(summary_path), "sha256": summary_sha256},
+            "run_spec_sha256": run_spec_sha256,
+            "specialists": {
+                "count": len(specialist_records),
+                "review_ids_sha256": value_sha256(
+                    [record["review_id"] for record in specialist_records]
+                ),
+                "records_sha256": value_sha256(specialist_records),
+                "files_sha256": value_sha256(
+                    [
+                        {"path": record["path"], "sha256": record["sha256"]}
+                        for record in specialist_records
+                    ]
+                ),
+            },
+            "arms": arms,
+        }
+        return {**body, "source_id": value_sha256(body)}
 
 
 def _paper_reviews(
