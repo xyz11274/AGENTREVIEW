@@ -57,6 +57,7 @@ class ResearchConfig:
     train_clean_path: str = "/data0/xyj/shengao/OpenReview/train_clean.jsonl"
     paper_asset_root: str = "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark"
     coco_root: str = "/data0/xyj/shengao/CoCoReviewBench"
+    coco_scoring_spec_path: str = ""
     frozen_s2_path: str = ""
     frozen_coco_s2_path: str = ""
     embedding_provider: str = "qwen3_embedding"

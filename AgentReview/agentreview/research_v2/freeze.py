@@ -12,6 +12,7 @@ from agentreview.reviewer_identity import (
     load_reviewer_suite,
 )
 
+from .coco_scoring_spec import validate_coco_scoring_spec
 from .constants import ROLES
 from .evolution import EvolutionPool
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
@@ -29,6 +30,7 @@ FORMAL_MUTATION_ATTEMPTS = 20
 NON_INDUCTIVE_SEED_KINDS = {"no_memory", "vector_search", "llm_summarizer"}
 EXTERNAL_COCO_IDENTITY_PROTOCOL = "research-v2-external-coco-identity-v1"
 EXTERNAL_COCO_RUNNER_RELATIVE_PATH = Path("scripts/run_official_candidate.py")
+FORMAL_COCO_WINNER_RUN_ID = "formal-coco1300-winner-v1"
 
 
 def _validate_external_coco_identity(value: Any) -> dict[str, Any]:
@@ -63,6 +65,34 @@ def _validate_external_coco_identity(value: Any) -> dict[str, Any]:
             "sha256": file_sha256(expected_runner),
         },
     }
+
+
+def _validate_coco_scoring_spec_binding(
+    value: Any,
+    *,
+    coco_root: str | Path,
+) -> dict[str, Any]:
+    required_fields = {"path", "sha256", "spec_id", "winner_run_id"}
+    if not isinstance(value, dict) or set(value) != required_fields:
+        raise ValueError(
+            "freeze-system requires a complete CoCo scoring spec binding"
+        )
+    source = Path(str(value.get("path") or "")).expanduser().resolve()
+    if str(source) != value.get("path"):
+        raise ValueError("freeze-system CoCo scoring spec path is not canonical")
+    spec = validate_coco_scoring_spec(source, coco_root=coco_root)
+    expected = {
+        "path": str(source),
+        "sha256": file_sha256(source),
+        "spec_id": spec["spec_id"],
+        "winner_run_id": spec["winner_run_id"],
+    }
+    if (
+        value != expected
+        or spec.get("winner_run_id") != FORMAL_COCO_WINNER_RUN_ID
+    ):
+        raise ValueError("freeze-system CoCo scoring spec binding mismatch")
+    return expected
 
 
 def _validate_memory_winner_identity(
@@ -195,6 +225,7 @@ def freeze_system(
     reflector_config: dict[str, Any],
     summarizer_config: dict[str, Any],
     external_coco_identity: dict[str, Any],
+    coco_scoring_spec: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not isinstance(model_identity, dict) or not model_identity:
         raise ValueError("freeze-system requires a non-empty model identity")
@@ -211,6 +242,17 @@ def freeze_system(
     verified_external_coco = _validate_external_coco_identity(
         external_coco_identity
     )
+    if coco_scoring_spec is None:
+        if primary_meta_enabled:
+            raise ValueError(
+                "freeze-system requires a CoCo scoring spec for the Primary"
+            )
+        verified_coco_scoring_spec = None
+    else:
+        verified_coco_scoring_spec = _validate_coco_scoring_spec_binding(
+            coco_scoring_spec,
+            coco_root=verified_external_coco["repository_root"],
+        )
     verified_winners = {}
     for role in ROLES:
         pool_path = Path(evolution_pools[role]).expanduser().resolve()
@@ -385,6 +427,11 @@ def freeze_system(
                 "manifest_sha256": coco_manifest["manifest_sha256"],
             },
             "coco_runner": verified_external_coco,
+            **(
+                {"coco_scoring_spec": verified_coco_scoring_spec}
+                if verified_coco_scoring_spec is not None
+                else {}
+            ),
         },
     }
     payload["system_id"] = value_sha256(payload)

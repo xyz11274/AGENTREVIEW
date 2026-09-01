@@ -496,6 +496,7 @@ def _validate_existing_complete_report(
     manifest_binding: dict[str, Any],
     source_binding: dict[str, Any],
     external_coco_identity: dict[str, Any],
+    expected_command: list[str],
     expected_ids: set[str],
     candidate_input: Path,
     output: Path,
@@ -513,6 +514,7 @@ def _validate_existing_complete_report(
         or report.get("candidate_input") != str(candidate_input)
         or report.get("candidate_input_sha256") != file_sha256(candidate_input)
         or report.get("external_coco_identity") != external_coco_identity
+        or report.get("command") != expected_command
         or report.get("artifact_validation_error") != ""
         or report.get("runtime_validation_error") != ""
     ):
@@ -602,6 +604,7 @@ def run_coco_evaluation(
                 manifest_binding=manifest_binding,
                 source_binding=source_binding,
                 external_coco_identity=external_coco_identity,
+                expected_command=normalized_command,
                 expected_ids=expected_ids,
                 candidate_input=input_path,
                 output=output,

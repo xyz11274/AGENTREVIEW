@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .coco_protocol import PROTOCOL as COCO_1300_PROTOCOL
+from .coco_scoring_spec import validate_coco_scoring_spec
 from .config import ResearchConfig
 from .constants import (
     EVALUATOR_MAX_TOKENS,
@@ -49,7 +50,11 @@ from .formal_evolution import (
     _validate_feedback_artifacts,
     validate_canonical_evaluation_summary,
 )
-from .freeze import _validate_completed_evolution, freeze_system
+from .freeze import (
+    FORMAL_COCO_WINNER_RUN_ID,
+    _validate_completed_evolution,
+    freeze_system,
+)
 from .io import (
     atomic_write_json,
     file_sha256,
@@ -90,6 +95,7 @@ FREEZE_ARGUMENT_FIELDS = {
     "summarizer_config",
     "require_bubblewrap",
     "external_coco_identity",
+    "coco_scoring_spec",
 }
 
 
@@ -993,6 +999,9 @@ def _expected_source_paths(
             "external_coco.runner": Path(
                 arguments["external_coco_identity"]["runner"]["path"]
             ).expanduser().resolve(),
+            "external_coco.scoring_spec": Path(
+                arguments["coco_scoring_spec"]["path"]
+            ).expanduser().resolve(),
         }
     )
     for role in ROLES:
@@ -1530,6 +1539,25 @@ def build_formal_freeze_arguments(
         output / "data" / "coco_1300" / "s2_title_queries.jsonl",
         "the CoCo-1300 S2 query set",
     )
+    coco_scoring_spec_path = _required_file(
+        config.coco_scoring_spec_path,
+        "the frozen CoCo scoring spec",
+    )
+    coco_scoring_spec_value = validate_coco_scoring_spec(
+        coco_scoring_spec_path,
+        coco_root=config.coco_root,
+    )
+    if coco_scoring_spec_value.get("winner_run_id") != FORMAL_COCO_WINNER_RUN_ID:
+        raise ValueError(
+            "Formal freeze requires winner_run_id "
+            f"{FORMAL_COCO_WINNER_RUN_ID}"
+        )
+    coco_scoring_spec = {
+        "path": str(coco_scoring_spec_path),
+        "sha256": file_sha256(coco_scoring_spec_path),
+        "spec_id": coco_scoring_spec_value["spec_id"],
+        "winner_run_id": coco_scoring_spec_value["winner_run_id"],
+    }
     development_targets = _validate_development_manifest(
         development_manifest,
         query_path=development_query_path,
@@ -1641,6 +1669,7 @@ def build_formal_freeze_arguments(
         "evolution_run_ids": run_ids,
         "evolution_pools": pools,
         "external_coco_identity": _external_coco_identity(config),
+        "coco_scoring_spec": coco_scoring_spec,
         **_provenance_configs(model_identity),
     }
     if set(arguments) != FREEZE_ARGUMENT_FIELDS:
@@ -1749,6 +1778,15 @@ def validate_formal_freeze_spec(path: str | Path) -> dict[str, Any]:
         raise ValueError("Formal freeze spec requires primary Meta")
     if arguments.get("require_bubblewrap") is not True:
         raise ValueError("Formal freeze spec requires bubblewrap isolation")
+    coco_scoring_spec = arguments.get("coco_scoring_spec")
+    if (
+        not isinstance(coco_scoring_spec, dict)
+        or set(coco_scoring_spec)
+        != {"path", "sha256", "spec_id", "winner_run_id"}
+        or coco_scoring_spec.get("winner_run_id")
+        != FORMAL_COCO_WINNER_RUN_ID
+    ):
+        raise ValueError("Formal freeze spec CoCo scoring binding differs")
     run_ids = arguments.get("evolution_run_ids")
     if not isinstance(run_ids, dict) or run_ids != {
         role: formal_run_id for role in ROLES

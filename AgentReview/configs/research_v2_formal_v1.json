@@ -1,6 +1,7 @@
 {
   "artifact_root": "artifacts/research_v2",
   "coco_root": "/data0/xyj/shengao/CoCoReviewBench",
+  "coco_scoring_spec_path": "artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json",
   "embedding_cache_path": "AgentReview/cache/research_v2_qwen3_embedding.sqlite3",
   "embedding_device": "",
   "embedding_model": "Qwen/Qwen3-Embedding-8B",

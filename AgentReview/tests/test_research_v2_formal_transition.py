@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -10,6 +11,10 @@ from unittest.mock import patch
 from agentreview.research_v2 import cli as cli_module
 from agentreview.research_v2 import formal_transition as transition_module
 from agentreview.research_v2.coco_review_batch import CocoReviewBatchOptions
+from agentreview.research_v2.coco_scoring_spec import (
+    CRITICAL_FILE_RELATIVE_PATHS,
+    materialize_coco_scoring_spec,
+)
 from agentreview.research_v2.config import ResearchConfig
 from agentreview.research_v2.constants import ROLES
 from agentreview.research_v2.evolution import (
@@ -97,6 +102,55 @@ class FormalTransitionTest(unittest.TestCase):
             records.append(record)
         self._write_jsonl(path, records)
 
+    @staticmethod
+    def _tiny_coco_scoring_fixture(root: Path) -> tuple[Path, Path, dict]:
+        coco_root = root / "fake-coco"
+        for index, relative in enumerate(CRITICAL_FILE_RELATIVE_PATHS):
+            path = coco_root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"critical-{index}\n", encoding="utf-8")
+        fixture_files = {
+            "benchmark/benchmark_ICLR_2024.jsonl": '{"id":"a"}\n',
+            "benchmark/benchmark_all_human_classify.jsonl": (
+                '{"id":"a","category":[]}\n'
+            ),
+            "benchmark/benchmark_reviewer_selection.json": (
+                '{"a":"Reviewer 1"}\n'
+            ),
+            "model/split_model/config.json": '{"split":true}\n',
+            "model/split_model/weights.bin": "tiny split weights\n",
+            "model/classify_model/config.json": '{"classify":true}\n',
+            "model/classify_model/weights.bin": "tiny classify weights\n",
+        }
+        for relative, content in fixture_files.items():
+            path = coco_root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+        for arguments in (
+            ("init",),
+            ("config", "user.email", "formal@example.invalid"),
+            ("config", "user.name", "Formal Transition Test"),
+            ("add", "."),
+            ("commit", "-m", "tiny CoCo scoring fixture"),
+        ):
+            subprocess.run(
+                ["git", *arguments],
+                cwd=coco_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        scoring_spec_path = (
+            root / "frozen" / "formal-coco1300-scoring-spec-v1.json"
+        )
+        scoring_spec = materialize_coco_scoring_spec(
+            coco_root=coco_root,
+            artifact_root=root,
+            winner_run_id="formal-coco1300-winner-v1",
+            output_path=scoring_spec_path,
+        )
+        return coco_root.resolve(), scoring_spec_path.resolve(), scoring_spec
+
     def _review_evaluation_fixture(
         self,
         *,
@@ -169,6 +223,9 @@ class FormalTransitionTest(unittest.TestCase):
 
     def _formal_fixture(self, root: Path) -> tuple[ResearchConfig, dict[str, Path]]:
         root.mkdir(parents=True, exist_ok=True)
+        coco_root, scoring_spec_path, _ = (
+            self._tiny_coco_scoring_fixture(root)
+        )
         development_s2 = root / "s2" / "development.jsonl"
         coco_s2 = root / "s2" / "coco-1300.jsonl"
         development_targets = [
@@ -197,6 +254,8 @@ class FormalTransitionTest(unittest.TestCase):
         )
         config = ResearchConfig(
             artifact_root=str(root),
+            coco_root=str(coco_root),
+            coco_scoring_spec_path=str(scoring_spec_path),
             frozen_s2_path=str(development_s2),
             frozen_coco_s2_path=str(coco_s2),
             embedding_cache_path=str(root / "cache" / "embedding.sqlite3"),
@@ -738,6 +797,7 @@ class FormalTransitionTest(unittest.TestCase):
             "coco_s2": coco_s2,
             "development_manifest": development_manifest,
             "coco_manifest": coco_manifest,
+            "coco_scoring_spec": scoring_spec_path,
             "summary": summary_path,
             "resume_audit": resume_audit,
             "qual_run_spec": (
@@ -746,7 +806,7 @@ class FormalTransitionTest(unittest.TestCase):
         }
 
     def test_materialized_spec_round_trips_into_a_frozen_system(self):
-        config, _ = self._formal_fixture(self.root)
+        config, paths = self._formal_fixture(self.root)
         spec_path = self.root / "formal-freeze-spec.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
@@ -802,9 +862,27 @@ class FormalTransitionTest(unittest.TestCase):
             arguments["external_coco_identity"]["git_commit"],
             "a" * 40,
         )
+        scoring_spec = read_json(paths["coco_scoring_spec"])
+        expected_scoring_binding = {
+            "path": str(paths["coco_scoring_spec"].resolve()),
+            "sha256": file_sha256(paths["coco_scoring_spec"]),
+            "spec_id": scoring_spec["spec_id"],
+            "winner_run_id": "formal-coco1300-winner-v1",
+        }
+        self.assertEqual(
+            arguments["coco_scoring_spec"],
+            expected_scoring_binding,
+        )
         self.assertIn(
             "external_coco.runner",
             spec["source_bindings"]["files"],
+        )
+        self.assertEqual(
+            spec["source_bindings"]["files"]["external_coco.scoring_spec"],
+            {
+                "path": expected_scoring_binding["path"],
+                "sha256": expected_scoring_binding["sha256"],
+            },
         )
         self.assertEqual(frozen["protocol"], "research-v2-frozen-system-v2")
         self.assertEqual(
@@ -818,6 +896,10 @@ class FormalTransitionTest(unittest.TestCase):
         self.assertEqual(
             frozen["external_evaluation"]["coco_runner"],
             arguments["external_coco_identity"],
+        )
+        self.assertEqual(
+            frozen["external_evaluation"]["coco_scoring_spec"],
+            expected_scoring_binding,
         )
         self.assertEqual(
             frozen["reproducibility"]["transition_code_commit"],
@@ -1131,6 +1213,71 @@ class FormalTransitionTest(unittest.TestCase):
 
         self.assertFalse(output_path.exists())
 
+    def test_rehashed_scoring_spec_tamper_never_reaches_final_system(self):
+        config, paths = self._formal_fixture(self.root)
+        formal_spec_path = self.root / "formal-freeze-spec.json"
+        output_path = self.root / "system-must-not-exist.json"
+        with patch(
+            "agentreview.research_v2.formal_transition.clean_git_head",
+            return_value="a" * 40,
+        ):
+            materialize_formal_freeze_spec(
+                config=config,
+                formal_run_id="formal-evolution-v1",
+                repository_root=self.root,
+                output_path=formal_spec_path,
+            )
+
+        scoring_spec = read_json(paths["coco_scoring_spec"])
+        scoring_spec["scientific_settings"]["split"]["model"] = "tampered-model"
+        scoring_spec["spec_id"] = value_sha256(
+            {
+                name: value
+                for name, value in scoring_spec.items()
+                if name != "spec_id"
+            }
+        )
+        atomic_write_json(
+            paths["coco_scoring_spec"],
+            scoring_spec,
+            immutable=False,
+        )
+
+        formal_spec = read_json(formal_spec_path)
+        scoring_sha256 = file_sha256(paths["coco_scoring_spec"])
+        formal_spec["freeze_arguments"]["coco_scoring_spec"].update(
+            {
+                "sha256": scoring_sha256,
+                "spec_id": scoring_spec["spec_id"],
+            }
+        )
+        formal_spec["source_bindings"]["files"][
+            "external_coco.scoring_spec"
+        ]["sha256"] = scoring_sha256
+        formal_spec["spec_id"] = value_sha256(
+            {
+                name: value
+                for name, value in formal_spec.items()
+                if name != "spec_id"
+            }
+        )
+        atomic_write_json(formal_spec_path, formal_spec, immutable=False)
+
+        with (
+            patch(
+                "agentreview.research_v2.formal_transition.clean_git_head",
+                return_value="a" * 40,
+            ),
+            self.assertRaisesRegex(ValueError, "scoring spec paths, hashes"),
+        ):
+            freeze_formal_system(
+                spec_path=formal_spec_path,
+                output_path=output_path,
+                repository_root=self.root,
+            )
+
+        self.assertFalse(output_path.exists())
+
     def test_materializer_revalidates_semantics_after_source_binding(self):
         config, paths = self._formal_fixture(self.root)
         output_path = self.root / "system-must-not-exist.json"
@@ -1284,6 +1431,43 @@ class FormalTransitionTest(unittest.TestCase):
             config=config,
             formal_run_id="formal-evolution-v1",
             repository_root=Path(cli_module.__file__).resolve().parents[3],
+            output_path=str(output_path),
+        )
+
+    def test_materialize_coco_scoring_spec_cli_binds_formal_inputs(self):
+        coco_root = self.root / "coco"
+        config = ResearchConfig(
+            artifact_root=str(self.root / "artifacts"),
+            coco_root=str(coco_root),
+        )
+        output_path = self.root / "formal-coco-scoring-spec.json"
+        rendered = io.StringIO()
+        with (
+            patch.object(cli_module.ResearchConfig, "load", return_value=config),
+            patch.object(
+                cli_module,
+                "materialize_coco_scoring_spec",
+                return_value={"protocol": "research-v2-coco-scoring-spec-v1"},
+            ) as materialize,
+            redirect_stdout(rendered),
+        ):
+            exit_code = cli_module.main(
+                [
+                    "--config",
+                    "formal.json",
+                    "materialize-coco-scoring-spec",
+                    "--winner-run-id",
+                    "formal-coco1300-winner-v1",
+                    "--output",
+                    str(output_path),
+                ]
+            )
+
+        self.assertEqual(exit_code, 0)
+        materialize.assert_called_once_with(
+            coco_root=str(coco_root),
+            artifact_root=config.artifact_path(),
+            winner_run_id="formal-coco1300-winner-v1",
             output_path=str(output_path),
         )
 

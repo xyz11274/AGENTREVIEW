@@ -318,6 +318,8 @@ def _service_identities(models: dict[str, Any]) -> dict[str, Any]:
         "software": {"vllm": "0.20.1", "transformers": "5.8.1"},
         "split": {
             "cuda_visible_devices": "0",
+            "python_executable": "/data0/xyj/miniconda3/envs/qwen38serve/bin/python",
+            "vllm_attention_backend": "FLASH_ATTN",
             "host": "127.0.0.1",
             "port": 13099,
             "served_model_name": "Qwen3-8B-Split",
@@ -326,9 +328,16 @@ def _service_identities(models: dict[str, Any]) -> dict[str, Any]:
             "max_num_seqs": 8,
             "tensor_parallel_size": 1,
             "gpu_memory_utilization": 0.90,
+            "dtype": "bfloat16",
+            "language_model_only": True,
+            "reasoning_parser": "qwen3",
+            "enable_prefix_caching": True,
+            "enforce_eager": True,
         },
         "classify": {
             "cuda_visible_devices": "1",
+            "python_executable": "/data0/xyj/miniconda3/envs/qwen38serve/bin/python",
+            "vllm_attention_backend": "FLASH_ATTN",
             "host": "127.0.0.1",
             "port": 13098,
             "served_model_name": "Qwen3-8B-Classify",
@@ -337,6 +346,11 @@ def _service_identities(models: dict[str, Any]) -> dict[str, Any]:
             "max_num_seqs": 16,
             "tensor_parallel_size": 1,
             "gpu_memory_utilization": 0.90,
+            "dtype": "bfloat16",
+            "language_model_only": True,
+            "reasoning_parser": "qwen3",
+            "enable_prefix_caching": True,
+            "enforce_eager": True,
         },
     }
 
@@ -552,6 +566,8 @@ def _validate_shape(value: dict[str, Any]) -> None:
     )
     service_fields = {
         "cuda_visible_devices",
+        "python_executable",
+        "vllm_attention_backend",
         "host",
         "port",
         "served_model_name",
@@ -560,6 +576,11 @@ def _validate_shape(value: dict[str, Any]) -> None:
         "max_num_seqs",
         "tensor_parallel_size",
         "gpu_memory_utilization",
+        "dtype",
+        "language_model_only",
+        "reasoning_parser",
+        "enable_prefix_caching",
+        "enforce_eager",
     }
     for role in ("split", "classify"):
         _require_fields(
@@ -617,6 +638,15 @@ def materialize_coco_scoring_spec(
         artifact_root=artifacts,
         winner_run_id=winner,
     )
+    confirmed_body = _build_body(
+        coco_root=root,
+        artifact_root=artifacts,
+        winner_run_id=winner,
+    )
+    if confirmed_body != body:
+        raise RuntimeError(
+            "CoCo scoring inputs changed between materialization passes"
+        )
     value = {**body, "spec_id": value_sha256(body)}
     _validate_shape(value)
     target = atomic_write_json(output_path, value)

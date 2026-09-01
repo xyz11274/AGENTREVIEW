@@ -21,6 +21,7 @@ from .coco_review_batch import (
     ResearchV2ReviewGenerationAdapter,
     run_coco_review_batch,
 )
+from .coco_scoring_spec import materialize_coco_scoring_spec
 from .config import ResearchConfig
 from .constants import ROLES
 from .data import prepare_data
@@ -179,6 +180,10 @@ def _base_parser() -> argparse.ArgumentParser:
     materialize_freeze = stages.add_parser("materialize-freeze-spec")
     materialize_freeze.add_argument("--run-id", required=True)
     materialize_freeze.add_argument("--output", required=True)
+
+    materialize_scoring = stages.add_parser("materialize-coco-scoring-spec")
+    materialize_scoring.add_argument("--winner-run-id", required=True)
+    materialize_scoring.add_argument("--output", required=True)
 
     coco_reviews = stages.add_parser("generate-coco-reviews")
     coco_reviews.add_argument("--frozen-system", required=True)
@@ -712,6 +717,13 @@ def main(argv: list[str] | None = None) -> int:
             config=config,
             formal_run_id=args.run_id,
             repository_root=Path(__file__).resolve().parents[3],
+            output_path=args.output,
+        )
+    elif args.stage == "materialize-coco-scoring-spec":
+        result = materialize_coco_scoring_spec(
+            coco_root=config.coco_root,
+            artifact_root=output_root,
+            winner_run_id=args.winner_run_id,
             output_path=args.output,
         )
     elif args.stage == "freeze-system":
