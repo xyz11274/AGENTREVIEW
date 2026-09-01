@@ -1,6 +1,6 @@
 # ADR-0006：Family-Deduplicated Temporal v2 四区数据协议
 
-- 状态：Accepted
+- 状态：Superseded for Research Core v2 by ADR-0010
 - 适用范围：历史经验、Evolution、Effectiveness Screening 与正式 Benchmark
 
 ## Context

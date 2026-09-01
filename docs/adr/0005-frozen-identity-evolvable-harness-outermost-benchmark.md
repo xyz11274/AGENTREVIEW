@@ -1,6 +1,6 @@
 # ADR-0005：Frozen Reviewer Identity、可演化 Memory Harness 与外置 Benchmark
 
-- 状态：Accepted
+- 状态：Superseded for Research Core v2 by ADR-0008 and ADR-0009
 - 适用范围：Reviewer、MemoryProgram、候选可见信息与外部评价
 
 ## Context

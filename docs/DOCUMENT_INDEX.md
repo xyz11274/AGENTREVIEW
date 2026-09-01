@@ -4,26 +4,28 @@
 
 ## 阅读顺序
 
-1. [`AgentReview/README.md`](../AgentReview/README.md)：安装、入口、运行状态与常用命令。
-2. [`ARCHITECTURE.md`](ARCHITECTURE.md)：完整模块边界、执行流、数据流、产物与接口状态。
-3. [`CONTEXT.md`](../CONTEXT.md)：Reviewer、MemoryProgram、Evolution、四区数据与评测术语。
-4. [`adr/`](adr/)：当前架构决策及其约束。
-5. 组件 README：Seed Programs 与 Evolution Viewer 的局部使用说明。
+1. [`RESEARCH_CORE_V2_DESIGN.md`](RESEARCH_CORE_V2_DESIGN.md)：已确认的 Research Core v2 目标边界、唯一主链与实施顺序。
+2. [`CONTEXT.md`](../CONTEXT.md)：Research Core v2 的规范术语。
+3. [`adr/`](adr/)：Research Core v2 的现行边界决策与 legacy 架构决策。
+4. [`ARCHITECTURE.md`](ARCHITECTURE.md)：旧六任务实现的 legacy 架构快照，用于迁移核对。
+5. [`AgentReview/README.md`](../AgentReview/README.md)：当前 legacy 代码的安装、入口与运行命令。
 
 ## 核心说明文件
 
 | File | Ownership | Update trigger |
 |---|---|---|
+| `docs/RESEARCH_CORE_V2_DESIGN.md` | 已确认的 Research Core v2 目标主链、边界与实施顺序 | 目标架构或已确认实验协议变化 |
 | `AgentReview/README.md` | 用户入口、依赖、三条执行面、当前资产状态 | CLI、安装方式、运行状态或主要命令变化 |
-| `docs/ARCHITECTURE.md` | 全仓模块、Interface、Implementation、Seam、Adapter、数据流和产物 | 模块边界、运行协议、入口或正式流程变化 |
-| `CONTEXT.md` | 当前领域词汇及精确定义 | 代码引入、重命名或改变领域概念 |
+| `docs/ARCHITECTURE.md` | 2026-08-31 legacy 实现快照 | 仅在迁移核对需要时更新 |
+| `CONTEXT.md` | Research Core v2 领域词汇及精确定义 | 设计树确认、重命名或改变领域概念 |
 | `docs/DOCUMENT_INDEX.md` | 说明文件集合和所有权 | 新增、移动、合并或删除说明文件 |
 
 ## 冻结规范与组件说明
 
 | File | Ownership | Status |
 |---|---|---|
-| `AgentReview/REVIEW_Request.md` | 五 Specialist 与 META 的 Frozen Reviewer Identity 内容源 | `reviewer_identity.py` 解析六个有序章节；`frozen_reviewer_identity_v2.json` 固化 source、task、Specialist/META request template 与 suite SHA256 |
+| `AgentReview/REVIEW_Request.md` | Research Core v2 的五 Specialist identity、职责与输出要求 | v2 目标只保留 `QUAL/CLAR/SIGN/ORIG/POL`；当前六章节内容属于待替换 legacy 状态 |
+| `AgentReview/META_SYNTHESIS_Request_v1.md` | Research Core v2 的独立无状态 Meta 汇总请求 | 待实现；单独冻结版本与内容 hash，不属于 Reviewer Role 或 Evolution |
 | `AgentReview/memory_evolution/seeds/README.md` | 三个 Seed Program 的设计与区别 | 与 `seeds/*.py` 同步 |
 | `AgentReview/evolution_viewer/README.md` | Evolution Viewer 参数、数据源和管理命令 | 与 `evolution_viewer/app.py`、`manage.sh` 同步 |
 | `AgentReview/LICENSE` | 项目许可证 | 法律文件 |
@@ -32,11 +34,14 @@
 
 | ADR | Decision |
 |---|---|
-| [`0003`](adr/0003-path-discipline-and-asset-manifest.md) | 项目相对路径、显式外部根与 hash-bound Asset Manifest |
-| [`0004`](adr/0004-proxy-vs-official-evaluation.md) | Evolution fitness、C 区 proxy、密封 D 测量与 official CoCo 分层 |
-| [`0005`](adr/0005-frozen-identity-evolvable-harness-outermost-benchmark.md) | Frozen Reviewer Identity、可演化 Memory Harness 与外置 Benchmark |
-| [`0006`](adr/0006-data-protocol-four-zones.md) | family-deduplicated temporal v2 和 A/B/C/D 四区协议 |
-| [`0007`](adr/0007-evolution-semantics-fresh-state-lineage-budget.md) | fresh-state replay、全局候选池、lineage provenance 与 20-attempt 预算 |
+| [`0010`](adr/0010-external-development-sealed-coco.md) | OpenReview train development 与冻结的 CoCo-1300 隔离，并采用最小直接去重 |
+| [`0009`](adr/0009-offline-generative-evolution-deterministic-retrieval.md) | Evolution 可离线生成 Derived Memory；召回确定性，LLM Summarizer 仅处理冻结命中集合 |
+| [`0008`](adr/0008-stage-and-evaluation-boundaries.md) | Research Core v2 分离 Review、Internal Evaluation、Evolution 与外部 CoCo；Meta 无状态且不进化 |
+| [`0003`](adr/0003-path-discipline-and-asset-manifest.md) | Legacy：项目相对路径、显式外部根与 hash-bound Asset Manifest |
+| [`0004`](adr/0004-proxy-vs-official-evaluation.md) | Legacy：Evolution fitness、C 区 proxy、密封 D 测量与 official CoCo 分层 |
+| [`0005`](adr/0005-frozen-identity-evolvable-harness-outermost-benchmark.md) | Legacy：Frozen Reviewer Identity、可演化 Memory Harness 与外置 Benchmark |
+| [`0006`](adr/0006-data-protocol-four-zones.md) | Legacy：family-deduplicated temporal v2 和 A/B/C/D 四区协议 |
+| [`0007`](adr/0007-evolution-semantics-fresh-state-lineage-budget.md) | Legacy：fresh-state replay、全局候选池、lineage provenance 与 20-attempt 预算 |
 
 ## 配置与 manifest
 
@@ -44,7 +49,7 @@
 
 | Asset | Role |
 |---|---|
-| `AgentReview/configs/frozen_reviewer_identity_v2.json` | Reviewer Identity version、source SHA、六个 task prompt SHA、Specialist/META request protocol/template 与 suite SHA |
+| `AgentReview/configs/frozen_reviewer_identity_v2.json` | Legacy 六任务 Reviewer Suite identity；v2 实现时由五 Specialist identity 与独立 Meta prompt identity 取代，不保留兼容要求 |
 | `AgentReview/configs/asset_manifest_v2.json` | Frozen Reviewer Identity、temporal v2、Frozen S2 v2、Seed Program 与 embedding 身份 |
 | `AgentReview/configs/formal_temporal_v3_qwen3e8b.json` | 正式 Qwen3 embedding 实验身份与 selection 资产状态 |
 | `AgentReview/configs/coco_temporal_split_v2/manifest.json` | 3900 records、3889 families 与 A/B/C/D 冻结分配 |

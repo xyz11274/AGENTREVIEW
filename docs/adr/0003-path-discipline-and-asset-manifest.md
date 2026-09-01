@@ -1,6 +1,6 @@
 # ADR-0003：项目相对路径、显式外部根与 Asset Manifest
 
-- 状态：Accepted
+- 状态：Legacy（Research Core v2 仅按需复用最小 provenance）
 - 适用范围：配置、冻结数据、Program、模型资产与运行产物
 
 ## Context

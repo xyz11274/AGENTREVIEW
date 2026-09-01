@@ -1,5 +1,7 @@
 # AgentReview M★ 代码仓全架构
 
+> Legacy snapshot：本文描述 2026-08-31 旧六任务实现，不再是 Research Core v2 的目标协议。新设计及待决项见 [`RESEARCH_CORE_V2_DESIGN.md`](RESEARCH_CORE_V2_DESIGN.md)；冲突边界由 [`ADR-0008`](adr/0008-stage-and-evaluation-boundaries.md) 取代。
+
 本文是 `AgentReview_0811` 的现行架构说明，依据 2026-08-31 的源码、配置、资产 manifest 与测试建立。它描述当前可执行系统、正式实验边界、生成产物以及保留的待启用接口。
 
 术语定义见 [`CONTEXT.md`](../CONTEXT.md)，运行入口见 [`AgentReview/README.md`](../AgentReview/README.md)，架构决策见 [`adr/`](adr/)。

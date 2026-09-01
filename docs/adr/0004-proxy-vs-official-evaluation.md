@@ -1,6 +1,6 @@
 # ADR-0004：Fitness、Proxy、Sealed D 与 Official CoCo 分层
 
-- 状态：Accepted
+- 状态：Superseded for Research Core v2 by ADR-0008 and ADR-0010
 - 适用范围：Evolution 选择、C 区效果筛选、D 区密封测量与外部 CoCo 评测
 
 ## Context

@@ -1,6 +1,6 @@
 # ADR-0007：Fresh-State Replay、全局候选池与 20-Attempt 搜索
 
-- 状态：Accepted
+- 状态：Legacy（Research Core v2 仅复用 role-local M★ 搜索骨架）
 - 适用范围：MemoryProgram evaluation、parent selection、lineage、预算与恢复
 
 ## Context
