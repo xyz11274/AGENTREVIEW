@@ -10,6 +10,7 @@ import os
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -26,6 +27,10 @@ from .s2 import (
     S2_RECORD_BUILDER_SHA256,
     validate_frozen_s2_pool,
 )
+from .coco_scoring_spec import (
+    FORMAL_EVALUATION_PROXY_HOST,
+    FORMAL_EVALUATION_PROXY_PORT,
+)
 
 PROBE_PROTOCOL = "research-v2-hourly-probe-v3"
 FORMAL_RUN_ID = "formal-evolution-v1"
@@ -35,6 +40,12 @@ FORMAL_LOCK_RELATIVE = Path(
     "artifacts/research_v2/runs/formal-evolution-runner.lock"
 )
 S2_LOCK_RELATIVE = Path("artifacts/research_v2/s2/.s2-build.lock")
+COCO_SCORING_SPEC_RELATIVE = Path(
+    "artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json"
+)
+COCO_PRE_SCORE_SEAL_RELATIVE = Path(
+    "artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json"
+)
 
 FORMAL_PYTHON = "/data0/xyj/miniconda3/envs/env_shengao/bin/python"
 FORMAL_ARGUMENTS = (
@@ -645,6 +656,66 @@ def _issue(issues: list[dict[str, str]], severity: str, code: str, message: str)
     issues.append({"severity": severity, "code": code, "message": message})
 
 
+def _proxy_tcp_health(
+    *,
+    host: str = FORMAL_EVALUATION_PROXY_HOST,
+    port: int = FORMAL_EVALUATION_PROXY_PORT,
+    timeout: float = 2.0,
+) -> dict[str, Any]:
+    error = ""
+    connection = None
+    try:
+        connection = socket.create_connection((host, port), timeout=timeout)
+    except OSError as exc:
+        error = f"{type(exc).__name__}: {exc}"[:256]
+    finally:
+        if connection is not None:
+            connection.close()
+    return {
+        "host": host,
+        "port": port,
+        "reachable": connection is not None,
+        "error": error,
+    }
+
+
+def _coco_scoring_gate_started(
+    repo_root: Path,
+    *,
+    transition_ready: bool,
+) -> bool:
+    return transition_ready or any(
+        (repo_root / relative).is_file()
+        for relative in (
+            COCO_SCORING_SPEC_RELATIVE,
+            COCO_PRE_SCORE_SEAL_RELATIVE,
+        )
+    )
+
+
+def _append_proxy_health_issue(
+    issues: list[dict[str, str]],
+    *,
+    health: dict[str, Any],
+    scoring_gate_started: bool,
+) -> None:
+    if health.get("reachable") is True:
+        return
+    severity = "critical" if scoring_gate_started else "warning"
+    phase = (
+        "Formal CoCo scoring is gated"
+        if scoring_gate_started
+        else "Formal/S2 remains in progress; do not restart services"
+    )
+    _issue(
+        issues,
+        severity,
+        "coco_evaluation_proxy_unreachable",
+        f"Fixed Evaluation proxy {health.get('host')}:{health.get('port')} is "
+        f"unreachable. {phase}.",
+    )
+
+
 def _append_s2_stagnation_issues(
     issues: list[dict[str, str]],
     *,
@@ -781,6 +852,18 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         active=s2_active,
     )
     issues: list[dict[str, str]] = []
+    transition_ready = (
+        formal_progress["summary_status"] == "complete" and s2_progress["complete"]
+    )
+    proxy_health = _proxy_tcp_health()
+    _append_proxy_health_issue(
+        issues,
+        health=proxy_health,
+        scoring_gate_started=_coco_scoring_gate_started(
+            repo_root,
+            transition_ready=transition_ready,
+        ),
+    )
 
     if formal_progress["summary_status"] == "interrupted":
         _issue(issues, "critical", "formal_interrupted", "Formal summary is interrupted")
@@ -866,7 +949,6 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         _issue(issues, "warning", "disk_low", f"Only {disk['free_gib']} GiB remains on the artifact filesystem")
 
     severities = {value["severity"] for value in issues}
-    transition_ready = formal_progress["summary_status"] == "complete" and s2_progress["complete"]
     if "critical" in severities:
         status = "action_required"
     elif "warning" in severities:
@@ -895,6 +977,7 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         },
         "locks": lock_owners,
         "endpoints": endpoints,
+        "evaluation_proxy": proxy_health,
         "gpus": _gpu_snapshot(),
         "disk": disk,
         "git": _git_snapshot(repo_root),

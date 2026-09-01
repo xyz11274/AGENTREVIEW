@@ -71,6 +71,7 @@ def _validate_coco_scoring_spec_binding(
     value: Any,
     *,
     coco_root: str | Path,
+    external_coco_identity: dict[str, Any],
 ) -> dict[str, Any]:
     required_fields = {"path", "sha256", "spec_id", "winner_run_id"}
     if not isinstance(value, dict) or set(value) != required_fields:
@@ -92,7 +93,48 @@ def _validate_coco_scoring_spec_binding(
         or spec.get("winner_run_id") != FORMAL_COCO_WINNER_RUN_ID
     ):
         raise ValueError("freeze-system CoCo scoring spec binding mismatch")
+    _cross_check_external_coco_scoring_identity(
+        external_coco_identity=external_coco_identity,
+        scoring_spec=spec,
+    )
     return expected
+
+
+def _cross_check_external_coco_scoring_identity(
+    *,
+    external_coco_identity: dict[str, Any],
+    scoring_spec: dict[str, Any],
+) -> None:
+    """Require both formal bindings to name one identical CoCo checkout."""
+    repository = scoring_spec.get("repository")
+    runner = external_coco_identity.get("runner")
+    critical_files = scoring_spec.get("critical_files")
+    if (
+        not isinstance(repository, dict)
+        or set(repository) != {"root", "git_commit", "clean"}
+        or repository.get("clean") is not True
+        or not isinstance(runner, dict)
+        or set(runner) != {"path", "sha256"}
+        or not isinstance(critical_files, list)
+    ):
+        raise ValueError("freeze-system CoCo identity/spec cross-binding is incomplete")
+    if (
+        repository.get("root") != external_coco_identity.get("repository_root")
+        or repository.get("git_commit") != external_coco_identity.get("git_commit")
+    ):
+        raise ValueError(
+            "freeze-system external CoCo root or commit differs from scoring spec"
+        )
+    runner_matches = [
+        binding
+        for binding in critical_files
+        if isinstance(binding, dict)
+        and binding.get("path") == runner.get("path")
+    ]
+    if len(runner_matches) != 1 or runner_matches[0] != runner:
+        raise ValueError(
+            "freeze-system external CoCo runner differs from scoring spec"
+        )
 
 
 def _validate_memory_winner_identity(
@@ -252,6 +294,7 @@ def freeze_system(
         verified_coco_scoring_spec = _validate_coco_scoring_spec_binding(
             coco_scoring_spec,
             coco_root=verified_external_coco["repository_root"],
+            external_coco_identity=verified_external_coco,
         )
     verified_winners = {}
     for role in ROLES:

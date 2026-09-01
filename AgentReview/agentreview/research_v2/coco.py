@@ -11,9 +11,22 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-from .coco_review_batch import validate_completed_coco_review_batch
+from .coco_scoring_spec import (
+    FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS,
+    FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS,
+    FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM,
+    FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
+    FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
+    FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS,
+    FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM,
+    FORMAL_EVALUATION_PROXY_URL,
+    FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS,
+    FORMAL_SPLIT_MAX_COMPLETION_TOKENS,
+    FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM,
+)
 from .io import (
     atomic_write_json,
+    canonical_json_bytes,
     file_sha256,
     read_json,
     read_jsonl,
@@ -46,28 +59,66 @@ TABLE_1_COLUMNS = {
     "Paper.",
     "Complete.",
 }
-COCO_FORWARDED_ENV = (
-    "COCO_SPLIT_BASE_URL",
-    "COCO_SPLIT_MODEL",
-    "COCO_SPLIT_MAX_WORKERS",
-    "COCO_SPLIT_EFFORT",
-    "COCO_SPLIT_CACHE_VERSION",
-    "COCO_CLASSIFY_BASE_URL",
-    "COCO_CLASSIFY_MODEL",
-    "COCO_CLASSIFY_MAX_WORKERS",
-    "COCO_CLASSIFY_EFFORT",
-    "COCO_CLASSIFY_CACHE_VERSION",
-    "COCO_RUN_EVALUATION",
-    "COCO_EVALUATION_BENCHMARK_FILES",
-    "COCO_EVALUATION_COMPLETE_HUMAN_CLASSIFY_FILE",
-    "COCO_EVALUATION_MODEL",
-    "COCO_EVALUATION_BASE_URL",
-    "COCO_EVALUATION_API_KEY",
-    "COCO_EVALUATION_MAX_WORKERS",
-    "COCO_EVALUATION_EFFORT",
-    "COCO_EVALUATION_CACHE_VERSION",
-    "COCO_EVALUATION_CUDA_VISIBLE_DEVICES",
+TABLE_1_FULL_COUNT_COLUMNS = {
+    "BLEU",
+    "ROUGE-L",
+    "BERT.",
+    "Paper.",
+    "Complete.",
+}
+TABLE_1_ELIGIBLE_COUNT_COLUMNS = {
+    "Correct.",
+    "Thoro.",
+    "Ground.",
+    "Clarity",
+    "Average",
+}
+TABLE_1_VERIFY_COLUMN = "Verify."
+COCO_API_KEY_ENV = "COCO_EVALUATION_API_KEY"
+COCO_FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+COCO_RUN_REPORT_FIELDS = frozenset(
+    {
+        "protocol",
+        "frozen_system_id",
+        "frozen_system_sha256",
+        "coco_1300_manifest_sha256",
+        "scoring_source",
+        "pre_score_seal",
+        "scoring_spec",
+        "service_runtime",
+        "candidate_input",
+        "candidate_input_sha256",
+        "external_coco_identity",
+        "command",
+        "environment",
+        "returncode",
+        "status",
+        "artifacts",
+        "artifact_validation_error",
+        "runtime_validation_error",
+    }
 )
+
+
+def _fixed_output_path(
+    root: Path,
+    relative: str | Path,
+    *,
+    label: str,
+    require_file: bool = False,
+) -> Path:
+    """Return one fixed lexical descendant and reject symlink redirection."""
+    relative_path = Path(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise ValueError(f"{label} must be a fixed relative output path")
+    if not root.is_absolute() or root.resolve() != root:
+        raise ValueError(f"{label} output root must be canonical and non-symlinked")
+    target = root / relative_path
+    if target.parent.resolve() != target.parent or target.is_symlink():
+        raise ValueError(f"{label} must not use a symbolic link")
+    if require_file and not target.is_file():
+        raise FileNotFoundError(f"{label} is missing: {target}")
+    return target
 
 
 def _artifact_binding(path: Path) -> dict[str, str]:
@@ -82,8 +133,12 @@ def _validate_contract_binding(
 ) -> None:
     if not isinstance(binding, dict):
         raise RuntimeError(f"External CoCo contract requires a {label} binding")
-    bound_path = Path(str(binding.get("path") or "")).expanduser().resolve()
-    if bound_path != expected_path or binding.get("sha256") != file_sha256(expected_path):
+    if (
+        expected_path.is_symlink()
+        or expected_path.parent.resolve() != expected_path.parent
+        or binding.get("path") != str(expected_path)
+        or binding.get("sha256") != file_sha256(expected_path)
+    ):
         raise RuntimeError(f"External CoCo contract has an invalid {label} binding")
 
 
@@ -112,11 +167,6 @@ def _git_head_and_status(root: Path) -> tuple[str, str]:
     ):
         raise RuntimeError("External CoCo repository identity is unreadable")
     return commit, status.stdout.strip()
-
-
-def _resolve_command_path(value: str, *, root: Path) -> Path:
-    path = Path(value).expanduser()
-    return (path if path.is_absolute() else root / path).resolve()
 
 
 def _validate_external_coco_runtime(
@@ -154,12 +204,11 @@ def _validate_external_coco_runtime(
     normalized_command = list(command)
     if normalized_command and normalized_command[0] == "--":
         normalized_command = normalized_command[1:]
-    if not normalized_command:
+    if not normalized_command or any(
+        not isinstance(argument, str) for argument in normalized_command
+    ):
         raise ValueError("CoCo Evaluation requires an explicit external command")
-    command_paths = [_resolve_command_path(normalized_command[0], root=root)]
-    if len(normalized_command) > 1:
-        command_paths.append(_resolve_command_path(normalized_command[1], root=root))
-    if expected_runner not in command_paths:
+    if normalized_command.count(str(expected_runner)) != 1:
         raise RuntimeError("CoCo command does not execute the frozen official runner")
     return identity, normalized_command
 
@@ -170,12 +219,18 @@ def _validate_stage_checkpoint_binding(
     stage: str,
     binding: Any,
     runner: dict[str, Any],
+    scoring_spec_binding: dict[str, str],
     input_binding: dict[str, str],
     output_binding: dict[str, str],
 ) -> None:
     expected_path = (
-        output / COCO_STAGE_ROOT / stage / COCO_STAGE_CHECKPOINT
-    ).resolve()
+        _fixed_output_path(
+            output,
+            Path(COCO_STAGE_ROOT) / stage / COCO_STAGE_CHECKPOINT,
+            label=f"{stage} stage checkpoint",
+            require_file=True,
+        )
+    )
     _validate_contract_binding(
         binding,
         expected_path=expected_path,
@@ -194,12 +249,13 @@ def _validate_stage_checkpoint_binding(
         "stage": stage,
         "candidate_input": candidate_input,
         "input_artifact": input_binding,
+        "scoring_spec": scoring_spec_binding,
         "settings": settings.get(stage) if isinstance(settings, dict) else None,
         "output_filename": Path(output_binding["path"]).name,
         "output_sha256": output_binding["sha256"],
     }
     if (
-        body != expected
+        canonical_json_bytes(body) != canonical_json_bytes(expected)
         or checkpoint.get("checkpoint_id") != value_sha256(body)
     ):
         raise RuntimeError(f"External CoCo {stage} stage checkpoint differs")
@@ -210,7 +266,7 @@ def _validate_candidate_stage(
     *,
     stage: str,
     expected_ids: set[str],
-) -> None:
+) -> list[dict[str, Any]]:
     if not path.is_file():
         raise RuntimeError(f"External CoCo process requires the {stage} artifact: {path}")
     try:
@@ -233,6 +289,7 @@ def _validate_candidate_stage(
             raise RuntimeError(
                 "External CoCo classify artifact has an invalid category record"
             )
+    return records
 
 
 def _validate_evaluation_summary(path: Path, *, expected_count: int) -> None:
@@ -270,33 +327,177 @@ def _validate_evaluation_summary(path: Path, *, expected_count: int) -> None:
     scores = table.get("absolute_scores")
     counts = table.get("paper_counts")
     coverage = table.get("category_coverage")
+    counts_have_exact_types = isinstance(counts, dict) and all(
+        type(counts.get(name)) is int for name in TABLE_1_COLUMNS
+    )
+    full_counts_match = counts_have_exact_types and all(
+        counts[name] == expected_count for name in TABLE_1_FULL_COUNT_COLUMNS
+    )
+    eligible_count = counts.get("Correct.") if counts_have_exact_types else None
+    eligible_counts_match = (
+        type(eligible_count) is int
+        and 1 <= eligible_count <= expected_count
+        and all(
+            counts[name] == eligible_count
+            for name in TABLE_1_ELIGIBLE_COUNT_COLUMNS
+        )
+    )
+    verify_count = counts.get(TABLE_1_VERIFY_COLUMN) if counts_have_exact_types else None
+    verify_count_matches = (
+        eligible_counts_match
+        and type(verify_count) is int
+        and 0 <= verify_count <= eligible_count
+    )
+
+    def finite_score(name: str) -> bool:
+        score = scores.get(name) if isinstance(scores, dict) else None
+        return (
+            not isinstance(score, bool)
+            and isinstance(score, (int, float))
+            and math.isfinite(float(score))
+        )
+
+    verify_score = scores.get(TABLE_1_VERIFY_COLUMN) if isinstance(scores, dict) else None
+    verify_score_matches = (
+        verify_count_matches
+        and (
+            (verify_count == 0 and verify_score is None)
+            or (verify_count > 0 and finite_score(TABLE_1_VERIFY_COLUMN))
+        )
+    )
     if (
         not isinstance(scores, dict)
         or set(scores) != TABLE_1_COLUMNS
         or not isinstance(counts, dict)
         or set(counts) != TABLE_1_COLUMNS
-        or any(type(counts[name]) is not int for name in TABLE_1_COLUMNS)
-        or any(counts[name] != expected_count for name in TABLE_1_COLUMNS)
+        or not full_counts_match
+        or not eligible_counts_match
+        or not verify_score_matches
         or any(
-            isinstance(scores[name], bool)
-            or not isinstance(scores[name], (int, float))
-            or not math.isfinite(float(scores[name]))
-            for name in TABLE_1_COLUMNS
+            not finite_score(name)
+            for name in TABLE_1_COLUMNS - {TABLE_1_VERIFY_COLUMN}
         )
         or not isinstance(coverage, dict)
+        or type(coverage.get("item_count")) is not int
         or coverage.get("item_count") != expected_count
-        or (coverage.get("metric_counts") or {}).get("Complete.") != expected_count
+        or not isinstance(coverage.get("metric_counts"), dict)
+        or type(coverage["metric_counts"].get("Complete.")) is not int
+        or coverage["metric_counts"].get("Complete.") != expected_count
     ):
         raise RuntimeError(
             "External CoCo evaluation does not cover the exact frozen paper set"
         )
+
+
+def _validated_split_prompt_preflight(
+    value: Any,
+    *,
+    expected_count: int,
+) -> dict[str, Any]:
+    fields = {
+        "algorithm",
+        "max_model_len",
+        "max_completion_tokens",
+        "enable_thinking",
+        "candidate_count",
+        "max_prompt_tokens",
+        "max_total_tokens",
+        "prompt_token_counts_sha256",
+    }
+    if not isinstance(value, dict) or set(value) != fields:
+        raise RuntimeError("External CoCo split prompt preflight fields differ")
+    max_prompt_tokens = value.get("max_prompt_tokens")
+    max_total_tokens = value.get("max_total_tokens")
+    if (
+        value.get("algorithm") != FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM
+        or type(value.get("max_model_len")) is not int
+        or value["max_model_len"] != FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS
+        or type(value.get("max_completion_tokens")) is not int
+        or value["max_completion_tokens"] != FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+        or value.get("enable_thinking") is not True
+        or type(value.get("candidate_count")) is not int
+        or value["candidate_count"] < 1
+        or value["candidate_count"] != expected_count
+        or type(max_prompt_tokens) is not int
+        or max_prompt_tokens < 1
+        or type(max_total_tokens) is not int
+        or max_total_tokens
+        != max_prompt_tokens + FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+        or max_total_tokens > FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS
+        or not isinstance(value.get("prompt_token_counts_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", value["prompt_token_counts_sha256"])
+        is None
+    ):
+        raise RuntimeError("External CoCo split prompt preflight identity differs")
+    return dict(value)
+
+
+def _validated_classify_prompt_preflight(
+    value: Any,
+    *,
+    expected_count: int,
+    expected_opinion_count: int | None = None,
+) -> dict[str, Any]:
+    fields = {
+        "algorithm",
+        "max_model_len",
+        "max_completion_tokens",
+        "enable_thinking",
+        "candidate_count",
+        "opinion_count",
+        "max_prompt_tokens",
+        "max_total_tokens",
+        "prompt_token_counts_sha256",
+    }
+    if not isinstance(value, dict) or set(value) != fields:
+        raise RuntimeError("External CoCo classify prompt preflight fields differ")
+    opinion_count = value.get("opinion_count")
+    max_prompt_tokens = value.get("max_prompt_tokens")
+    max_total_tokens = value.get("max_total_tokens")
+    if (
+        value.get("algorithm") != FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM
+        or type(value.get("max_model_len")) is not int
+        or value["max_model_len"] != FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS
+        or type(value.get("max_completion_tokens")) is not int
+        or value["max_completion_tokens"]
+        != FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        or value.get("enable_thinking") is not True
+        or type(value.get("candidate_count")) is not int
+        or value["candidate_count"] < 1
+        or value["candidate_count"] != expected_count
+        or type(opinion_count) is not int
+        or opinion_count < expected_count
+        or (
+            expected_opinion_count is not None
+            and opinion_count != expected_opinion_count
+        )
+        or type(max_prompt_tokens) is not int
+        or max_prompt_tokens < 1
+        or type(max_total_tokens) is not int
+        or max_total_tokens
+        != max_prompt_tokens + FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        or max_total_tokens > FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS
+        or not isinstance(value.get("prompt_token_counts_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", value["prompt_token_counts_sha256"])
+        is None
+    ):
+        raise RuntimeError("External CoCo classify prompt preflight identity differs")
+    return dict(value)
+
+
 def _validate_coco_artifacts(
     output: Path,
     *,
     expected_ids: set[str],
     candidate_input: Path,
+    expected_scoring_spec: dict[str, str] | None = None,
+    require_evaluation: bool = False,
 ) -> dict[str, dict[str, str]]:
-    runner_path = output / COCO_RUNNER_ARTIFACT
+    runner_path = _fixed_output_path(
+        output,
+        COCO_RUNNER_ARTIFACT,
+        label="External CoCo runner artifact",
+    )
     if not runner_path.is_file():
         raise RuntimeError(
             f"External CoCo process requires its contract artifact: {runner_path}"
@@ -312,6 +513,16 @@ def _validate_coco_artifacts(
         or not isinstance(runner.get("evaluation_enabled"), bool)
     ):
         raise RuntimeError(f"External CoCo contract artifact is invalid: {runner_path}")
+    scoring_spec = runner.get("scoring_spec")
+    if (
+        not isinstance(scoring_spec, dict)
+        or set(scoring_spec) != {"path", "sha256", "spec_id"}
+        or any(not isinstance(scoring_spec.get(name), str) for name in scoring_spec)
+        or (expected_scoring_spec is not None and scoring_spec != expected_scoring_spec)
+    ):
+        raise RuntimeError("External CoCo contract has an invalid scoring spec binding")
+    if require_evaluation and runner["evaluation_enabled"] is not True:
+        raise RuntimeError("Formal CoCo scoring requires the evaluation stage")
     _validate_contract_binding(
         runner.get("candidate_input"),
         expected_path=candidate_input,
@@ -320,6 +531,13 @@ def _validate_coco_artifacts(
     declared_artifacts = runner.get("artifacts")
     settings = runner.get("settings")
     stage_checkpoints = runner.get("stage_checkpoints")
+    evaluation_settings = (
+        settings.get("evaluation") if isinstance(settings, dict) else None
+    )
+    split_settings = settings.get("split") if isinstance(settings, dict) else None
+    classify_settings = (
+        settings.get("classify") if isinstance(settings, dict) else None
+    )
     expected_stages = {"split", "classify"} | (
         {"evaluation"} if runner["evaluation_enabled"] else set()
     )
@@ -328,15 +546,42 @@ def _validate_coco_artifacts(
         or set(declared_artifacts) != expected_stages
         or not isinstance(settings, dict)
         or set(settings) != {"split", "classify", "evaluation"}
+        or not isinstance(split_settings, dict)
+        or not isinstance(classify_settings, dict)
+        or not isinstance(evaluation_settings, dict)
+        or evaluation_settings.get("enabled") is not True
+        or evaluation_settings.get("require_complete") is not True
         or not isinstance(stage_checkpoints, dict)
         or set(stage_checkpoints) != expected_stages
     ):
         raise RuntimeError("External CoCo contract requires artifact bindings")
+    _validated_split_prompt_preflight(
+        split_settings.get("prompt_preflight"),
+        expected_count=len(expected_ids),
+    )
 
-    split_path = output / COCO_SPLIT_ARTIFACT
-    classify_path = output / COCO_CLASSIFY_ARTIFACT
-    _validate_candidate_stage(split_path, stage="split", expected_ids=expected_ids)
+    split_path = _fixed_output_path(
+        output,
+        COCO_SPLIT_ARTIFACT,
+        label="External CoCo split artifact",
+    )
+    classify_path = _fixed_output_path(
+        output,
+        COCO_CLASSIFY_ARTIFACT,
+        label="External CoCo classify artifact",
+    )
+    split_records = _validate_candidate_stage(
+        split_path,
+        stage="split",
+        expected_ids=expected_ids,
+    )
     _validate_candidate_stage(classify_path, stage="classify", expected_ids=expected_ids)
+    opinion_count = sum(len(record["opinions"]) for record in split_records)
+    _validated_classify_prompt_preflight(
+        classify_settings.get("prompt_preflight"),
+        expected_count=len(expected_ids),
+        expected_opinion_count=opinion_count,
+    )
     _validate_contract_binding(
         declared_artifacts.get("split"),
         expected_path=split_path,
@@ -352,6 +597,7 @@ def _validate_coco_artifacts(
         stage="split",
         binding=stage_checkpoints["split"],
         runner=runner,
+        scoring_spec_binding=scoring_spec,
         input_binding=runner["candidate_input"],
         output_binding=declared_artifacts["split"],
     )
@@ -360,6 +606,7 @@ def _validate_coco_artifacts(
         stage="classify",
         binding=stage_checkpoints["classify"],
         runner=runner,
+        scoring_spec_binding=scoring_spec,
         input_binding=declared_artifacts["split"],
         output_binding=declared_artifacts["classify"],
     )
@@ -369,7 +616,11 @@ def _validate_coco_artifacts(
         "classify": _artifact_binding(classify_path),
     }
     if runner["evaluation_enabled"]:
-        evaluation_path = output / COCO_EVALUATION_ARTIFACT
+        evaluation_path = _fixed_output_path(
+            output,
+            COCO_EVALUATION_ARTIFACT,
+            label="External CoCo evaluation artifact",
+        )
         if not evaluation_path.is_file():
             raise RuntimeError(
                 "External CoCo process enabled evaluation and requires the evaluation "
@@ -389,6 +640,7 @@ def _validate_coco_artifacts(
             stage="evaluation",
             binding=stage_checkpoints["evaluation"],
             runner=runner,
+            scoring_spec_binding=scoring_spec,
             input_binding=declared_artifacts["classify"],
             output_binding=declared_artifacts["evaluation"],
         )
@@ -412,13 +664,17 @@ def prepare_coco_input(
             raise ValueError(f"Duplicate Final Review paper_id: {paper_id}")
         seen.add(paper_id)
         values.append({"id": paper_id, "text": text})
-    return write_immutable_jsonl(output_path, values)
+    return write_immutable_jsonl(output_path, values, reject_symlink=True)
 
 
 @contextmanager
 def _exclusive_evaluation_lock(output_root: Path) -> Iterator[None]:
     output_root.mkdir(parents=True, exist_ok=True)
-    lock_path = output_root / COCO_EVALUATION_LOCK
+    lock_path = _fixed_output_path(
+        output_root,
+        COCO_EVALUATION_LOCK,
+        label="AgentReview CoCo evaluation lock",
+    )
     with lock_path.open("a+", encoding="utf-8") as handle:
         try:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -430,28 +686,6 @@ def _exclusive_evaluation_lock(output_root: Path) -> Iterator[None]:
             yield
         finally:
             fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-
-
-def _scoring_source_binding(
-    source: dict[str, Any],
-    *,
-    final_mode: str,
-) -> dict[str, Any]:
-    arm = (source.get("arms") or {}).get(final_mode)
-    if not isinstance(arm, dict):
-        raise ValueError(f"Winner batch lacks the {final_mode} Final Review arm")
-    return {
-        "source_id": source["source_id"],
-        "winner_run_id": source["run_id"],
-        "final_mode": final_mode,
-        "final_run_id": arm["run_id"],
-        "count": arm["count"],
-        "paper_ids_sha256": arm["paper_ids_sha256"],
-        "final_review_ids_sha256": arm["final_review_ids_sha256"],
-        "source_review_ids_sha256": arm["source_review_ids_sha256"],
-        "records_sha256": arm["records_sha256"],
-        "files_sha256": arm["files_sha256"],
-    }
 
 
 def _validate_output_isolation(*, output: Path, winner_root: Path) -> None:
@@ -474,17 +708,460 @@ def _validate_output_isolation(*, output: Path, winner_root: Path) -> None:
             )
 
 
+def _validate_pre_score_seal(path: Path) -> dict[str, Any]:
+    # Local import avoids a module cycle: the final-audit boundary also delegates
+    # its external artifact checks to this module.
+    from .coco_final_audit import validate_coco_pre_score_seal
+
+    return validate_coco_pre_score_seal(
+        path,
+        repository_root=Path(__file__).resolve().parents[3],
+    )
+
+
+def _canonical_bound_file(value: Any, *, label: str) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must be a canonical absolute file path")
+    path = Path(value).expanduser()
+    if (
+        not path.is_absolute()
+        or str(path) != value
+        or path.parent.resolve() != path.parent
+        or path.is_symlink()
+    ):
+        raise ValueError(f"{label} must be a canonical absolute file path")
+    if not path.is_file():
+        raise FileNotFoundError(f"{label} is missing: {path}")
+    return path
+
+
+def _lexical_input_file(value: str | Path, *, label: str) -> Path:
+    """Accept relative CLI input while preserving and checking its lexical path."""
+    path = Path(os.path.abspath(Path(value).expanduser()))
+    if path.parent.resolve() != path.parent or path.is_symlink():
+        raise ValueError(f"{label} must not use a symbolic link")
+    if not path.is_file():
+        raise FileNotFoundError(f"{label} is missing: {path}")
+    return path
+
+
+def _absolute_executable(value: Any, *, label: str) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must be an absolute executable path")
+    path = Path(value).expanduser()
+    if not path.is_absolute() or str(path) != value or not path.is_file():
+        raise ValueError(f"{label} must be an absolute executable path")
+    if not os.access(path, os.X_OK):
+        raise ValueError(f"{label} must be executable")
+    return path
+
+
+def _validated_sealed_candidate(
+    *,
+    arm: dict[str, Any],
+    output: Path,
+) -> tuple[Path, set[str]]:
+    candidate = arm.get("candidate")
+    if not isinstance(candidate, dict) or set(candidate) != {
+        "path",
+        "sha256",
+        "count",
+        "paper_ids_sha256",
+    }:
+        raise ValueError("CoCo pre-score arm has an invalid candidate binding")
+    expected_path = _fixed_output_path(
+        output,
+        "candidate_official_input.jsonl",
+        label="CoCo pre-score candidate",
+        require_file=True,
+    )
+    if candidate.get("path") != str(expected_path):
+        raise ValueError("CoCo pre-score candidate path differs from its sealed arm")
+    path = expected_path
+    if candidate.get("sha256") != file_sha256(path):
+        raise RuntimeError("CoCo pre-score candidate changed after sealing")
+    records = read_jsonl(path)
+    if any(
+        not isinstance(value, dict)
+        or set(value) != {"id", "text"}
+        or not isinstance(value.get("id"), str)
+        or not value["id"]
+        or not isinstance(value.get("text"), str)
+        or not value["text"]
+        for value in records
+    ):
+        raise ValueError("CoCo pre-score candidate rows must contain only id/text")
+    paper_ids = [value["id"] for value in records]
+    if (
+        type(candidate.get("count")) is not int
+        or len(records) != candidate["count"]
+        or len(paper_ids) != len(set(paper_ids))
+        or value_sha256(paper_ids) != candidate.get("paper_ids_sha256")
+    ):
+        raise ValueError("CoCo pre-score candidate paper set differs")
+    return path, set(paper_ids)
+
+
+def _required_text(value: Any, *, label: str, allow_empty: bool = False) -> str:
+    if not isinstance(value, str) or (not allow_empty and not value):
+        raise ValueError(f"CoCo scoring spec {label} is invalid")
+    return value
+
+
+def _required_client_limit(value: Any, *, label: str) -> str:
+    if type(value) is not int or value < 1:
+        raise ValueError(f"CoCo scoring spec {label} must be a positive integer")
+    return str(value)
+
+
+def _formal_coco_environment_identity(
+    *,
+    spec: dict[str, Any],
+    final_mode: str,
+    candidate_input: Path,
+    output: Path,
+    scoring_spec_path: Path,
+) -> dict[str, str]:
+    scientific = spec.get("scientific_settings")
+    services = spec.get("services")
+    arms = spec.get("arms")
+    if (
+        not isinstance(scientific, dict)
+        or set(scientific) != {"split", "classify", "evaluation"}
+        or not isinstance(services, dict)
+        or not isinstance(arms, dict)
+        or set(arms) != {"meta", "concat"}
+        or not isinstance(arms.get(final_mode), dict)
+    ):
+        raise ValueError("CoCo scoring spec scientific settings are invalid")
+    split = scientific["split"]
+    classify = scientific["classify"]
+    evaluation = scientific["evaluation"]
+    evaluation_runtime = services.get("evaluation")
+    caches = arms[final_mode].get("cache_versions")
+    if (
+        not isinstance(split, dict)
+        or not isinstance(classify, dict)
+        or not isinstance(evaluation, dict)
+        or not isinstance(evaluation_runtime, dict)
+        or not isinstance(caches, dict)
+        or set(caches) != {"split", "classify", "evaluation"}
+    ):
+        raise ValueError("CoCo scoring spec stage settings are invalid")
+    if evaluation_runtime.get("transport") != {
+        "HTTP_PROXY": FORMAL_EVALUATION_PROXY_URL,
+        "HTTPS_PROXY": FORMAL_EVALUATION_PROXY_URL,
+    }:
+        raise ValueError("Formal CoCo evaluation transport identity is invalid")
+    if (
+        type(split.get("max_completion_tokens")) is not int
+        or split["max_completion_tokens"] != FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+        or type(split.get("context_window_tokens")) is not int
+        or split["context_window_tokens"] != FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS
+    ):
+        raise ValueError("Formal CoCo split completion budget identity is invalid")
+    split_preflight = split.get("prompt_preflight")
+    if (
+        not isinstance(split_preflight, dict)
+        or set(split_preflight)
+        != {
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "enable_thinking",
+        }
+        or split_preflight.get("algorithm")
+        != FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM
+        or type(split_preflight.get("max_model_len")) is not int
+        or split_preflight["max_model_len"]
+        != FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS
+        or type(split_preflight.get("max_completion_tokens")) is not int
+        or split_preflight["max_completion_tokens"]
+        != FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+        or split_preflight.get("enable_thinking") is not True
+    ):
+        raise ValueError("Formal CoCo split prompt preflight identity is invalid")
+    if (
+        type(classify.get("max_completion_tokens")) is not int
+        or classify["max_completion_tokens"]
+        != FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        or type(classify.get("context_window_tokens")) is not int
+        or classify["context_window_tokens"]
+        != FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS
+    ):
+        raise ValueError("Formal CoCo classify completion budget identity is invalid")
+    classify_preflight = classify.get("prompt_preflight")
+    if (
+        not isinstance(classify_preflight, dict)
+        or set(classify_preflight)
+        != {
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "enable_thinking",
+        }
+        or classify_preflight.get("algorithm")
+        != FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM
+        or type(classify_preflight.get("max_model_len")) is not int
+        or classify_preflight["max_model_len"]
+        != FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS
+        or type(classify_preflight.get("max_completion_tokens")) is not int
+        or classify_preflight["max_completion_tokens"]
+        != FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        or classify_preflight.get("enable_thinking") is not True
+    ):
+        raise ValueError("Formal CoCo classify prompt preflight identity is invalid")
+    if (
+        type(evaluation.get("max_completion_tokens")) is not int
+        or evaluation["max_completion_tokens"]
+        != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or type(evaluation.get("context_window_tokens")) is not int
+        or evaluation["context_window_tokens"]
+        != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+    ):
+        raise ValueError("Formal CoCo evaluation completion budget identity is invalid")
+    evaluation_preflight = evaluation.get("prompt_preflight")
+    if (
+        not isinstance(evaluation_preflight, dict)
+        or set(evaluation_preflight)
+        != {
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "chat_overhead_tokens",
+        }
+        or evaluation_preflight.get("algorithm")
+        != FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM
+        or type(evaluation_preflight.get("max_model_len")) is not int
+        or evaluation_preflight["max_model_len"]
+        != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        or type(evaluation_preflight.get("max_completion_tokens")) is not int
+        or evaluation_preflight["max_completion_tokens"]
+        != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or type(evaluation_preflight.get("chat_overhead_tokens")) is not int
+        or evaluation_preflight["chat_overhead_tokens"]
+        != FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS
+    ):
+        raise ValueError("Formal CoCo evaluation prompt preflight identity is invalid")
+    benchmark_files = evaluation.get("benchmark_files")
+    if (
+        evaluation.get("enabled") is not True
+        or evaluation.get("require_complete") is not True
+        or evaluation.get("temperature") is not None
+        or evaluation.get("cuda_visible_devices") != ""
+        or not isinstance(benchmark_files, list)
+        or not benchmark_files
+        or any(
+            not isinstance(path, str) or not path or os.pathsep in path
+            for path in benchmark_files
+        )
+    ):
+        raise ValueError("Formal CoCo scoring requires a registered CPU evaluation")
+    bert_score_model = evaluation.get("bert_score_model")
+    if (
+        not isinstance(bert_score_model, dict)
+        or set(bert_score_model)
+        != {
+            "model_type",
+            "root",
+            "num_layers",
+            "rescale_with_baseline",
+            "file_count",
+            "tree_id",
+        }
+        or bert_score_model.get("model_type") != "roberta-large"
+        or type(bert_score_model.get("num_layers")) is not int
+        or bert_score_model.get("num_layers") != 17
+        or bert_score_model.get("rescale_with_baseline") is not False
+        or type(bert_score_model.get("file_count")) is not int
+        or bert_score_model.get("file_count", 0) < 1
+        or not isinstance(bert_score_model.get("tree_id"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", bert_score_model["tree_id"]) is None
+    ):
+        raise ValueError("Formal CoCo BERTScore model identity is invalid")
+    bert_score_root = Path(
+        _required_text(
+            bert_score_model.get("root"),
+            label="evaluation.bert_score_model.root",
+        )
+    )
+    if (
+        not bert_score_root.is_absolute()
+        or bert_score_root.resolve() != bert_score_root
+        or not bert_score_root.is_dir()
+    ):
+        raise ValueError("Formal CoCo BERTScore model root must be canonical")
+
+    fixed = {
+        "COCO_CANDIDATE_INPUT": str(candidate_input),
+        "COCO_OUTPUT_ROOT": str(output),
+        "COCO_SCORING_SPEC": str(scoring_spec_path),
+        "COCO_SCORING_ARM": final_mode,
+        "COCO_REQUIRE_SCORING_SPEC": "1",
+        "COCO_REQUIRE_EVALUATION": "1",
+        "COCO_RUN_EVALUATION": "1",
+        "COCO_SPLIT_BASE_URL": _required_text(
+            split.get("base_url"), label="split.base_url"
+        ),
+        "COCO_SPLIT_MODEL": _required_text(split.get("model"), label="split.model"),
+        "COCO_SPLIT_MAX_WORKERS": _required_client_limit(
+            split.get("max_in_flight_client_requests"),
+            label="split.max_in_flight_client_requests",
+        ),
+        "COCO_SPLIT_MAX_COMPLETION_TOKENS": str(
+            FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+        ),
+        "COCO_SPLIT_EFFORT": _required_text(
+            split.get("effort"), label="split.effort"
+        ),
+        "COCO_SPLIT_CACHE_VERSION": _required_text(
+            caches.get("split"), label=f"arms.{final_mode}.cache_versions.split"
+        ),
+        "COCO_CLASSIFY_BASE_URL": _required_text(
+            classify.get("base_url"), label="classify.base_url"
+        ),
+        "COCO_CLASSIFY_MODEL": _required_text(
+            classify.get("model"), label="classify.model"
+        ),
+        "COCO_CLASSIFY_MAX_WORKERS": _required_client_limit(
+            classify.get("max_in_flight_client_requests"),
+            label="classify.max_in_flight_client_requests",
+        ),
+        "COCO_CLASSIFY_MAX_COMPLETION_TOKENS": str(
+            FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        ),
+        "COCO_CLASSIFY_EFFORT": _required_text(
+            classify.get("effort"), label="classify.effort"
+        ),
+        "COCO_CLASSIFY_CACHE_VERSION": _required_text(
+            caches.get("classify"),
+            label=f"arms.{final_mode}.cache_versions.classify",
+        ),
+        "COCO_EVALUATION_BENCHMARK_FILES": os.pathsep.join(benchmark_files),
+        "COCO_EVALUATION_COMPLETE_HUMAN_CLASSIFY_FILE": _required_text(
+            evaluation.get("complete_human_classify_file"),
+            label="evaluation.complete_human_classify_file",
+        ),
+        "COCO_EVALUATION_MODEL": _required_text(
+            evaluation.get("model"), label="evaluation.model"
+        ),
+        "COCO_EVALUATION_BASE_URL": _required_text(
+            evaluation.get("base_url"), label="evaluation.base_url"
+        ),
+        "COCO_EVALUATION_MAX_WORKERS": _required_client_limit(
+            evaluation.get("max_in_flight_client_requests"),
+            label="evaluation.max_in_flight_client_requests",
+        ),
+        "COCO_EVALUATION_MAX_COMPLETION_TOKENS": str(
+            FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        ),
+        "COCO_EVALUATION_EFFORT": _required_text(
+            evaluation.get("effort"), label="evaluation.effort"
+        ),
+        "COCO_EVALUATION_CACHE_VERSION": _required_text(
+            caches.get("evaluation"),
+            label=f"arms.{final_mode}.cache_versions.evaluation",
+        ),
+        "COCO_EVALUATION_CUDA_VISIBLE_DEVICES": _required_text(
+            evaluation.get("cuda_visible_devices"),
+            label="evaluation.cuda_visible_devices",
+            allow_empty=True,
+        ),
+        "COCO_BERT_SCORE_MODEL_ROOT": str(bert_score_root),
+        "COCO_BERT_SCORE_NUM_LAYERS": str(bert_score_model["num_layers"]),
+    }
+    return {
+        "PATH": COCO_FIXED_PATH,
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PYTHONHASHSEED": "0",
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        **fixed,
+    }
+
+
+def _formal_coco_environment(
+    *,
+    spec: dict[str, Any],
+    final_mode: str,
+    candidate_input: Path,
+    output: Path,
+    scoring_spec_path: Path,
+) -> dict[str, str]:
+    """Build the launch environment and append the required secret in memory."""
+    environment = _formal_coco_environment_identity(
+        spec=spec,
+        final_mode=final_mode,
+        candidate_input=candidate_input,
+        output=output,
+        scoring_spec_path=scoring_spec_path,
+    )
+    for name, expected in environment.items():
+        if (
+            name.startswith("COCO_")
+            and name in os.environ
+            and os.environ[name] != expected
+        ):
+            raise RuntimeError(
+                f"Ambient {name} differs from the sealed CoCo scoring spec"
+            )
+    api_key = os.environ.get(COCO_API_KEY_ENV)
+    if not isinstance(api_key, str) or not api_key.strip():
+        raise RuntimeError(
+            f"Formal CoCo evaluation requires a non-empty {COCO_API_KEY_ENV}"
+        )
+    environment[COCO_API_KEY_ENV] = api_key
+    return environment
+
+
+def _formal_runner_command(
+    *,
+    spec: dict[str, Any],
+    external_identity: dict[str, Any],
+    normalized_command: list[str],
+) -> list[str]:
+    services = spec.get("services")
+    if not isinstance(services, dict):
+        raise ValueError("CoCo scoring spec service identities are invalid")
+    evaluation = services.get("evaluation")
+    if not isinstance(evaluation, dict):
+        raise ValueError("CoCo scoring spec service identities are invalid")
+    evaluation_python = _absolute_executable(
+        evaluation.get("python_executable"),
+        label="CoCo evaluation Python executable",
+    )
+    runner = external_identity.get("runner")
+    if not isinstance(runner, dict):
+        raise ValueError("CoCo pre-score seal has no external runner binding")
+    runner_path = _canonical_bound_file(
+        runner.get("path"),
+        label="CoCo official runner",
+    )
+    expected = [str(evaluation_python), "-s", "-B", str(runner_path)]
+    if normalized_command != expected:
+        raise RuntimeError(
+            "Formal CoCo command must be exactly the sealed Python and official runner"
+        )
+    return expected
+
+
 def _persist_failed_attempt(output: Path, report: dict[str, Any]) -> Path:
+    if set(report) != COCO_RUN_REPORT_FIELDS:
+        raise RuntimeError("AgentReview CoCo failed report fields differ")
     attempt = {
         **report,
         "attempt_id": value_sha256(report),
     }
-    path = (
-        output
-        / COCO_EVALUATION_ATTEMPT_ROOT
-        / f"{attempt['attempt_id']}.json"
+    path = _fixed_output_path(
+        output,
+        Path(COCO_EVALUATION_ATTEMPT_ROOT) / f"{attempt['attempt_id']}.json",
+        label="AgentReview CoCo failed attempt",
     )
-    atomic_write_json(path, attempt)
+    atomic_write_json(path, attempt, reject_symlink=True)
     return path
 
 
@@ -492,11 +1169,15 @@ def _validate_existing_complete_report(
     *,
     path: Path,
     system: dict[str, Any],
-    frozen_system_path: str | Path,
+    frozen_system_path: Path,
     manifest_binding: dict[str, Any],
     source_binding: dict[str, Any],
+    pre_score_seal_binding: dict[str, Any],
+    scoring_spec_binding: dict[str, Any],
+    service_runtime: dict[str, Any],
     external_coco_identity: dict[str, Any],
     expected_command: list[str],
+    environment_identity: dict[str, str],
     expected_ids: set[str],
     candidate_input: Path,
     output: Path,
@@ -504,17 +1185,30 @@ def _validate_existing_complete_report(
     report = read_json(path)
     if (
         not isinstance(report, dict)
+        or set(report) != COCO_RUN_REPORT_FIELDS
         or report.get("protocol") != "research-v2-external-coco-v1"
         or report.get("status") != "complete"
+        or type(report.get("returncode")) is not int
         or report.get("returncode") != 0
         or report.get("frozen_system_id") != system["system_id"]
         or report.get("frozen_system_sha256") != file_sha256(frozen_system_path)
         or report.get("coco_1300_manifest_sha256") != manifest_binding["sha256"]
-        or report.get("scoring_source") != source_binding
+        or canonical_json_bytes(report.get("scoring_source"))
+        != canonical_json_bytes(source_binding)
+        or canonical_json_bytes(report.get("pre_score_seal"))
+        != canonical_json_bytes(pre_score_seal_binding)
+        or canonical_json_bytes(report.get("scoring_spec"))
+        != canonical_json_bytes(scoring_spec_binding)
+        or canonical_json_bytes(report.get("service_runtime"))
+        != canonical_json_bytes(service_runtime)
         or report.get("candidate_input") != str(candidate_input)
         or report.get("candidate_input_sha256") != file_sha256(candidate_input)
-        or report.get("external_coco_identity") != external_coco_identity
-        or report.get("command") != expected_command
+        or canonical_json_bytes(report.get("external_coco_identity"))
+        != canonical_json_bytes(external_coco_identity)
+        or canonical_json_bytes(report.get("command"))
+        != canonical_json_bytes(expected_command)
+        or canonical_json_bytes(report.get("environment"))
+        != canonical_json_bytes(environment_identity)
         or report.get("artifact_validation_error") != ""
         or report.get("runtime_validation_error") != ""
     ):
@@ -523,118 +1217,226 @@ def _validate_existing_complete_report(
         output,
         expected_ids=expected_ids,
         candidate_input=candidate_input,
+        expected_scoring_spec={
+            name: scoring_spec_binding[name]
+            for name in ("path", "sha256", "spec_id")
+        },
+        require_evaluation=True,
     )
-    if report.get("artifacts") != artifacts:
+    if canonical_json_bytes(report.get("artifacts")) != canonical_json_bytes(artifacts):
         raise RuntimeError("Completed AgentReview CoCo artifact bindings differ")
     return report
 
 
 def run_coco_evaluation(
     *,
-    frozen_system_path: str | Path,
-    winner_output_root: str | Path,
-    winner_run_id: str,
+    pre_score_seal_path: str | Path,
     final_mode: str,
-    coco_root: str | Path,
-    output_root: str | Path,
     command: list[str],
 ) -> dict[str, Any]:
-    """Launch an explicit external command; Review/Evolution modules never import CoCo."""
+    """Run one sealed CoCo arm without accepting any mutable scientific inputs."""
     if final_mode not in {"meta", "concat"}:
         raise ValueError("CoCo Evaluation final_mode must be meta or concat")
-    system = read_json(frozen_system_path)
-    if not system.get("system_id"):
-        raise ValueError("CoCo Evaluation requires a Frozen System Bundle")
-    root = Path(coco_root).expanduser().resolve()
-    output = Path(output_root).expanduser().resolve()
-    winner_root = Path(winner_output_root).expanduser().resolve()
-    _validate_output_isolation(output=output, winner_root=winner_root)
-    manifest_binding = (
-        (system.get("external_evaluation") or {}).get("coco_1300_manifest") or {}
+    seal_path = _lexical_input_file(
+        pre_score_seal_path,
+        label="CoCo pre-score seal",
     )
-    manifest_path = str(manifest_binding.get("path") or "")
-    if not manifest_path or file_sha256(manifest_path) != manifest_binding.get("sha256"):
-        raise ValueError("Frozen System has no valid CoCo-1300 manifest binding")
-    manifest = read_json(manifest_path)
-    manifest_records = list(manifest.get("records") or [])
-    expected_ids = {str(value.get("paper_id") or "") for value in manifest_records}
-    if "" in expected_ids or len(expected_ids) != len(manifest_records):
-        raise ValueError("Frozen CoCo-1300 manifest contains missing or duplicate paper IDs")
+    seal = _validate_pre_score_seal(seal_path)
+    seal_binding = {
+        "path": str(seal_path),
+        "sha256": file_sha256(seal_path),
+        "seal_id": seal.get("seal_id"),
+    }
+
+    frozen_binding = seal.get("frozen_system")
+    if not isinstance(frozen_binding, dict) or set(frozen_binding) != {
+        "path",
+        "sha256",
+        "system_id",
+    }:
+        raise ValueError("CoCo pre-score seal has an invalid Frozen System binding")
+    frozen_system_path = _canonical_bound_file(
+        frozen_binding.get("path"),
+        label="CoCo pre-score Frozen System",
+    )
+    if frozen_binding.get("sha256") != file_sha256(frozen_system_path):
+        raise RuntimeError("CoCo pre-score Frozen System changed after sealing")
+    system = read_json(frozen_system_path)
+    if (
+        not isinstance(system, dict)
+        or not system.get("system_id")
+        or system.get("system_id") != frozen_binding.get("system_id")
+    ):
+        raise ValueError("CoCo pre-score seal does not bind a Frozen System Bundle")
+
+    scoring_spec_binding = seal.get("scoring_spec")
+    if not isinstance(scoring_spec_binding, dict) or set(scoring_spec_binding) != {
+        "path",
+        "sha256",
+        "spec_id",
+        "winner_run_id",
+    }:
+        raise ValueError("CoCo pre-score seal has an invalid scoring spec binding")
+    scoring_spec_path = _canonical_bound_file(
+        scoring_spec_binding.get("path"),
+        label="CoCo pre-score scoring spec",
+    )
+    spec = read_json(scoring_spec_path)
+    if (
+        scoring_spec_binding.get("sha256") != file_sha256(scoring_spec_path)
+        or not isinstance(spec, dict)
+        or scoring_spec_binding.get("spec_id") != spec.get("spec_id")
+        or scoring_spec_binding.get("winner_run_id") != spec.get("winner_run_id")
+    ):
+        raise RuntimeError("CoCo pre-score scoring spec changed after sealing")
+
+    repository = spec.get("repository")
+    if not isinstance(repository, dict):
+        raise ValueError("CoCo scoring spec repository binding is invalid")
+    root_value = repository.get("root")
+    if not isinstance(root_value, str) or not root_value:
+        raise ValueError("CoCo scoring spec repository root is invalid")
+    root = Path(root_value).expanduser().resolve()
+    if str(root) != root_value or not root.is_dir():
+        raise ValueError("CoCo scoring spec repository root is not canonical")
+
+    arms = seal.get("arms")
+    spec_arms = spec.get("arms")
+    if (
+        not isinstance(arms, dict)
+        or set(arms) != {"meta", "concat"}
+        or not isinstance(arms.get(final_mode), dict)
+        or not isinstance(spec_arms, dict)
+        or not isinstance(spec_arms.get(final_mode), dict)
+    ):
+        raise ValueError("CoCo pre-score seal has invalid scoring arms")
+    arm = arms[final_mode]
+    output_value = arm.get("output_root")
+    if not isinstance(output_value, str) or not output_value:
+        raise ValueError("CoCo pre-score arm output root is invalid")
+    output = Path(output_value).expanduser().resolve()
+    artifact_root_value = spec.get("artifact_root")
+    if not isinstance(artifact_root_value, str) or not artifact_root_value:
+        raise ValueError("CoCo scoring spec artifact root is invalid")
+    artifact_root = Path(artifact_root_value).expanduser().resolve()
+    if (
+        str(output) != output_value
+        or str(artifact_root) != artifact_root_value
+        or output
+        != Path(str(spec_arms[final_mode].get("output_root") or ""))
+        .expanduser()
+        .resolve()
+        or arm.get("cache_versions")
+        != spec_arms[final_mode].get("cache_versions")
+    ):
+        raise ValueError("CoCo pre-score arm differs from its scoring spec")
+    _validate_output_isolation(output=output, winner_root=artifact_root)
+    candidate_input, expected_ids = _validated_sealed_candidate(
+        arm=arm,
+        output=output,
+    )
+
+    source_binding = arm.get("scoring_source")
+    source = seal.get("source")
+    manifest_binding = source.get("coco_manifest") if isinstance(source, dict) else None
+    if (
+        not isinstance(source_binding, dict)
+        or source_binding.get("final_mode") != final_mode
+        or source_binding.get("winner_run_id")
+        != scoring_spec_binding.get("winner_run_id")
+        or not isinstance(manifest_binding, dict)
+        or not isinstance(manifest_binding.get("sha256"), str)
+    ):
+        raise ValueError("CoCo pre-score winner source binding is invalid")
+
+    sealed_external_identity = seal.get("external_coco")
+    if not isinstance(sealed_external_identity, dict):
+        raise ValueError("CoCo pre-score external runner identity is invalid")
+    service_runtime = seal.get("service_runtime")
+    if not isinstance(service_runtime, dict):
+        raise ValueError("CoCo pre-score service runtime proof is invalid")
+    external_coco_identity, normalized_command = _validate_external_coco_runtime(
+        system=system,
+        root=root,
+        command=command,
+    )
+    if external_coco_identity != sealed_external_identity:
+        raise RuntimeError("External CoCo runtime differs from the pre-score seal")
+    normalized_command = _formal_runner_command(
+        spec=spec,
+        external_identity=external_coco_identity,
+        normalized_command=normalized_command,
+    )
+    environment = _formal_coco_environment(
+        spec=spec,
+        final_mode=final_mode,
+        candidate_input=candidate_input,
+        output=output,
+        scoring_spec_path=scoring_spec_path,
+    )
+    environment_identity = {
+        name: value
+        for name, value in environment.items()
+        if name != COCO_API_KEY_ENV
+    }
+    runner_scoring_spec = {
+        name: scoring_spec_binding[name]
+        for name in ("path", "sha256", "spec_id")
+    }
+
     with _exclusive_evaluation_lock(output):
-        source = validate_completed_coco_review_batch(
-            frozen_system_path=frozen_system_path,
-            coco_manifest_path=manifest_path,
-            output_root=winner_root,
-            run_id=winner_run_id,
+        confirmed_seal = _validate_pre_score_seal(seal_path)
+        if confirmed_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
+            raise RuntimeError("CoCo pre-score seal changed before scoring")
+        _validated_sealed_candidate(arm=arm, output=output)
+        complete_report_path = _fixed_output_path(
+            output,
+            "run.json",
+            label="AgentReview CoCo complete report",
         )
-        arm = source["arms"][final_mode]
-        final_review_paths = list(arm["paths"])
-        source_binding = _scoring_source_binding(source, final_mode=final_mode)
-        source_ids = {
-            str(read_json(path).get("paper_id") or "")
-            for path in final_review_paths
-        }
-        if source_ids != expected_ids or len(final_review_paths) != len(expected_ids):
-            raise ValueError(
-                "Validated winner arm differs from the exact frozen CoCo paper set"
-            )
-        external_coco_identity, normalized_command = _validate_external_coco_runtime(
-            system=system,
-            root=root,
-            command=command,
-        )
-        input_path = prepare_coco_input(
-            final_review_paths,
-            output / "candidate_official_input.jsonl",
-        )
-        confirmed_source = validate_completed_coco_review_batch(
-            frozen_system_path=frozen_system_path,
-            coco_manifest_path=manifest_path,
-            output_root=winner_root,
-            run_id=winner_run_id,
-        )
-        if confirmed_source.get("source_id") != source.get("source_id"):
-            raise RuntimeError("Winner scoring source changed while sealing candidate input")
-        complete_report_path = output / "run.json"
         if complete_report_path.is_file():
-            return _validate_existing_complete_report(
+            report = _validate_existing_complete_report(
                 path=complete_report_path,
                 system=system,
                 frozen_system_path=frozen_system_path,
                 manifest_binding=manifest_binding,
                 source_binding=source_binding,
+                pre_score_seal_binding=seal_binding,
+                scoring_spec_binding=scoring_spec_binding,
+                service_runtime=service_runtime,
                 external_coco_identity=external_coco_identity,
                 expected_command=normalized_command,
+                environment_identity=environment_identity,
                 expected_ids=expected_ids,
-                candidate_input=input_path,
+                candidate_input=candidate_input,
                 output=output,
             )
-        environment = {
-            "PATH": os.environ.get("PATH", ""),
-            "PYTHONHASHSEED": "0",
-            "COCO_CANDIDATE_INPUT": str(input_path),
-            "COCO_OUTPUT_ROOT": str(output),
-        }
-        environment.update(
-            {name: os.environ[name] for name in COCO_FORWARDED_ENV if name in os.environ}
-        )
-        completed = subprocess.run(
-            normalized_command,
-            cwd=str(root),
-            env=environment,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+            final_seal = _validate_pre_score_seal(seal_path)
+            if final_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
+                raise RuntimeError("CoCo pre-score seal changed during report validation")
+            return report
+        launch_error: RuntimeError | None = None
+        try:
+            completed = subprocess.run(
+                normalized_command,
+                cwd=str(root),
+                env=environment,
+                check=False,
+            )
+        except OSError:
+            completed = subprocess.CompletedProcess(normalized_command, -1)
+            launch_error = RuntimeError("External CoCo process launch failed")
+        runtime_error: RuntimeError | None = launch_error
         artifacts: dict[str, dict[str, str]] = {}
         artifact_error: RuntimeError | None = None
-        runtime_error: RuntimeError | None = None
         if completed.returncode == 0:
             try:
                 artifacts = _validate_coco_artifacts(
                     output,
                     expected_ids=expected_ids,
-                    candidate_input=input_path,
+                    candidate_input=candidate_input,
+                    expected_scoring_spec=runner_scoring_spec,
+                    require_evaluation=True,
                 )
             except Exception as exc:
                 artifact_error = (
@@ -650,33 +1452,32 @@ def run_coco_evaluation(
             )
             if confirmed_identity != external_coco_identity:
                 raise RuntimeError("External CoCo runtime identity changed during scoring")
-            final_source = validate_completed_coco_review_batch(
-                frozen_system_path=frozen_system_path,
-                coco_manifest_path=manifest_path,
-                output_root=winner_root,
-                run_id=winner_run_id,
-            )
-            if final_source.get("source_id") != source.get("source_id"):
-                raise RuntimeError("Winner scoring source changed during scoring")
+            final_seal = _validate_pre_score_seal(seal_path)
+            if final_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
+                raise RuntimeError("CoCo pre-score seal or its upstream changed during scoring")
+            _validated_sealed_candidate(arm=arm, output=output)
         except Exception as exc:
-            runtime_error = (
-                exc
-                if isinstance(exc, RuntimeError)
-                else RuntimeError("External CoCo runtime validation failed")
-            )
+            if runtime_error is None:
+                runtime_error = (
+                    exc
+                    if isinstance(exc, RuntimeError)
+                    else RuntimeError("External CoCo runtime validation failed")
+                )
         report = {
             "protocol": "research-v2-external-coco-v1",
             "frozen_system_id": system["system_id"],
-            "frozen_system_sha256": file_sha256(frozen_system_path),
+            "frozen_system_sha256": frozen_binding["sha256"],
             "coco_1300_manifest_sha256": manifest_binding["sha256"],
             "scoring_source": source_binding,
-            "candidate_input": str(input_path),
-            "candidate_input_sha256": file_sha256(input_path),
+            "pre_score_seal": seal_binding,
+            "scoring_spec": scoring_spec_binding,
+            "service_runtime": service_runtime,
+            "candidate_input": str(candidate_input),
+            "candidate_input_sha256": arm["candidate"]["sha256"],
             "external_coco_identity": external_coco_identity,
             "command": normalized_command,
+            "environment": environment_identity,
             "returncode": completed.returncode,
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
             "status": (
                 "complete"
                 if (
@@ -691,7 +1492,11 @@ def run_coco_evaluation(
             "runtime_validation_error": str(runtime_error or ""),
         }
         if report["status"] == "complete":
-            atomic_write_json(complete_report_path, report)
+            atomic_write_json(
+                complete_report_path,
+                report,
+                reject_symlink=True,
+            )
         else:
             _persist_failed_attempt(output, report)
         if completed.returncode != 0:

@@ -73,6 +73,14 @@ S2 有请求并发和速率限制，正式规则是：
 - 任意两次 HTTP 请求的启动时间至少间隔 1.2 秒，即最多约 0.83 request/s；
 - retry 也在同一串行调用内完成，不形成额外并发。
 
+截至2026-09-02，正式 CoCo S2 pool 已按上述规则完成严格的1,300/1,300
+校验，文件 SHA256 为
+`9d5eb43166d9f8b9b34fcc5dcf9382b54e40adb006d8e8aa227ad6befe63956e`。
+后续恢复 Formal、生成 winner 或执行 CoCo 评分都不能重新构建、追加或改写这份
+pool。S2 只供 evolved Reviewer Program 在生成 Review 时自主使用；下游 CoCo
+Split、Classify 与 Evaluation 只读取已经冻结的最终 Review，不发起 S2 请求，也不依赖
+S2 服务是否在线。
+
 正式 CoCo S2 构建使用 `--retry-until-success`。对于 408、425、429、500、
 502、503、504 和连接异常，进程持续指数退避（单次最多60秒）并保持同一个
 paper checkpoint，不因固定重试次数耗尽而退出；非重试型 HTTP、响应 schema、
@@ -200,6 +208,17 @@ Review raw、完整 Review、Memory snapshot 和 S2 parts 是不可变 artifact�
 
 不要同时启动两个相同 run ID 的 bootstrap 进程。正式 runner 使用 run-scoped lock；第二个进程应立即失败，而不是把模型并发翻倍。
 
+### 两类已验证的恢复门禁
+
+- Memory 结构化 item 必须在单次模型请求中使用
+  `response_format=json_schema` 强制 schema，不能只在 prompt 中要求模型返回 JSON。
+  单条 item 失败时保留已经提交的 item checkpoint，修复 endpoint 或可恢复基础设施问题后
+  使用同一 run ID 继续；不得删除完整前缀重新生成。对应修复 commit 为 `a5dc464`。
+- 正式进程运行期间禁止修改会进入 request identity 的代码或字段。历史 v1 request
+  缺少 `require_bubblewrap` 时，只允许 Formal 私有兼容路径复用，并且必须同时满足：当前
+  expected 值为 `true`、其余 identity 字段完全相等、所有已绑定 artifact hash 仍有效。
+  其他缺字段、值漂移或 hash 失效一律 fail closed。对应修复 commit 为 `14eb9fb`。
+
 ## 当前 tmux 与日志
 
 ```text
@@ -283,8 +302,87 @@ Formal 与 CoCo S2 的精确 PID 还必须分别等于其 flock owner PID，只�
 
 ## Formal 完成后的确定性过渡
 
-只有小时探针给出 `transition_ready=true`，且 Git worktree 已提交并保持干净时，才按
-以下固定身份从五角色 winner 进入 sealed CoCo 阶段：
+只有小时探针给出 `transition_ready=true`，且两个 Git worktree 的变更都已提交并保持
+干净时，才从五角色 winner 进入 sealed CoCo 阶段。顺序固定为：Formal 完整结束 →
+在 clean `CoCoReviewBench` 上物化 CoCo scoring spec → 物化并冻结 Formal system →
+以唯一 run ID 生成 winner batch → 将 GPU 0 Split 从预留服务切换到正式服务 → 建立
+pre-score seal → 并行或排队执行 meta/concat 两臂 → final audit。任何一步失败都停在该步
+恢复，不能越过 barrier 启动下游。
+
+首先确认外部仓库状态为空，然后物化唯一的评分环境身份。该步骤绑定外部 commit、runner、
+benchmark/evaluation closure、Split/Classify 模型文件、独立 Evaluation Python 的完整
+prefix tree、固定 BERTScore 模型 tree、正式 endpoint 参数，以及两臂不同的 output root
+和三阶段 cache namespace；此时 GPU 0 仍可保持8K预留服务：
+
+```bash
+git -C /data0/xyj/shengao/CoCoReviewBench status --porcelain=v1
+
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  materialize-coco-scoring-spec \
+  --winner-run-id formal-coco1300-winner-v1 \
+  --evaluation-python /data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runtime/coco_eval_env_v1/bin/python \
+  --evaluation-proxy-url http://127.0.0.1:7898 \
+  --output artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json
+```
+
+命令必须看到空的 CoCo worktree；不能临时忽略 untracked benchmark 或 runner 文件。
+正式 Evaluation 只能使用上面固定的 `coco_eval_env_v1`，不能复用仅服务
+Split/Classify GPU endpoint 的 `qwen38serve` Python。其运行方式固定为 CPU、offline、
+`python -s -B`：禁用 user site，禁止写入新 bytecode，并设置 `HF_HUB_OFFLINE=1` 与
+`TRANSFORMERS_OFFLINE=1`。scoring spec 会在清空环境的 probe 中验证 Python flags 和
+openai、requests、tqdm、numpy、torch、nltk、rouge-score、bert-score、transformers
+版本，再由父进程绑定整个 `sys.prefix` 的 ordinary file bytes、已有 `.pyc` 与 symlink
+target；运行时与 runner checkpoint 必须复用同一身份。
+
+正式 judge 的网络 transport 也由 spec 固定为
+`HTTP_PROXY=HTTPS_PROXY=http://127.0.0.1:7898`。outer runner 会清除 ambient proxy，
+Split/Classify child 完全不接收 proxy，只有 Evaluation child 注入这两个已登记且非秘密的
+值；`ALL_PROXY`、`NO_PROXY` 和额外 transport 字段均不允许。Evaluation 同时固定
+`require_complete=true`，任一 judge 提交、解析或重试最终失败都会使阶段非零退出；
+`temperature=null` 表示调用 GPT-5 judge 时完全省略 temperature 参数。
+
+Split 的输出预算固定为 `max_completion_tokens=8192`，上下文上限固定为 40,960。
+runner 在发出任何 Split API 请求前，必须用封印的 Split tokenizer、正式 system prompt
+和 `apply_chat_template(..., add_generation_prompt=true, enable_thinking=true)` 对每条实际
+candidate 做离线 token preflight；只有 `prompt_tokens + 8192 <= 40960` 才能继续，禁止
+截断，任一超限必须列出 paper ID 并使评分失败。该算法、预算和实际摘要均进入 runner
+身份与 final audit。
+
+在125篇 canonical bootstrap concat candidate 上已用同一算法做过离线 smoke：prompt
+token 的 median/p95/max 分别为 4,390/4,966/5,487，最大总预算为
+13,679/40,960。该结果只说明当前样本有充足余量，不代替对正式1,300篇 candidate 的
+逐条 exact preflight；正式 gate 仍必须在任何 Split API 请求前执行。
+
+Classify 的输出预算固定为 `max_completion_tokens=4096`，上下文上限固定为
+32,768。runner 必须在 Split artifact 完整验证后、发出任何 Classify API 请求前，按
+JSONL paper 顺序与每篇 `opinions` 索引顺序构造逐 opinion 正式 prompt，并使用封印的
+Classify tokenizer 与 `enable_thinking=true` chat template 做同样的 exact preflight。
+动态摘要同时绑定 paper `candidate_count`、扁平 `opinion_count`、最大 prompt/总 token 与
+完整 token-count 列表 hash；任何 `prompt_tokens + 4096 > 32768` 的 opinion 都必须列出
+paper ID/opinion index 后失败，禁止截断或部分请求。
+
+Evaluation judge 的输出预算固定为 `max_completion_tokens=32768`，上下文上限固定为
+400,000。`_4_evaluation.py` 的统一 judge 提交入口必须在每次请求前，以 exact system 与
+user prompt 的 UTF-8 byte 数作为 token 数保守上界，再加固定1,024 chat overhead 与
+32,768输出预算；总和大于400,000时在进入 `LLMClient.submit_task` 前直接失败。该
+`utf8-byte-upper-bound-v1` 算法和三个常量进入 scoring spec、runner settings 与 final
+audit；不能依赖远端服务截断，也不能在正式命令中扩大预算。
+
+BERTScore 只能读取
+`/data0/xyj/shengao/CoCoReviewBench/model/bertscore_roberta_large`，固定
+`model_type=roberta-large`、`num_layers=17`、`rescale_with_baseline=false`。spec 会绑定
+该目录的全部普通文件 inventory 与 tree ID；runner 通过封印的
+`COCO_BERT_SCORE_MODEL_ROOT`、`COCO_BERT_SCORE_NUM_LAYERS` 使用它，不得从 Hub 下载、
+改用缓存模型或自动推断层数。
+该本地目录来源固定为 Hugging Face `FacebookAI/roberta-large` revision
+`722cf37b1afa9454edce342e7895e588b6ff1d59`；revision 只用于可恢复 provenance，正式
+运行身份仍以目录内 7 个普通文件的逐文件 hash 与 tree ID 为准。
+
+随后 materialize/freeze 会把上述 scoring spec 的 path、SHA256、spec ID 和唯一 winner
+run ID 一并冻结：
 
 ```bash
 PYTHONPATH=AgentReview \
@@ -317,10 +415,10 @@ Evolution 的 original/context-fix/resume commits；`code_commit` 不得把这�
 误归因成 transition commit。`primary_meta_enabled` 固定为 true，指的是最终系统包含
 独立 Meta synthesizer，并不改变 evolved Program 是否调用 S2 的自主权。
 
-过渡还会绑定独立 `CoCoReviewBench` 仓库的 clean Git commit、仓库根路径、
-`scripts/run_official_candidate.py` 路径与 SHA256；该文件也进入 freeze spec 的 source
-bindings。`coco-eval` 在外部 subprocess 前后都会复核这份身份，并拒绝 dirty worktree、
-commit漂移、runner内容漂移或绕过 frozen runner 的命令。
+过渡还会绑定完整 CoCo scoring spec，并据此复核独立 `CoCoReviewBench` 仓库的 clean
+Git commit、仓库根路径、`scripts/run_official_candidate.py` 路径与 SHA256；该文件也进入
+freeze spec 的 source bindings。`coco-eval` 在外部 subprocess 前后都会复核这份身份，
+并拒绝 dirty worktree、commit漂移、runner内容漂移或绕过 frozen runner 的命令。
 
 随后以唯一正式 run ID 启动可恢复的 winner batch：
 
@@ -363,7 +461,102 @@ Meta 必须回连匹配的 meta raw/request。改写正文后重算旧式 ID 也
 请求时使用新 run ID；受控清理 staging 只允许在没有 canonical promotion、已记录原因并
 建立 Git/运行审计后人工执行，小时探针不会自动清理或改写 staging。
 
-外部 CoCo runner 同样采用 output-root scoped 非阻塞锁。Split、Classify 与可选
+winner batch 的进程完整退出并释放 GPU 0 embedding 后，定向停止
+`ar0831_coco_split_gpu0` 的8K/0.40预留服务，将其重启为 scoring spec 冻结的正式身份：
+GPU 0、`Qwen3-8B-Split`、端口13099、`max_model_len=40960`、
+`max_num_seqs=8`、`gpu_memory_utilization=0.90`。GPU 1 Classify 继续保持端口13098、
+32K、16 sequences、0.90；禁止全局 `pkill` 或重启 Classify。随后建立唯一 pre-score
+seal：
+
+```bash
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  seal-coco-pre-score \
+  --frozen-system artifacts/research_v2/frozen/formal-evolution-v1.system.json \
+  --winner-run-id formal-coco1300-winner-v1 \
+  --output artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json
+```
+
+seal 会 fail closed 地验证 Split 与 Classify 两个运行中服务的完整冻结身份，而不只检查
+`/v1/models`；任一 GPU、进程参数、模型树、软件版本、endpoint 或容量参数不一致时都不
+生成 seal。它还会从 frozen system 和 winner batch 完整重建 meta/concat 两份1,300条
+candidate input，并验证 exact-set、内容链、独立 output roots 与六个互异 cache
+namespaces。8K预留 Split 不能通过该步骤。
+
+seal 成功后，meta 与 concat 两个 `coco-eval` 可在独立 tmux 中同时启动，也可排队执行。
+两臂必须使用 scoring spec/seal 分配的不同 output root 和 Split/Classify/Evaluation cache
+identity；两者可以共享 GPU 0/1 endpoint，让 vLLM scheduler 排队，但不能共享 staging、
+缓存或结果文件。此时 Formal 与 winner Review 均已冻结，27B 不再有下游 Review 工作，
+可以空闲；CoCo 评分不会读取27B或S2。`coco-eval` 的执行参数必须全部从 seal 与 scoring
+spec 注入，不得用 shell 环境临时覆盖 model、worker、effort、benchmark 或 cache version。
+
+正式 Evaluation 的凭据只从调用控制器进程的 `COCO_EVALUATION_API_KEY` 读取，并只传给
+外部 runner；普通的 `OPENAI_API_KEY` 不会被透传。启动两臂前只检查该变量是否非空，
+不要把值写入 scoring spec、seal、命令行或日志。如果 API 并发额度不足，顺序执行两臂；
+Split/Classify 的 GPU 服务仍可保持在线，已完成 stage 会按冻结 checkpoint 恢复。
+
+```bash
+# meta arm（可与下一条放入两个独立 tmux）
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python -u \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  coco-eval \
+  --pre-score-seal artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json \
+  --final-mode meta \
+  -- \
+  /data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runtime/coco_eval_env_v1/bin/python3.10 \
+  -s -B \
+  /data0/xyj/shengao/CoCoReviewBench/scripts/run_official_candidate.py
+
+# concat arm
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python -u \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  coco-eval \
+  --pre-score-seal artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json \
+  --final-mode concat \
+  -- \
+  /data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runtime/coco_eval_env_v1/bin/python3.10 \
+  -s -B \
+  /data0/xyj/shengao/CoCoReviewBench/scripts/run_official_candidate.py
+```
+
+CLI 不接受 winner root、CoCo root 或 output root 参数；这些路径只能从 seal/spec 推导，
+从而避免把某一臂指向另一臂的 namespace。
+
+两臂都产生 complete `run.json` 和完整 Evaluation artifact 后，执行最终审计：
+
+```bash
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  audit-coco-final \
+  --pre-score-seal artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json \
+  --output artifacts/research_v2/frozen/formal-coco1300-final-audit-v1.json
+```
+
+只有 final audit 自哈希 artifact 成功提交后，全流程才算完成；单臂完成、进程返回0或
+仅有部分指标都不构成正式结果。
+
+服务释放后可用离线门禁重复验证 audit 自哈希以及 seal、spec、两臂 run、candidate 和
+全部评分 artifact 的绑定；默认不会要求 GPU 0/1 服务仍在线。需要同时复核在线服务时
+显式增加 `--live-service`：
+
+```bash
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  validate-coco-final \
+  --audit artifacts/research_v2/frozen/formal-coco1300-final-audit-v1.json
+```
+
+外部 CoCo runner 同样采用 output-root scoped 非阻塞锁。Split、Classify 与必需
 Evaluation 各自在 `.candidate_official_stages/<stage>/` 写入输入、设置、输出 SHA 和
 checkpoint ID；只有完整验证后才通过硬链接发布 fixed artifact。相同身份恢复会跳过
 已完成阶段，不再请求模型；失败 attempt 保留在隐藏 staging 中。任一输入、endpoint、

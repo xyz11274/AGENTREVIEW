@@ -63,6 +63,20 @@ class FormalTransitionTest(unittest.TestCase):
         self.temporary.cleanup()
 
     @staticmethod
+    def _formal_clean_head(config: ResearchConfig, paths: dict[str, Path]):
+        coco_root = Path(config.coco_root).expanduser().resolve()
+        coco_commit = read_json(paths["coco_scoring_spec"])["repository"][
+            "git_commit"
+        ]
+
+        def clean_head(root: str | Path) -> str:
+            if Path(root).expanduser().resolve() == coco_root:
+                return coco_commit
+            return "a" * 40
+
+        return clean_head
+
+    @staticmethod
     def _write_jsonl(path: Path, values: list[dict]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
@@ -121,6 +135,12 @@ class FormalTransitionTest(unittest.TestCase):
             "model/split_model/weights.bin": "tiny split weights\n",
             "model/classify_model/config.json": '{"classify":true}\n',
             "model/classify_model/weights.bin": "tiny classify weights\n",
+            "model/bertscore_roberta_large/config.json": (
+                '{"model_type":"roberta"}\n'
+            ),
+            "model/bertscore_roberta_large/model.safetensors": (
+                "tiny roberta-large weights\n"
+            ),
         }
         for relative, content in fixture_files.items():
             path = coco_root / relative
@@ -143,11 +163,44 @@ class FormalTransitionTest(unittest.TestCase):
         scoring_spec_path = (
             root / "frozen" / "formal-coco1300-scoring-spec-v1.json"
         )
+        evaluation_prefix = root / "evaluation-environment"
+        evaluation_python = evaluation_prefix / "bin" / "python3"
+        evaluation_python.parent.mkdir(parents=True)
+        probe = {
+            "python_executable": str(evaluation_python.resolve()),
+            "python_version": "3.12.11",
+            "sys_prefix": str(evaluation_prefix.resolve()),
+            "user_site_enabled": False,
+            "isolated_mode": False,
+            "no_user_site": True,
+            "dont_write_bytecode": True,
+            "ignore_environment": False,
+            "packages": {
+                "bert-score": "0.3.13",
+                "nltk": "3.9.3",
+                "numpy": "2.2.6",
+                "openai": "2.6.0",
+                "requests": "2.32.5",
+                "rouge-score": "0.1.2",
+                "torch": "2.8.0",
+                "tqdm": "4.67.1",
+                "transformers": "4.57.1",
+            },
+        }
+        evaluation_python.write_text(
+            "#!/bin/sh\n"
+            f"printf '%s\\n' '{json.dumps(probe, sort_keys=True)}'\n",
+            encoding="utf-8",
+        )
+        evaluation_python.chmod(0o755)
+        (evaluation_prefix / "bin" / "python").symlink_to("python3")
         scoring_spec = materialize_coco_scoring_spec(
             coco_root=coco_root,
             artifact_root=root,
             winner_run_id="formal-coco1300-winner-v1",
             output_path=scoring_spec_path,
+            evaluation_python=evaluation_prefix / "bin" / "python",
+            evaluation_proxy_url="http://127.0.0.1:7898",
         )
         return coco_root.resolve(), scoring_spec_path.resolve(), scoring_spec
 
@@ -810,7 +863,7 @@ class FormalTransitionTest(unittest.TestCase):
         spec_path = self.root / "formal-freeze-spec.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             spec = materialize_formal_freeze_spec(
                 config=config,
@@ -858,11 +911,11 @@ class FormalTransitionTest(unittest.TestCase):
             arguments["evolution_run_ids"],
             {role: "formal-evolution-v1" for role in ROLES},
         )
+        scoring_spec = read_json(paths["coco_scoring_spec"])
         self.assertEqual(
             arguments["external_coco_identity"]["git_commit"],
-            "a" * 40,
+            scoring_spec["repository"]["git_commit"],
         )
-        scoring_spec = read_json(paths["coco_scoring_spec"])
         expected_scoring_binding = {
             "path": str(paths["coco_scoring_spec"].resolve()),
             "sha256": file_sha256(paths["coco_scoring_spec"]),
@@ -1278,6 +1331,52 @@ class FormalTransitionTest(unittest.TestCase):
 
         self.assertFalse(output_path.exists())
 
+    def test_external_coco_commit_must_match_scoring_spec_before_commit(self):
+        config, paths = self._formal_fixture(self.root)
+        formal_spec_path = self.root / "formal-freeze-spec.json"
+        output_path = self.root / "system-must-not-exist.json"
+        clean_head = self._formal_clean_head(config, paths)
+        with patch(
+            "agentreview.research_v2.formal_transition.clean_git_head",
+            side_effect=clean_head,
+        ):
+            materialize_formal_freeze_spec(
+                config=config,
+                formal_run_id="formal-evolution-v1",
+                repository_root=self.root,
+                output_path=formal_spec_path,
+            )
+
+        formal_spec = read_json(formal_spec_path)
+        formal_spec["freeze_arguments"]["external_coco_identity"][
+            "git_commit"
+        ] = "f" * 40
+        formal_spec["spec_id"] = value_sha256(
+            {
+                name: value
+                for name, value in formal_spec.items()
+                if name != "spec_id"
+            }
+        )
+        atomic_write_json(formal_spec_path, formal_spec, immutable=False)
+
+        with (
+            patch(
+                "agentreview.research_v2.formal_transition.clean_git_head",
+                side_effect=clean_head,
+            ),
+            self.assertRaisesRegex(
+                ValueError,
+                "external CoCo root or commit differs from scoring spec",
+            ),
+        ):
+            freeze_formal_system(
+                spec_path=formal_spec_path,
+                output_path=output_path,
+                repository_root=self.root,
+            )
+        self.assertFalse(output_path.exists())
+
     def test_materializer_revalidates_semantics_after_source_binding(self):
         config, paths = self._formal_fixture(self.root)
         output_path = self.root / "system-must-not-exist.json"
@@ -1316,12 +1415,12 @@ class FormalTransitionTest(unittest.TestCase):
         self.assertFalse(output_path.exists())
 
     def test_transition_validator_rejects_rehashed_winner_substitution(self):
-        config, _ = self._formal_fixture(self.root)
+        config, paths = self._formal_fixture(self.root)
         spec_path = self.root / "formal-freeze-spec.json"
         frozen_path = self.root / "frozen-system.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             materialize_formal_freeze_spec(
                 config=config,
@@ -1436,6 +1535,7 @@ class FormalTransitionTest(unittest.TestCase):
 
     def test_materialize_coco_scoring_spec_cli_binds_formal_inputs(self):
         coco_root = self.root / "coco"
+        evaluation_python = self.root / "evaluation-environment" / "bin" / "python"
         config = ResearchConfig(
             artifact_root=str(self.root / "artifacts"),
             coco_root=str(coco_root),
@@ -1458,6 +1558,10 @@ class FormalTransitionTest(unittest.TestCase):
                     "materialize-coco-scoring-spec",
                     "--winner-run-id",
                     "formal-coco1300-winner-v1",
+                    "--evaluation-python",
+                    str(evaluation_python),
+                    "--evaluation-proxy-url",
+                    "http://127.0.0.1:7898",
                     "--output",
                     str(output_path),
                 ]
@@ -1469,6 +1573,8 @@ class FormalTransitionTest(unittest.TestCase):
             artifact_root=config.artifact_path(),
             winner_run_id="formal-coco1300-winner-v1",
             output_path=str(output_path),
+            evaluation_python=str(evaluation_python),
+            evaluation_proxy_url="http://127.0.0.1:7898",
         )
 
     def test_freeze_cli_uses_the_source_revalidating_transition(self):

@@ -68,9 +68,13 @@ evolve-step
 run-evolution
 formal-evolution
 materialize-freeze-spec
+materialize-coco-scoring-spec
 freeze-system
 generate-coco-reviews
+seal-coco-pre-score
 coco-eval
+audit-coco-final
+validate-coco-final
 ```
 
 准备 development 的互斥 125/25/125 划分：
@@ -101,10 +105,19 @@ python -m agentreview.research_v2 \
 
 加 `--build-s2` 时构建独立 `frozen_s2_coco1300_v1`。development 与 CoCo 的 S2 pool 不允许混用。
 
-五角色 Formal Evolution 与两套 S2 均完整后，先从五个已验证 winner 确定性生成
+五角色 Formal Evolution 与两套 S2 均完整后，先冻结干净的外部 CoCo 仓库、模型、
+benchmark、服务参数和两臂 cache identity；随后从五个已验证 winner 确定性生成
 self-hashed freeze spec，再冻结系统并生成可恢复的 1,300 篇 winner Review：
 
 ```bash
+python -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  materialize-coco-scoring-spec \
+  --winner-run-id formal-coco1300-winner-v1 \
+  --evaluation-python artifacts/research_v2/runtime/coco_eval_env_v1/bin/python \
+  --evaluation-proxy-url http://127.0.0.1:7898 \
+  --output artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json
+
 python -m agentreview.research_v2 \
   --config AgentReview/configs/research_v2_formal_v1.json \
   materialize-freeze-spec \
@@ -133,13 +146,16 @@ Specialist 与 Meta 共用同一个最多8路的27B队列，每篇五份 Special
 Meta；concat 不调用 LLM。相同 run ID 仅在正文、raw output、请求与完整 frozen identity
 均一致时恢复。
 
-冻结系统和两组各 1300 份 Final Review 齐备后，`coco-eval` 可调用
-CoCoReviewBench 的 `scripts/run_official_candidate.py`。该 runner 只连接已经
-常驻、在外部完成 GPU pin 的 split/classify endpoint；Review 生成、vLLM
-生命周期和进程清理由外部服务负责。命令返回 0 后，本侧会按冻结 ID 集合
-验证 split/classify（以及可选 evaluation）产物并记录 SHA256。CoCo 整臂与
-另一实验臂的 Review 可由两个独立进程并行启动；单个 sealed arm 保持整臂
-执行。
+冻结系统和两组各 1300 份 Final Review 齐备后，用 `seal-coco-pre-score` 固化候选与
+运行态证明。`coco-eval`
+只能按 seal 调用 CoCoReviewBench 的 `scripts/run_official_candidate.py`；该 runner
+只连接已经常驻并完成 GPU pin 的 split/classify endpoint。正式 evaluation 为必需
+阶段，凭据仅从 `COCO_EVALUATION_API_KEY` 注入子进程且不进入 artifact。两臂完成后
+必须运行 `audit-coco-final`，并可用 `validate-coco-final` 离线复核完整闭包。CoCo
+整臂与另一实验臂的 Review 可由两个独立进程并行启动；单个 sealed arm 保持整臂
+执行。三阶段输出预算/上下文上限固定为 Split 8,192/40,960、Classify
+4,096/32,768、Evaluation 32,768/400,000；runner 必须在对应 API 请求前执行封印的
+离线 prompt preflight，超限即失败且不得截断。
 
 其余 stage 的必需参数以各自 `--help` 为准。每一步读取上一阶段已经保存的 artifact；`run-evolution` 只是显式 spec 的薄协调器，不把 Review 与 Evaluation 合并成在线调用。
 

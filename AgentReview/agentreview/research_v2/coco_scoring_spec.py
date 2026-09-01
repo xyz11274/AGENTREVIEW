@@ -8,11 +8,15 @@ scientific settings, service identities, or arm-local namespaces are bound.
 from __future__ import annotations
 
 import json
+import math
+import os
 import re
 import stat
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from .io import atomic_write_json, file_sha256, value_sha256
 
@@ -28,6 +32,8 @@ CRITICAL_FILE_RELATIVE_PATHS = (
     "src/evaluation/_2_split.py",
     "src/evaluation/_3_classify.py",
     "src/evaluation/_4_evaluation.py",
+    "src/evaluation/table_1_contract.py",
+    "src/utils.py",
     "src/benchmark/prompt_registry.py",
     "src/evaluation/prompt/judge.txt",
 )
@@ -35,6 +41,46 @@ CRITICAL_FILE_RELATIVE_PATHS = (
 MODEL_RELATIVE_ROOTS = {
     "split": "model/split_model",
     "classify": "model/classify_model",
+    "evaluation": "model/bertscore_roberta_large",
+}
+EVALUATION_MODEL_TYPE = "roberta-large"
+EVALUATION_MODEL_NUM_LAYERS = 17
+FORMAL_EVALUATION_MAX_COMPLETION_TOKENS = 32768
+FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS = 400000
+FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM = "utf8-byte-upper-bound-v1"
+FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS = 1024
+FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS = 4096
+FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS = 32768
+FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM = "qwen-classify-chat-template-v1"
+FORMAL_SPLIT_MAX_COMPLETION_TOKENS = 8192
+FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS = 40960
+FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM = "qwen-chat-template-v1"
+FORMAL_EVALUATION_PROXY_HOST = "127.0.0.1"
+FORMAL_EVALUATION_PROXY_PORT = 7898
+FORMAL_EVALUATION_PROXY_URL = (
+    f"http://{FORMAL_EVALUATION_PROXY_HOST}:{FORMAL_EVALUATION_PROXY_PORT}"
+)
+EVALUATION_REQUIRED_PACKAGES = {
+    "bert-score": "bert_score",
+    "nltk": "nltk",
+    "numpy": "numpy",
+    "openai": "openai",
+    "requests": "requests",
+    "rouge-score": "rouge_score",
+    "torch": "torch",
+    "tqdm": "tqdm",
+    "transformers": "transformers",
+}
+_EVALUATION_PROBE_ENVIRONMENT = {
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONHASHSEED": "0",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
 }
 
 _TOP_LEVEL_FIELDS = {
@@ -52,6 +98,33 @@ _TOP_LEVEL_FIELDS = {
 }
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 _GIT_COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+
+
+def _evaluation_transport(proxy_url: Any) -> dict[str, str]:
+    if not isinstance(proxy_url, str) or not proxy_url or proxy_url != proxy_url.strip():
+        raise ValueError("CoCo evaluation proxy URL must be canonical")
+    try:
+        parsed = urlsplit(proxy_url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("CoCo evaluation proxy URL must have a valid port") from exc
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname != FORMAL_EVALUATION_PROXY_HOST
+        or parsed.username is not None
+        or parsed.password is not None
+        or port != FORMAL_EVALUATION_PROXY_PORT
+        or parsed.query
+        or parsed.fragment
+        or parsed.path not in {"", "/"}
+        or parsed.netloc
+        != f"{FORMAL_EVALUATION_PROXY_HOST}:{FORMAL_EVALUATION_PROXY_PORT}"
+    ):
+        raise ValueError(
+            "CoCo evaluation proxy URL must be an explicit localhost HTTP endpoint"
+        )
+    canonical = FORMAL_EVALUATION_PROXY_URL
+    return {"HTTP_PROXY": canonical, "HTTPS_PROXY": canonical}
 
 
 def _run_git(root: Path, *arguments: str) -> str:
@@ -283,22 +356,293 @@ def _verify_observations(observations: dict[str, tuple[int, ...]]) -> None:
             raise RuntimeError(f"CoCo input changed during inventory: {path}")
 
 
-def _scientific_settings(benchmark: dict[str, Any]) -> dict[str, Any]:
+def _evaluation_model_identity(model: dict[str, Any]) -> dict[str, Any]:
+    files = model["files"]
+    return {
+        "model_type": model["model_type"],
+        "root": model["root"],
+        "num_layers": model["num_layers"],
+        "rescale_with_baseline": model["rescale_with_baseline"],
+        "file_count": len(files),
+        "tree_id": value_sha256({"root": model["root"], "files": files}),
+    }
+
+
+def _evaluation_probe(python_executable: Path) -> dict[str, Any]:
+    package_mapping = json.dumps(EVALUATION_REQUIRED_PACKAGES, sort_keys=True)
+    probe_source = f"""
+import importlib
+import importlib.metadata
+import json
+import platform
+import site
+import sys
+
+packages = {{}}
+for distribution, import_name in {package_mapping}.items():
+    importlib.import_module(import_name)
+    packages[distribution] = importlib.metadata.version(distribution)
+print(json.dumps({{
+    "python_executable": str(__import__("pathlib").Path(sys.executable).resolve()),
+    "python_version": platform.python_version(),
+    "sys_prefix": str(__import__("pathlib").Path(sys.prefix).resolve()),
+    "user_site_enabled": site.ENABLE_USER_SITE,
+    "isolated_mode": bool(sys.flags.isolated),
+    "no_user_site": bool(sys.flags.no_user_site),
+    "dont_write_bytecode": bool(sys.flags.dont_write_bytecode),
+    "ignore_environment": bool(sys.flags.ignore_environment),
+    "packages": packages,
+}}, sort_keys=True))
+"""
+    try:
+        with tempfile.TemporaryDirectory(
+            prefix="agentreview-coco-evaluation-probe-"
+        ) as directory:
+            result = subprocess.run(
+                [str(python_executable), "-s", "-B", "-c", probe_source],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                env=dict(_EVALUATION_PROBE_ENVIRONMENT),
+                cwd=directory,
+            )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("CoCo evaluation Python probe failed") from exc
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip()
+        suffix = f": {detail}" if detail else ""
+        raise RuntimeError(f"CoCo evaluation Python probe failed{suffix}")
+    try:
+        value = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("CoCo evaluation Python probe output is invalid") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError("CoCo evaluation Python probe output is invalid")
+    return value
+
+
+def _stable_symlink_target(path: Path, *, prefix: Path) -> str:
+    before = path.lstat()
+    if not stat.S_ISLNK(before.st_mode):
+        raise ValueError(f"CoCo evaluation prefix entry is not a symlink: {path}")
+    target = os.readlink(path)
+    try:
+        resolved_target = path.resolve(strict=True)
+    except (FileNotFoundError, RuntimeError) as exc:
+        raise ValueError(
+            f"CoCo evaluation prefix contains a dangling symlink: {path}"
+        ) from exc
+    after = path.lstat()
+    before_identity = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+    )
+    after_identity = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+    )
+    if before_identity != after_identity:
+        raise RuntimeError(
+            f"CoCo evaluation prefix symlink changed while being hashed: {path}"
+        )
+    if not _is_within(resolved_target, prefix):
+        raise ValueError(
+            f"CoCo evaluation prefix symlink escapes its sys.prefix: {path}"
+        )
+    return target
+
+
+def _evaluation_prefix_tree(prefix: Path) -> dict[str, Any]:
+    entries: list[dict[str, Any]] = []
+    file_count = 0
+    total_bytes = 0
+    symlink_count = 0
+    pyc_file_count = 0
+
+    def walk_error(error: OSError) -> None:
+        raise RuntimeError("CoCo evaluation Python prefix is unreadable") from error
+
+    for directory, directory_names, file_names in os.walk(
+        prefix,
+        topdown=True,
+        followlinks=False,
+        onerror=walk_error,
+    ):
+        directory_path = Path(directory)
+        retained_directories: list[str] = []
+        for name in sorted(directory_names):
+            path = directory_path / name
+            relative = path.relative_to(prefix).as_posix()
+            mode = path.lstat().st_mode
+            if stat.S_ISLNK(mode):
+                entries.append(
+                    {
+                        "path": relative,
+                        "type": "symlink",
+                        "target": _stable_symlink_target(path, prefix=prefix),
+                    }
+                )
+                symlink_count += 1
+            elif stat.S_ISDIR(mode):
+                retained_directories.append(name)
+            else:
+                raise ValueError(
+                    f"CoCo evaluation prefix contains a special entry: {path}"
+                )
+        directory_names[:] = retained_directories
+
+        for name in sorted(file_names):
+            path = directory_path / name
+            relative = path.relative_to(prefix).as_posix()
+            mode = path.lstat().st_mode
+            if stat.S_ISLNK(mode):
+                entries.append(
+                    {
+                        "path": relative,
+                        "type": "symlink",
+                        "target": _stable_symlink_target(path, prefix=prefix),
+                    }
+                )
+                symlink_count += 1
+                continue
+            if not stat.S_ISREG(mode):
+                raise ValueError(
+                    f"CoCo evaluation prefix contains a special entry: {path}"
+                )
+            digest, size, _ = _stable_file_fingerprint(path)
+            entries.append(
+                {
+                    "path": relative,
+                    "type": "regular",
+                    "size_bytes": size,
+                    "sha256": digest,
+                }
+            )
+            file_count += 1
+            total_bytes += size
+            if path.suffix == ".pyc":
+                pyc_file_count += 1
+
+    entries.sort(key=lambda item: (item["path"], item["type"]))
+    return {
+        "root": str(prefix),
+        "file_count": file_count,
+        "total_bytes": total_bytes,
+        "symlink_count": symlink_count,
+        "pyc_file_count": pyc_file_count,
+        "tree_sha256": value_sha256(entries),
+    }
+
+
+def _evaluation_runtime_identity(value: str | Path) -> dict[str, Any]:
+    requested = Path(value).expanduser()
+    try:
+        python_executable = requested.resolve(strict=True)
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"CoCo evaluation Python executable is missing: {requested}"
+        ) from exc
+    if not python_executable.is_file() or not os.access(python_executable, os.X_OK):
+        raise ValueError(
+            f"CoCo evaluation Python executable is not executable: {requested}"
+        )
+    probe = _evaluation_probe(python_executable)
+    expected_probe_fields = {
+        "python_executable",
+        "python_version",
+        "sys_prefix",
+        "user_site_enabled",
+        "isolated_mode",
+        "no_user_site",
+        "dont_write_bytecode",
+        "ignore_environment",
+        "packages",
+    }
+    if set(probe) != expected_probe_fields:
+        raise RuntimeError("CoCo evaluation Python probe fields differ")
+    try:
+        observed_executable = Path(probe["python_executable"]).resolve(strict=True)
+        prefix = Path(probe["sys_prefix"]).resolve(strict=True)
+    except (FileNotFoundError, TypeError) as exc:
+        raise RuntimeError("CoCo evaluation Python probe paths are invalid") from exc
+    if observed_executable != python_executable:
+        raise ValueError("CoCo evaluation Python executable identity differs")
+    if not prefix.is_dir() or not _is_within(python_executable, prefix):
+        raise ValueError("CoCo evaluation Python executable escapes its sys.prefix")
+    if (
+        not isinstance(probe["python_version"], str)
+        or not probe["python_version"]
+        or probe["user_site_enabled"] is not False
+        or probe["isolated_mode"] is not False
+        or probe["no_user_site"] is not True
+        or probe["dont_write_bytecode"] is not True
+        or probe["ignore_environment"] is not False
+    ):
+        raise ValueError("CoCo evaluation Python isolation identity differs")
+    packages = probe["packages"]
+    if (
+        not isinstance(packages, dict)
+        or set(packages) != set(EVALUATION_REQUIRED_PACKAGES)
+        or any(not isinstance(version, str) or not version for version in packages.values())
+    ):
+        raise ValueError("CoCo evaluation Python package closure differs")
+    return {
+        "python_executable": str(python_executable),
+        "python_version": probe["python_version"],
+        "sys_prefix": str(prefix),
+        "user_site_enabled": False,
+        "isolated_mode": False,
+        "no_user_site": True,
+        "dont_write_bytecode": True,
+        "ignore_environment": False,
+        "packages": dict(sorted(packages.items())),
+        "prefix_tree": _evaluation_prefix_tree(prefix),
+    }
+
+
+def _scientific_settings(
+    benchmark: dict[str, Any],
+    models: dict[str, Any],
+) -> dict[str, Any]:
     return {
         "split": {
             "base_url": "http://127.0.0.1:13099/v1",
             "model": "Qwen3-8B-Split",
             "max_in_flight_client_requests": 64,
+            "max_completion_tokens": FORMAL_SPLIT_MAX_COMPLETION_TOKENS,
+            "context_window_tokens": FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS,
+            "prompt_preflight": {
+                "algorithm": FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM,
+                "max_model_len": FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS,
+                "max_completion_tokens": FORMAL_SPLIT_MAX_COMPLETION_TOKENS,
+                "enable_thinking": True,
+            },
             "effort": "medium",
         },
         "classify": {
             "base_url": "http://127.0.0.1:13098/v1",
             "model": "Qwen3-8B-Classify",
             "max_in_flight_client_requests": 128,
+            "max_completion_tokens": FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS,
+            "context_window_tokens": FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS,
+            "prompt_preflight": {
+                "algorithm": FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM,
+                "max_model_len": FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS,
+                "max_completion_tokens": FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS,
+                "enable_thinking": True,
+            },
             "effort": "medium",
         },
         "evaluation": {
             "enabled": True,
+            "require_complete": True,
             "benchmark_files": [item["path"] for item in benchmark["files"]],
             "complete_human_classify_file": benchmark["complete_human_classify"][
                 "path"
@@ -308,13 +652,28 @@ def _scientific_settings(benchmark: dict[str, Any]) -> dict[str, Any]:
             "model": "gpt-5-mini",
             "max_in_flight_client_requests": 128,
             "effort": "medium",
+            "temperature": None,
+            "max_completion_tokens": FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
+            "context_window_tokens": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
+            "prompt_preflight": {
+                "algorithm": FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM,
+                "max_model_len": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
+                "max_completion_tokens": FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
+                "chat_overhead_tokens": FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS,
+            },
             "cuda_visible_devices": "",
+            "bert_score_model": _evaluation_model_identity(models["evaluation"]),
         },
     }
 
 
-def _service_identities(models: dict[str, Any]) -> dict[str, Any]:
-    return {
+def _service_identities(
+    models: dict[str, Any],
+    *,
+    evaluation_python: str | Path,
+    evaluation_proxy_url: str,
+) -> dict[str, Any]:
+    services = {
         "software": {"vllm": "0.20.1", "transformers": "5.8.1"},
         "split": {
             "cuda_visible_devices": "0",
@@ -353,6 +712,11 @@ def _service_identities(models: dict[str, Any]) -> dict[str, Any]:
             "enforce_eager": True,
         },
     }
+    services["evaluation"] = {
+        **_evaluation_runtime_identity(evaluation_python),
+        "transport": _evaluation_transport(evaluation_proxy_url),
+    }
+    return services
 
 
 def _validate_winner_run_id(value: Any) -> str:
@@ -375,17 +739,24 @@ def _arm_bindings(
     winner_run_id: str,
 ) -> dict[str, Any]:
     scoring_root = artifact_root / "coco_scoring"
-    return {
-        mode: {
+    if scoring_root.parent.resolve() != scoring_root.parent or scoring_root.is_symlink():
+        raise ValueError("CoCo scoring output root must not use a symbolic link")
+    bindings: dict[str, Any] = {}
+    for mode in ARMS:
+        output = scoring_root / f"{winner_run_id}-{mode}"
+        if output.parent.resolve() != output.parent or output.is_symlink():
+            raise ValueError(
+                f"CoCo scoring {mode} output must not use a symbolic link"
+            )
+        bindings[mode] = {
             "mode": mode,
-            "output_root": str((scoring_root / f"{winner_run_id}-{mode}").resolve()),
+            "output_root": str(output),
             "cache_versions": {
                 stage: f"{winner_run_id}-{mode}-{stage}-cache-v1"
                 for stage in CACHE_STAGES
             },
         }
-        for mode in ARMS
-    }
+    return bindings
 
 
 def _build_body(
@@ -393,6 +764,8 @@ def _build_body(
     coco_root: Path,
     artifact_root: Path,
     winner_run_id: str,
+    evaluation_python: str | Path,
+    evaluation_proxy_url: str,
 ) -> dict[str, Any]:
     repository = _clean_git_identity(coco_root)
     critical_files = _critical_file_bindings(coco_root)
@@ -407,8 +780,15 @@ def _build_body(
             relative_root=relative_root,
         )
         if inventory["root"] in resolved_model_roots:
-            raise ValueError("CoCo split and classify model roots must be distinct")
+            raise ValueError("CoCo scoring model roots must be distinct")
         resolved_model_roots.add(inventory["root"])
+        if role == "evaluation":
+            inventory = {
+                "model_type": EVALUATION_MODEL_TYPE,
+                **inventory,
+                "num_layers": EVALUATION_MODEL_NUM_LAYERS,
+                "rescale_with_baseline": False,
+            }
         models[role] = inventory
         observations.update(role_observations)
     _verify_observations(observations)
@@ -423,8 +803,12 @@ def _build_body(
         "critical_files": critical_files,
         "benchmark": benchmark,
         "models": models,
-        "scientific_settings": _scientific_settings(benchmark),
-        "services": _service_identities(models),
+        "scientific_settings": _scientific_settings(benchmark, models),
+        "services": _service_identities(
+            models,
+            evaluation_python=evaluation_python,
+            evaluation_proxy_url=evaluation_proxy_url,
+        ),
         "arms": _arm_bindings(
             artifact_root=artifact_root,
             winner_run_id=winner_run_id,
@@ -436,6 +820,31 @@ def _require_fields(value: Any, fields: set[str], *, label: str) -> dict[str, An
     if not isinstance(value, dict) or set(value) != fields:
         raise ValueError(f"CoCo scoring spec {label} fields differ")
     return value
+
+
+def _require_non_empty_text(value: Any, *, label: str) -> str:
+    if isinstance(value, str) and value:
+        return value
+    raise ValueError(f"CoCo scoring spec {label} must be a non-empty string")
+
+
+def _require_positive_integer(value: Any, *, label: str) -> int:
+    if type(value) is int and value > 0:
+        return value
+    raise ValueError(f"CoCo scoring spec {label} must be a positive integer")
+
+
+def _require_gpu_utilization(value: Any, *, label: str) -> float:
+    if (
+        not isinstance(value, bool)
+        and isinstance(value, (int, float))
+        and math.isfinite(float(value))
+        and 0.0 < float(value) <= 1.0
+    ):
+        return float(value)
+    raise ValueError(
+        f"CoCo scoring spec {label} must be a finite number in (0, 1]"
+    )
 
 
 def _validate_file_binding_shape(value: Any, *, label: str) -> None:
@@ -454,8 +863,7 @@ def _validate_shape(value: dict[str, Any]) -> None:
     if value.get("protocol") != PROTOCOL:
         raise ValueError("CoCo scoring spec protocol differs")
     _validate_winner_run_id(value.get("winner_run_id"))
-    if not isinstance(value.get("artifact_root"), str):
-        raise ValueError("CoCo scoring spec artifact_root must be a path string")
+    _require_non_empty_text(value.get("artifact_root"), label="artifact_root")
 
     repository = _require_fields(
         value.get("repository"),
@@ -464,6 +872,7 @@ def _validate_shape(value: dict[str, Any]) -> None:
     )
     if (
         not isinstance(repository["root"], str)
+        or not repository["root"]
         or not _GIT_COMMIT_PATTERN.fullmatch(str(repository["git_commit"]))
         or repository["clean"] is not True
     ):
@@ -501,13 +910,31 @@ def _validate_shape(value: dict[str, Any]) -> None:
         label="models",
     )
     for role in MODEL_RELATIVE_ROOTS:
+        inventory_fields = {"root", "files"}
+        if role == "evaluation":
+            inventory_fields |= {
+                "model_type",
+                "num_layers",
+                "rescale_with_baseline",
+            }
         inventory = _require_fields(
             models[role],
-            {"root", "files"},
+            inventory_fields,
             label=f"models.{role}",
         )
-        if not isinstance(inventory["root"], str):
-            raise ValueError(f"CoCo scoring spec models.{role}.root is invalid")
+        if role == "evaluation" and (
+            inventory["model_type"] != EVALUATION_MODEL_TYPE
+            or type(inventory["num_layers"]) is not int
+            or inventory["num_layers"] != EVALUATION_MODEL_NUM_LAYERS
+            or inventory["rescale_with_baseline"] is not False
+        ):
+            raise ValueError(
+                "CoCo scoring spec models.evaluation scientific identity differs"
+            )
+        _require_non_empty_text(
+            inventory["root"],
+            label=f"models.{role}.root",
+        )
         if not isinstance(inventory["files"], list) or not inventory["files"]:
             raise ValueError(f"CoCo scoring spec models.{role}.files is empty")
         for index, binding in enumerate(inventory["files"]):
@@ -533,15 +960,83 @@ def _validate_shape(value: dict[str, Any]) -> None:
         label="scientific_settings",
     )
     for role in ("split", "classify"):
-        _require_fields(
+        fields = {"base_url", "model", "max_in_flight_client_requests", "effort"}
+        if role in {"split", "classify"}:
+            fields |= {
+                "max_completion_tokens",
+                "context_window_tokens",
+                "prompt_preflight",
+            }
+        stage_settings = _require_fields(
             settings[role],
-            {"base_url", "model", "max_in_flight_client_requests", "effort"},
+            fields,
             label=f"scientific_settings.{role}",
         )
-    _require_fields(
+        for name in ("base_url", "model", "effort"):
+            _require_non_empty_text(
+                stage_settings[name],
+                label=f"scientific_settings.{role}.{name}",
+            )
+        _require_positive_integer(
+            stage_settings["max_in_flight_client_requests"],
+            label=(
+                f"scientific_settings.{role}.max_in_flight_client_requests"
+            ),
+        )
+        expected_max_completion_tokens = (
+            FORMAL_SPLIT_MAX_COMPLETION_TOKENS
+            if role == "split"
+            else FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS
+        )
+        expected_context_window_tokens = (
+            FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS
+            if role == "split"
+            else FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS
+        )
+        expected_preflight_algorithm = (
+            FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM
+            if role == "split"
+            else FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM
+        )
+        if (
+            type(stage_settings["max_completion_tokens"]) is not int
+            or stage_settings["max_completion_tokens"]
+            != expected_max_completion_tokens
+            or type(stage_settings["context_window_tokens"]) is not int
+            or stage_settings["context_window_tokens"]
+            != expected_context_window_tokens
+        ):
+            raise ValueError(
+                f"CoCo scoring spec scientific_settings.{role} token budgets differ"
+            )
+        preflight = _require_fields(
+            stage_settings["prompt_preflight"],
+            {
+                "algorithm",
+                "max_model_len",
+                "max_completion_tokens",
+                "enable_thinking",
+            },
+            label=f"scientific_settings.{role}.prompt_preflight",
+        )
+        if (
+            preflight["algorithm"] != expected_preflight_algorithm
+            or type(preflight["max_model_len"]) is not int
+            or preflight["max_model_len"] != expected_context_window_tokens
+            or type(preflight["max_completion_tokens"]) is not int
+            or preflight["max_completion_tokens"]
+            != expected_max_completion_tokens
+            or preflight["enable_thinking"] is not True
+        ):
+            raise ValueError(
+                f"CoCo scoring spec scientific_settings.{role} prompt preflight "
+                "identity differs"
+            )
+    evaluation_settings = _require_fields(
         settings["evaluation"],
         {
             "enabled",
+            "require_complete",
             "benchmark_files",
             "complete_human_classify_file",
             "reviewer_selection_file",
@@ -549,21 +1044,140 @@ def _validate_shape(value: dict[str, Any]) -> None:
             "model",
             "max_in_flight_client_requests",
             "effort",
+            "temperature",
+            "max_completion_tokens",
+            "context_window_tokens",
+            "prompt_preflight",
             "cuda_visible_devices",
+            "bert_score_model",
         },
         label="scientific_settings.evaluation",
     )
+    if evaluation_settings["enabled"] is not True:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.enabled must be true"
+        )
+    if evaluation_settings["require_complete"] is not True:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.require_complete "
+            "must be true"
+        )
+    benchmark_files = evaluation_settings["benchmark_files"]
+    if not isinstance(benchmark_files, list) or not benchmark_files or any(
+        not isinstance(path, str) or not path for path in benchmark_files
+    ):
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.benchmark_files "
+            "must be a non-empty string list"
+        )
+    for name in (
+        "complete_human_classify_file",
+        "reviewer_selection_file",
+        "base_url",
+        "model",
+        "effort",
+    ):
+        _require_non_empty_text(
+            evaluation_settings[name],
+            label=f"scientific_settings.evaluation.{name}",
+        )
+    _require_positive_integer(
+        evaluation_settings["max_in_flight_client_requests"],
+        label="scientific_settings.evaluation.max_in_flight_client_requests",
+    )
+    if evaluation_settings["temperature"] is not None:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.temperature "
+            "must be null"
+        )
+    if (
+        type(evaluation_settings["max_completion_tokens"]) is not int
+        or evaluation_settings["max_completion_tokens"]
+        != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or type(evaluation_settings["context_window_tokens"]) is not int
+        or evaluation_settings["context_window_tokens"]
+        != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+    ):
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation token budgets differ"
+        )
+    evaluation_preflight = _require_fields(
+        evaluation_settings["prompt_preflight"],
+        {
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "chat_overhead_tokens",
+        },
+        label="scientific_settings.evaluation.prompt_preflight",
+    )
+    if (
+        evaluation_preflight["algorithm"]
+        != FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM
+        or type(evaluation_preflight["max_model_len"]) is not int
+        or evaluation_preflight["max_model_len"]
+        != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        or type(evaluation_preflight["max_completion_tokens"]) is not int
+        or evaluation_preflight["max_completion_tokens"]
+        != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or type(evaluation_preflight["chat_overhead_tokens"]) is not int
+        or evaluation_preflight["chat_overhead_tokens"]
+        != FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS
+    ):
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation prompt preflight "
+            "identity differs"
+        )
+    if not isinstance(evaluation_settings["cuda_visible_devices"], str):
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.cuda_visible_devices "
+            "must be a string"
+        )
+    bert_score_model = _require_fields(
+        evaluation_settings["bert_score_model"],
+        {
+            "model_type",
+            "root",
+            "num_layers",
+            "rescale_with_baseline",
+            "file_count",
+            "tree_id",
+        },
+        label="scientific_settings.evaluation.bert_score_model",
+    )
+    if (
+        bert_score_model["model_type"] != EVALUATION_MODEL_TYPE
+        or type(bert_score_model["num_layers"]) is not int
+        or bert_score_model["num_layers"] != EVALUATION_MODEL_NUM_LAYERS
+        or bert_score_model["rescale_with_baseline"] is not False
+        or type(bert_score_model["file_count"]) is not int
+        or bert_score_model["file_count"] < 1
+        or not isinstance(bert_score_model["root"], str)
+        or not bert_score_model["root"]
+        or not isinstance(bert_score_model["tree_id"], str)
+        or not _SHA256_PATTERN.fullmatch(bert_score_model["tree_id"])
+    ):
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.bert_score_model "
+            "is invalid"
+        )
+    if bert_score_model != _evaluation_model_identity(models["evaluation"]):
+        raise ValueError(
+            "CoCo scoring spec scientific evaluation model projection differs"
+        )
 
     services = _require_fields(
         value.get("services"),
-        {"software", "split", "classify"},
+        {"software", "split", "classify", "evaluation"},
         label="services",
     )
-    _require_fields(
+    software = _require_fields(
         services["software"],
         {"vllm", "transformers"},
         label="services.software",
     )
+    for name in ("vllm", "transformers"):
+        _require_non_empty_text(software[name], label=f"services.software.{name}")
     service_fields = {
         "cuda_visible_devices",
         "python_executable",
@@ -583,10 +1197,137 @@ def _validate_shape(value: dict[str, Any]) -> None:
         "enforce_eager",
     }
     for role in ("split", "classify"):
-        _require_fields(
+        service = _require_fields(
             services[role],
             service_fields,
             label=f"services.{role}",
+        )
+        for name in (
+            "cuda_visible_devices",
+            "python_executable",
+            "vllm_attention_backend",
+            "host",
+            "served_model_name",
+            "model_root",
+            "dtype",
+            "reasoning_parser",
+        ):
+            _require_non_empty_text(
+                service[name],
+                label=f"services.{role}.{name}",
+            )
+        for name in (
+            "port",
+            "max_model_len",
+            "max_num_seqs",
+            "tensor_parallel_size",
+        ):
+            _require_positive_integer(
+                service[name],
+                label=f"services.{role}.{name}",
+            )
+        _require_gpu_utilization(
+            service["gpu_memory_utilization"],
+            label=f"services.{role}.gpu_memory_utilization",
+        )
+        for name in (
+            "language_model_only",
+            "enable_prefix_caching",
+            "enforce_eager",
+        ):
+            if service[name] is not True:
+                raise ValueError(
+                    f"CoCo scoring spec services.{role}.{name} must be true"
+                )
+
+    evaluation_runtime = _require_fields(
+        services["evaluation"],
+        {
+            "python_executable",
+            "python_version",
+            "sys_prefix",
+            "user_site_enabled",
+            "isolated_mode",
+            "no_user_site",
+            "dont_write_bytecode",
+            "ignore_environment",
+            "packages",
+            "prefix_tree",
+            "transport",
+        },
+        label="services.evaluation",
+    )
+    for name in ("python_executable", "python_version", "sys_prefix"):
+        _require_non_empty_text(
+            evaluation_runtime[name],
+            label=f"services.evaluation.{name}",
+        )
+    if (
+        evaluation_runtime["user_site_enabled"] is not False
+        or evaluation_runtime["isolated_mode"] is not False
+        or evaluation_runtime["no_user_site"] is not True
+        or evaluation_runtime["dont_write_bytecode"] is not True
+        or evaluation_runtime["ignore_environment"] is not False
+    ):
+        raise ValueError(
+            "CoCo scoring spec evaluation Python isolation identity differs"
+        )
+    packages = _require_fields(
+        evaluation_runtime["packages"],
+        set(EVALUATION_REQUIRED_PACKAGES),
+        label="services.evaluation.packages",
+    )
+    for name, version in packages.items():
+        _require_non_empty_text(
+            version,
+            label=f"services.evaluation.packages.{name}",
+        )
+    transport = _require_fields(
+        evaluation_runtime["transport"],
+        {"HTTP_PROXY", "HTTPS_PROXY"},
+        label="services.evaluation.transport",
+    )
+    expected_transport = _evaluation_transport(transport["HTTP_PROXY"])
+    if transport != expected_transport:
+        raise ValueError("CoCo scoring spec evaluation transport differs")
+    prefix_tree = _require_fields(
+        evaluation_runtime["prefix_tree"],
+        {
+            "root",
+            "file_count",
+            "total_bytes",
+            "symlink_count",
+            "pyc_file_count",
+            "tree_sha256",
+        },
+        label="services.evaluation.prefix_tree",
+    )
+    _require_non_empty_text(
+        prefix_tree["root"],
+        label="services.evaluation.prefix_tree.root",
+    )
+    for name in ("file_count", "total_bytes", "symlink_count", "pyc_file_count"):
+        if type(prefix_tree[name]) is not int or prefix_tree[name] < 0:
+            raise ValueError(
+                f"CoCo scoring spec services.evaluation.prefix_tree.{name} "
+                "must be a non-negative integer"
+            )
+    if prefix_tree["file_count"] < 1:
+        raise ValueError(
+            "CoCo scoring spec services.evaluation.prefix_tree.file_count "
+            "must be positive"
+        )
+    if prefix_tree["pyc_file_count"] > prefix_tree["file_count"]:
+        raise ValueError(
+            "CoCo scoring spec evaluation Python pyc inventory is invalid"
+        )
+    if (
+        prefix_tree["root"] != evaluation_runtime["sys_prefix"]
+        or not isinstance(prefix_tree["tree_sha256"], str)
+        or not _SHA256_PATTERN.fullmatch(prefix_tree["tree_sha256"])
+    ):
+        raise ValueError(
+            "CoCo scoring spec evaluation Python prefix identity is invalid"
         )
 
     arms = _require_fields(value.get("arms"), set(ARMS), label="arms")
@@ -598,7 +1339,11 @@ def _validate_shape(value: dict[str, Any]) -> None:
             {"mode", "output_root", "cache_versions"},
             label=f"arms.{mode}",
         )
-        if arm["mode"] != mode or not isinstance(arm["output_root"], str):
+        if (
+            arm["mode"] != mode
+            or not isinstance(arm["output_root"], str)
+            or not arm["output_root"]
+        ):
             raise ValueError(f"CoCo scoring spec {mode} arm identity is invalid")
         caches = _require_fields(
             arm["cache_versions"],
@@ -628,20 +1373,28 @@ def materialize_coco_scoring_spec(
     artifact_root: str | Path,
     winner_run_id: str,
     output_path: str | Path,
+    evaluation_python: str | Path,
+    evaluation_proxy_url: str,
 ) -> dict[str, Any]:
     """Materialize one deterministic, immutable, self-hashed scoring spec."""
     root = Path(coco_root).expanduser().resolve()
-    artifacts = Path(artifact_root).expanduser().resolve()
+    artifacts = Path(os.path.abspath(Path(artifact_root).expanduser()))
+    if artifacts.parent.resolve() != artifacts.parent or artifacts.is_symlink():
+        raise ValueError("CoCo artifact root must not use a symbolic link")
     winner = _validate_winner_run_id(winner_run_id)
     body = _build_body(
         coco_root=root,
         artifact_root=artifacts,
         winner_run_id=winner,
+        evaluation_python=evaluation_python,
+        evaluation_proxy_url=evaluation_proxy_url,
     )
     confirmed_body = _build_body(
         coco_root=root,
         artifact_root=artifacts,
         winner_run_id=winner,
+        evaluation_python=evaluation_python,
+        evaluation_proxy_url=evaluation_proxy_url,
     )
     if confirmed_body != body:
         raise RuntimeError(
@@ -649,7 +1402,7 @@ def materialize_coco_scoring_spec(
         )
     value = {**body, "spec_id": value_sha256(body)}
     _validate_shape(value)
-    target = atomic_write_json(output_path, value)
+    target = atomic_write_json(output_path, value, reject_symlink=True)
     try:
         committed = json.loads(target.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -667,7 +1420,11 @@ def validate_coco_scoring_spec(
     coco_root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Revalidate the strict envelope and every current external binding."""
-    source = Path(path).expanduser().resolve()
+    source = Path(os.path.abspath(Path(path).expanduser()))
+    if source.parent.resolve() != source.parent or source.is_symlink():
+        raise ValueError("CoCo scoring spec must not use a symbolic link")
+    if not source.is_file():
+        raise FileNotFoundError(f"CoCo scoring spec is missing: {source}")
     before = source.read_bytes()
     try:
         value = json.loads(before)
@@ -700,6 +1457,10 @@ def validate_coco_scoring_spec(
         coco_root=recorded_root,
         artifact_root=artifact_root,
         winner_run_id=value["winner_run_id"],
+        evaluation_python=value["services"]["evaluation"]["python_executable"],
+        evaluation_proxy_url=value["services"]["evaluation"]["transport"][
+            "HTTP_PROXY"
+        ],
     )
     if body != expected:
         raise ValueError(
@@ -713,6 +1474,19 @@ def validate_coco_scoring_spec(
 
 
 __all__ = [
+    "FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS",
+    "FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS",
+    "FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM",
+    "FORMAL_EVALUATION_PROXY_HOST",
+    "FORMAL_EVALUATION_PROXY_PORT",
+    "FORMAL_EVALUATION_PROXY_URL",
+    "FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS",
+    "FORMAL_EVALUATION_MAX_COMPLETION_TOKENS",
+    "FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS",
+    "FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM",
+    "FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS",
+    "FORMAL_SPLIT_MAX_COMPLETION_TOKENS",
+    "FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM",
     "PROTOCOL",
     "materialize_coco_scoring_spec",
     "validate_coco_scoring_spec",

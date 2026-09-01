@@ -32,14 +32,37 @@ def file_sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def _output_target(path: str | Path, *, reject_symlink: bool) -> Path:
+    """Resolve an output target without following it in strict mode.
+
+    Formal artifacts use ``reject_symlink=True`` so a caller-controlled final
+    path, or any symlink in its parent chain, cannot redirect a write outside
+    the requested lexical directory.  The default preserves the historical I/O
+    behavior for non-formal callers.
+    """
+    expanded = Path(path).expanduser()
+    if not reject_symlink:
+        return expanded.resolve()
+    lexical = Path(os.path.abspath(expanded))
+    if lexical.is_symlink():
+        raise ValueError(f"Artifact output path must not be a symbolic link: {lexical}")
+    if lexical.parent.resolve() != lexical.parent:
+        raise ValueError(
+            "Artifact output parent must be a canonical non-symlink directory: "
+            f"{lexical.parent}"
+        )
+    return lexical
+
+
 def atomic_write_json(
     path: str | Path,
     value: Any,
     *,
     immutable: bool = True,
+    reject_symlink: bool = False,
 ) -> Path:
     """Commit one JSON artifact; immutable paths may only be replayed identically."""
-    target = Path(path).expanduser().resolve()
+    target = _output_target(path, reject_symlink=reject_symlink)
     target.parent.mkdir(parents=True, exist_ok=True)
     rendered = json.dumps(
         value,
@@ -121,9 +144,11 @@ def write_derived_jsonl(path: str | Path, values: Iterable[dict[str, Any]]) -> P
 def write_immutable_jsonl(
     path: str | Path,
     values: Iterable[dict[str, Any]],
+    *,
+    reject_symlink: bool = False,
 ) -> Path:
     """Commit one JSONL artifact; replay is allowed only for identical bytes."""
-    target = Path(path).expanduser().resolve()
+    target = _output_target(path, reject_symlink=reject_symlink)
     target.parent.mkdir(parents=True, exist_ok=True)
     rendered = b"".join(
         json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8") + b"\n"

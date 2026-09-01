@@ -15,6 +15,11 @@ from .bootstrap import (
     run_canonical_bootstrap,
 )
 from .coco import run_coco_evaluation
+from .coco_final_audit import (
+    audit_coco_final,
+    seal_coco_pre_score,
+    validate_coco_final_audit,
+)
 from .coco_protocol import prepare_coco_1300
 from .coco_review_batch import (
     CocoReviewBatchOptions,
@@ -183,6 +188,8 @@ def _base_parser() -> argparse.ArgumentParser:
 
     materialize_scoring = stages.add_parser("materialize-coco-scoring-spec")
     materialize_scoring.add_argument("--winner-run-id", required=True)
+    materialize_scoring.add_argument("--evaluation-python", required=True)
+    materialize_scoring.add_argument("--evaluation-proxy-url", required=True)
     materialize_scoring.add_argument("--output", required=True)
 
     coco_reviews = stages.add_parser("generate-coco-reviews")
@@ -191,12 +198,23 @@ def _base_parser() -> argparse.ArgumentParser:
     coco_reviews.add_argument("--run-id", required=True)
     coco_reviews.add_argument("--max-workers", type=int, default=8)
 
+    seal_coco = stages.add_parser("seal-coco-pre-score")
+    seal_coco.add_argument("--frozen-system", required=True)
+    seal_coco.add_argument("--winner-run-id", required=True)
+    seal_coco.add_argument("--output", required=True)
+
     coco = stages.add_parser("coco-eval")
-    coco.add_argument("--frozen-system", required=True)
-    coco.add_argument("--winner-run-id", required=True)
+    coco.add_argument("--pre-score-seal", required=True)
     coco.add_argument("--final-mode", choices=("meta", "concat"), required=True)
-    coco.add_argument("--output", required=True)
     coco.add_argument("command", nargs=argparse.REMAINDER)
+
+    audit_coco = stages.add_parser("audit-coco-final")
+    audit_coco.add_argument("--pre-score-seal", required=True)
+    audit_coco.add_argument("--output", required=True)
+
+    validate_coco = stages.add_parser("validate-coco-final")
+    validate_coco.add_argument("--audit", required=True)
+    validate_coco.add_argument("--live-service", action="store_true")
 
     bootstrap = stages.add_parser("bootstrap-corpus")
     bootstrap.add_argument("--run-id", default=DEFAULT_FORMAL_RUN_ID)
@@ -725,6 +743,8 @@ def main(argv: list[str] | None = None) -> int:
             artifact_root=output_root,
             winner_run_id=args.winner_run_id,
             output_path=args.output,
+            evaluation_python=args.evaluation_python,
+            evaluation_proxy_url=args.evaluation_proxy_url,
         )
     elif args.stage == "freeze-system":
         result = freeze_formal_system(
@@ -771,15 +791,30 @@ def main(argv: list[str] | None = None) -> int:
                 flush=True,
             ),
         )
+    elif args.stage == "seal-coco-pre-score":
+        result = seal_coco_pre_score(
+            frozen_system_path=args.frozen_system,
+            artifact_root=output_root,
+            winner_run_id=args.winner_run_id,
+            repository_root=Path(__file__).resolve().parents[3],
+            output_path=args.output,
+        )
     elif args.stage == "coco-eval":
         result = run_coco_evaluation(
-            frozen_system_path=args.frozen_system,
-            winner_output_root=output_root,
-            winner_run_id=args.winner_run_id,
+            pre_score_seal_path=args.pre_score_seal,
             final_mode=args.final_mode,
-            coco_root=config.coco_root,
-            output_root=args.output,
             command=args.command,
+        )
+    elif args.stage == "audit-coco-final":
+        result = audit_coco_final(
+            pre_score_seal_path=args.pre_score_seal,
+            repository_root=Path(__file__).resolve().parents[3],
+            output_path=args.output,
+        )
+    elif args.stage == "validate-coco-final":
+        result = validate_coco_final_audit(
+            args.audit,
+            require_live_service=args.live_service,
         )
     elif args.stage == "bootstrap-corpus":
         try:

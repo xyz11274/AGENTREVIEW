@@ -9,6 +9,7 @@ only two complete, scientifically identical, namespace-isolated CoCo runs.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -23,9 +24,14 @@ from .coco_scoring_spec import (
     CACHE_STAGES,
     validate_coco_scoring_spec,
 )
+from .coco_service_runtime import (
+    validate_coco_service_runtime,
+    validate_coco_service_runtime_proof,
+)
 from .formal_transition import validate_frozen_system_transition
 from .io import (
     atomic_write_json,
+    canonical_json_bytes,
     file_sha256,
     read_json,
     read_jsonl,
@@ -89,12 +95,44 @@ def _require_exact_fields(
     return result
 
 
+def _require_true_fields(
+    value: Any,
+    fields: set[str],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    result = _require_exact_fields(value, fields, label=label)
+    if any(result[name] is not True for name in fields):
+        raise ValueError(f"{label} values must all be true booleans")
+    return result
+
+
 def _canonical_path(value: Any, *, label: str) -> Path:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{label} must be a non-empty path string")
-    path = Path(value).expanduser().resolve()
-    if str(path) != value:
+    path = Path(value).expanduser()
+    if (
+        not path.is_absolute()
+        or str(path) != value
+        or path.parent.resolve() != path.parent
+        or path.is_symlink()
+    ):
         raise ValueError(f"{label} must be a canonical absolute path")
+    return path
+
+
+def _lexical_cli_path(
+    value: str | Path,
+    *,
+    label: str,
+    require_file: bool = False,
+) -> Path:
+    """Normalize a CLI spelling without following its final path component."""
+    path = Path(os.path.abspath(Path(value).expanduser()))
+    if path.parent.resolve() != path.parent or path.is_symlink():
+        raise ValueError(f"{label} must not use a symbolic link")
+    if require_file and not path.is_file():
+        raise FileNotFoundError(f"{label} is missing: {path}")
     return path
 
 
@@ -327,6 +365,8 @@ def _validated_candidate(
     expected_count: Any,
     expected_paper_ids_sha256: Any,
 ) -> dict[str, Any]:
+    if path.parent.resolve() != path.parent or path.is_symlink() or not path.is_file():
+        raise ValueError("CoCo candidate must be a regular non-symlink file")
     values = read_jsonl(path)
     if any(
         set(value) != {"id", "text"}
@@ -351,6 +391,44 @@ def _validated_candidate(
         "count": len(values),
         "paper_ids_sha256": value_sha256(paper_ids),
     }
+
+
+def _prepare_or_validate_candidate(
+    *,
+    final_review_paths: list[str],
+    output_path: Path,
+    allow_materialize: bool,
+) -> Path:
+    target = coco_module._fixed_output_path(
+        output_path.parent,
+        CANDIDATE_INPUT_NAME,
+        label="CoCo candidate input",
+        require_file=not allow_materialize,
+    )
+    if output_path != target:
+        raise ValueError(
+            "CoCo candidate must use the fixed lexical path under its output root"
+        )
+    if allow_materialize:
+        return coco_module.prepare_coco_input(
+            final_review_paths,
+            target,
+        )
+    expected: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for path in final_review_paths:
+        review = read_json(path)
+        paper_id = str(review.get("paper_id") or "")
+        text = str(review.get("review_text") or "")
+        if not paper_id or not text:
+            raise ValueError("CoCo input requires saved Final Review id/text")
+        if paper_id in seen:
+            raise ValueError(f"Duplicate Final Review paper_id: {paper_id}")
+        seen.add(paper_id)
+        expected.append({"id": paper_id, "text": text})
+    if read_jsonl(target) != expected:
+        raise RuntimeError(f"Sealed CoCo candidate content differs: {target}")
+    return target
 
 
 def _compact_source(
@@ -410,6 +488,7 @@ def _build_pre_score_body(
     artifact_root: Path,
     winner_run_id: str,
     repository_root: Path,
+    allow_materialize: bool,
 ) -> dict[str, Any]:
     if not frozen_system_path.is_file():
         raise FileNotFoundError(f"Frozen System is missing: {frozen_system_path}")
@@ -425,6 +504,7 @@ def _build_pre_score_body(
     ) != artifact_root:
         raise ValueError("CoCo scoring spec artifact root differs")
     external_identity = _validated_external_identity(system=system, spec=spec)
+    service_runtime = _validated_service_runtime(spec)
     outputs = _validate_output_isolation(artifact_root=artifact_root, spec=spec)
     _validate_cache_isolation(spec)
     manifest = _manifest_binding(system)
@@ -460,10 +540,11 @@ def _build_pre_score_body(
         paths = source_arm.get("paths")
         if not isinstance(paths, list) or any(not isinstance(path, str) for path in paths):
             raise ValueError(f"winner scoring source {mode} paths differ")
-        candidate_path = coco_module.prepare_coco_input(
-            paths,
-            outputs[mode] / CANDIDATE_INPUT_NAME,
-        ).resolve()
+        candidate_path = _prepare_or_validate_candidate(
+            final_review_paths=paths,
+            output_path=outputs[mode] / CANDIDATE_INPUT_NAME,
+            allow_materialize=allow_materialize,
+        )
         scoring_source = _scoring_source_binding(source, mode=mode)
         candidate = _validated_candidate(
             path=candidate_path,
@@ -483,6 +564,7 @@ def _build_pre_score_body(
         "frozen_system": system_binding,
         "scoring_spec": spec_binding,
         "external_coco": external_identity,
+        "service_runtime": service_runtime,
         "source": compact_source,
         "arms": sealed_arms,
         "firewall": dict(_FIREWALL),
@@ -522,17 +604,33 @@ def _verify_pre_score_bindings(body: dict[str, Any]) -> None:
         raise RuntimeError("Pre-score CoCo manifest changed during sealing")
     external = _require_object(body.get("external_coco"), label="pre-score external CoCo")
     _validate_file_binding(external.get("runner"), label="pre-score external runner")
+    _require_object(
+        body.get("service_runtime"), label="pre-score CoCo service runtime proof"
+    )
     arms = _require_exact_fields(body.get("arms"), set(ARMS), label="pre-score arms")
     for mode in ARMS:
+        arm = _require_object(arms[mode], label=f"pre-score {mode} arm")
+        output = _canonical_path(
+            arm.get("output_root"),
+            label=f"pre-score {mode} output root",
+        )
         candidate = _require_object(
-            _require_object(arms[mode], label=f"pre-score {mode} arm").get(
-                "candidate"
-            ),
+            arm.get("candidate"),
             label=f"pre-score {mode} candidate",
         )
         path = _required_file(
             candidate.get("path"), label=f"pre-score {mode} candidate"
         )
+        expected_path = coco_module._fixed_output_path(
+            output,
+            CANDIDATE_INPUT_NAME,
+            label=f"pre-score {mode} candidate",
+            require_file=True,
+        )
+        if path != expected_path:
+            raise ValueError(
+                f"Pre-score {mode} candidate is outside its fixed output path"
+            )
         if candidate.get("sha256") != file_sha256(path):
             raise RuntimeError(f"Pre-score {mode} candidate changed during sealing")
 
@@ -545,6 +643,7 @@ def _validate_seal_shape(value: Any) -> dict[str, Any]:
             "frozen_system",
             "scoring_spec",
             "external_coco",
+            "service_runtime",
             "source",
             "arms",
             "firewall",
@@ -560,8 +659,18 @@ def _validate_seal_shape(value: Any) -> dict[str, Any]:
     body = {name: item for name, item in seal.items() if name != "seal_id"}
     if seal_id != value_sha256(body):
         raise ValueError("CoCo pre-score seal self-hash differs")
-    if seal.get("firewall") != _FIREWALL:
-        raise ValueError("CoCo pre-score firewall declarations differ")
+    _require_true_fields(
+        seal.get("firewall"),
+        set(_FIREWALL),
+        label="CoCo pre-score firewall declarations",
+    )
+    scoring_spec = _require_object(
+        seal.get("scoring_spec"), label="pre-score scoring spec"
+    )
+    validate_coco_service_runtime_proof(
+        seal.get("service_runtime"),
+        scoring_spec_id=str(scoring_spec.get("spec_id") or ""),
+    )
     arms = _require_exact_fields(seal.get("arms"), set(ARMS), label="pre-score arms")
     for mode in ARMS:
         arm = _require_exact_fields(
@@ -578,6 +687,14 @@ def _validate_seal_shape(value: Any) -> dict[str, Any]:
         if arm.get("mode") != mode:
             raise ValueError(f"Pre-score {mode} arm mode differs")
     return seal
+
+
+def _validated_service_runtime(spec: dict[str, Any]) -> dict[str, Any]:
+    first = validate_coco_service_runtime(spec)
+    second = validate_coco_service_runtime(spec)
+    if first != second:
+        raise RuntimeError("CoCo service runtime proofs differ between validation passes")
+    return first
 
 
 def seal_coco_pre_score(
@@ -599,21 +716,50 @@ def seal_coco_pre_score(
         or winner_run_id in {".", ".."}
     ):
         raise ValueError("CoCo pre-score winner_run_id must be one path-safe name")
+    target = _lexical_cli_path(
+        output_path,
+        label="CoCo pre-score seal output",
+    )
+    if target.exists():
+        existing = validate_coco_pre_score_seal(
+            target,
+            repository_root=repository,
+        )
+        frozen = _require_object(
+            existing.get("frozen_system"), label="pre-score Frozen System"
+        )
+        scoring_spec = _require_object(
+            existing.get("scoring_spec"), label="pre-score scoring spec"
+        )
+        spec = validate_coco_scoring_spec(scoring_spec["path"])
+        if (
+            frozen.get("path") != str(system_path)
+            or scoring_spec.get("winner_run_id") != winner_run_id
+            or _canonical_path(
+                spec.get("artifact_root"), label="CoCo scoring spec artifact root"
+            )
+            != artifacts
+        ):
+            raise FileExistsError(
+                "Immutable CoCo pre-score seal already exists for different inputs"
+            )
+        return existing
+
     arguments = {
         "frozen_system_path": system_path,
         "artifact_root": artifacts,
         "winner_run_id": winner_run_id,
         "repository_root": repository,
     }
-    first = _build_pre_score_body(**arguments)
-    second = _build_pre_score_body(**arguments)
+    first = _build_pre_score_body(**arguments, allow_materialize=True)
+    second = _build_pre_score_body(**arguments, allow_materialize=False)
     if first != second:
         raise RuntimeError("CoCo pre-score complete rebuilds differ")
     _verify_pre_score_bindings(second)
     value = {**second, "seal_id": value_sha256(second)}
     _validate_seal_shape(value)
-    target = atomic_write_json(output_path, value)
-    committed = read_json(target)
+    committed_path = atomic_write_json(target, value, reject_symlink=True)
+    committed = read_json(committed_path)
     if committed != value:
         raise RuntimeError("Committed CoCo pre-score seal differs")
     _verify_pre_score_bindings(second)
@@ -626,7 +772,11 @@ def validate_coco_pre_score_seal(
     repository_root: str | Path,
 ) -> dict[str, Any]:
     """Rebuild a pre-score seal from formal upstream sources and match exactly."""
-    source = Path(path).expanduser().resolve()
+    source = _lexical_cli_path(
+        path,
+        label="CoCo pre-score seal",
+        require_file=True,
+    )
     before = source.read_bytes()
     try:
         value = json.loads(before)
@@ -652,9 +802,10 @@ def validate_coco_pre_score_seal(
         ),
         winner_run_id=scoring_spec.get("winner_run_id"),
         repository_root=Path(repository_root).expanduser().resolve(),
+        allow_materialize=False,
     )
     expected = {**expected_body, "seal_id": value_sha256(expected_body)}
-    if seal != expected:
+    if canonical_json_bytes(seal) != canonical_json_bytes(expected):
         raise ValueError("CoCo pre-score seal differs from its complete rebuild")
     if source.read_bytes() != before:
         raise RuntimeError("CoCo pre-score seal changed during validation")
@@ -690,7 +841,7 @@ def _expected_runner_settings(
     )
     models = _require_exact_fields(
         spec.get("models"),
-        {"split", "classify"},
+        {"split", "classify", "evaluation"},
         label="CoCo scoring model inventories",
     )
     settings: dict[str, Any] = {}
@@ -721,6 +872,53 @@ def _expected_runner_settings(
     evaluation = _require_object(
         scientific.get("evaluation"), label="CoCo scoring evaluation settings"
     )
+    evaluation_model = _require_exact_fields(
+        models.get("evaluation"),
+        {
+            "model_type",
+            "root",
+            "num_layers",
+            "rescale_with_baseline",
+            "files",
+        },
+        label="CoCo scoring evaluation model inventory",
+    )
+    evaluation_model_files = evaluation_model.get("files")
+    if (
+        evaluation_model.get("model_type") != "roberta-large"
+        or type(evaluation_model.get("num_layers")) is not int
+        or evaluation_model.get("num_layers") != 17
+        or evaluation_model.get("rescale_with_baseline") is not False
+        or not isinstance(evaluation_model_files, list)
+        or not evaluation_model_files
+    ):
+        raise ValueError("CoCo scoring evaluation model inventory is invalid")
+    bert_score_model = {
+        "model_type": evaluation_model["model_type"],
+        "root": evaluation_model["root"],
+        "num_layers": evaluation_model["num_layers"],
+        "rescale_with_baseline": evaluation_model["rescale_with_baseline"],
+        "file_count": len(evaluation_model_files),
+        "tree_id": value_sha256(
+            {
+                "root": evaluation_model["root"],
+                "files": evaluation_model_files,
+            }
+        ),
+    }
+    if canonical_json_bytes(evaluation.get("bert_score_model")) != canonical_json_bytes(
+        bert_score_model
+    ):
+        raise ValueError("CoCo scoring scientific evaluation model differs")
+    services = _require_exact_fields(
+        spec.get("services"),
+        {"software", "split", "classify", "evaluation"},
+        label="CoCo scoring services",
+    )
+    evaluation_runtime = _require_object(
+        services.get("evaluation"),
+        label="CoCo scoring evaluation Python runtime",
+    )
     benchmark = _require_exact_fields(
         spec.get("benchmark"),
         {"files", "complete_human_classify", "reviewer_selection"},
@@ -743,6 +941,7 @@ def _expected_runner_settings(
 
     settings["evaluation"] = {
         "enabled": evaluation.get("enabled"),
+        "require_complete": evaluation.get("require_complete"),
         "benchmark_files": list(benchmark["files"]),
         "complete_human_classify_file": dict(
             benchmark["complete_human_classify"]
@@ -758,6 +957,10 @@ def _expected_runner_settings(
             "split": critical_binding("src/evaluation/_2_split.py"),
             "classify": critical_binding("src/evaluation/_3_classify.py"),
             "evaluation": critical_binding("src/evaluation/_4_evaluation.py"),
+            "table_1_contract": critical_binding(
+                "src/evaluation/table_1_contract.py"
+            ),
+            "llm_client": critical_binding("src/utils.py"),
         },
         "base_url": evaluation.get("base_url"),
         "model": evaluation.get("model"),
@@ -765,8 +968,19 @@ def _expected_runner_settings(
             "max_in_flight_client_requests"
         ),
         "effort": evaluation.get("effort"),
+        "temperature": evaluation.get("temperature"),
+        "max_completion_tokens": evaluation.get("max_completion_tokens"),
+        "context_window_tokens": evaluation.get("context_window_tokens"),
+        "prompt_preflight": dict(
+            _require_object(
+                evaluation.get("prompt_preflight"),
+                label="CoCo scoring evaluation prompt preflight",
+            )
+        ),
         "cache_version": caches["evaluation"],
         "cuda_visible_devices": evaluation.get("cuda_visible_devices"),
+        "bert_score_model": bert_score_model,
+        "python_runtime": dict(evaluation_runtime),
     }
     return settings
 
@@ -779,11 +993,61 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
         )
         if "cache_version" not in stage_settings or "model_tree" not in stage_settings:
             raise ValueError(f"External CoCo {stage} settings are incomplete")
-        projection[stage] = {
+        stage_projection = {
             name: item
             for name, item in stage_settings.items()
             if name not in {"cache_version", "model_tree"}
         }
+        if stage == "split":
+            preflight = _require_exact_fields(
+                stage_projection.get("prompt_preflight"),
+                {
+                    "algorithm",
+                    "max_model_len",
+                    "max_completion_tokens",
+                    "enable_thinking",
+                    "candidate_count",
+                    "max_prompt_tokens",
+                    "max_total_tokens",
+                    "prompt_token_counts_sha256",
+                },
+                label="external CoCo split prompt preflight",
+            )
+            stage_projection["prompt_preflight"] = {
+                name: preflight[name]
+                for name in (
+                    "algorithm",
+                    "max_model_len",
+                    "max_completion_tokens",
+                    "enable_thinking",
+                )
+            }
+        elif stage == "classify":
+            preflight = _require_exact_fields(
+                stage_projection.get("prompt_preflight"),
+                {
+                    "algorithm",
+                    "max_model_len",
+                    "max_completion_tokens",
+                    "enable_thinking",
+                    "candidate_count",
+                    "opinion_count",
+                    "max_prompt_tokens",
+                    "max_total_tokens",
+                    "prompt_token_counts_sha256",
+                },
+                label="external CoCo classify prompt preflight",
+            )
+            stage_projection["prompt_preflight"] = {
+                name: preflight[name]
+                for name in (
+                    "algorithm",
+                    "max_model_len",
+                    "max_completion_tokens",
+                    "enable_thinking",
+                )
+            }
+        projection[stage] = stage_projection
     evaluation = _require_object(
         settings.get("evaluation"), label="external CoCo evaluation settings"
     )
@@ -793,6 +1057,7 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
         "reviewer_selection_file",
         "judge_prompt_file",
         "code_files",
+        "python_runtime",
     }
     if "cache_version" not in evaluation or not required_assets.issubset(evaluation):
         raise ValueError("External CoCo evaluation settings are incomplete")
@@ -801,6 +1066,7 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
         raise TypeError("External CoCo benchmark bindings must be a list")
     projection["evaluation"] = {
         "enabled": evaluation.get("enabled"),
+        "require_complete": evaluation.get("require_complete"),
         "benchmark_files": [
             _require_object(binding, label="external CoCo benchmark binding").get(
                 "path"
@@ -822,6 +1088,7 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
             not in required_assets
             | {
                 "enabled",
+                "require_complete",
                 "cache_version",
             }
         },
@@ -852,6 +1119,7 @@ def _audit_arm(
     mode: str,
     seal: dict[str, Any],
     spec: dict[str, Any],
+    pre_score_seal_path: Path,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     arm = _require_object(seal["arms"].get(mode), label=f"pre-score {mode} arm")
     output = _canonical_path(
@@ -860,15 +1128,25 @@ def _audit_arm(
     candidate = _require_object(
         arm.get("candidate"), label=f"pre-score {mode} candidate"
     )
-    candidate_path = _required_file(
-        candidate.get("path"), label=f"pre-score {mode} candidate"
+    candidate_path = coco_module._fixed_output_path(
+        output,
+        CANDIDATE_INPUT_NAME,
+        label=f"pre-score {mode} candidate",
+        require_file=True,
     )
+    if candidate.get("path") != str(candidate_path):
+        raise ValueError(f"Pre-score {mode} candidate path differs")
     expected_ids = _candidate_ids(candidate, mode=mode)
-    run_path = output / "run.json"
-    if not run_path.is_file():
-        raise FileNotFoundError(f"Completed CoCo {mode} run is missing: {run_path}")
+    run_path = coco_module._fixed_output_path(
+        output,
+        "run.json",
+        label=f"completed CoCo {mode} run",
+        require_file=True,
+    )
     run_sha256 = file_sha256(run_path)
     report = _require_object(read_json(run_path), label=f"CoCo {mode} run report")
+    if set(report) != coco_module.COCO_RUN_REPORT_FIELDS:
+        raise ValueError(f"Completed CoCo {mode} run report fields differ")
     frozen = _require_object(
         seal.get("frozen_system"), label="pre-score Frozen System"
     )
@@ -876,6 +1154,40 @@ def _audit_arm(
     manifest = _require_object(
         source.get("coco_manifest"), label="pre-score CoCo manifest"
     )
+    scoring_spec = _require_object(
+        seal.get("scoring_spec"), label="pre-score scoring spec"
+    )
+    seal_binding = {
+        "path": str(pre_score_seal_path),
+        "sha256": file_sha256(pre_score_seal_path),
+        "seal_id": seal.get("seal_id"),
+    }
+    external_identity = _require_object(
+        seal.get("external_coco"), label="pre-score external CoCo identity"
+    )
+    report_command = report.get("command")
+    if not isinstance(report_command, list) or any(
+        not isinstance(item, str) for item in report_command
+    ):
+        raise ValueError(f"Completed CoCo {mode} command identity differs")
+    expected_command = coco_module._formal_runner_command(
+        spec=spec,
+        external_identity=external_identity,
+        normalized_command=report_command,
+    )
+    scoring_spec_path = _required_file(
+        scoring_spec.get("path"), label="pre-score scoring spec"
+    )
+    expected_environment = {
+        name: value
+        for name, value in coco_module._formal_coco_environment_identity(
+            spec=spec,
+            final_mode=mode,
+            candidate_input=candidate_path,
+            output=output,
+            scoring_spec_path=scoring_spec_path,
+        ).items()
+    }
     if (
         report.get("protocol") != "research-v2-external-coco-v1"
         or report.get("status") != "complete"
@@ -886,35 +1198,79 @@ def _audit_arm(
         or report.get("frozen_system_id") != frozen.get("system_id")
         or report.get("frozen_system_sha256") != frozen.get("sha256")
         or report.get("coco_1300_manifest_sha256") != manifest.get("sha256")
-        or report.get("scoring_source") != arm.get("scoring_source")
+        or canonical_json_bytes(report.get("scoring_source"))
+        != canonical_json_bytes(arm.get("scoring_source"))
+        or canonical_json_bytes(report.get("pre_score_seal"))
+        != canonical_json_bytes(seal_binding)
+        or canonical_json_bytes(report.get("scoring_spec"))
+        != canonical_json_bytes(scoring_spec)
+        or canonical_json_bytes(report.get("service_runtime"))
+        != canonical_json_bytes(seal.get("service_runtime"))
         or report.get("candidate_input") != str(candidate_path)
         or report.get("candidate_input_sha256") != candidate.get("sha256")
-        or report.get("external_coco_identity") != seal.get("external_coco")
+        or canonical_json_bytes(report.get("external_coco_identity"))
+        != canonical_json_bytes(seal.get("external_coco"))
+        or canonical_json_bytes(report.get("command"))
+        != canonical_json_bytes(expected_command)
+        or canonical_json_bytes(report.get("environment"))
+        != canonical_json_bytes(expected_environment)
     ):
         raise ValueError(f"Completed CoCo {mode} run report identity differs")
 
-    runner_path = output / coco_module.COCO_RUNNER_ARTIFACT
-    runner_before = runner_path.read_bytes() if runner_path.is_file() else None
+    runner_path = coco_module._fixed_output_path(
+        output,
+        coco_module.COCO_RUNNER_ARTIFACT,
+        label=f"external CoCo {mode} runner contract",
+        require_file=True,
+    )
+    runner_before = runner_path.read_bytes()
     artifacts = coco_module._validate_coco_artifacts(
         output,
         expected_ids=expected_ids,
         candidate_input=candidate_path,
+        expected_scoring_spec=_runner_spec_binding(seal),
+        require_evaluation=True,
     )
     runner = _require_object(
         read_json(runner_path), label=f"external CoCo {mode} runner contract"
     )
-    if runner_before is None or runner_path.read_bytes() != runner_before:
+    if runner_path.read_bytes() != runner_before:
         raise RuntimeError(f"External CoCo {mode} runner contract changed during audit")
     if runner.get("evaluation_enabled") is not True:
         raise ValueError(f"Final CoCo {mode} audit requires evaluation to be enabled")
     if "evaluation" not in artifacts:
         raise ValueError(f"Final CoCo {mode} audit requires an evaluation artifact")
-    if report.get("artifacts") != artifacts:
+    if canonical_json_bytes(report.get("artifacts")) != canonical_json_bytes(artifacts):
         raise ValueError(f"Completed CoCo {mode} artifact bindings differ")
 
-    expected_settings = _expected_runner_settings(spec=spec, mode=mode)
     settings = runner.get("settings")
-    if settings != expected_settings:
+    observed_settings = _require_object(
+        settings, label=f"external CoCo {mode} settings"
+    )
+    observed_split = _require_object(
+        observed_settings.get("split"),
+        label=f"external CoCo {mode} split settings",
+    )
+    split_prompt_preflight = coco_module._validated_split_prompt_preflight(
+        observed_split.get("prompt_preflight"),
+        expected_count=len(expected_ids),
+    )
+    observed_classify = _require_object(
+        observed_settings.get("classify"),
+        label=f"external CoCo {mode} classify settings",
+    )
+    classify_prompt_preflight = (
+        coco_module._validated_classify_prompt_preflight(
+            observed_classify.get("prompt_preflight"),
+            expected_count=len(expected_ids),
+        )
+    )
+    expected_settings = _expected_runner_settings(spec=spec, mode=mode)
+    expected_settings["split"]["prompt_preflight"] = split_prompt_preflight
+    expected_settings["classify"][
+        "prompt_preflight"
+    ] = classify_prompt_preflight
+    if canonical_json_bytes(settings) != canonical_json_bytes(expected_settings):
         raise ValueError(
             f"External CoCo {mode} runner settings differ from scoring spec"
         )
@@ -972,11 +1328,20 @@ def _build_final_audit_body(
             mode=mode,
             seal=seal,
             spec=spec,
+            pre_score_seal_path=pre_score_seal_path,
         )
-    if scientific[ARMS[0]] != scientific[ARMS[1]]:
+    if canonical_json_bytes(scientific[ARMS[0]]) != canonical_json_bytes(
+        scientific[ARMS[1]]
+    ):
         raise ValueError("CoCo scoring arms use different scientific settings")
-    if scientific[ARMS[0]] != spec.get("scientific_settings"):
+    if canonical_json_bytes(scientific[ARMS[0]]) != canonical_json_bytes(
+        spec.get("scientific_settings")
+    ):
         raise ValueError("CoCo scoring arm scientific settings differ from spec")
+
+    service_runtime = _validated_service_runtime(spec)
+    if service_runtime != seal.get("service_runtime"):
+        raise ValueError("CoCo service runtime differs from the pre-score proof")
 
     confirmed = validate_coco_pre_score_seal(
         pre_score_seal_path,
@@ -996,6 +1361,7 @@ def _build_final_audit_body(
             "seal_id": seal["seal_id"],
         },
         "scoring_spec": dict(spec_binding),
+        "service_runtime": service_runtime,
         "arms": audited_arms,
         "declarations": dict(_FINAL_DECLARATIONS),
     }
@@ -1007,25 +1373,284 @@ def _verify_final_bindings(body: dict[str, Any]) -> None:
     if seal.get("sha256") != file_sha256(seal_path):
         raise RuntimeError("Pre-score seal changed during final audit commit")
     arms = _require_exact_fields(body.get("arms"), set(ARMS), label="final audit arms")
+    artifact_names = {
+        "runner": coco_module.COCO_RUNNER_ARTIFACT,
+        "split": coco_module.COCO_SPLIT_ARTIFACT,
+        "classify": coco_module.COCO_CLASSIFY_ARTIFACT,
+        "evaluation": coco_module.COCO_EVALUATION_ARTIFACT,
+    }
     for mode in ARMS:
         arm = _require_object(arms[mode], label=f"final audit {mode} arm")
-        _validate_file_binding(arm.get("run"), label=f"final audit {mode} run")
+        output = _canonical_path(
+            arm.get("output_root"),
+            label=f"final audit {mode} output root",
+        )
+        run_path = _validate_file_binding(
+            arm.get("run"), label=f"final audit {mode} run"
+        )
+        expected_run_path = coco_module._fixed_output_path(
+            output,
+            "run.json",
+            label=f"final audit {mode} run",
+            require_file=True,
+        )
+        if run_path != expected_run_path:
+            raise ValueError(f"Final audit {mode} run path differs")
         candidate = _require_object(
             arm.get("candidate"), label=f"final audit {mode} candidate"
         )
         candidate_path = _required_file(
             candidate.get("path"), label=f"final audit {mode} candidate"
         )
+        expected_candidate_path = coco_module._fixed_output_path(
+            output,
+            CANDIDATE_INPUT_NAME,
+            label=f"final audit {mode} candidate",
+            require_file=True,
+        )
+        if candidate_path != expected_candidate_path:
+            raise ValueError(f"Final audit {mode} candidate path differs")
         if candidate.get("sha256") != file_sha256(candidate_path):
             raise RuntimeError(f"Final audit {mode} candidate changed")
         artifacts = _require_object(
             arm.get("artifacts"), label=f"final audit {mode} artifacts"
         )
+        if set(artifacts) != set(artifact_names):
+            raise ValueError(f"Final audit {mode} artifact set differs")
         for name, binding in artifacts.items():
-            _validate_file_binding(
+            artifact_path = _validate_file_binding(
                 binding,
                 label=f"final audit {mode} {name} artifact",
             )
+            expected_artifact_path = coco_module._fixed_output_path(
+                output,
+                artifact_names[name],
+                label=f"final audit {mode} {name} artifact",
+                require_file=True,
+            )
+            if artifact_path != expected_artifact_path:
+                raise ValueError(
+                    f"Final audit {mode} {name} artifact path differs"
+                )
+
+
+def _validate_pre_score_seal_offline(
+    path: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Rebuild the sealed lineage without requiring live CoCo services."""
+    before = path.read_bytes()
+    seal = _validate_seal_shape(read_json(path))
+    seal_body = {name: item for name, item in seal.items() if name != "seal_id"}
+    _verify_pre_score_bindings(seal_body)
+
+    frozen = _require_exact_fields(
+        seal.get("frozen_system"),
+        {"path", "sha256", "system_id"},
+        label="pre-score Frozen System",
+    )
+    frozen_path = _required_file(
+        frozen.get("path"), label="pre-score Frozen System"
+    )
+    system = _require_object(
+        read_json(frozen_path), label="pre-score Frozen System"
+    )
+    if system.get("system_id") != frozen.get("system_id"):
+        raise ValueError("Pre-score Frozen System identity differs")
+
+    spec_binding, spec = _system_spec_binding(system=system)
+    if seal.get("scoring_spec") != spec_binding:
+        raise ValueError("Pre-score scoring spec differs from Frozen System")
+    external_identity = _validated_external_identity(system=system, spec=spec)
+    if seal.get("external_coco") != external_identity:
+        raise ValueError("Pre-score external CoCo identity differs")
+    runtime = validate_coco_service_runtime_proof(
+        seal.get("service_runtime"),
+        scoring_spec_id=str(spec.get("spec_id") or ""),
+        scoring_spec=spec,
+    )
+    if runtime != seal.get("service_runtime"):
+        raise ValueError("Pre-score service runtime proof differs")
+
+    artifact_root = _canonical_path(
+        spec.get("artifact_root"), label="CoCo scoring spec artifact root"
+    )
+    outputs = _validate_output_isolation(artifact_root=artifact_root, spec=spec)
+    _validate_cache_isolation(spec)
+    manifest = _manifest_binding(system)
+    source = _require_object(
+        validate_completed_coco_review_batch(
+            frozen_system_path=frozen_path,
+            coco_manifest_path=manifest["path"],
+            output_root=artifact_root,
+            run_id=spec_binding["winner_run_id"],
+        ),
+        label="completed winner scoring source",
+    )
+    expected_source = _compact_source(
+        source=source,
+        artifact_root=artifact_root,
+        system_binding=dict(frozen),
+        manifest_binding=manifest,
+    )
+    if canonical_json_bytes(seal.get("source")) != canonical_json_bytes(
+        expected_source
+    ):
+        raise ValueError("Pre-score winner source lineage differs")
+
+    source_arms = _require_exact_fields(
+        source.get("arms"), set(ARMS), label="winner scoring source arms"
+    )
+    expected_arms: dict[str, Any] = {}
+    for mode in ARMS:
+        source_arm = _require_object(
+            source_arms.get(mode), label=f"winner scoring source {mode} arm"
+        )
+        paths = source_arm.get("paths")
+        if not isinstance(paths, list) or any(
+            not isinstance(item, str) for item in paths
+        ):
+            raise ValueError(f"winner scoring source {mode} paths differ")
+        candidate_path = _prepare_or_validate_candidate(
+            final_review_paths=paths,
+            output_path=outputs[mode] / CANDIDATE_INPUT_NAME,
+            allow_materialize=False,
+        )
+        scoring_source = _scoring_source_binding(source, mode=mode)
+        candidate = _validated_candidate(
+            path=candidate_path,
+            expected_count=scoring_source["count"],
+            expected_paper_ids_sha256=scoring_source["paper_ids_sha256"],
+        )
+        expected_arms[mode] = {
+            "mode": mode,
+            "output_root": str(outputs[mode]),
+            "scoring_source": scoring_source,
+            "candidate": candidate,
+            "cache_versions": dict(spec["arms"][mode]["cache_versions"]),
+        }
+    if canonical_json_bytes(seal.get("arms")) != canonical_json_bytes(expected_arms):
+        raise ValueError("Pre-score arm lineage differs")
+    if path.read_bytes() != before:
+        raise RuntimeError("CoCo pre-score seal changed during offline validation")
+    return seal, spec
+
+
+def validate_coco_final_audit(
+    path: str | Path,
+    *,
+    require_live_service: bool = False,
+) -> dict[str, Any]:
+    """Validate a committed final audit, optionally including live services."""
+    if not isinstance(require_live_service, bool):
+        raise TypeError("require_live_service must be a boolean")
+    source = _lexical_cli_path(
+        path,
+        label="CoCo final audit",
+        require_file=True,
+    )
+    before = source.read_bytes()
+    try:
+        value = json.loads(before)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"CoCo final audit is not valid JSON: {source}") from exc
+    audit = _require_exact_fields(
+        value,
+        {
+            "protocol",
+            "pre_score_seal",
+            "scoring_spec",
+            "service_runtime",
+            "arms",
+            "declarations",
+            "audit_id",
+        },
+        label="CoCo final audit",
+    )
+    body = {name: item for name, item in audit.items() if name != "audit_id"}
+    if (
+        audit.get("protocol") != FINAL_AUDIT_PROTOCOL
+        or not isinstance(audit.get("audit_id"), str)
+        or not _SHA256_PATTERN.fullmatch(audit["audit_id"])
+        or audit["audit_id"] != value_sha256(body)
+    ):
+        raise ValueError("CoCo final audit identity differs")
+    _require_true_fields(
+        audit.get("declarations"),
+        set(_FINAL_DECLARATIONS),
+        label="CoCo final audit declarations",
+    )
+
+    seal_binding = _require_exact_fields(
+        audit.get("pre_score_seal"),
+        {"path", "sha256", "seal_id"},
+        label="CoCo final audit pre-score seal",
+    )
+    seal_path = _required_file(
+        seal_binding.get("path"), label="CoCo final audit pre-score seal"
+    )
+    seal, spec = _validate_pre_score_seal_offline(seal_path)
+    if (
+        seal_binding.get("sha256") != file_sha256(seal_path)
+        or seal_binding.get("seal_id") != seal.get("seal_id")
+    ):
+        raise ValueError("CoCo final audit pre-score seal binding differs")
+
+    spec_binding = _require_exact_fields(
+        audit.get("scoring_spec"),
+        _SYSTEM_SPEC_BINDING_FIELDS,
+        label="CoCo final audit scoring spec",
+    )
+    if spec_binding != seal.get("scoring_spec"):
+        raise ValueError("CoCo final audit scoring spec differs from its seal")
+    spec_path = _required_file(
+        spec_binding.get("path"), label="CoCo final audit scoring spec"
+    )
+    expected_spec_binding = {
+        "path": str(spec_path),
+        "sha256": file_sha256(spec_path),
+        "spec_id": spec.get("spec_id"),
+        "winner_run_id": spec.get("winner_run_id"),
+    }
+    if spec_binding != expected_spec_binding:
+        raise ValueError("CoCo final audit scoring spec binding differs")
+    runtime = validate_coco_service_runtime_proof(
+        audit.get("service_runtime"),
+        scoring_spec_id=str(spec.get("spec_id") or ""),
+        scoring_spec=spec,
+    )
+    if runtime != seal.get("service_runtime"):
+        raise ValueError("CoCo final audit service proof differs from its seal")
+
+    arms = _require_exact_fields(
+        audit.get("arms"), set(ARMS), label="CoCo final audit arms"
+    )
+    scientific: dict[str, Any] = {}
+    for mode in ARMS:
+        expected_arm, scientific[mode] = _audit_arm(
+            mode=mode,
+            seal=seal,
+            spec=spec,
+            pre_score_seal_path=seal_path,
+        )
+        if canonical_json_bytes(arms.get(mode)) != canonical_json_bytes(expected_arm):
+            raise ValueError(f"CoCo final audit {mode} arm semantics differ")
+    if canonical_json_bytes(scientific[ARMS[0]]) != canonical_json_bytes(
+        scientific[ARMS[1]]
+    ):
+        raise ValueError("CoCo scoring arms use different scientific settings")
+    if canonical_json_bytes(scientific[ARMS[0]]) != canonical_json_bytes(
+        spec.get("scientific_settings")
+    ):
+        raise ValueError("CoCo scoring arm scientific settings differ from spec")
+
+    _verify_final_bindings(body)
+    if source.read_bytes() != before:
+        raise RuntimeError("CoCo final audit changed during validation")
+    if require_live_service:
+        current_runtime = _validated_service_runtime(spec)
+        if current_runtime != runtime:
+            raise ValueError("Live CoCo service runtime differs from the final audit")
+    return audit
 
 
 def audit_coco_final(
@@ -1035,7 +1660,15 @@ def audit_coco_final(
     output_path: str | Path,
 ) -> dict[str, Any]:
     """Audit both complete CoCo arms and immutably commit a self-hashed result."""
-    seal_path = Path(pre_score_seal_path).expanduser().resolve()
+    seal_path = _lexical_cli_path(
+        pre_score_seal_path,
+        label="CoCo pre-score seal",
+        require_file=True,
+    )
+    audit_path = _lexical_cli_path(
+        output_path,
+        label="CoCo final audit output",
+    )
     repository = Path(repository_root).expanduser().resolve()
     arguments = {
         "pre_score_seal_path": seal_path,
@@ -1047,11 +1680,18 @@ def audit_coco_final(
         raise RuntimeError("CoCo final audit complete passes differ")
     _verify_final_bindings(second)
     value = {**second, "audit_id": value_sha256(second)}
-    target = atomic_write_json(output_path, value)
+    target = atomic_write_json(
+        audit_path,
+        value,
+        reject_symlink=True,
+    )
     if read_json(target) != value:
         raise RuntimeError("Committed CoCo final audit differs")
     _verify_final_bindings(second)
-    return value
+    validated = validate_coco_final_audit(target)
+    if validated != value:
+        raise RuntimeError("Committed CoCo final audit validation differs")
+    return validated
 
 
 __all__ = [
@@ -1059,5 +1699,6 @@ __all__ = [
     "PRE_SCORE_SEAL_PROTOCOL",
     "audit_coco_final",
     "seal_coco_pre_score",
+    "validate_coco_final_audit",
     "validate_coco_pre_score_seal",
 ]
