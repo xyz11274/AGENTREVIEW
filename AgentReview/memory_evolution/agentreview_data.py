@@ -542,6 +542,49 @@ def _training_episode(question: str) -> str:
     return "HISTORICAL REVIEW TASK\n" + str(question)
 
 
+def _recorded_coco_path(
+    path: str | Path,
+    *,
+    runtime_root: Path,
+    recorded_root: str | None,
+) -> str:
+    """Record a stable logical CoCo path while reading from a remapped checkout."""
+    resolved = Path(path).expanduser().resolve()
+    relative = resolved.relative_to(runtime_root)
+    if not recorded_root:
+        return str(resolved)
+    return str(Path(recorded_root).expanduser() / relative)
+
+
+def _recorded_coco_provenance(
+    provenance: dict[str, Any],
+    *,
+    runtime_root: Path,
+    recorded_root: str | None,
+) -> dict[str, Any]:
+    """Rewrite only provenance paths; content hashes and data remain unchanged."""
+    if not recorded_root:
+        return provenance
+    result = dict(provenance)
+    for key in ("implementation_path", "selection_loader_path", "left_out_selection"):
+        result[key] = _recorded_coco_path(
+            result[key], runtime_root=runtime_root, recorded_root=recorded_root
+        )
+    result["benchmark_files"] = [
+        _recorded_coco_path(
+            path, runtime_root=runtime_root, recorded_root=recorded_root
+        )
+        for path in result.get("benchmark_files") or []
+    ]
+    result["benchmark_file_sha256"] = {
+        _recorded_coco_path(
+            path, runtime_root=runtime_root, recorded_root=recorded_root
+        ): digest
+        for path, digest in (result.get("benchmark_file_sha256") or {}).items()
+    }
+    return result
+
+
 def _select_families(
     records: list[dict[str, Any]],
     validation_families: int,
@@ -581,6 +624,8 @@ def prepare_openreview_data(
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     seed: int = 0,
     s2_cache_path: str | None = None,
+    recorded_coco_root: str | None = None,
+    selection_seed_label: str | None = None,
 ) -> dict[str, Any]:
     """Create A/B specialist data from the frozen temporal paper manifest."""
     source_root = Path(openreview_root).expanduser().resolve()
@@ -636,6 +681,16 @@ def prepare_openreview_data(
     a_families_ordered = list(
         dict.fromkeys(str(value["paper_family"]) for value in a_entries)
     )
+    if selection_seed_label:
+        a_families_ordered = sorted(
+            a_families_ordered,
+            key=lambda value: (
+                hashlib.sha256(
+                    f"{selection_seed_label}:A:{value}".encode("utf-8")
+                ).hexdigest(),
+                value,
+            ),
+        )
     if max_train_families is not None:
         a_families_ordered = a_families_ordered[: max(1, int(max_train_families))]
     train_families = set(a_families_ordered)
@@ -696,6 +751,11 @@ def prepare_openreview_data(
                 validation_records,
                 benchmark_source_paths,
             )
+        )
+        official_reference_provenance = _recorded_coco_provenance(
+            official_reference_provenance,
+            runtime_root=markdown_root,
+            recorded_root=recorded_coco_root,
         )
     required_s2_ids = {str(record.get("id") or "") for record in records}
     missing_s2_ids = sorted(required_s2_ids - set(s2_cache))
@@ -806,9 +866,14 @@ def prepare_openreview_data(
                 year=year,
                 reviewer_role=task_id,
             )
+            recorded_markdown_path = _recorded_coco_path(
+                markdown_path,
+                runtime_root=markdown_root,
+                recorded_root=recorded_coco_root,
+            )
             provenance_metadata = {
                 "work_family": family,
-                "paper_md_path": str(markdown_path),
+                "paper_md_path": recorded_markdown_path,
                 "split": split,
                 "temporal_split_manifest": str(
                     Path(temporal_split_manifest).expanduser().resolve()
@@ -820,7 +885,7 @@ def prepare_openreview_data(
                 "work_family": family,
                 "task_id": task_id,
                 "conference": venue,
-                "markdown_path": str(markdown_path),
+                "markdown_path": recorded_markdown_path,
                 "split": split,
                 "candidate_visible": visible_metadata,
                 "internal_provenance": provenance_metadata,
@@ -843,13 +908,6 @@ def prepare_openreview_data(
                     }
                 )
             elif split == "specialist_validation":
-                per_task[task_id]["validation"].append(
-                    {
-                        "id": item_id,
-                        "question": question,
-                        "metadata": common_metadata,
-                    }
-                )
                 reference, categories = (
                     _official_task_reference(
                         (official_references or {})[paper_id], task_id
@@ -857,29 +915,44 @@ def prepare_openreview_data(
                     if official_references is not None
                     else _evaluator_reference(record, task_id)
                 )
-                per_task[task_id]["evaluator_references"].append(
-                    {
-                        "id": item_id,
-                        "answer": reference,
-                        "metadata": {
-                            "paper_id": paper_id,
-                            "paper_title": title,
-                            "work_family": family,
-                            "task_id": task_id,
-                            "categories": categories,
-                            "split": split,
-                            "paper_review_cutoff": str(
-                                record.get("_paper_review_cutoff") or ""
-                            ),
-                            "temporal_zone": str(record.get("_temporal_zone") or ""),
-                            "paper_context_version": (CANONICAL_PAPER_CONTEXT_VERSION),
+                # A role-paper pair without an official category is unlabeled,
+                # not a zero-quality review. Keep the B family allocation frozen
+                # while excluding undefined task metrics from role fitness.
+                if reference.strip() and categories:
+                    per_task[task_id]["validation"].append(
+                        {
+                            "id": item_id,
+                            "question": question,
+                            "metadata": common_metadata,
                         },
-                        "access": {
-                            "evaluator_only": True,
-                            "candidate_forbidden": True,
-                        },
-                    }
-                )
+                    )
+                    per_task[task_id]["evaluator_references"].append(
+                        {
+                            "id": item_id,
+                            "answer": reference,
+                            "metadata": {
+                                "paper_id": paper_id,
+                                "paper_title": title,
+                                "work_family": family,
+                                "task_id": task_id,
+                                "categories": categories,
+                                "split": split,
+                                "paper_review_cutoff": str(
+                                    record.get("_paper_review_cutoff") or ""
+                                ),
+                                "temporal_zone": str(
+                                    record.get("_temporal_zone") or ""
+                                ),
+                                "paper_context_version": (
+                                    CANONICAL_PAPER_CONTEXT_VERSION
+                                ),
+                            },
+                            "access": {
+                                "evaluator_only": True,
+                                "candidate_forbidden": True,
+                            },
+                        }
+                    )
             if split in {"train", "meta_validation"}:
                 per_task[task_id]["queries"].append(
                     {
@@ -961,6 +1034,10 @@ def prepare_openreview_data(
         "evaluator_reference_source": official_reference_provenance,
         "held_out_test": "defined only by frozen CoCo D manifest",
         "seed": seed,
+        "selection_seed_label": str(selection_seed_label or ""),
+        "train_family_selection": (
+            "sha256-rank-v1" if selection_seed_label else "temporal-manifest-order"
+        ),
         "temporal_split_manifest": str(Path(temporal_split_manifest).resolve()),
         "temporal_split_manifest_sha256": sha256_file(
             Path(temporal_split_manifest).expanduser().resolve()
@@ -1178,6 +1255,7 @@ def prepare_held_out_test_data(
     s2_cache_path: str,
     temporal_split_manifest: str,
     max_paper_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    recorded_coco_root: str | None = None,
 ) -> dict[str, Any]:
     """Materialize only D from the frozen held-out CoCo paper manifest."""
     source_root = Path(coco_root).expanduser().resolve()
@@ -1203,6 +1281,11 @@ def prepare_held_out_test_data(
         load_official_coco_human_references(
             str(source_root), raw_by_id, benchmark_source_paths
         )
+    )
+    official_reference_provenance = _recorded_coco_provenance(
+        official_reference_provenance,
+        runtime_root=source_root,
+        recorded_root=recorded_coco_root,
     )
     records = []
     family_keys = []

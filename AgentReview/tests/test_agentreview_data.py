@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from memory_evolution.agentreview_data import (
     _official_task_reference,
+    _recorded_coco_provenance,
     assert_no_human_reference_leak,
     build_coco_evaluator_reference,
     prepare_held_out_test_data,
@@ -17,6 +18,96 @@ from memory_evolution.tasks import SPECIALIST_TASKS
 
 
 class AgentReviewDataTest(unittest.TestCase):
+    def test_prepare_selection_seed_label_is_stable_and_changes_a_subset(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_a_selection_") as directory:
+            root = Path(directory)
+            records = [self._record(f"p{index}", f"Paper {index}", f"work-{index}") for index in range(5)]
+            for record in records:
+                paper_dir = root / record["MD_path"]
+                paper_dir.mkdir(parents=True)
+                (paper_dir / "md_content.md").write_text("# Paper\nBody", encoding="utf-8")
+            (root / "train_clean.jsonl").write_text(
+                "".join(json.dumps(value) + "\n" for value in records), encoding="utf-8"
+            )
+            (root / "test.jsonl").write_text("", encoding="utf-8")
+            temporal = self._temporal_manifest(root, [f"p{index}" for index in range(5)], [])
+            with patch(
+                "memory_evolution.agentreview_data._load_s2_cache",
+                return_value=({f"p{index}": {} for index in range(5)}, "a" * 64),
+            ), patch(
+                "memory_evolution.agentreview_data.validate_frozen_s2_pool",
+                return_value={"passed": True},
+            ):
+                first = prepare_openreview_data(
+                    str(root), str(root / "out-1"), str(temporal),
+                    validation_families=0, meta_validation_families=0,
+                    max_train_families=3, s2_cache_path=str(root / "s2.jsonl"),
+                    selection_seed_label="fixed-label",
+                )
+                second = prepare_openreview_data(
+                    str(root), str(root / "out-2"), str(temporal),
+                    validation_families=0, meta_validation_families=0,
+                    max_train_families=3, s2_cache_path=str(root / "s2.jsonl"),
+                    selection_seed_label="fixed-label",
+                )
+            first_ids = [
+                json.loads(line)["metadata"]["paper_id"]
+                for line in (root / "out-1" / "QUAL" / "episodes.jsonl").read_text().splitlines()
+            ]
+            second_ids = [
+                json.loads(line)["metadata"]["paper_id"]
+                for line in (root / "out-2" / "QUAL" / "episodes.jsonl").read_text().splitlines()
+            ]
+            self.assertEqual(first_ids, second_ids)
+            self.assertEqual(len(first_ids), 3)
+            self.assertEqual(first["selection_seed_label"], "fixed-label")
+            self.assertEqual(first["train_family_selection"], "sha256-rank-v1")
+
+    def test_recorded_coco_provenance_preserves_relative_paths_and_hashes(self):
+        with tempfile.TemporaryDirectory(prefix="mstar_coco_provenance_") as directory:
+            runtime_root = Path(directory).resolve()
+            files = {}
+            for relative in (
+                "src/evaluation/_4_evaluation.py",
+                "src/evaluation/_0_human_review.py",
+                "benchmark/left_out.jsonl",
+                "benchmark/source.jsonl",
+            ):
+                path = runtime_root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(relative, encoding="utf-8")
+                files[relative] = path
+            provenance = {
+                "implementation_path": str(files["src/evaluation/_4_evaluation.py"]),
+                "implementation_sha256": "implementation-hash",
+                "selection_loader_path": str(files["src/evaluation/_0_human_review.py"]),
+                "selection_loader_sha256": "selection-hash",
+                "left_out_selection": str(files["benchmark/left_out.jsonl"]),
+                "left_out_selection_sha256": "left-out-hash",
+                "benchmark_files": [str(files["benchmark/source.jsonl"])],
+                "benchmark_file_sha256": {
+                    str(files["benchmark/source.jsonl"]): "benchmark-hash"
+                },
+            }
+            recorded = _recorded_coco_provenance(
+                provenance,
+                runtime_root=runtime_root,
+                recorded_root="/frozen/coco",
+            )
+            self.assertEqual(
+                recorded["implementation_path"],
+                "/frozen/coco/src/evaluation/_4_evaluation.py",
+            )
+            self.assertEqual(
+                recorded["benchmark_files"],
+                ["/frozen/coco/benchmark/source.jsonl"],
+            )
+            self.assertEqual(
+                recorded["benchmark_file_sha256"],
+                {"/frozen/coco/benchmark/source.jsonl": "benchmark-hash"},
+            )
+            self.assertEqual(recorded["implementation_sha256"], "implementation-hash")
+
     def test_prepare_d_uses_official_coco_left_out_references(self):
         with tempfile.TemporaryDirectory(prefix="mstar_d_official_refs_") as directory:
             root = Path(directory)
@@ -472,7 +563,10 @@ class AgentReviewDataTest(unittest.TestCase):
                 )
             for task_id in SPECIALIST_TASKS:
                 self.assertEqual(manifest["tasks"][task_id]["episode_count"], 1)
-                self.assertEqual(manifest["tasks"][task_id]["validation_count"], 1)
+                self.assertEqual(manifest["tasks"][task_id]["validation_count"], 0)
+                self.assertEqual(
+                    manifest["tasks"][task_id]["evaluator_reference_count"], 0
+                )
 
     def test_coco_reference_is_evaluator_only_and_never_enters_candidate_input(self):
         with tempfile.TemporaryDirectory(prefix="mstar_evaluator_only_") as directory:

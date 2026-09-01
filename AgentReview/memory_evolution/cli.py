@@ -43,6 +43,11 @@ from .metrics import get_metric
 from .models import Episode, EvalItem
 from .quality import check_program_path
 from .search import EvolutionConfig, run_evolution
+from .specialist_orchestrator import (
+    SharedEvolutionResources,
+    SpecialistRoleJob,
+    run_specialist_suite,
+)
 from .task_agent import build_task_agent
 from .tasks import (
     ALL_TASKS,
@@ -81,6 +86,20 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _atomic_write_json(path: Path, value: Any) -> None:
+    """Publish one JSON artifact atomically from the caller thread."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as handle:
+            json.dump(value, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _backend(args, model_name: str):
@@ -279,7 +298,24 @@ def _validate_formal_embedding_cache_audit(
     return vector_count, _sha256(audit)
 
 
-def _task_toolkit(args):
+def _runtime_embedding_client(args):
+    return _embedding_adapter(
+        args.embedding_adapter,
+        args.embedding_model_name,
+        args.embedding_revision,
+        getattr(args, "runtime_embedding_cache", ""),
+        not getattr(args, "disable_embedding_cache", False),
+        getattr(args, "embedding_device", ""),
+        getattr(args, "embedding_batch_size", 1),
+        False,
+        "candidate_runtime_v1",
+    )
+
+
+def _task_toolkit(
+    args,
+    shared_resources: SharedEvolutionResources | None = None,
+):
     _prepare_llm_runtime(args, formal=not _is_nonformal(args))
     if getattr(args, "disable_embedding_cache", False) and getattr(
         args, "embedding_cache_read_only", False
@@ -287,29 +323,25 @@ def _task_toolkit(args):
         raise SystemExit(
             "--embedding-cache-read-only requires the embedding cache to be enabled"
         )
-    splitter, classifier = _classifier_adapter(
-        args.classifier_adapter,
-        args.review_split_revision,
-        args.review_classify_revision,
-        getattr(args, "coco_root", ""),
-    )
+    if shared_resources is None:
+        splitter, classifier = _classifier_adapter(
+            args.classifier_adapter,
+            args.review_split_revision,
+            args.review_classify_revision,
+            getattr(args, "coco_root", ""),
+        )
+        runtime_embedding = _runtime_embedding_client(args)
+    else:
+        splitter = shared_resources.review_splitter
+        classifier = shared_resources.review_classifier
+        runtime_embedding = shared_resources.runtime_embedding
     s2_pool, s2_pool_sha256 = load_frozen_s2_pool(
         getattr(args, "s2_retrieval_pool", "")
     )
     return MemoryToolkit(
         llm_client=_backend(args, args.task_model_name),
         llm_model=args.task_model_name,
-        embedding_client=_embedding_adapter(
-            args.embedding_adapter,
-            args.embedding_model_name,
-            args.embedding_revision,
-            getattr(args, "runtime_embedding_cache", ""),
-            not getattr(args, "disable_embedding_cache", False),
-            getattr(args, "embedding_device", ""),
-            getattr(args, "embedding_batch_size", 1),
-            False,
-            "candidate_runtime_v1",
-        ),
+        embedding_client=runtime_embedding,
         embedding_model=args.embedding_model_name,
         review_splitter=splitter,
         review_classifier=classifier,
@@ -319,7 +351,12 @@ def _task_toolkit(args):
     )
 
 
-def _selection_embedding_client(args):
+def _selection_embedding_client(
+    args,
+    shared_resources: SharedEvolutionResources | None = None,
+):
+    if shared_resources is not None:
+        return shared_resources.selection_embedding
     return _embedding_adapter(
         args.embedding_adapter,
         args.embedding_model_name,
@@ -333,8 +370,11 @@ def _selection_embedding_client(args):
     )
 
 
-def _toolkits(args):
-    task = _task_toolkit(args)
+def _toolkits(
+    args,
+    shared_resources: SharedEvolutionResources | None = None,
+):
+    task = _task_toolkit(args, shared_resources)
     reflector = MemoryToolkit(
         llm_client=_backend(args, args.reflector_model_name),
         llm_model=args.reflector_model_name,
@@ -346,6 +386,25 @@ def _toolkits(args):
         max_llm_calls_per_operation=1,
     )
     return task, reflector, judge
+
+
+def _shared_evolution_resources(args) -> SharedEvolutionResources:
+    """Construct process-scoped adapters before any role worker starts."""
+    _prepare_llm_runtime(args, formal=not _is_nonformal(args))
+    splitter, classifier = _classifier_adapter(
+        args.classifier_adapter,
+        args.review_split_revision,
+        args.review_classify_revision,
+        getattr(args, "coco_root", ""),
+    )
+    runtime_embedding = _runtime_embedding_client(args)
+    selection_embedding = _selection_embedding_client(args)
+    return SharedEvolutionResources(
+        runtime_embedding=runtime_embedding,
+        selection_embedding=selection_embedding,
+        review_splitter=splitter,
+        review_classifier=classifier,
+    )
 
 
 def _prepare_llm_runtime(args, *, formal: bool):
@@ -522,12 +581,16 @@ def _experiment_kind(args) -> str:
     deviations = []
     canonical = {
         "iterations": 20,
-        "static_size": 25,
+        "static_size": 32,
         "rotating_size": 5,
         "temperature": 0.15,
+        "episode_budget": 64,
+        "selection_repeats": 0,
+        "selection_top_k": 1,
         "max_fix_attempts": 3,
         "parent_policy": "softmax",
         "mutation_scope": "full",
+        "reference_programs": False,
     }
     for name, expected in canonical.items():
         if getattr(args, name) != expected:
@@ -545,6 +608,9 @@ def evolution_protocol_config_identity(args, task_id: str, seed: int):
         "rotating_size": args.rotating_size,
         "temperature": args.temperature,
         "episode_budget": args.episode_budget,
+        "selection_repeats": args.selection_repeats,
+        "selection_top_k": args.selection_top_k,
+        "reference_programs": args.reference_programs,
         "coco_root": str(Path(args.coco_root).expanduser().resolve()),
         "task_model_name": args.task_model_name,
         "reflector_model_name": args.reflector_model_name,
@@ -779,13 +845,21 @@ def _add_runtime_args(parser):
 
 def _add_search_args(parser):
     parser.add_argument("--iterations", type=int, default=20)
-    parser.add_argument("--static-size", type=int, default=25)
+    parser.add_argument("--static-size", type=int, default=32)
     parser.add_argument("--rotating-size", type=int, default=5)
     parser.add_argument("--temperature", type=float, default=0.15)
-    parser.add_argument("--episode-budget", type=int, default=None)
+    parser.add_argument("--episode-budget", type=int, default=64)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--selection-repeats", type=int, default=3)
-    parser.add_argument("--selection-top-k", type=int, default=3)
+    parser.add_argument(
+        "--selection-repeats",
+        type=int,
+        default=0,
+        help=(
+            "Post-search static re-evaluations. The MSTAR-aligned default is 0; "
+            "positive values are an AgentReview robustness extension."
+        ),
+    )
+    parser.add_argument("--selection-top-k", type=int, default=1)
     parser.add_argument("--max-fix-attempts", type=int, default=3)
     parser.add_argument(
         "--sandbox-memory-mb",
@@ -808,7 +882,27 @@ def _add_search_args(parser):
         default="full",
         help="M★ full search or a memory-only/prompt-only ablation.",
     )
+    parser.add_argument(
+        "--reference-programs",
+        action="store_true",
+        help=(
+            "Expose scored non-parent programs to the reflector. Disabled in the "
+            "MSTAR formal experiment scripts; enabling it is an extension."
+        ),
+    )
     _add_nonformal_mode_args(parser)
+
+
+def _role_workers(value: str) -> int:
+    try:
+        workers = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("role workers must be an integer") from exc
+    if workers < 1 or workers > len(SPECIALIST_TASKS):
+        raise argparse.ArgumentTypeError(
+            f"role workers must be between 1 and {len(SPECIALIST_TASKS)}"
+        )
+    return workers
 
 
 def build_parser():
@@ -853,6 +947,22 @@ def build_parser():
     prepare.add_argument("--max-paper-chars", type=int, default=60000)
     prepare.add_argument("--seed", type=int, default=0)
     prepare.add_argument(
+        "--selection-seed-label",
+        default="",
+        help=(
+            "Optional stable label used to SHA256-rank A families before "
+            "--max-train-families is applied."
+        ),
+    )
+    prepare.add_argument(
+        "--recorded-coco-root",
+        default="",
+        help=(
+            "Stable logical CoCo root recorded in formal provenance while files "
+            "are read from --coco-root."
+        ),
+    )
+    prepare.add_argument(
         "--s2-cache",
         default="",
         help=(
@@ -867,6 +977,7 @@ def build_parser():
     prepare_test.add_argument("--s2-cache", required=True)
     prepare_test.add_argument("--temporal-split-manifest", required=True)
     prepare_test.add_argument("--max-paper-chars", type=int, default=60000)
+    prepare_test.add_argument("--recorded-coco-root", default="")
 
     meta = subparsers.add_parser("prepare-meta")
     meta.add_argument("--openreview-root", required=True)
@@ -901,6 +1012,15 @@ def build_parser():
         ),
     )
     suite.add_argument("--primary-seed", type=int, default=0)
+    suite.add_argument(
+        "--role-workers",
+        type=_role_workers,
+        default=1,
+        help=(
+            "Maximum independent Specialist roles evolved concurrently in this "
+            "Python process (default: 1; use 4 for the parallel reduced run)."
+        ),
+    )
     _add_search_args(suite)
     _add_runtime_args(suite)
 
@@ -988,6 +1108,15 @@ def build_parser():
             "a non-reportable failure-retry diagnostic. Requires "
             "--specialists-only and is mutually exclusive with "
             "--max-specialist-test-items."
+        ),
+    )
+    final_suite.add_argument(
+        "--specialist-test-selection-manifest",
+        default="",
+        help=(
+            "JSON manifest with a tasks mapping of fixed Specialist D item ids. "
+            "Produces a non-reportable selected-D experiment and is mutually "
+            "exclusive with the subset limit and failure-retry manifest."
         ),
     )
     final_suite.add_argument(
@@ -1114,7 +1243,13 @@ def _promote_lineage_champions(
     return promoted
 
 
-def _run_task(args, task_id: str, output: Path, seed: int):
+def _run_task(
+    args,
+    task_id: str,
+    output: Path,
+    seed: int,
+    shared_resources: SharedEvolutionResources | None = None,
+):
     formal = not _is_nonformal(args)
     _prepare_llm_runtime(args, formal=formal)
     if formal and getattr(args, "disable_embedding_cache", False):
@@ -1157,8 +1292,11 @@ def _run_task(args, task_id: str, output: Path, seed: int):
             coco_root=args.coco_root,
             config_identity=evolution_protocol_config_identity(args, task_id, seed),
         )
-    task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(args)
-    selection_embedding = _selection_embedding_client(args)
+    task_toolkit, reflector_toolkit, judge_toolkit = _toolkits(
+        args,
+        shared_resources,
+    )
+    selection_embedding = _selection_embedding_client(args, shared_resources)
     embedding_spec, embedding_fingerprint = _embedding_provenance(selection_embedding)
     runtime_spec, runtime_fingerprint = _embedding_provenance(
         task_toolkit.embedding_client
@@ -1266,6 +1404,7 @@ def _run_task(args, task_id: str, output: Path, seed: int):
         selection_top_k=1 if args.smoke else args.selection_top_k,
         parent_policy=args.parent_policy,
         mutation_scope=args.mutation_scope,
+        reference_programs=args.reference_programs,
         write_timeout=args.write_timeout,
         read_timeout=args.read_timeout,
         sandbox_memory_mb=args.sandbox_memory_mb,
@@ -1395,6 +1534,9 @@ def _final_evaluate_suite(args):
     subset_limit = getattr(args, "max_specialist_test_items", None)
     subset_seed = int(getattr(args, "specialist_test_subset_seed", 0))
     retry_ids_value = str(getattr(args, "specialist_test_item_ids", "") or "")
+    selection_manifest_value = str(
+        getattr(args, "specialist_test_selection_manifest", "") or ""
+    )
     evaluation_pipeline_depth = int(
         getattr(args, "evaluation_pipeline_depth", 1)
     )
@@ -1413,6 +1555,16 @@ def _final_evaluate_suite(args):
     retry_ids_path = (
         Path(retry_ids_value).expanduser().resolve() if retry_ids_value else None
     )
+    selection_manifest_path = (
+        Path(selection_manifest_value).expanduser().resolve()
+        if selection_manifest_value
+        else None
+    )
+    if retry_ids_path is not None and selection_manifest_path is not None:
+        raise SystemExit(
+            "--specialist-test-item-ids is mutually exclusive with "
+            "--specialist-test-selection-manifest."
+        )
     if retry_ids_path is not None:
         if not specialists_only:
             raise SystemExit("--specialist-test-item-ids requires --specialists-only.")
@@ -1446,6 +1598,44 @@ def _final_evaluate_suite(args):
             retry_ids_by_task[task_id] = ids
     else:
         retry_ids_by_task = {}
+    if selection_manifest_path is not None:
+        if not specialists_only:
+            raise SystemExit(
+                "--specialist-test-selection-manifest requires --specialists-only."
+            )
+        if subset_limit is not None:
+            raise SystemExit(
+                "--specialist-test-selection-manifest is mutually exclusive with "
+                "--max-specialist-test-items."
+            )
+        if not selection_manifest_path.is_file():
+            raise FileNotFoundError(
+                f"Specialist D selection manifest missing: {selection_manifest_path}"
+            )
+        selection_manifest = json.loads(
+            selection_manifest_path.read_text(encoding="utf-8")
+        )
+        raw_selected_tasks = selection_manifest.get("tasks") or {}
+        if set(raw_selected_tasks) != set(SPECIALIST_TASKS):
+            raise ValueError(
+                "Specialist D selection manifest must contain exactly all five tasks."
+            )
+        selected_ids_by_task = {}
+        for task_id in SPECIALIST_TASKS:
+            values = raw_selected_tasks[task_id]
+            if not isinstance(values, list) or not values:
+                raise ValueError(
+                    f"Selected ids for {task_id} must be a nonempty list."
+                )
+            ids = [str(value) for value in values]
+            if len(ids) != len(set(ids)) or any(not value for value in ids):
+                raise ValueError(
+                    f"Selected ids for {task_id} must be unique and nonempty."
+                )
+            selected_ids_by_task[task_id] = ids
+    else:
+        selection_manifest = {}
+        selected_ids_by_task = {}
     if subset_limit is not None:
         if not specialists_only:
             raise SystemExit(
@@ -1455,7 +1645,8 @@ def _final_evaluate_suite(args):
             raise SystemExit("--max-specialist-test-items must be positive.")
     subset_mode = subset_limit is not None
     retry_mode = retry_ids_path is not None
-    nonreportable_mode = subset_mode or retry_mode
+    selection_mode = selection_manifest_path is not None
+    nonreportable_mode = subset_mode or retry_mode or selection_mode
     active_specialist_tasks = (
         [task_id for task_id in SPECIALIST_TASKS if task_id in retry_ids_by_task]
         if retry_mode
@@ -1511,6 +1702,17 @@ def _final_evaluate_suite(args):
             "selection_manifest_sha256": _sha256(retry_ids_path),
             "tasks": {},
         }
+    elif selection_mode:
+        subset_protocol = {
+            "selection_identity": str(
+                selection_manifest.get("protocol")
+                or "explicit-specialist-d-selection-v1"
+            ),
+            "selection_manifest": str(selection_manifest_path),
+            "selection_manifest_sha256": _sha256(selection_manifest_path),
+            "seed_label": str(selection_manifest.get("seed_label") or ""),
+            "tasks": {},
+        }
 
     def final_identity(task_id, program, selection_path, lineage):
         config_identity = {
@@ -1534,7 +1736,11 @@ def _final_evaluate_suite(args):
             config_identity["evaluation_scope"] = (
                 "selected_specialist_failures_d_retry"
                 if retry_mode
-                else "five_specialist_champions_d_subset"
+                else (
+                    "five_specialist_champions_d_selected"
+                    if selection_mode
+                    else "five_specialist_champions_d_subset"
+                )
             )
             config_identity["test_subset"] = subset_protocol["tasks"][task_id]
         if not specialists_only:
@@ -1629,14 +1835,18 @@ def _final_evaluate_suite(args):
                     ).encode()
                 ).hexdigest(),
             }
-        elif retry_mode:
+        elif retry_mode or selection_mode:
             source_item_count = len(eval_items)
             eval_items_by_id = {str(item.id): item for item in eval_items}
-            requested_ids = retry_ids_by_task[task_id]
+            requested_ids = (
+                retry_ids_by_task[task_id]
+                if retry_mode
+                else selected_ids_by_task[task_id]
+            )
             missing_ids = [value for value in requested_ids if value not in eval_items_by_id]
             if missing_ids:
                 raise ValueError(
-                    f"Specialist D retry ids missing from {eval_path}: {missing_ids}"
+                    f"Specialist D selected ids missing from {eval_path}: {missing_ids}"
                 )
             eval_items = [eval_items_by_id[value] for value in requested_ids]
             subset_protocol["tasks"][task_id] = {
@@ -1700,9 +1910,13 @@ def _final_evaluate_suite(args):
             "d_retry_specialists_coco_style"
             if retry_mode
             else (
-                "d_subset_specialists_coco_style"
-                if subset_mode
-                else "sealed_d_specialists_coco_style"
+                "d_selected_specialists_coco_style"
+                if selection_mode
+                else (
+                    "d_subset_specialists_coco_style"
+                    if subset_mode
+                    else "sealed_d_specialists_coco_style"
+                )
             )
         )
         report = {
@@ -1714,12 +1928,19 @@ def _final_evaluate_suite(args):
                 "selected_specialist_failures_d_retry"
                 if retry_mode
                 else (
-                    "five_specialist_champions_d_subset"
-                    if subset_mode
-                    else "five_specialist_champions"
+                    "five_specialist_champions_d_selected"
+                    if selection_mode
+                    else (
+                        "five_specialist_champions_d_subset"
+                        if subset_mode
+                        else "five_specialist_champions"
+                    )
                 )
             ),
-            "program_selection": "suite_manifest.promoted overall champions",
+            "program_selection": str(
+                suite_manifest.get("program_selection")
+                or "suite_manifest.promoted overall champions"
+            ),
             "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
             "benchmark_adapter_bypassed": False,
             "evaluation_pipeline": evaluation_pipeline,
@@ -1904,6 +2125,8 @@ def main():
             max_paper_chars=args.max_paper_chars,
             seed=args.seed,
             s2_cache_path=args.s2_cache or None,
+            recorded_coco_root=args.recorded_coco_root or None,
+            selection_seed_label=args.selection_seed_label or None,
         )
     elif args.command == "prepare-test":
         result = prepare_held_out_test_data(
@@ -1912,6 +2135,7 @@ def main():
             args.s2_cache,
             args.temporal_split_manifest,
             max_paper_chars=args.max_paper_chars,
+            recorded_coco_root=args.recorded_coco_root or None,
         )
     elif args.command == "prepare-meta":
         result = prepare_meta_data(
@@ -1945,25 +2169,50 @@ def main():
         seeds = _parse_experiment_seeds(args.experiment_seeds)
         if args.primary_seed not in seeds:
             raise SystemExit("--primary-seed must be included in --experiment-seeds")
-        results = {}
+        suite_root = Path(args.output).expanduser().resolve()
+        shared_resources = _shared_evolution_resources(args)
+        role_args = {
+            task_id: argparse.Namespace(**vars(args))
+            for task_id in SPECIALIST_TASKS
+        }
+        jobs = [
+            SpecialistRoleJob(
+                task_id=task_id,
+                seeds=tuple(seeds),
+                primary_seed=args.primary_seed,
+                output_root=suite_root,
+            )
+            for task_id in SPECIALIST_TASKS
+        ]
+
+        def execute_seed(job, seed, output, resources):
+            return _run_task(
+                role_args[job.task_id],
+                job.task_id,
+                output,
+                seed,
+                shared_resources=resources,
+            ).to_dict()
+
+        role_results = run_specialist_suite(
+            jobs,
+            role_workers=args.role_workers,
+            resources=shared_resources,
+            execute_seed=execute_seed,
+        )
+        results = {
+            task_id: [dict(run) for run in role_results[task_id].runs]
+            for task_id in SPECIALIST_TASKS
+        }
         promoted = {}
         promoted_by_lineage = {}
         for task_id in SPECIALIST_TASKS:
-            results[task_id] = []
-            for seed in seeds:
-                output = (
-                    Path(args.output).expanduser().resolve() / task_id / f"seed_{seed}"
-                )
-                results[task_id].append(
-                    _run_task(args, task_id, output, seed).to_dict()
-                )
-            winner = results[task_id][seeds.index(args.primary_seed)]
+            winner = dict(role_results[task_id].winner)
             promoted_path = (
-                Path(args.output).expanduser().resolve() / task_id / "best_program.py"
+                suite_root / task_id / "best_program.py"
             )
             promoted_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(winner["best_program_path"], promoted_path)
-            suite_root = Path(args.output).expanduser().resolve()
             promoted[task_id] = {
                 "program": record_manifest_path(promoted_path, suite_root),
                 "program_sha256": _sha256(promoted_path),
@@ -1981,17 +2230,19 @@ def main():
             "provenance": experiment_provenance(),
             "experiment_seeds": seeds,
             "primary_seed": args.primary_seed,
+            "orchestration": {
+                "identity": "bounded-specialist-role-threads-v1",
+                "role_workers": args.role_workers,
+                "role_order": list(SPECIALIST_TASKS),
+                "embedding_requests_serialized": True,
+            },
             "results": results,
             "promoted": promoted,
             "promoted_by_lineage": promoted_by_lineage,
             "meta_status": "run prepare-meta after freezing specialist winners",
         }
         manifest_path = suite_root / "suite_manifest.json"
-        manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        manifest_path.write_text(
-            json.dumps(result, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        _atomic_write_json(manifest_path, result)
     elif args.command == "evolve-meta":
         seeds = _parse_experiment_seeds(args.experiment_seeds)
         if args.primary_seed not in seeds:

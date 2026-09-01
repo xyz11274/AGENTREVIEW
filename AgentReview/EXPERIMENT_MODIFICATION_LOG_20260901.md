@@ -310,3 +310,209 @@
   log=`runs/0831_smoke_champions_specialists_d_subset10_pipeline2_runtime/d_subset10_pipeline2.log`。
   启动时 GPU6=15 MiB，8000/13099/13098 均健康；Split/Classify formal preflight、首个
   Qwen3 embedding cache hit 已通过，现已进入 QUAL 的串行 A/history replay。
+
+### 2026-09-01 16:50：停止子集实验，转入 MSTAR 正式协议重建
+
+- 用户明确要求不再沿用 smoke champion/10 篇子集作为正式实验，并要求 evolution
+  对齐本地原文 `/data/xyj/shengao/2604.11811v2_Mstar.pdf`。因此仅向实验进程
+  PID=`2988431` 发送 SIGINT；未停止共享 Qwen/CoCo 服务，也未删除或覆盖任何产物。
+- 停止后 tmux=`ar0831_subset10_pipeline2` 和对应 `memory_evolution.cli`
+  进程均已退出；GPU6/7 均为 15 MiB。Qwen 8000、CoCo Split 13099、Classify
+  13098 三个 `/v1/models` 健康检查均通过。
+- 已保留 QUAL checkpoint：
+  `runs/0831_smoke_champions_specialists_d_subset10_pipeline2/d_subset10_pipeline2_report.json.QUAL.checkpoint.json`
+  （83750 bytes，SHA256=`3949c8629f4af02af19d4272f8e30da2f1d0dbf530f617932476fd291e0bab57`）。
+  该文件只作为被中止子集任务的恢复/审计证据，不会进入新的正式实验。
+- 终止后的完整日志为
+  `runs/0831_smoke_champions_specialists_d_subset10_pipeline2_runtime/d_subset10_pipeline2.log`
+  （111063 bytes，SHA256=`c0ed087546877a8408c85fe67422bcb2a56357a8dd8fc480e30656b9fe112737`）；
+  末尾为受控 `KeyboardInterrupt`。新的正式运行将在独立 run/runtime 目录中启动。
+
+### 2026-09-01 16:50-17:22：按 MSTAR 原文重建并启动正式五 Specialist 全架构
+
+- 依据本地原文 `/data/xyj/shengao/2604.11811v2_Mstar.pdf`（SHA256=
+  `e02aa0f498751dd29f93de2af29eb125d7c00619878aa2f91beb97511de0ffe0`）完成一手
+  协议审计，写入 `docs/MSTAR_FORMAL_ALIGNMENT_AUDIT_20260901.md`。正式实验定义为
+  MSTAR 算法对齐的 AgentReview 任务迁移，不冒充论文模型、数据集或 evaluator 复现。
+- Evolution 合同修正为每角色同一累积 pool 内 3 个结构 seed、20 次 mutation attempt、
+  softmax 全池选父代、tau=0.15、static=32、rotating=5、episodes=64、compile-fix=3、
+  合法 child 无条件入池、最终 static argmax。失败 mutation 消耗 attempt；META=OFF；
+  reference programs 和 selection repeats 均关闭。static/rotating 改为论文式 k-means
+  centroid representative；rotating 每轮用 seed+iteration 重聚类；A episode 仍用
+  greedy facility-location。相关代码位于 `memory_evolution/search.py`、`cli.py`、
+  `subset_selection.py`。
+- 修复角色 B 未标注语义：Official CoCo 没有非空角色 category/reference 的 pair 从该
+  角色 validation/fitness 排除，不再被错误作为零分项。新增可选
+  `--recorded-coco-root`，运行从当前 adapter checkout 读取文件，但把相同相对路径记录
+  为冻结逻辑根 `/data0/xyj/shengao/CoCoReviewBench`；gate 再按 SHA 映射回当前 checkout。
+  该改动只影响 provenance path，不改 paper、reference 或 evaluator。
+- 新 A/B=`data/0901_mstar_formal_specialists_v2`：A=2391 families；B 冻结分配
+  Specialist=150、META reserved=149；角色可评分 B 为 QUAL/CLAR/SIGN/ORIG/POL=
+  150/149/134/147/53。新 D=`data/0901_mstar_formal_d_official_v2`：899 papers；
+  五角色 items=899/878/804/872/338，合计3791。C=300 保留但不进入本次主链。
+  A/B manifest SHA256=`cb1a53c6b83acba01ca332e0e1f1ba647735b611b931fe2e3b9968cf144e0459`；
+  D manifest SHA256=`ea6e7cae166d7f04d5006878ad8f9ca8d4f85a6706e06eb6ce5fda7ddc29bd32`。
+- 原 `configs/asset_manifest_v2.json` 仅 `temporal_split_generator` 与当前 clean HEAD
+  不符；清单期望的旧 hash 在 0811、0827 和全部 Git 历史均不存在，其余12项全部匹配。
+  未改原清单，创建运行专用 `asset_manifest_v2.runtime.json`，记录当前 committed
+  generator hash 与源清单 hash。运行清单 SHA256=
+  `5f82ca25becf8e2d82826838a060a1a88a46e967c4a8978abc4a934604d1e3e6`。
+- 生成唯一 launcher=
+  `runs/0901_mstar_formal_full_runtime/launch_mstar_formal_full.sh`，含服务/数据/cache
+  fail-closed precheck、五角色串行 evolution、META disabled 和 full sealed-D
+  specialists-only depth=2 流水线。修复 Conda activation 与 `set -u` 的兼容；用户给定
+  `qwen38_serve` 不存在时回退到已验证 `/data/xyj/envs/qwen38serve`。
+- 五角色正式 readiness gate 全通过；报告=
+  `runs/0901_mstar_formal_full_runtime/formal_readiness_gate.json`，SHA256=
+  `69f51caa65d00434dba427889785eed0b7bac7b8624bc1b52419d0aa3f761a42`。
+  全仓 223/223 tests passed，`git diff --check`、launcher `bash -n` 和独立 preflight
+  均通过。完整架构/数据/命令文档为
+  `docs/MSTAR_FORMAL_FULL_ARCHITECTURE_RUNBOOK_20260901.md`。
+- 17:22:21 启动 tmux=`ar0901_mstar_formal_full`；17:22:45 进入
+  `SPECIALIST_EVOLUTION_START`。QUAL formal gate 和 controller 已落盘，初始 phase=
+  `subset_selection`、attempt=0、candidate_count=0；A/B selection embedding 分别
+  2391/150 全部命中冻结 cache。共享 Qwen 8000、Split 13099、Classify 13098 保持运行。
+- 随后 QUAL 在线 closure smoke 通过：`Memory KnowledgeItem` 和 `Memory Query` 均为
+  `finish_reason=stop`；动态 runtime embedding miss 由 GPU6 Qwen3-Embedding-8B 正常
+  计算并写入独立 cache。controller 推进到 phase=`seeds`，static=32、episodes=64，
+  已开始 `program_000_seed_vector_search` static evaluation；GPU6 约15515 MiB。
+
+### 2026-09-01 17:39-18:02：保留正式 checkpoint，新增 reduced-scale full-flow
+
+- 按用户要求暂停正式 full run，并保留全部正式配置、checkpoint 和 artifact。仅向正式
+  Evolution 进程发送 SIGINT，共享 Qwen/CoCo 服务未停止。正式 QUAL controller 位于
+  `runs/0901_mstar_formal_full/QUAL/seed_0/search_controller_checkpoint.json`，停止时
+  `phase=seeds`、`attempt=0`、无 inflight，SHA256=
+  `317a67a130c7456fb448b7adbbc2ef5c01f7c1333c49d2ce09447688ef194114`；只读备份为
+  `runs/0901_mstar_formal_full_runtime/preserved_checkpoints/QUAL_seed0_controller_20260901_1739.json`，
+  hash 相同。reduced launcher 会在启动前再次校验二者一致。
+- 新增独立 reduced 数据目录 `data/0901_mstar_reduced_fullflow_a300_b50`，不复制或修改
+  原始 OpenReview/CoCo 资产。固定 seed label=`20260901_reduced_fullflow`，通过 SHA256
+  排序稳定抽样：A=300 family、B=50 paper、C=0、D=100 paper；B/D 均从五角色共同存在
+  且 official reference 非空的交集抽取，因此五角色使用完全相同的 paper ID 集。
+  数据 manifest SHA256=`3b5282203dadd2a864522b3b9ae8e803ec12eb7951ac1a9da24edaee076fedcf`；
+  独立 selection manifest=
+  `runs/0901_mstar_full_reduced_runtime/reduced_selection_manifest.json`，SHA256=
+  `d391a62706a411db33675b4ca96e2c427296ee31c4fb8577ebe9c4e741b34d9a`。
+- 新增脚本 `scripts/build_reduced_fullflow_data.py`、
+  `scripts/build_original_seed_suite.py`、`scripts/summarize_reduced_fullflow.py`。
+  前者只生成派生 rows/manifest；第二个脚本按各角色 iteration=0 的 B static fitness 选择
+  三个结构 seed 中的最佳 original seed；第三个脚本汇总 baseline、winner、delta、五角色、
+  CoCo、runtime 和 config 到唯一目标 `artifacts/reduced_fullflow_summary.json`。
+- Evolution 仍为五角色 QUAL/CLAR/SIGN/ORIG/POL、META-OFF、三个结构 seed、同一 pool、
+  mutation、compile-fix、fitness、winner selection；仅将搜索预算缩为 static=16、
+  rotating=4、episodes=32、mutation_attempt=8，其他 MSTAR 语义保持不变。baseline 与
+  evolved winner 均在同一固定 D100 上执行完整 Split/Classify/Judge Official CoCo。
+- Qwen3.8-27B 保持 64K 和已验证的 TP=4、`max-num-seqs=4`：GPU0-3 为 Qwen，GPU4 为
+  Split，GPU5 为 Classify，GPU6 为 Qwen3-Embedding-8B。launcher 会校验 8000 服务命令
+  包含 TP=4，并保持 CoCo classify workers=4；不重启共享模型服务。
+- 新 launcher=
+  `runs/0901_mstar_full_reduced_runtime/launch_reduced_fullflow.sh`，支持阶段级恢复但拒绝
+  覆盖已完成报告；独立输出根=`runs/0901_mstar_full_reduced`。新增运行文档
+  `docs/MSTAR_REDUCED_FULLFLOW_RUNBOOK_20260901.md`，记录抽样、参数差异、启动、状态和
+  结果定位。独立 preflight 已通过，五角色 readiness gate=
+  `runs/0901_mstar_full_reduced_runtime/formal_readiness_gate.json`，SHA256=
+  `d8b7eb18f83c6816cb606b7ce0389dd3364e17c0d1a48e6179b47a8fad4680ef`。
+- 全仓 225/225 tests passed；`git diff --check`、launcher `bash -n`、三个新脚本
+  `py_compile` 均通过。该 reduced run 明确标记 `non_reportable=true`，只用于快速验证
+  Original Reviewer 与 Evolution Winner Reviewer 的完整方向性差异，不作为论文结果。
+
+### 2026-09-01 18:04-18:10：首次启动 fail-fast 与 B/META 抽样边界修正
+
+- 18:04:59 首次启动 reduced tmux；precheck 和 CoCo preflight 通过，但 QUAL 在
+  `phase=subset_selection`、任何 candidate 生成前退出。精确错误为冻结 selection
+  embedding `requested=50 hits=25 misses=25`。失败 run 没有 suite、candidate 或 D 结果，
+  因此无需删除或覆盖已有实验产物。
+- 最小只读复现稳定得到同一 25/25 miss。逐 paper 比对确认：旧 B50 恰有25篇属于正式
+  META-OFF specialist B，另25篇来自 B299 中的 META-reserved 分区；重合的25篇 question
+  文本完全一致。cache/audit hash 和 mtime 未改变，排除 fingerprint、文本改写和 cache
+  损坏。根因为 reduced B 抽样源边界错误，不是 TP=4、64K 或 Evolution 算法问题。
+- 正式 META-OFF 五角色 B 可评分量为 QUAL/CLAR/SIGN/ORIG/POL=
+  150/149/134/147/53，共同交集只有49，无法让五角色共用同一 B50。按用户的“每角色
+  B=50、固定 seed、META-OFF”合同，改为从各角色正式 specialist B pool 分别按
+  `SHA256(seed_label:B:<ROLE>:paper_id)` 固定抽50；A300 与 D100 仍按五角色共同交集抽样，
+  D100 paper IDs 完全相同。
+- 保留首次失败输入不覆盖；新数据=
+  `data/0901_mstar_reduced_fullflow_a300_b50_v2/manifest.json`，SHA256=
+  `2a2fb6265ac11d47933cf1bc1fe3b53dfa2c9396a1d9e01628a47268bc6a0b1f`；新选择清单=
+  `runs/0901_mstar_full_reduced_runtime/reduced_selection_manifest_v2.json`，SHA256=
+  `912a1658fabb8f3c1158074d09e6f71a643855e2b474869aad54914c85bf89a3`。
+- launcher 新增真实 selection coverage gate：逐角色对 A300 的 `text` 和 B50 的
+  `question` 调用只读 frozen adapter。该门禁先在旧输入稳定转红，再在 v2 对五角色全部
+  得到 A=`300/300`、B=`50/50` cache hit；未加载在线 embedding 模型，未写冻结 cache。
+  修正后 readiness gate SHA256=
+  `a60d8568b951f75804c767113c47235464a0cdfdaa8033e35c216981a21fc8d5`。
+- 首次失败目录 `runs/0901_mstar_full_reduced` 保留其零长度 scores/lineage 和
+  `phase=subset_selection, candidate_count=0` controller，不复用也不删除。修正后的正式
+  reduced 输出改为 `runs/0901_mstar_full_reduced_v2`，baseline suite 改为
+  `runs/0901_mstar_full_reduced_baseline_v2`；最终汇总路径仍严格为
+  `artifacts/reduced_fullflow_summary.json`。
+
+### 2026-09-01 18:12：启动修正后的 reduced full-flow v2
+
+- 修正后再次执行全仓测试与门禁：225/225 tests passed，三个脚本 `py_compile`、
+  launcher `bash -n`、`git diff --check`、独立 preflight 全通过。最终 launcher
+  SHA256=`94cb6a455119837b09a3eb7ab6ccd578785bfbdf55da97a637f3eb1bd1ef7fbe`。
+- 18:12:17 启动 tmux=`ar0901_mstar_reduced`；18:12:31 完成 precheck 并进入
+  `SPECIALIST_EVOLUTION_START`。实际 CLI 参数已核验为 iterations=8、static=16、
+  rotating=4、episodes=32、parent=softmax、mutation=full、compile-fix=3，输出到全新
+  `runs/0901_mstar_full_reduced_v2`。
+- 18:14 状态：QUAL controller 已落盘，`phase=subset_selection`、attempt=0、seed_index=0、
+  candidate_count=0；正在执行正式 closure smoke 的 `Memory KnowledgeItem`，不是失败或
+  空转。8000 `/v1/models` 返回 `max_model_len=65536`；实际 vLLM PID=`2934848` 命令为
+  `--tensor-parallel-size 4 --max-model-len 65536 --max-num-seqs 4`，GPU0-3 均在计算。
+  Split/Classify 服务保持在 GPU4/5，GPU6 等待 runtime embedding miss 时按需加载。
+
+### 2026-09-01 21:32-21:44：暂停串行 reduced run，实施五角色并行分支
+
+- 按用户授权，在修改 parallel worktree 前仅向 reduced Evolution PID=`3050909` 发送
+  SIGINT。Evolution 和 launcher 均受控退出，tmux=`ar0901_mstar_reduced` 消失；Qwen
+  64K TP4、CoCo Split/Classify 三个共享服务继续监听 8000/13099/13098，未被停止。
+- 暂停前后 QUAL controller SHA256 均为
+  `043446d30a5c772ddaac090613eef884b3f8f4ba8cb35c13682626f9712e4914`，phase=`seeds`、
+  seed_index=0、candidate_count=0；A/history checkpoint 已提交32篇，SHA256=
+  `13adb71c088c63ec5c81cb2f3bb35abf39d056147d2fb966da045eef53eaa085`。scores、lineage、
+  candidate_reviews 仍为0行；在途 B 不属于 controller commit，未伪报为完成。
+- 独立分支=`parallel-role-workers-20260901`，worktree=
+  `/data/xyj/shengao/AgentReview_0901_parallel`。先原样移植实际 reduced full-flow 所需的
+  9个源码/测试差异和三个派生数据/汇总脚本；未复制 runs、checkpoint、cache 或 artifact。
+- 新增 `memory_evolution/specialist_orchestrator.py`：单 Python 编排进程使用有界
+  `ThreadPoolExecutor`；`role_workers=4` 时 QUAL/CLAR/SIGN/ORIG 先启动、POL 排队；
+  每角色内部 outer seed 和完整 MSTAR loop 保持串行。返回值按固定
+  QUAL/CLAR/SIGN/ORIG/POL 顺序聚合。
+- `memory_evolution/cli.py` 新增 `--role-workers`（默认1，范围1..5）。主线程在 executor
+  前完成 Qwen preflight并只创建一次 runtime/selection embedding 和 CoCo adapter；五角色
+  使用独立 args、toolkit、pool/candidate/checkpoint，仅共享 adapter 引用。runtime embedding
+  依赖既有实例锁把模型推理/cache写入串行化。
+- `role_workers` 未进入 EvolutionConfig、formal protocol identity、search controller
+  identity 或 candidate identity。suite manifest 仅在全部角色成功后原子发布，并额外记录
+  orchestration 容量；未修改 embedding/coco adapter、evaluator、history checkpoint 或
+  MSTAR selection/fitness/mutation/winner loop。parallel 与暂停运行的 `search.py`、三个 seed、
+  embedding/coco adapter SHA逐项相同。
+- 新 launcher=`scripts/launch_reduced_fullflow_parallel.sh`，使用全新
+  `runs/0901_mstar_full_reduced_parallel*`、runtime embedding cache、D报告及
+  `artifacts/reduced_fullflow_parallel_summary.json`；显式设置 `--role-workers 4` 和
+  `COCO_CLASSIFY_WORKERS=1`，只读复用0831的 reduced data、D selection和冻结 embedding
+  cache。launcher SHA256=
+  `086555a32b4657a1b8f31a07f1dec0b34ede52b30ae8764bde1979c9ce79528e`。
+- 新增专项测试覆盖四并发/第五排队、serial默认、规范顺序、role args/output隔离、共享资源
+  单次构建、同一 runtime embedding、embed最大并发1、identity不变、main manifest原子发布。
+  全仓236/236 tests passed，`git diff --check`、launcher `bash -n` 均通过。
+- `PARALLEL_PREFLIGHT_ONLY=1` 已通过：Qwen=64K/TP4/max-num-seqs4，五角色 A300/B50
+  selection embedding 全部 frozen-cache hit，formal readiness gate SHA256=
+  `a60d8568b951f75804c767113c47235464a0cdfdaa8033e35c216981a21fc8d5`。本阶段没有启动
+  parallel Evolution，也没有生成 suite/result artifact。
+
+### 2026-09-01 22:00：parallel 正式启动前的 0831 checkpoint 复用审计
+
+- 以当前 parallel 代码、同一三 seed、A300/B50 v2 数据和旧 `config.json` 重新计算
+  0831 QUAL controller identity，计算值与 checkpoint 保存值均为
+  `e53dffccd73b468ebe6e1e5eb5ea82cffa8e26d32b89e1201e8816190ca8a649`；因此允许原位
+  resume，不复制、不改写 controller 身份。
+- 复用范围严格限定为旧 run root
+  `runs/0901_mstar_full_reduced_v2` 中已经 controller/history 原子提交的状态，以及旧
+  runtime embedding cache。QUAL 已提交的 A/history 32 篇跳过；暂停时未提交的 B 重新
+  运行；CLAR/SIGN/ORIG/POL 没有兼容 checkpoint，均从头运行。
+- parallel launcher 的默认 `RUN_ROOT`/`BASELINE_ROOT` 指向上述 0831 v2 路径，运行日志、
+  readiness gate 和最终 parallel summary 仍写入 0901 worktree。所有路径都可用
+  `PARALLEL_*` 环境变量覆盖；duplicate-process gate 按规范化的精确 output path 检查。

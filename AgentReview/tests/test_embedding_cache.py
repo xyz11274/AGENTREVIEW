@@ -1,7 +1,10 @@
 import hashlib
 import sqlite3
 import tempfile
+import threading
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 
@@ -79,6 +82,36 @@ class MockQwenEmbedding(Qwen3Embedding):
 
 
 class EmbeddingCacheTest(unittest.TestCase):
+    def test_shared_runtime_embedding_serializes_concurrent_cache_misses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            embedding = MockQwenEmbedding(Path(directory) / "runtime.sqlite3")
+            original = embedding._embed_uncached_batch
+            active = 0
+            max_active = 0
+            counter_lock = threading.Lock()
+
+            def observed(batch):
+                nonlocal active, max_active
+                with counter_lock:
+                    active += 1
+                    max_active = max(max_active, active)
+                time.sleep(0.02)
+                try:
+                    return original(batch)
+                finally:
+                    with counter_lock:
+                        active -= 1
+
+            embedding._embed_uncached_batch = observed
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(
+                    executor.map(embedding.embed, (["first"], ["second"]))
+                )
+
+            self.assertEqual(len(results), 2)
+            self.assertEqual(max_active, 1)
+            self.assertEqual(len(embedding.batch_calls), 2)
+
     def test_qwen_identity_contains_complete_formal_fingerprint(self):
         with tempfile.TemporaryDirectory() as directory:
             embedding = MockQwenEmbedding(Path(directory) / "qwen.sqlite3")

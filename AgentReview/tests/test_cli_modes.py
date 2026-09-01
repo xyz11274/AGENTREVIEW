@@ -1,6 +1,7 @@
 import hashlib
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,13 +14,179 @@ from memory_evolution.cli import (
     _is_nonformal,
     _parse_experiment_seeds,
     _promote_lineage_champions,
+    _shared_evolution_resources,
+    _task_toolkit,
     build_parser,
+    evolution_protocol_config_identity,
     main,
 )
 from memory_evolution.models import EvalItem
+from memory_evolution.specialist_orchestrator import SharedEvolutionResources
 
 
 class CliModeTest(unittest.TestCase):
+    def test_parallel_specialist_main_uses_isolated_args_and_atomic_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            suite_root = root / "suite"
+            resources = SharedEvolutionResources(
+                runtime_embedding=object(),
+                selection_embedding=object(),
+                review_splitter=object(),
+                review_classifier=object(),
+            )
+            observed_args = {}
+            observed_resources = []
+            lock = threading.Lock()
+
+            def run_task(args, task_id, output, seed, shared_resources=None):
+                output.mkdir(parents=True, exist_ok=True)
+                best_program = output / "best_program.py"
+                best_program.write_text(
+                    f"VALUE = {task_id!r}\n",
+                    encoding="utf-8",
+                )
+                program_sha256 = hashlib.sha256(best_program.read_bytes()).hexdigest()
+                (output / "lineage_champions.json").write_text(
+                    json.dumps(
+                        {
+                            "vector_search": {
+                                "program": "best_program.py",
+                                "program_sha256": program_sha256,
+                                "fitness": 0.5,
+                            }
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                with lock:
+                    observed_args[task_id] = id(args)
+                    observed_resources.append(shared_resources)
+                payload = {
+                    "best_program_path": str(best_program),
+                    "best_score": 0.5,
+                    "output_dir": str(output),
+                }
+                return SimpleNamespace(to_dict=lambda: dict(payload))
+
+            argv = [
+                "memory_evolution.cli",
+                "evolve-specialists",
+                "--data-root",
+                str(root / "data"),
+                "--output",
+                str(suite_root),
+                "--pilot",
+                "--role-workers",
+                "4",
+            ]
+            with (
+                patch("sys.argv", argv),
+                patch(
+                    "memory_evolution.cli._shared_evolution_resources",
+                    return_value=resources,
+                ),
+                patch("memory_evolution.cli._run_task", side_effect=run_task),
+                patch("builtins.print"),
+            ):
+                result = main()
+
+            manifest_path = suite_root / "suite_manifest.json"
+            self.assertTrue(manifest_path.is_file())
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["orchestration"]["role_workers"], 4)
+            self.assertEqual(
+                manifest["orchestration"]["role_order"],
+                ["QUAL", "CLAR", "SIGN", "ORIG", "POL"],
+            )
+            self.assertEqual(list(manifest["results"]), manifest["orchestration"]["role_order"])
+            self.assertEqual(len(set(observed_args.values())), 5)
+            self.assertTrue(all(value is resources for value in observed_resources))
+            self.assertIsNone(result)
+
+    def test_shared_evolution_resources_are_constructed_once_on_caller(self):
+        args = SimpleNamespace(
+            classifier_adapter="fixture:factory",
+            review_split_revision="split",
+            review_classify_revision="classify",
+            coco_root="coco",
+        )
+        runtime = object()
+        selection = object()
+        splitter = object()
+        classifier = object()
+        with (
+            patch("memory_evolution.cli._prepare_llm_runtime") as preflight,
+            patch(
+                "memory_evolution.cli._classifier_adapter",
+                return_value=(splitter, classifier),
+            ) as coco,
+            patch(
+                "memory_evolution.cli._runtime_embedding_client",
+                return_value=runtime,
+            ) as runtime_factory,
+            patch(
+                "memory_evolution.cli._selection_embedding_client",
+                return_value=selection,
+            ) as selection_factory,
+            patch("memory_evolution.cli._is_nonformal", return_value=False),
+        ):
+            resources = _shared_evolution_resources(args)
+
+        self.assertIs(resources.runtime_embedding, runtime)
+        self.assertIs(resources.selection_embedding, selection)
+        self.assertIs(resources.review_splitter, splitter)
+        self.assertIs(resources.review_classifier, classifier)
+        preflight.assert_called_once_with(args, formal=True)
+        coco.assert_called_once()
+        runtime_factory.assert_called_once_with(args)
+        selection_factory.assert_called_once_with(args)
+
+    def test_task_toolkit_uses_injected_runtime_and_coco_adapters(self):
+        runtime = object()
+        splitter = object()
+        classifier = object()
+        resources = SharedEvolutionResources(
+            runtime_embedding=runtime,
+            selection_embedding=object(),
+            review_splitter=splitter,
+            review_classifier=classifier,
+        )
+        args = SimpleNamespace(
+            disable_embedding_cache=False,
+            embedding_cache_read_only=False,
+            task_model_name="task-model",
+            embedding_model_name="embedding-model",
+            s2_retrieval_pool="pool.jsonl",
+        )
+
+        def toolkit(**kwargs):
+            return SimpleNamespace(**kwargs)
+
+        with (
+            patch("memory_evolution.cli._prepare_llm_runtime"),
+            patch(
+                "memory_evolution.cli._classifier_adapter",
+                side_effect=AssertionError("must use injected CoCo adapters"),
+            ),
+            patch(
+                "memory_evolution.cli._runtime_embedding_client",
+                side_effect=AssertionError("must use injected runtime embedding"),
+            ),
+            patch("memory_evolution.cli._backend", return_value=object()),
+            patch(
+                "memory_evolution.cli.load_frozen_s2_pool",
+                return_value=([], "sha256"),
+            ),
+            patch("memory_evolution.cli.MemoryToolkit", side_effect=toolkit),
+            patch("memory_evolution.cli._is_nonformal", return_value=False),
+        ):
+            observed = _task_toolkit(args, resources)
+
+        self.assertIs(observed.embedding_client, runtime)
+        self.assertIs(observed.review_splitter, splitter)
+        self.assertIs(observed.review_classifier, classifier)
+
     def test_final_suite_specialists_only_has_distinct_scope(self):
         args = build_parser().parse_args(
             [
@@ -77,6 +244,27 @@ class CliModeTest(unittest.TestCase):
             ]
         )
         self.assertEqual(args.specialist_test_item_ids, "failed-ids.json")
+
+    def test_specialist_d_selection_manifest_is_parsed(self):
+        args = build_parser().parse_args(
+            [
+                "final-evaluate-suite",
+                "--data-root",
+                "data/formal",
+                "--test-data-root",
+                "data/test",
+                "--program-root",
+                "runs/formal",
+                "--output",
+                "runs/formal/d-selected.json",
+                "--specialists-only",
+                "--specialist-test-selection-manifest",
+                "selected-ids.json",
+            ]
+        )
+        self.assertEqual(
+            args.specialist_test_selection_manifest, "selected-ids.json"
+        )
 
     def test_final_suite_evaluation_pipeline_depth_is_parsed(self):
         args = build_parser().parse_args(
@@ -228,6 +416,24 @@ class CliModeTest(unittest.TestCase):
                 args.max_specialist_test_items = None
                 args.specialist_test_item_ids = str(retry_ids)
                 retry_result = _final_evaluate_suite(args)
+                selected_ids = root / "selected-ids.json"
+                selected_ids.write_text(
+                    json.dumps(
+                        {
+                            "protocol": "reduced-fullflow-d-selection-v1",
+                            "seed_label": "fixed",
+                            "tasks": {
+                                task: ["paper::QUAL"] for task in promoted
+                            },
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                selected_output = root / "selected-report.json"
+                args.output = str(selected_output)
+                args.specialist_test_item_ids = ""
+                args.specialist_test_selection_manifest = str(selected_ids)
+                selected_result = _final_evaluate_suite(args)
 
             report = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(
@@ -271,6 +477,21 @@ class CliModeTest(unittest.TestCase):
             )
             self.assertFalse(retry_result["final_test"])
             self.assertTrue(retry_result["non_reportable"])
+
+            selected_report = json.loads(selected_output.read_text(encoding="utf-8"))
+            self.assertEqual(
+                selected_report["evaluation_identity"],
+                "d_selected_specialists_coco_style",
+            )
+            self.assertEqual(
+                selected_report["evaluation_scope"],
+                "five_specialist_champions_d_selected",
+            )
+            self.assertEqual(
+                selected_report["subset_protocol"]["seed_label"], "fixed"
+            )
+            self.assertFalse(selected_result["final_test"])
+            self.assertTrue(selected_result["non_reportable"])
 
     def test_lineage_promotion_contract_is_shared_by_specialists_and_meta(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -337,6 +558,12 @@ class CliModeTest(unittest.TestCase):
             ]
         )
         self.assertEqual(args.iterations, 20)
+        self.assertEqual(args.static_size, 32)
+        self.assertEqual(args.rotating_size, 5)
+        self.assertEqual(args.episode_budget, 64)
+        self.assertEqual(args.selection_repeats, 0)
+        self.assertEqual(args.selection_top_k, 1)
+        self.assertFalse(args.reference_programs)
         self.assertFalse(hasattr(args, "max_attempts_per_lineage"))
         self.assertEqual(_experiment_kind(args), "formal")
 
@@ -418,6 +645,48 @@ class CliModeTest(unittest.TestCase):
             )
             self.assertEqual(args.experiment_seeds, "0")
             self.assertEqual(_parse_experiment_seeds(args.experiment_seeds), [0])
+
+    def test_specialist_role_workers_default_to_serial_and_accept_four(self):
+        base = [
+            "evolve-specialists",
+            "--data-root",
+            "data/formal",
+            "--output",
+            "runs/formal",
+        ]
+        self.assertEqual(build_parser().parse_args(base).role_workers, 1)
+        self.assertEqual(
+            build_parser().parse_args([*base, "--role-workers", "4"]).role_workers,
+            4,
+        )
+
+    def test_specialist_role_workers_reject_values_outside_role_count(self):
+        base = [
+            "evolve-specialists",
+            "--data-root",
+            "data/formal",
+            "--output",
+            "runs/formal",
+            "--role-workers",
+        ]
+        for value in ("0", "6"):
+            with self.subTest(value=value), self.assertRaises(SystemExit):
+                build_parser().parse_args([*base, value])
+
+    def test_role_workers_do_not_change_evolution_protocol_identity(self):
+        base = [
+            "evolve-specialists",
+            "--data-root",
+            "data/formal",
+            "--output",
+            "runs/formal",
+        ]
+        serial = build_parser().parse_args([*base, "--role-workers", "1"])
+        parallel = build_parser().parse_args([*base, "--role-workers", "4"])
+        self.assertEqual(
+            evolution_protocol_config_identity(serial, "QUAL", 0),
+            evolution_protocol_config_identity(parallel, "QUAL", 0),
+        )
 
     def test_outer_experiment_seed_count_is_parameterized_but_nonempty(self):
         self.assertEqual(_parse_experiment_seeds("0"), [0])

@@ -4,6 +4,7 @@ import unittest
 
 from memory_evolution.subset_selection import (
     build_static_validation_set,
+    sample_rotating_validation_set,
     select_episode_subset,
 )
 
@@ -77,6 +78,68 @@ class QwenSubsetSelectionTest(unittest.TestCase):
                 n_static=2,
                 allow_random_fallback=False,
             )
+
+    def test_static_selection_uses_centroid_nearest_cluster_members(self):
+        class AxisEmbedding:
+            def embed(self, texts):
+                mapping = {
+                    "left-a": [1.0, 0.2],
+                    "left-center": [1.0, 0.0],
+                    "left-b": [1.0, -0.2],
+                    "right-a": [0.2, 1.0],
+                    "right-center": [0.0, 1.0],
+                    "right-b": [-0.2, 1.0],
+                }
+                return [mapping[text] for text in texts]
+
+        values = [
+            {"id": text, "question": text}
+            for text in (
+                "left-a",
+                "left-center",
+                "left-b",
+                "right-a",
+                "right-center",
+                "right-b",
+            )
+        ]
+        selected = build_static_validation_set(
+            values,
+            AxisEmbedding(),
+            n_static=2,
+            seed=0,
+            allow_random_fallback=False,
+        )
+        self.assertEqual(
+            {value["id"] for value in selected},
+            {"left-center", "right-center"},
+        )
+
+    def test_rotating_selection_is_seeded_kmeans_not_random_sampling(self):
+        client = Deterministic4096Embedding()
+        values = [
+            {"id": f"v-{index}", "question": f"rotating {index}"}
+            for index in range(12)
+        ]
+        first = sample_rotating_validation_set(
+            values,
+            n_rotating=5,
+            seed=9,
+            embedding_client=client,
+            allow_random_fallback=False,
+        )
+        second = sample_rotating_validation_set(
+            values,
+            n_rotating=5,
+            seed=9,
+            embedding_client=client,
+            allow_random_fallback=False,
+        )
+        self.assertEqual(
+            [value["id"] for value in first],
+            [value["id"] for value in second],
+        )
+        self.assertEqual(len({value["id"] for value in first}), 5)
 
 
 if __name__ == "__main__":

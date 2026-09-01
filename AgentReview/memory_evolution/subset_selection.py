@@ -74,6 +74,74 @@ def _mean(vectors: list[list[float]]) -> list[float]:
     ]
 
 
+def _kmeans_representative_indices(
+    vectors: list[list[float]],
+    clusters: int,
+    *,
+    seed: int,
+    max_iterations: int = 50,
+) -> list[int]:
+    """Return the centroid-nearest representative of each cosine k-means cluster."""
+    if clusters <= 0 or not vectors:
+        return []
+    if clusters >= len(vectors):
+        return list(range(len(vectors)))
+
+    rng = random.Random(seed)
+    centroids = [vectors[index][:] for index in rng.sample(range(len(vectors)), clusters)]
+    assignments: list[int] | None = None
+    for _ in range(max_iterations):
+        next_assignments = [
+            max(
+                range(clusters),
+                key=lambda index: (_cosine(vector, centroids[index]), -index),
+            )
+            for vector in vectors
+        ]
+        if next_assignments == assignments:
+            break
+        assignments = next_assignments
+        for cluster in range(clusters):
+            members = [
+                vector
+                for vector, assignment in zip(vectors, assignments)
+                if assignment == cluster
+            ]
+            if members:
+                centroids[cluster] = _mean(members)
+
+    assignments = assignments or [0] * len(vectors)
+    selected: list[int] = []
+    for cluster, centroid in enumerate(centroids):
+        members = [
+            index
+            for index, assignment in enumerate(assignments)
+            if assignment == cluster and index not in selected
+        ]
+        if members:
+            selected.append(
+                max(members, key=lambda index: (_cosine(vectors[index], centroid), -index))
+            )
+
+    # Empty clusters are possible in Lloyd's algorithm. Fill them deterministically
+    # with the point least represented by the already selected centroids.
+    while len(selected) < clusters:
+        remaining = [index for index in range(len(vectors)) if index not in selected]
+        if not selected:
+            selected.append(remaining[0])
+            continue
+        selected.append(
+            min(
+                remaining,
+                key=lambda index: (
+                    max(_cosine(vectors[index], vectors[value]) for value in selected),
+                    index,
+                ),
+            )
+        )
+    return selected
+
+
 def build_static_validation_set(
     val_items,
     embedding_client,
@@ -100,54 +168,46 @@ def build_static_validation_set(
         )
         return rng.sample(values, n_static)
 
-    centroid_indices = rng.sample(range(len(values)), n_static)
-    centroids = [vectors[index][:] for index in centroid_indices]
-    assignments = [0] * len(values)
-    for _ in range(30):
-        new_assignments = [
-            max(range(n_static), key=lambda index: _cosine(vector, centroids[index]))
-            for vector in vectors
-        ]
-        if new_assignments == assignments:
-            break
-        assignments = new_assignments
-        for cluster in range(n_static):
-            members = [
-                vector
-                for vector, assignment in zip(vectors, assignments)
-                if assignment == cluster
-            ]
-            if members:
-                centroids[cluster] = _mean(members)
-
-    selected_indices = []
-    for cluster, centroid in enumerate(centroids):
-        members = [
-            index
-            for index, assignment in enumerate(assignments)
-            if assignment == cluster
-        ]
-        candidates = members or [
-            index for index in range(len(values)) if index not in selected_indices
-        ]
-        selected = rng.choice(candidates)
-        if selected not in selected_indices:
-            selected_indices.append(selected)
-    for index in range(len(values)):
-        if len(selected_indices) >= n_static:
-            break
-        if index not in selected_indices:
-            selected_indices.append(index)
+    selected_indices = _kmeans_representative_indices(
+        vectors,
+        n_static,
+        seed=seed,
+    )
     return [values[index] for index in selected_indices[:n_static]]
 
 
-def sample_rotating_validation_set(remaining_val_items, n_rotating: int = 5, seed=None):
+def sample_rotating_validation_set(
+    remaining_val_items,
+    n_rotating: int = 5,
+    seed: int | None = None,
+    embedding_client=None,
+    allow_random_fallback: bool = True,
+):
     values = list(remaining_val_items)
     if n_rotating <= 0:
         return []
     if n_rotating >= len(values):
         return values
-    return random.Random(seed).sample(values, n_rotating)
+    resolved_seed = int(seed or 0)
+    try:
+        vectors = _embed(embedding_client, [_question(item) for item in values])
+    except Exception as exc:
+        if not allow_random_fallback:
+            raise RuntimeError(
+                "Formal rotating selection requires the frozen embedding adapter"
+            ) from exc
+        warnings.warn(
+            "Embedding unavailable for rotating validation selection; using "
+            f"random sample: {exc}",
+            RuntimeWarning,
+        )
+        return random.Random(resolved_seed).sample(values, n_rotating)
+    indices = _kmeans_representative_indices(
+        vectors,
+        n_rotating,
+        seed=resolved_seed,
+    )
+    return [values[index] for index in indices]
 
 
 def select_episode_subset(

@@ -504,6 +504,7 @@ class SearchLoopTest(unittest.TestCase):
                     temperature=1e-6,
                     selection_repeats=1,
                     selection_top_k=1,
+                    reference_programs=True,
                     formal=True,
                     historical_manifest_sha256="a" * 64,
                     experiment_config_sha256="b" * 64,

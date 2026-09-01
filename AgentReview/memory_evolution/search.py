@@ -32,10 +32,10 @@ class EvolutionConfig:
     output_dir: str = "runs/mstar"
     task_description: str = ""
     iterations: int = 20
-    static_size: int = 25
+    static_size: int = 32
     rotating_size: int = 5
     temperature: float = 0.15
-    episode_budget: int | None = None
+    episode_budget: int | None = 64
     seed: int = 0
     dry_run: bool = False
     max_fix_attempts: int = 3
@@ -44,10 +44,11 @@ class EvolutionConfig:
     sandbox_memory_mb: int = 1024
     max_llm_calls_per_operation: int = 1
     task_id: str = ""
-    selection_repeats: int = 3
-    selection_top_k: int = 3
+    selection_repeats: int = 0
+    selection_top_k: int = 1
     parent_policy: str = "softmax"
     mutation_scope: str = "full"
+    reference_programs: bool = False
     task_model_name: str = ""
     reflector_model_name: str = ""
     judge_model_name: str = ""
@@ -629,7 +630,7 @@ def run_evolution(
         )
         budget = cfg.episode_budget
         if budget is None:
-            budget = 5 * len(static_items)
+            budget = 2 * len(static_items)
         selected_episodes = select_episode_subset(
             episode_values,
             static_items,
@@ -991,6 +992,8 @@ def run_evolution(
                 remaining_items,
                 n_rotating=cfg.rotating_size,
                 seed=cfg.seed + iteration,
+                embedding_client=selection_embedding_client,
+                allow_random_fallback=not cfg.formal,
             )
             rotating_eval = evaluate_candidate(
                 parent.path,
@@ -1042,9 +1045,10 @@ def run_evolution(
                     parent.lineage,
                     reflector,
                     constraints,
-                    reference_programs=_reference_programs(
-                        candidates,
-                        parent.program_id,
+                    reference_programs=(
+                        _reference_programs(candidates, parent.program_id)
+                        if cfg.reference_programs
+                        else []
                     ),
                 )
                 code = mutation.program_code
@@ -1234,7 +1238,7 @@ def run_evolution(
         key=lambda candidate: candidate.static_score,
         reverse=True,
     )[: max(1, int(cfg.selection_top_k))]
-    repeat_count = max(1, int(cfg.selection_repeats))
+    repeat_count = max(0, int(cfg.selection_repeats))
     repeated_selection = []
     selection_scores = (
         {
@@ -1248,6 +1252,8 @@ def run_evolution(
         repeated_scores = list(selection_scores.get(candidate.program_id) or [])
         if len(repeated_scores) > repeat_count:
             raise RuntimeError("Formal selection checkpoint has excess repeats")
+        if repeat_count == 0:
+            repeated_scores = [candidate.static_score]
         for repeat_index in range(len(repeated_scores), repeat_count):
             repeated = evaluate_candidate(
                 candidate.path,
@@ -1317,14 +1323,16 @@ def run_evolution(
         f"[MSTAR] Best program={best.program_id}, score={selected['mean']:.4f}",
         flush=True,
     )
-    final_evaluation = evaluate_candidate(
-        str(best_path),
-        best.program_id,
-        best.lineage_name,
-        static_items,
-        replicate_id=f"final-{cfg.seed}",
-        collect_traces=False,
-    )
+    final_evaluation = None
+    if repeat_count > 0:
+        final_evaluation = evaluate_candidate(
+            str(best_path),
+            best.program_id,
+            best.lineage_name,
+            static_items,
+            replicate_id=f"final-{cfg.seed}",
+            collect_traces=False,
+        )
     best_report = {
         "program_id": best.program_id,
         "static_score": best.static_score,
@@ -1358,9 +1366,22 @@ def run_evolution(
         "change_log": asdict(best.change_log),
         "static_validation_ids": sorted(static_ids),
         "final_static_evaluation": {
-            "mean_score": final_evaluation.mean_score,
-            "runtime_stats": final_evaluation.runtime_stats,
-            "error": final_evaluation.error,
+            "mean_score": (
+                final_evaluation.mean_score
+                if final_evaluation is not None
+                else best.static_score
+            ),
+            "runtime_stats": (
+                final_evaluation.runtime_stats
+                if final_evaluation is not None
+                else {}
+            ),
+            "error": final_evaluation.error if final_evaluation is not None else None,
+            "source": (
+                "explicit_post_selection_repeat"
+                if final_evaluation is not None
+                else "recorded_candidate_static_fitness"
+            ),
             "case_content_hidden": True,
         },
         "test_set_used": False,
