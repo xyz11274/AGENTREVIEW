@@ -249,15 +249,45 @@ def _materialize_review_request(
     return payload
 
 
+def _review_request_input_identity_matches(
+    *,
+    protocol: Any,
+    stored: Any,
+    expected: dict[str, Any],
+    allow_legacy_missing_require_bubblewrap: bool,
+) -> bool:
+    if stored == expected:
+        return True
+    if (
+        allow_legacy_missing_require_bubblewrap is not True
+        or protocol != REVIEW_REQUEST_MATERIALIZATION_PROTOCOL
+        or expected.get("require_bubblewrap") is not True
+        or not isinstance(stored, dict)
+        or "require_bubblewrap" in stored
+    ):
+        return False
+    historical_expected = dict(expected)
+    historical_expected.pop("require_bubblewrap")
+    return stored == historical_expected
+
+
 def _load_review_request(
     path: Path,
     *,
     input_identity: dict[str, Any],
+    allow_legacy_missing_require_bubblewrap: bool,
 ) -> dict[str, Any]:
     value = read_json(path)
     if value.get("protocol") != REVIEW_REQUEST_MATERIALIZATION_PROTOCOL:
         raise ValueError(f"Review request protocol mismatch at {path}")
-    if value.get("input_identity") != input_identity:
+    if not _review_request_input_identity_matches(
+        protocol=value.get("protocol"),
+        stored=value.get("input_identity"),
+        expected=input_identity,
+        allow_legacy_missing_require_bubblewrap=(
+            allow_legacy_missing_require_bubblewrap
+        ),
+    ):
         raise ValueError(f"Review request input identity mismatch at {path}")
     body = {name: item for name, item in value.items() if name != "preparation_sha256"}
     if value.get("preparation_sha256") != value_sha256(body):
@@ -301,6 +331,7 @@ def run_specialist_review(
     embedding_identity: dict[str, Any] | None = None,
     require_bubblewrap: bool = True,
     _canonical_bootstrap_s2_enabled: bool | None = None,
+    _allow_legacy_missing_require_bubblewrap: bool = False,
 ) -> dict[str, Any]:
     """Generate and save one full Review; this function has no evaluator hook."""
     if role not in ROLES:
@@ -353,6 +384,9 @@ def run_specialist_review(
             request_materialization = _load_review_request(
                 request_path,
                 input_identity=input_identity,
+                allow_legacy_missing_require_bubblewrap=(
+                    _allow_legacy_missing_require_bubblewrap
+                ),
             )
         else:
             try:

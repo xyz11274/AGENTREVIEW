@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agentreview.research_v2.io import atomic_write_json, read_json
+from agentreview.research_v2.io import atomic_write_json, read_json, value_sha256
 from agentreview.research_v2.memory import build_memory_snapshot, seed_program_path
 from agentreview.research_v2.models import Paper
 from agentreview.research_v2.review import run_specialist_review
@@ -237,6 +237,204 @@ class ReviewPreparationTest(unittest.TestCase):
                 snapshot=snapshot,
                 run_id="resume-run",
                 require_bubblewrap=True,
+            )
+
+    def test_historical_v1_request_missing_true_bubblewrap_resumes_immutably(self):
+        program = self._program("historical-resume-v1")
+        snapshot = self._snapshot(program, "historical-resume-v1")
+        run_id = "historical-resume-run"
+        self._review(
+            program=program,
+            snapshot=snapshot,
+            run_id=run_id,
+            require_bubblewrap=True,
+        )
+        target = self.root / "reviews" / run_id / "p1"
+        request_path = target / "QUAL.request.json"
+        request = read_json(request_path)
+        request["input_identity"].pop("require_bubblewrap")
+        body = {
+            name: value
+            for name, value in request.items()
+            if name != "preparation_sha256"
+        }
+        request["preparation_sha256"] = value_sha256(body)
+        request_path.write_text(
+            json.dumps(request, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        (target / "QUAL.raw.json").unlink()
+        (target / "QUAL.json").unlink()
+        historical_bytes = request_path.read_bytes()
+
+        client = FakeCompletion()
+        with patch(
+            "agentreview.research_v2.review.prepare_review_invocation",
+            side_effect=AssertionError("Historical Program must not be re-executed"),
+        ):
+            with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+                self._review(
+                    program=program,
+                    snapshot=snapshot,
+                    run_id=run_id,
+                    client=client,
+                    require_bubblewrap=True,
+                )
+            resumed = self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id=run_id,
+                client=client,
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        self.assertEqual(resumed["review_text"], "prepared Specialist Review")
+        self.assertEqual(client.calls, ["specialist_review:QUAL"])
+        self.assertEqual(request_path.read_bytes(), historical_bytes)
+
+    def test_historical_bubblewrap_compatibility_rejects_all_other_drift(self):
+        program = self._program("historical-rejection-v1")
+        snapshot = self._snapshot(program, "historical-rejection-v1")
+
+        def rewrite_request(
+            run_id,
+            mutate,
+            *,
+            initial_require_bubblewrap=True,
+            refresh_hash=True,
+        ):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id=run_id,
+                require_bubblewrap=initial_require_bubblewrap,
+            )
+            request_path = (
+                self.root / "reviews" / run_id / "p1" / "QUAL.request.json"
+            )
+            request = read_json(request_path)
+            mutate(request)
+            if refresh_hash:
+                request["preparation_sha256"] = value_sha256(
+                    {
+                        name: value
+                        for name, value in request.items()
+                        if name != "preparation_sha256"
+                    }
+                )
+            request_path.write_text(
+                json.dumps(request, ensure_ascii=False, indent=2, sort_keys=True)
+                + "\n",
+                encoding="utf-8",
+            )
+
+        rewrite_request(
+            "historical-expected-false",
+            lambda value: value["input_identity"].pop("require_bubblewrap"),
+            initial_require_bubblewrap=False,
+        )
+        with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-expected-false",
+                require_bubblewrap=False,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        rewrite_request(
+            "historical-stored-false",
+            lambda value: value["input_identity"].update(
+                {"require_bubblewrap": False}
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-stored-false",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        rewrite_request(
+            "historical-stored-null",
+            lambda value: value["input_identity"].update(
+                {"require_bubblewrap": None}
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-stored-null",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        def remove_bubblewrap_and_drift(value):
+            value["input_identity"].pop("require_bubblewrap")
+            value["input_identity"]["embedding_identity"] = {
+                "provider": "different"
+            }
+
+        rewrite_request("historical-other-drift", remove_bubblewrap_and_drift)
+        with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-other-drift",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        rewrite_request(
+            "historical-stale-materialization",
+            lambda value: value["input_identity"].pop("require_bubblewrap"),
+            refresh_hash=False,
+        )
+        with self.assertRaisesRegex(ValueError, "materialization hash mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-stale-materialization",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        def remove_bubblewrap_and_drift_prompt_hash(value):
+            value["input_identity"].pop("require_bubblewrap")
+            value["request_sha256"] = "0" * 64
+
+        rewrite_request(
+            "historical-prompt-hash",
+            remove_bubblewrap_and_drift_prompt_hash,
+        )
+        with self.assertRaisesRegex(ValueError, "prompt hash mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-prompt-hash",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
+            )
+
+        def remove_bubblewrap_and_drift_provenance(value):
+            value["input_identity"].pop("require_bubblewrap")
+            value["retrieval_provenance"]["assembly"]["prompt_sha256"] = "0" * 64
+
+        rewrite_request(
+            "historical-provenance",
+            remove_bubblewrap_and_drift_provenance,
+        )
+        with self.assertRaisesRegex(ValueError, "provenance identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="historical-provenance",
+                require_bubblewrap=True,
+                _allow_legacy_missing_require_bubblewrap=True,
             )
 
     def test_request_materialization_rejects_pool_or_payload_change(self):

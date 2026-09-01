@@ -562,6 +562,51 @@ class FormalEvolutionTests(unittest.TestCase):
                 / "pool.json",
             )
 
+    def test_formal_review_batch_scopes_legacy_request_compatibility_to_bubblewrap(self):
+        snapshot = self._json("formal-snapshot.json", {"snapshot_id": "snapshot-1"})
+        calls = []
+
+        def fake_review(**kwargs):
+            calls.append(kwargs)
+
+        arguments = {
+            "records": [{"paper_id": "paper-1", "path": "/paper-1.json"}],
+            "role": "QUAL",
+            "program_path": "/program.py",
+            "snapshot_path": snapshot,
+            "program_version": "program-v1",
+            "output_root": self.root,
+            "completion_client": object(),
+            "model_identity": {"model": "frozen-model"},
+            "frozen_s2_path": "/s2.jsonl",
+            "embedding_client": object(),
+            "embedding_identity": {"provider": "frozen-embedding"},
+            "max_workers": 1,
+        }
+        with patch.object(
+            formal_module,
+            "run_specialist_review",
+            side_effect=fake_review,
+        ):
+            formal_module._run_review_batch(
+                **arguments,
+                run_id="formal-bubblewrap-true",
+                require_bubblewrap=True,
+            )
+            formal_module._run_review_batch(
+                **arguments,
+                run_id="formal-bubblewrap-false",
+                require_bubblewrap=False,
+            )
+
+        self.assertEqual(
+            [
+                call["_allow_legacy_missing_require_bubblewrap"]
+                for call in calls
+            ],
+            [True, False],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

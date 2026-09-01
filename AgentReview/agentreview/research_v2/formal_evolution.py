@@ -1103,6 +1103,9 @@ def _run_review_batch(
                         embedding_client=embedding_client,
                         embedding_identity=embedding_identity,
                         require_bubblewrap=require_bubblewrap,
+                        _allow_legacy_missing_require_bubblewrap=(
+                            require_bubblewrap is True
+                        ),
                     )
                     result = final_path
                 except SpecialistReviewPaperFailure as exc:
