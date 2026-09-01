@@ -2,6 +2,8 @@
 
 Research Core v2 由彼此隔离的五个 stage context 组成：Data Preparation、Review、Internal Evaluation、Evolution 和 External CoCo Evaluation。唯一共享对象是已保存且可哈希的不可变 artifact。
 
+具体部署参数、S2 单路 1 request/s 约束、CoCo/Review 并行条件和常见环境问题见 [EXPERIMENT_CONFIGURATION.md](EXPERIMENT_CONFIGURATION.md)。
+
 ## Review runtime
 
 ```text
@@ -21,6 +23,8 @@ Frozen Paper ─┬─ deterministic role-local Query → Frozen Memory Snapshot
 每份原始模型输出先写 `*.raw.json`，再写完整 Specialist Review。Review 只读 Memory snapshot；生成后没有 evaluator hook 或 writeback。Retrieval 不调用生成模型。`llm_summarizer` seed 是唯一例外：deterministic top-k 和 hit IDs 已确定并记录后，只允许一次 summary generation，失败即失败。
 
 Meta 读取 Frozen Paper 与五份固定顺序完整 Review。它不能读取 Memory、Program、S2、Internal Evaluation 或 CoCo。Concat 是独立 ablation。Meta 失败不会回退到 concat。
+
+Canonical bootstrap 通过一个 bounded runner 最多保持8个 Specialist invocation 在途。每个 run ID 有跨进程独占锁；raw response、完整 Review、请求 identity 与 generation/retry identity 完整绑定。模型 endpoint 或共享 runtime 故障会停止补充队列并保留 pending checkpoint；paper-local 空输出失败不会伪装成基础设施故障。同 run ID 恢复时只跳过通过完整 artifact 校验的角色。
 
 ## Offline Memory lifecycle
 
@@ -58,7 +62,11 @@ CoCo 最终集合是 `coco_1300_protocol_compatible_resample_v1`：13 个 venue-
 
 Frozen System 绑定该 manifest 的路径、文件 SHA、内部 manifest SHA 和1,300计数；`coco-eval` 在启动外部进程前要求 Final Review IDs 与冻结集合完全相等。
 
-两类 paper 分别绑定 `frozen_s2_external_development_v1` 与 `frozen_s2_coco1300_v1`。S2 网络客户端只存在于 data-preparation stage；Review 按 Frozen Paper 的 dataset identity 选择正确本地 pool。
+两类 paper 分别绑定 `frozen_s2_external_development_v1` 与 `frozen_s2_coco1300_v1`。S2 网络客户端只存在于 data-preparation stage；全机只允许一个串行构建进程，任意两次请求启动至少间隔1秒，development 与 CoCo 不并发。Review 按 Frozen Paper 的 dataset identity 选择正确本地 pool。
+
+## External evaluation scheduling
+
+CoCo 的 Split/Classify 与 27B Review 是独立服务和独立进程。某实验臂 A 满足1,300篇 exact-set barrier 后，其整臂 CoCo scoring 可以和实验臂 B 的 Review 同时排队运行，前提是服务使用不同物理 GPU。Official candidate runner 只消费已保存 Final Review 并连接常驻 endpoint，不拥有 vLLM 的启动、停止、清理或 GPU pin，因此不会在 CoCo 运行期间让 27B 空闲，也不会全局 `pkill` 其他服务。CoCo 结果仍严格禁止进入 Review、Internal Evaluation 或 Evolution。
 
 ## Minimal code ownership
 

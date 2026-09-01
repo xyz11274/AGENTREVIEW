@@ -2,14 +2,31 @@
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Protocol
 
 from .data import canonical_title
-from .io import file_sha256, value_sha256, write_derived_jsonl
+from .io import (
+    atomic_write_json,
+    file_sha256,
+    read_json,
+    read_jsonl,
+    value_sha256,
+    write_derived_jsonl,
+)
+
+S2_BUILDER_PROTOCOL = "frozen-s2-resumable-v2"
+S2_QUERY_METHOD = "semantic_scholar_exact_title_v1"
+# Frozen identity of the v2 record construction/filtering protocol.  Transport-only
+# changes (for example, handling an empty API result) preserve resumable checkpoints.
+S2_RECORD_BUILDER_SHA256 = (
+    "b76ac49d0a82469aa452deadfa4a710fcf859da19cf8c6d5ecfe1e89138f8e6e"
+)
 
 
 class S2SearchClient(Protocol):
@@ -19,27 +36,74 @@ class S2SearchClient(Protocol):
 class SemanticScholarSearchClient:
     """Data-preparation-only Semantic Scholar Graph API client."""
 
-    def __init__(self, api_key_env: str = "S2_API_KEY"):
+    def __init__(
+        self,
+        api_key_env: str = "S2_API_KEY",
+        *,
+        max_attempts: int = 6,
+        retry_base_seconds: float = 2.0,
+        min_request_interval_seconds: float = 1.0,
+    ):
         import requests
 
         self.requests = requests
         self.api_key = os.environ.get(api_key_env, "")
+        self.max_attempts = max(1, int(max_attempts))
+        self.retry_base_seconds = max(0.0, float(retry_base_seconds))
+        self.min_request_interval_seconds = max(
+            0.0,
+            float(min_request_interval_seconds),
+        )
+        self._last_request_started = 0.0
 
     def search_title(self, title: str, *, limit: int) -> list[dict[str, Any]]:
         headers = {"x-api-key": self.api_key} if self.api_key else {}
-        response = self.requests.get(
-            "https://api.semanticscholar.org/graph/v1/paper/search",
-            params={
-                "query": title,
-                "limit": int(limit),
-                "fields": "paperId,externalIds,title,abstract,year,publicationDate,venue,authors,url",
-            },
-            headers=headers,
-            timeout=60,
-        )
-        response.raise_for_status()
+        retry_statuses = {408, 425, 429, 500, 502, 503, 504}
+        response = None
+        for attempt in range(1, self.max_attempts + 1):
+            remaining = self.min_request_interval_seconds - (
+                time.monotonic() - self._last_request_started
+            )
+            if remaining > 0.0:
+                time.sleep(remaining)
+            self._last_request_started = time.monotonic()
+            try:
+                response = self.requests.get(
+                    "https://api.semanticscholar.org/graph/v1/paper/search",
+                    params={
+                        "query": title,
+                        "limit": int(limit),
+                        "fields": "paperId,externalIds,title,abstract,year,publicationDate,venue,authors,url",
+                    },
+                    headers=headers,
+                    timeout=60,
+                )
+            except self.requests.RequestException:
+                if attempt >= self.max_attempts:
+                    raise
+            else:
+                if response.ok:
+                    break
+                if response.status_code not in retry_statuses:
+                    response.raise_for_status()
+            if attempt >= self.max_attempts:
+                assert response is not None
+                response.raise_for_status()
+            retry_after = "" if response is None else response.headers.get("Retry-After", "")
+            try:
+                delay = float(retry_after)
+            except (TypeError, ValueError):
+                delay = self.retry_base_seconds * (2 ** (attempt - 1))
+            time.sleep(min(max(0.0, delay), 60.0))
+        assert response is not None
         payload = response.json()
         values = payload.get("data") if isinstance(payload, dict) else None
+        if (
+            isinstance(payload, dict)
+            and values is None
+            and payload.get("total") == 0
+        ):
+            return []
         if not isinstance(values, list):
             raise ValueError("Semantic Scholar search response lacks data list")
         return [dict(value) for value in values if isinstance(value, dict)]
@@ -62,7 +126,76 @@ def _external_ids(value: dict[str, Any]) -> set[str]:
     }
 
 
-def build_frozen_s2_pool(
+def _expected_record_identity(
+    *,
+    target: dict[str, Any],
+    paper_id: str,
+    title: str,
+    pool_version: str,
+    raw_limit: int,
+    top_k: int,
+    builder_sha256: str,
+) -> dict[str, Any]:
+    return {
+        "builder_protocol": S2_BUILDER_PROTOCOL,
+        "builder_sha256": builder_sha256,
+        "target_sha256": value_sha256(target),
+        "pool_version": pool_version,
+        "paper_id": paper_id,
+        "canonical_query_title": title,
+        "query_method": S2_QUERY_METHOD,
+        "raw_limit": raw_limit,
+        "top_k": top_k,
+    }
+
+
+def _validate_record_identity(
+    record: dict[str, Any],
+    expected: dict[str, Any],
+    *,
+    source: Path,
+) -> None:
+    observed = {key: record.get(key) for key in expected}
+    if observed != expected:
+        raise ValueError(
+            f"Frozen S2 record identity mismatch at {source}: "
+            f"observed={observed!r}, expected={expected!r}"
+        )
+    body = {key: value for key, value in record.items() if key != "record_sha256"}
+    if record.get("record_sha256") != value_sha256(body):
+        raise ValueError(f"Frozen S2 record hash mismatch at {source}")
+
+
+def _pool_manifest(
+    *,
+    destination: Path,
+    pool_version: str,
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "pool_version": pool_version,
+        "record_count": len(records),
+        "output_path": str(destination),
+        "sha256": file_sha256(destination),
+        "rejection_counts": {
+            reason: sum(
+                1
+                for record in records
+                for value in record["rejected"]
+                if value["reason"] == reason
+            )
+            for reason in sorted(
+                {
+                    value["reason"]
+                    for record in records
+                    for value in record["rejected"]
+                }
+            )
+        },
+    }
+
+
+def _build_frozen_s2_pool_unlocked(
     *,
     targets: list[dict[str, Any]],
     output_path: str | Path,
@@ -71,8 +204,11 @@ def build_frozen_s2_pool(
     raw_limit: int = 50,
     top_k: int = 5,
 ) -> dict[str, Any]:
-    """Query once by exact title, self-filter, preserve order and freeze locally."""
-    records = []
+    """Build one pool while the caller holds the artifact-root S2 lock."""
+    destination = Path(output_path).expanduser().resolve()
+    checkpoint_root = destination.with_name(f"{destination.name}.parts")
+    builder_sha256 = S2_RECORD_BUILDER_SHA256
+    target_specs = []
     for target in targets:
         paper_id = str(target.get("paper_id") or "")
         title = str(
@@ -80,6 +216,72 @@ def build_frozen_s2_pool(
         ).strip()
         if not paper_id or not title:
             raise ValueError("Frozen S2 target requires paper_id and title")
+        target_specs.append(
+            (
+                target,
+                paper_id,
+                title,
+                _expected_record_identity(
+                    target=target,
+                    paper_id=paper_id,
+                    title=title,
+                    pool_version=pool_version,
+                    raw_limit=raw_limit,
+                    top_k=top_k,
+                    builder_sha256=builder_sha256,
+                ),
+            )
+        )
+    target_ids = [paper_id for _, paper_id, _, _ in target_specs]
+    if "" in target_ids or len(set(target_ids)) != len(target_ids):
+        raise ValueError("Frozen S2 targets require unique non-empty paper IDs")
+    if destination.is_file():
+        frozen_records = read_jsonl(destination)
+        if len(frozen_records) != len(target_specs):
+            raise ValueError(
+                f"Frozen S2 output count differs from requested targets: {destination}"
+            )
+        for record, (_, _, _, expected_identity) in zip(
+            frozen_records, target_specs, strict=True
+        ):
+            _validate_record_identity(
+                record,
+                expected_identity,
+                source=destination,
+            )
+        return _pool_manifest(
+            destination=destination,
+            pool_version=pool_version,
+            records=frozen_records,
+        )
+    records = []
+    for target_index, (target, paper_id, title, expected_identity) in enumerate(
+        target_specs
+    ):
+        checkpoint_id = value_sha256(expected_identity)
+        checkpoint_path = checkpoint_root / f"{target_index:06d}-{checkpoint_id}.json"
+        record = read_json(checkpoint_path) if checkpoint_path.is_file() else None
+        if record is not None:
+            _validate_record_identity(
+                record,
+                expected_identity,
+                source=checkpoint_path,
+            )
+            records.append(record)
+            print(
+                json.dumps(
+                    {
+                        "completed": target_index + 1,
+                        "total": len(targets),
+                        "paper_id": paper_id,
+                        "disposition": "resumed",
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+            continue
+
         raw = client.search_title(title, limit=raw_limit)
         target_title = canonical_title(title)
         target_family = _family_title(title)
@@ -119,12 +321,7 @@ def build_frozen_s2_pool(
             if len(selected) >= top_k:
                 break
         record = {
-            "pool_version": pool_version,
-            "paper_id": paper_id,
-            "canonical_query_title": title,
-            "query_method": "semantic_scholar_exact_title_v1",
-            "raw_limit": raw_limit,
-            "top_k": top_k,
+            **expected_identity,
             "raw_result_count": len(raw),
             "raw_response_sha256": value_sha256(raw),
             "rejected": rejected,
@@ -132,29 +329,57 @@ def build_frozen_s2_pool(
             "result_sha256": value_sha256(selected),
         }
         record["record_sha256"] = value_sha256(record)
+        atomic_write_json(checkpoint_path, record)
         records.append(record)
-    write_derived_jsonl(output_path, records)
-    return {
-        "pool_version": pool_version,
-        "record_count": len(records),
-        "output_path": str(Path(output_path).expanduser().resolve()),
-        "sha256": file_sha256(output_path),
-        "rejection_counts": {
-            reason: sum(
-                1
-                for record in records
-                for value in record["rejected"]
-                if value["reason"] == reason
-            )
-            for reason in sorted(
+        print(
+            json.dumps(
                 {
-                    value["reason"]
-                    for record in records
-                    for value in record["rejected"]
-                }
-            )
-        },
-    }
+                    "completed": target_index + 1,
+                    "total": len(targets),
+                    "paper_id": paper_id,
+                    "disposition": "queried",
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+    write_derived_jsonl(destination, records)
+    return _pool_manifest(
+        destination=destination,
+        pool_version=pool_version,
+        records=records,
+    )
+
+
+def build_frozen_s2_pool(
+    *,
+    targets: list[dict[str, Any]],
+    output_path: str | Path,
+    client: S2SearchClient,
+    pool_version: str,
+    raw_limit: int = 50,
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """Freeze one serial S2 pool under a non-blocking cross-process lock."""
+    destination = Path(output_path).expanduser().resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = destination.parent / ".s2-build.lock"
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError(
+                "Another S2 build is already running for this artifact root: "
+                f"{lock_path}"
+            ) from exc
+        return _build_frozen_s2_pool_unlocked(
+            targets=targets,
+            output_path=destination,
+            client=client,
+            pool_version=pool_version,
+            raw_limit=raw_limit,
+            top_k=top_k,
+        )
 
 
 class FrozenS2Store:

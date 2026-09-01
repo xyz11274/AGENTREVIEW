@@ -1,4 +1,6 @@
+import fcntl
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,7 +24,11 @@ from agentreview.research_v2.memory import (
 from agentreview.research_v2.meta import generate_final_review
 from agentreview.research_v2.models import Paper
 from agentreview.research_v2.review import run_specialist_review
-from agentreview.research_v2.s2 import FrozenS2Store, build_frozen_s2_pool
+from agentreview.research_v2.s2 import (
+    FrozenS2Store,
+    SemanticScholarSearchClient,
+    build_frozen_s2_pool,
+)
 
 
 class FakeCompletion:
@@ -168,14 +174,79 @@ class ResearchV2Test(unittest.TestCase):
         )
         final_path = self.root / "final.json"
         atomic_write_json(final_path, {"paper_id": "p1", "review_text": "final"})
+        fake_coco = self.root / "fake-coco-success"
+        fake_coco.write_text(
+            f"""#!{sys.executable}
+import json
+import hashlib
+import os
+from pathlib import Path
+
+output = Path(os.environ["COCO_OUTPUT_ROOT"])
+evaluation_enabled = output.name == "missing-evaluation-output"
+split_path = output / "candidate_official_split.jsonl"
+classify_path = output / "candidate_official_classify.jsonl"
+split_path.write_text(
+    json.dumps({{"id": "p1", "sentence_texts": ["final"], "opinions": [[0]]}}) + "\\n",
+    encoding="utf-8",
+)
+classify_path.write_text(
+    json.dumps({{
+        "id": "p1",
+        "sentence_texts": ["final"],
+        "opinions": [[0]],
+        "category": [["QUAL-MET"]],
+    }}) + "\\n",
+    encoding="utf-8",
+)
+
+def binding(path):
+    return {{"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}
+
+candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
+(output / "candidate_official_runner.json").write_text(
+    json.dumps({{
+        "protocol": "coco-official-candidate-runner-v1",
+        "status": "complete",
+        "evaluation_enabled": evaluation_enabled,
+        "candidate_input": binding(candidate_input),
+        "artifacts": {{
+            "split": binding(split_path),
+            "classify": binding(classify_path),
+        }},
+    }}) + "\\n",
+    encoding="utf-8",
+)
+""",
+            encoding="utf-8",
+        )
+        fake_coco.chmod(0o700)
         result = run_coco_evaluation(
             final_review_paths=[final_path],
             frozen_system_path=system_path,
             coco_root=self.root,
             output_root=self.root / "coco-output",
-            command=["/bin/true"],
+            command=[str(fake_coco)],
         )
         self.assertEqual(result["status"], "complete")
+        self.assertEqual(
+            set(result["artifacts"]),
+            {"runner", "split", "classify"},
+        )
+        self.assertTrue(
+            all(
+                len(value["sha256"]) == 64
+                for value in result["artifacts"].values()
+            )
+        )
+        with self.assertRaisesRegex(RuntimeError, "enabled evaluation"):
+            run_coco_evaluation(
+                final_review_paths=[final_path],
+                frozen_system_path=system_path,
+                coco_root=self.root,
+                output_root=self.root / "missing-evaluation-output",
+                command=[str(fake_coco)],
+            )
         wrong = self.root / "wrong-final.json"
         atomic_write_json(wrong, {"paper_id": "wrong", "review_text": "final"})
         with self.assertRaisesRegex(ValueError, "exact frozen paper set"):
@@ -186,6 +257,45 @@ class ResearchV2Test(unittest.TestCase):
                 output_root=self.root / "wrong-output",
                 command=["/bin/true"],
             )
+
+    def test_coco_process_rejects_success_without_contract_artifacts(self):
+        manifest_path = self.root / "missing-artifacts-coco-manifest.json"
+        atomic_write_json(
+            manifest_path,
+            {
+                "protocol": "coco_1300_protocol_compatible_resample_v1",
+                "count": 1,
+                "manifest_sha256": "test-manifest",
+                "records": [{"paper_id": "p1"}],
+            },
+        )
+        system_path = self.root / "missing-artifacts-system.json"
+        atomic_write_json(
+            system_path,
+            {
+                "system_id": "system-1",
+                "external_evaluation": {
+                    "coco_1300_manifest": {
+                        "path": str(manifest_path),
+                        "sha256": file_sha256(manifest_path),
+                    }
+                },
+            },
+        )
+        final_path = self.root / "missing-artifacts-final.json"
+        atomic_write_json(final_path, {"paper_id": "p1", "review_text": "final"})
+
+        with self.assertRaisesRegex(RuntimeError, "contract artifact"):
+            run_coco_evaluation(
+                final_review_paths=[final_path],
+                frozen_system_path=system_path,
+                coco_root=self.root,
+                output_root=self.root / "missing-artifacts-output",
+                command=["/bin/true"],
+            )
+        failed_report = read_json(self.root / "missing-artifacts-output" / "run.json")
+        self.assertEqual(failed_report["status"], "failed")
+        self.assertIn("contract artifact", failed_report["artifact_validation_error"])
 
     def test_vector_memory_is_role_local_deterministic_and_non_generative(self):
         review = self._review_path(text="Check ablations and statistical variance.")
@@ -432,6 +542,154 @@ class ResearchV2Test(unittest.TestCase):
         self.assertEqual(manifest["rejection_counts"]["exact_canonical_title"], 1)
         self.assertEqual(manifest["rejection_counts"]["duplicate_s2_id"], 1)
         self.assertEqual(len(record["raw_response_sha256"]), 64)
+
+    def test_s2_builder_resumes_from_per_target_checkpoint(self):
+        targets = [
+            {"paper_id": "p1", "canonical_query_title": "First Paper"},
+            {"paper_id": "p2", "canonical_query_title": "Second Paper"},
+        ]
+        path = self.root / "resumable-s2.jsonl"
+
+        class InterruptedSearch:
+            def __init__(self):
+                self.calls = []
+
+            def search_title(self, title, *, limit):
+                self.calls.append((title, limit))
+                if title == "Second Paper":
+                    raise RuntimeError("transient interruption")
+                return [{"paperId": "related-1", "title": "Related First"}]
+
+        interrupted = InterruptedSearch()
+        with self.assertRaisesRegex(RuntimeError, "transient interruption"):
+            build_frozen_s2_pool(
+                targets=targets,
+                output_path=path,
+                client=interrupted,
+                pool_version="resumable-pool",
+            )
+        self.assertFalse(path.exists())
+        self.assertEqual(
+            len(list(path.with_name(f"{path.name}.parts").glob("*.json"))),
+            1,
+        )
+
+        class ResumedSearch:
+            def __init__(self):
+                self.calls = []
+
+            def search_title(self, title, *, limit):
+                self.calls.append((title, limit))
+                return [{"paperId": "related-2", "title": "Related Second"}]
+
+        resumed = ResumedSearch()
+        manifest = build_frozen_s2_pool(
+            targets=targets,
+            output_path=path,
+            client=resumed,
+            pool_version="resumable-pool",
+        )
+        self.assertEqual(resumed.calls, [("Second Paper", 50)])
+        self.assertEqual(manifest["record_count"], 2)
+        self.assertEqual(
+            [json.loads(line)["paper_id"] for line in path.read_text().splitlines()],
+            ["p1", "p2"],
+        )
+
+        class CompletedSearch:
+            def search_title(self, title, *, limit):
+                raise AssertionError("completed pool must not query the network")
+
+        replay = build_frozen_s2_pool(
+            targets=targets,
+            output_path=path,
+            client=CompletedSearch(),
+            pool_version="resumable-pool",
+        )
+        self.assertEqual(replay["sha256"], manifest["sha256"])
+
+    def test_s2_builder_rejects_a_second_process_for_the_artifact_root(self):
+        path = self.root / "s2" / "locked.jsonl"
+        path.parent.mkdir(parents=True)
+        lock_path = path.parent / ".s2-build.lock"
+
+        class Search:
+            def search_title(self, title, *, limit):
+                raise AssertionError("lock rejection must happen before HTTP")
+
+        with lock_path.open("a+", encoding="utf-8") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaisesRegex(RuntimeError, "already running"):
+                build_frozen_s2_pool(
+                    targets=[
+                        {"paper_id": "p1", "canonical_query_title": "Test Paper"}
+                    ],
+                    output_path=path,
+                    client=Search(),
+                    pool_version="locked-pool",
+                )
+
+    def test_s2_client_retries_transient_status_only(self):
+        class FakeRequestException(Exception):
+            pass
+
+        class FakeResponse:
+            def __init__(self, status_code, payload=None):
+                self.status_code = status_code
+                self.ok = status_code == 200
+                self.headers = {}
+                self.payload = payload or {"data": []}
+
+            def raise_for_status(self):
+                raise FakeRequestException(f"HTTP {self.status_code}")
+
+            def json(self):
+                return self.payload
+
+        class FakeRequests:
+            RequestException = FakeRequestException
+
+            def __init__(self, responses):
+                self.responses = list(responses)
+                self.calls = 0
+
+            def get(self, *args, **kwargs):
+                self.calls += 1
+                return self.responses.pop(0)
+
+        client = SemanticScholarSearchClient(
+            max_attempts=3,
+            retry_base_seconds=0,
+            min_request_interval_seconds=0,
+        )
+        unauthorized = FakeRequests([FakeResponse(401)])
+        client.requests = unauthorized
+        with self.assertRaisesRegex(FakeRequestException, "HTTP 401"):
+            client.search_title("Paper", limit=5)
+        self.assertEqual(unauthorized.calls, 1)
+
+        transient = FakeRequests(
+            [
+                FakeResponse(429),
+                FakeResponse(200, {"data": [{"paperId": "related"}]}),
+            ]
+        )
+        client.requests = transient
+        self.assertEqual(
+            client.search_title("Paper", limit=5),
+            [{"paperId": "related"}],
+        )
+        self.assertEqual(transient.calls, 2)
+
+        empty = FakeRequests([FakeResponse(200, {"total": 0, "offset": 0})])
+        client.requests = empty
+        self.assertEqual(client.search_title("No Matching Paper", limit=5), [])
+        self.assertEqual(empty.calls, 1)
+
+        malformed = FakeRequests([FakeResponse(200, {"total": 1, "offset": 0})])
+        client.requests = malformed
+        with self.assertRaisesRegex(ValueError, "lacks data list"):
+            client.search_title("Malformed Result", limit=5)
 
     def test_prepare_data_makes_three_disjoint_deterministic_splits(self):
         data_root = self.root / "dataset"

@@ -1,8 +1,6 @@
 """Process-level capability sandbox for executable MemoryPrograms."""
 
 import json
-import os
-import resource
 import shutil
 import subprocess
 import sys
@@ -48,20 +46,6 @@ def _bubblewrap_usable(binary: str | None) -> bool:
     except (OSError, subprocess.TimeoutExpired):
         _BWRAP_USABLE = False
     return _BWRAP_USABLE
-
-
-def _limits(memory_mb: int, cpu_seconds: int):
-    def apply():
-        memory_bytes = max(64, int(memory_mb)) * 1024 * 1024
-        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
-        resource.setrlimit(
-            resource.RLIMIT_CPU,
-            (max(1, int(cpu_seconds)), max(1, int(cpu_seconds)) + 1),
-        )
-        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
-        os.umask(0o077)
-
-    return apply
 
 
 def _value_dict(value: Any) -> dict[str, Any]:
@@ -170,6 +154,8 @@ class SandboxSession:
                 "-S",
                 "/sandbox/worker.py",
                 "/candidate/program.py",
+                str(self.memory_mb),
+                str(self.cpu_seconds),
             ]
         else:
             command = [
@@ -178,6 +164,8 @@ class SandboxSession:
                 "-S",
                 str(worker),
                 str(candidate),
+                str(self.memory_mb),
+                str(self.cpu_seconds),
             ]
 
         self._process = subprocess.Popen(
@@ -188,7 +176,6 @@ class SandboxSession:
             text=True,
             bufsize=1,
             env={},
-            preexec_fn=_limits(self.memory_mb, self.cpu_seconds),
         )
         first = self._read_line()
         if first.get("type") != "ready":

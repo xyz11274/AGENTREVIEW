@@ -14,7 +14,9 @@ import heapq
 import itertools
 import json
 import math
+import os
 import re
+import resource
 import sqlite3
 import statistics
 import sys
@@ -30,6 +32,15 @@ _WIRE_OUT = sys.stdout
 sys.stdout = sys.stderr
 _next_call_id = 0
 _RESTORE_EMBEDDING_BATCH_SIZE = 32
+
+
+def _apply_process_limits(memory_mb, cpu_seconds):
+    memory_bytes = max(64, int(memory_mb)) * 1024 * 1024
+    cpu_soft = max(1, int(cpu_seconds))
+    resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
+    resource.setrlimit(resource.RLIMIT_CPU, (cpu_soft, cpu_soft + 1))
+    resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+    os.umask(0o077)
 
 
 def _send(value):
@@ -691,6 +702,7 @@ def _run(program_path):
 
 if __name__ == "__main__":
     try:
+        _apply_process_limits(sys.argv[2], sys.argv[3])
         _run(sys.argv[1])
     except BaseException as exc:
         _send(

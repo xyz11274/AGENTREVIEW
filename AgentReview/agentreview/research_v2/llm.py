@@ -8,6 +8,10 @@ from typing import Any, Protocol
 from .config import ModelConfig
 
 
+class EmptyCompletionOutput(RuntimeError):
+    """The endpoint returned no usable assistant text for one request."""
+
+
 class CompletionClient(Protocol):
     def complete(
         self,
@@ -24,7 +28,11 @@ class OpenAICompletionClient:
 
         self.config = config
         api_key = os.environ.get(config.api_key_env) or "local-not-required"
-        self.client = OpenAI(base_url=config.base_url, api_key=api_key)
+        self.client = OpenAI(
+            base_url=config.base_url,
+            api_key=api_key,
+            max_retries=0,
+        )
 
     def complete(
         self,
@@ -46,7 +54,7 @@ class OpenAICompletionClient:
         )
         text = response.choices[0].message.content
         if not isinstance(text, str) or not text.strip():
-            raise RuntimeError(f"{component} returned an empty response")
+            raise EmptyCompletionOutput(f"{component} returned an empty response")
         return text.strip()
 
 

@@ -1,8 +1,8 @@
 # Research Core v2 修改记录
 
-> 状态：核心实现与本地边界测试完成；正式 S2 数据获取和 275 篇生成实验尚未启动  
+> 状态：development 数据与 S2 已冻结；专用 27B 和真实 8 并发 smoke 已验证；正式 canonical bootstrap 与串行 CoCo S2 正在运行
 > 实施日期：2026-09-01  
-> 基线 branch / commit：`20260831-minimal` / `e7c3ed8`
+> 本轮实验起点 branch / commit：`20260831-minimal` / `827289a`
 
 本文只记录实际执行的修改、删除、生成资产和测试证据。目标协议见 [RESEARCH_CORE_V2_DESIGN.md](RESEARCH_CORE_V2_DESIGN.md)。
 
@@ -36,6 +36,7 @@ META_SYNTHESIS_Request_v1.md      6beb7fb87506d9413ac1c3f8c7aee5915d130750794ec7
 ```text
 prepare-data
 prepare-coco-1300
+build-s2
 bootstrap-corpus
 build-memory
 review
@@ -59,6 +60,10 @@ coco-eval
 - Meta 和 concat 是两个明确 final mode；Meta 失败不回退 concat。
 - CoCo 只由外部子进程读取 Final Review 的 `{id,text}` 视图。
 - Frozen System 绑定确切 CoCo-1300 manifest；外部进程启动前严格验证 Final Review IDs 与冻结1,300篇完全相等。
+- Canonical bootstrap 默认8个 bounded worker；每个完成角色立即更新 mutable `run.json` checkpoint，同 run ID 由 nonblocking `flock` 防止双进程重复请求。
+- raw artifact 绑定完整 request、model generation、retry、Program 和 Memory identity；OpenAI SDK retry 显式关闭，唯一重试层最多执行两次完全相同请求。
+- infrastructure failure 停止补充队列并以非零 CLI 状态退出；已完成角色和 pending 状态可由同 run ID 恢复。
+- immutable JSON commit 使用 unique temp + `os.link` 原子 create-if-absent；并发不同内容只有一个进程可提交。
 
 ## 4. M★ 对齐实现
 
@@ -76,6 +81,29 @@ coco-eval
 - development 和 CoCo 分别配置 `frozen_s2_external_development_v1` 与 `frozen_s2_coco1300_v1`。
 - CLI 根据 Frozen Paper `source.dataset` 自动选择正确 S2 pool；`freeze-system` 强制同时绑定两套 pool。
 - 旧 `frozen_s2_temporal_v2` 只覆盖 CoCo family representative，且含大量 self-match，未复用到 v2 并已随 legacy 配置删除。
+
+实际执行 `prepare-data`：
+
+```text
+protocol             research-v2-development-split-v1
+usable candidates    34,052
+canonical/static/rotating  125 / 25 / 125
+development manifest b684aaf982c822e1538fc4c83369d1ef91e4f54139b758dc9fdefbff1d5efc5a
+pairwise disjoint     verified
+```
+
+实际串行执行 development S2：
+
+```text
+targets               275
+request concurrency   1 process / serial / at most 1 request start per second
+records               275
+zero-result records   71
+selected evidence     877
+pool SHA256            231430ed3ce7cff9d53bc5c962df7062b25807fcc79bc483e7fad720849ad8cc
+```
+
+构建使用 per-target immutable checkpoint 和 artifact-root nonblocking lock。首次运行揭示 Semantic Scholar 的合法零命中响应是 `total: 0` 且省略 `data`；客户端现将它明确解释为空列表，其他缺失 `data` 的响应仍失败。已有 checkpoint 在修复和受控重启后全部原位恢复。最终文件又通过一次无网络 CLI 重放、record hash、顺序 identity 与 runtime self-match 全量校验。
 
 实际执行 `prepare-coco-1300`：
 
@@ -98,12 +126,22 @@ paper assets    63.21 MiB
 
 - 新增 `configs/research_v2_formal_v1.json`。
 - generation：`Qwen/Qwen3.8-27B`，revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，BF16，temperature 0，thinking false。
-- live endpoint 核验：`http://127.0.0.1:18000/v1` 返回 served model `qwen3.8-27b`、max model length 32768。
+- 专用 live endpoint：物理 GPU 3、6 上的 `http://127.0.0.1:18001/v1`；TP=2、BF16、max model length 65536、`max_num_seqs=8`。
 - server environment：vLLM `0.20.1+cu129`，Transformers `5.8.1`。
 - embedding：`Qwen/Qwen3-Embedding-8B`，revision `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`，本地 cache 路径独立配置。
 - test/embedding environment：Transformers `4.57.1`；它与生成服务环境分开记录。
 - tokenizer SHA256：`0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3`。
 - chat template SHA256：`c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041`。
+
+服务测得 GPU KV cache 478,412 tokens，完整 65,536-token request 的理论并发为7.30。实际 Specialist 最大输入预检约25,621 tokens，加8,192输出预算约33,813，因此正式 workload 使用8 worker。2篇×5角色的完整 S2 live smoke 实测经历长 prompt 分批 prefill 后达到 `8 running / 0 waiting`，峰值 KV 约33%；10/10 首次调用成功。同 run ID 重放为10/10 resumed，模型 prompt/generation token counter 均未增加。32k 无法覆盖已测最大输入与输出预算，因此正式采用64k；当前没有必要牺牲并发升到96k。
+
+## 6.1 CoCo 与 Review 排队边界
+
+- stock CoCo 客户端 cap 是 Split 512 / Classify 1024；它们是 HTTP 在途上限，不是 GPU active sequence 数。
+- 新 `scripts/run_official_candidate.py` 默认收紧为 Split 64 / Classify 128，只连接预先部署并完成 GPU pin 的 endpoint。
+- 两个 CoCo launcher 都是单卡 TP=1，且未显式设置 `max_num_seqs`；实际服务端并行由 vLLM 默认与 KV 容量决定。
+- runner 不生成 Review、不启动/停止服务、不执行全局 `pkill`，并在成功返回后输出固定 contract 与 split/classify/可选 evaluation SHA256。
+- A 整臂 CoCo 与 B 整臂 Review 可在不同 GPU 上由两个独立进程同时运行；单臂内仍保留严格1,300篇 exact-set barrier，不做逐 paper microbatch 交错。
 
 ## 7. Legacy 删除记录
 
@@ -135,17 +173,23 @@ paper assets    63.21 MiB
 | v2 + CoCo quota + five-role Tiny | 18 passed，1.90s |
 | final v2 suite + exact CoCo manifest binding | 19 passed，1.58s |
 | artifact binding checks + final lint/compile/test | 20 passed，1.67s；Ruff passed；compileall passed |
+| resumable/concurrent bootstrap + S2 lock + immutable race | 35 passed，6.89s；Ruff/compileall/diff-check passed |
+| Qwen live S2 smoke | 2 papers × 5 roles，10/10 first-attempt；8 running verified；resume 10/10 |
+| CoCo official candidate runner | CoCo repo 2 passed；AgentReview exact contract tests included above |
 | compileall after legacy removal | passed |
 | CLI `--help` | 10 stage entries loaded successfully |
 | CoCo-1300 actual freeze | 1,300 assets、13 groups、paper-only boundary verified |
 
 Tiny 测试按实际边界执行：五个 role-local no-memory snapshot → 五次独立完整 Review → 确认 Review 阶段没有 Evaluation → 五次后置 Internal Evaluation → 独立 Meta 与 concat Final Review；使用 fake completion client，不占用正在执行其他任务的正式 Qwen GPU 服务。
 
-## 9. 尚未执行的正式工作
+## 9. 正式运行状态与后续队列
 
-1. 当前 `S2_API_KEY` 未设置；两套新 S2 pool 尚未从 API 获取。无 key 也可调用公开接口，但 1,575 个 title query 容易受速率限制，正式构建建议配置 key 后分别运行 data-preparation stage。
-2. development 275 篇正式 prepare-data、625份 canonical no-memory Review、Internal Evaluation 和五角色 Evolution 尚未启动。
-3. 未运行正式 Qwen Tiny generation；当前 live Qwen endpoint 正被另一 corpus build 使用。本批次只做只读 `/v1/models` readiness 检查，避免干扰正在运行的 GPU 任务。
-4. CoCo split/classify/evaluation 尚未执行；它必须等 Frozen System 和1,300份 Final Review 完成后由独立 `coco-eval` stage 启动。
+`canonical-bootstrap-v1` 已于 2026-09-01 16:40 CST 启动：125篇 canonical paper × 5角色，共625个任务，S2 开启，`max_workers=8`。启动核验时已完成7个角色，0 paper failure、0 infrastructure failure，vLLM 为8 running / 0 waiting；tmux session 是 `ar0831_formal_canonical_c8`，进度日志是 `artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log`。
 
-这些项目是正式实验执行，不是当前核心代码和边界测试的失败。
+尚未执行：
+
+1. canonical Review 完成后的后置 Internal Evaluation、三 seed Memory 与五角色 Evolution；
+2. 独立的 CoCo-1300 S2 pool 已在 development S2 释放全局锁后顺序启动；它与 GPU Review 并行，但全机仍只有这一个 S2 HTTP 流，tmux session 为 `ar0831_s2_coco1300`；
+3. Frozen System、1,300份 CoCo Final Review，以及随后独立运行的 split/classify/evaluation。
+
+正式服务与常见环境问题统一记录在 [EXPERIMENT_CONFIGURATION.md](EXPERIMENT_CONFIGURATION.md)。这些剩余项目是实验队列，不是当前核心代码或边界测试失败。

@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from .bootstrap import (
+    DEFAULT_FORMAL_RUN_ID,
+    BootstrapInfrastructureFailure,
+    BootstrapCorpusOptions,
+    run_canonical_bootstrap,
+)
 from .coco import run_coco_evaluation
 from .coco_protocol import prepare_coco_1300
 from .config import ResearchConfig
@@ -37,6 +44,15 @@ def _base_parser() -> argparse.ArgumentParser:
     prepare_coco.add_argument("--build-s2", action="store_true")
     prepare_coco.add_argument("--s2-output", default="")
     prepare_coco.add_argument("--s2-api-key-env", default="S2_API_KEY")
+
+    build_s2 = stages.add_parser("build-s2")
+    build_s2.add_argument(
+        "--dataset",
+        choices=("development", "coco"),
+        required=True,
+    )
+    build_s2.add_argument("--output", default="")
+    build_s2.add_argument("--s2-api-key-env", default="S2_API_KEY")
 
     build = stages.add_parser("build-memory")
     build.add_argument("--role", required=True)
@@ -88,8 +104,9 @@ def _base_parser() -> argparse.ArgumentParser:
     coco.add_argument("command", nargs=argparse.REMAINDER)
 
     bootstrap = stages.add_parser("bootstrap-corpus")
-    bootstrap.add_argument("--run-id", default="canonical-bootstrap-v1")
+    bootstrap.add_argument("--run-id", default=DEFAULT_FORMAL_RUN_ID)
     bootstrap.add_argument("--limit", type=int, default=0)
+    bootstrap.add_argument("--max-workers", type=int, default=8)
     bootstrap.add_argument("--no-s2", action="store_true")
     return parser
 
@@ -266,6 +283,23 @@ def main(argv: list[str] | None = None) -> int:
                 client=SemanticScholarSearchClient(args.s2_api_key_env),
                 pool_version="frozen_s2_coco1300_v1",
             )
+    elif args.stage == "build-s2":
+        if args.dataset == "development":
+            query_path = output_root / "data" / "s2_title_queries.jsonl"
+            default_output = (
+                output_root / "s2" / "frozen_s2_external_development_v1.jsonl"
+            )
+            pool_version = "frozen_s2_external_development_v1"
+        else:
+            query_path = output_root / "data" / "coco_1300" / "s2_title_queries.jsonl"
+            default_output = output_root / "s2" / "frozen_s2_coco1300_v1.jsonl"
+            pool_version = "frozen_s2_coco1300_v1"
+        result = build_frozen_s2_pool(
+            targets=read_jsonl(query_path),
+            output_path=args.output or default_output,
+            client=SemanticScholarSearchClient(args.s2_api_key_env),
+            pool_version=pool_version,
+        )
     elif args.stage == "build-memory":
         deterministic_builds = {"no_memory", "vector_search", "llm_summarizer"}
         client = (
@@ -373,72 +407,37 @@ def main(argv: list[str] | None = None) -> int:
             command=args.command,
         )
     elif args.stage == "bootstrap-corpus":
-        split = read_json(
-            output_root / "data" / "splits" / "canonical_review_corpus.json"
-        )
-        records = list(split.get("records") or [])
-        if args.limit > 0:
-            records = records[: args.limit]
-        client = OpenAICompletionClient(config.model)
-        no_memory_program = str(seed_program_path("no_memory"))
-        snapshots = {}
-        for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL"):
-            snapshot_path = (
-                output_root
-                / "memories"
-                / role
-                / "canonical-no-memory-v1"
-                / "snapshot.json"
+        try:
+            result = run_canonical_bootstrap(
+                config=config,
+                options=BootstrapCorpusOptions(
+                    run_id=args.run_id,
+                    limit=args.limit,
+                    max_workers=args.max_workers,
+                    s2_enabled=not args.no_s2,
+                ),
+                completion_client=OpenAICompletionClient(config.model),
+                progress=lambda event: print(
+                    json.dumps(event, ensure_ascii=False, sort_keys=True),
+                    file=sys.stderr,
+                    flush=True,
+                ),
             )
-            build_memory_snapshot(
-                role=role,
-                program_path=no_memory_program,
-                program_version="canonical-no-memory-v1",
-                review_paths=[],
-                evaluation_paths=[],
-                output_path=snapshot_path,
-                seed_kind="no_memory",
-                require_bubblewrap=config.require_bubblewrap,
+        except BootstrapInfrastructureFailure as exc:
+            print(
+                json.dumps(
+                    {
+                        "stage": "bootstrap-corpus",
+                        "status": "infrastructure_failed",
+                        "error": f"{type(exc).__name__}: {exc}",
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+                file=sys.stderr,
+                flush=True,
             )
-            snapshots[role] = str(snapshot_path)
-        completed, failed = [], []
-        for record in records:
-            for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL"):
-                try:
-                    review = run_specialist_review(
-                        paper_path=record["path"],
-                        role=role,
-                        program_path=no_memory_program,
-                        snapshot_path=snapshots[role],
-                        run_id=args.run_id,
-                        output_root=output_root,
-                        completion_client=client,
-                        model_identity=config.model.identity(),
-                        program_version="canonical-no-memory-v1",
-                        s2_enabled=not args.no_s2,
-                        frozen_s2_path=config.frozen_s2_path or None,
-                        embedding_client=_embedding_client(config),
-                        require_bubblewrap=config.require_bubblewrap,
-                    )
-                    completed.append(review["review_id"])
-                except Exception as exc:
-                    failed.append(
-                        {
-                            "paper_id": record["paper_id"],
-                            "role": role,
-                            "error": f"{type(exc).__name__}: {exc}",
-                        }
-                    )
-        result = {
-            "run_id": args.run_id,
-            "completed_review_ids": completed,
-            "failures": failed,
-            "snapshots": snapshots,
-        }
-        atomic_write_json(
-            output_root / "runs" / args.run_id / "run.json",
-            result,
-        )
+            return 2
     else:
         raise AssertionError(args.stage)
     printable = result

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -50,13 +51,28 @@ def atomic_write_json(
         if target.read_bytes() == rendered:
             return target
         raise FileExistsError(f"Immutable artifact already exists with new content: {target}")
-    temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
     try:
-        with temporary.open("wb") as handle:
+        with os.fdopen(descriptor, "wb") as handle:
             handle.write(rendered)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, target)
+        if immutable:
+            try:
+                os.link(temporary, target)
+            except FileExistsError:
+                if target.read_bytes() == rendered:
+                    return target
+                raise FileExistsError(
+                    f"Immutable artifact already exists with new content: {target}"
+                ) from None
+        else:
+            os.replace(temporary, target)
     finally:
         if temporary.exists():
             temporary.unlink()

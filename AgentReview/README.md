@@ -23,7 +23,7 @@ Saved complete Reviews
   → append candidate to that role's pool
 ```
 
-完整设计见 [RESEARCH_CORE_V2_DESIGN.md](../docs/RESEARCH_CORE_V2_DESIGN.md)，领域术语见 [CONTEXT.md](../CONTEXT.md)，实际修改和测试证据见 [RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md](../docs/RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md)。
+完整设计见 [RESEARCH_CORE_V2_DESIGN.md](../docs/RESEARCH_CORE_V2_DESIGN.md)，领域术语见 [CONTEXT.md](../CONTEXT.md)，实际修改和测试证据见 [RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md](../docs/RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md)。正式服务、S2 串行限流、CoCo 并行边界与常见环境问题统一记录在 [EXPERIMENT_CONFIGURATION.md](../docs/EXPERIMENT_CONFIGURATION.md)。
 
 ## 冻结身份
 
@@ -45,7 +45,7 @@ export PYTHONPATH=AgentReview
 export OPENAI_API_KEY=dummy
 ```
 
-正式生成模型是独立 vLLM 服务。当前冻结配置连接 `http://127.0.0.1:18000/v1`，served model name 为 `qwen3.8-27b`，BF16、temperature 0、`enable_thinking=false`。Qwen3-Embedding-8B 在本地进程中只服务确定性 embedding retrieval。
+正式生成模型是物理 GPU 3、6 上的独立 vLLM 服务。当前冻结配置连接 `http://127.0.0.1:18001/v1`，served model name 为 `qwen3.8-27b`，TP=2、BF16、64k context、`max_num_seqs=8`、temperature 0、`enable_thinking=false`。Qwen3-Embedding-8B 在本地进程中只服务确定性 embedding retrieval。
 
 ## Stage CLI
 
@@ -58,6 +58,7 @@ python -m agentreview.research_v2 --config AgentReview/configs/research_v2_forma
 ```text
 prepare-data
 prepare-coco-1300
+build-s2
 bootstrap-corpus
 build-memory
 review
@@ -76,13 +77,15 @@ python -m agentreview.research_v2 \
   prepare-data
 ```
 
-如需在数据准备阶段获取并冻结 S2：
+已有 data artifact 时，独立串行获取并冻结 development S2，避免重新扫描原始数据：
 
 ```bash
 python -m agentreview.research_v2 \
   --config AgentReview/configs/research_v2_formal_v1.json \
-  prepare-data --build-s2
+  build-s2 --dataset development
 ```
+
+S2 全机只运行一个构建进程，development 与 CoCo 不并发；每个进程严格串行且最多每秒启动一个请求。限流和恢复规则见 [EXPERIMENT_CONFIGURATION.md](../docs/EXPERIMENT_CONFIGURATION.md)。
 
 独立冻结 protocol-compatible CoCo-1300；该集合不是作者未公开的 original IDs：
 
@@ -93,6 +96,14 @@ python -m agentreview.research_v2 \
 ```
 
 加 `--build-s2` 时构建独立 `frozen_s2_coco1300_v1`。development 与 CoCo 的 S2 pool 不允许混用。
+
+冻结系统和 1300 份 Final Review 齐备后，`coco-eval` 可调用
+CoCoReviewBench 的 `scripts/run_official_candidate.py`。该 runner 只连接已经
+常驻、在外部完成 GPU pin 的 split/classify endpoint；Review 生成、vLLM
+生命周期和进程清理由外部服务负责。命令返回 0 后，本侧会按冻结 ID 集合
+验证 split/classify（以及可选 evaluation）产物并记录 SHA256。CoCo 整臂与
+另一实验臂的 Review 可由两个独立进程并行启动；单个 sealed arm 保持整臂
+执行。
 
 其余 stage 的必需参数以各自 `--help` 为准。每一步读取上一阶段已经保存的 artifact；`run-evolution` 只是显式 spec 的薄协调器，不把 Review 与 Evaluation 合并成在线调用。
 
