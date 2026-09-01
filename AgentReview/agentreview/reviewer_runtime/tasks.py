@@ -11,5 +11,5 @@ __all__ = ["ALL_TASKS", "META_TASK", "SPECIALIST_TASKS", "reviewer_identity"]
 
 
 def reviewer_identity(task_id: str) -> dict:
-    """Return one task's prompt identity plus the composite suite identity."""
+    """Return one Specialist's identity; Meta is not a Reviewer task."""
     return load_reviewer_suite().identity(task_id)

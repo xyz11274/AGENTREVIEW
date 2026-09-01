@@ -1,25 +1,5 @@
-# Install the section needed for the selected optional workflow. The formal
-# AgentReview + memory-evolution path uses requirements-runtime.txt.
-
-# Dormant provider adapters.
-anthropic
-bardapi
-cohere
-langchain
-supabase
-
-# Interactive CLI, viewers, OpenReview ingestion, and OpenScholar helpers.
-beautifulsoup4
-colorama
-googlesearch-python
-gradio>=5.0,<6.0
-jsonlines
-openreview-py
-prompt-toolkit
-rich
-
 # Development and test commands.
-pytest
+pytest==9.1.1
 ruff
 
 # Optional Qwen embedding acceleration. Install after the CUDA torch wheel with

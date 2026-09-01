@@ -1,4 +1,4 @@
-"""Frozen reviewer suite: prompt rendering, identities, and META requests."""
+"""Frozen identities for five Specialist Reviewers and stateless Meta synthesis."""
 
 from __future__ import annotations
 
@@ -10,23 +10,28 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-REVIEWER_IDENTITY_VERSION = "frozen-reviewer-identity-v2"
-SPECIALIST_REQUEST_PROTOCOL_VERSION = "specialist-review-request-v1"
+REVIEWER_IDENTITY_VERSION = "frozen-specialist-identity-v3"
+META_SYNTHESIS_IDENTITY_VERSION = "meta-synthesis-identity-v1"
+SPECIALIST_REQUEST_PROTOCOL_VERSION = "specialist-review-request-v2"
+META_REQUEST_PROTOCOL_VERSION = "meta-synthesis-request-v1"
 SPECIALIST_REQUEST_TEMPLATE = (
     "Review task: {task_id}\n\n"
     "{paper_context}\n\n"
     "Return the complete {task_id} specialist review using the frozen output protocol."
 )
-META_REQUEST_PROTOCOL_VERSION = "meta-synthesis-request-v2"
 META_REQUEST_TEMPLATE = (
-    "Review task: META\n"
+    "Synthesis task: META\n"
     "Paper id: {paper_id}\n\n"
+    "=== FROZEN PAPER ===\n"
     "{paper_context}\n\n"
     "{specialist_block}\n\n"
-    "Return the complete final meta-review."
+    "Return the complete Final Review using META Synthesis Request v1."
 )
 EXPECTED_REVIEW_REQUEST_SHA256 = (
-    "ecd42d44c1df2cb27f606c48cb5071eea844e9dc93a7b8a36bb78352806d148d"
+    "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2"
+)
+EXPECTED_META_SYNTHESIS_REQUEST_SHA256 = (
+    "6beb7fb87506d9413ac1c3f8c7aee5915d130750794ec7fc647e806fbdd19fe5"
 )
 
 REVIEWER_SPECS = (
@@ -60,9 +65,10 @@ REVIEWER_SPECS = (
 SPECIALIST_TASKS: tuple[str, ...] = tuple(
     str(spec["dimension"]) for spec in REVIEWER_SPECS
 )
+# META is an artifact label, not a Reviewer Role and not part of ALL_TASKS.
 META_TASK = "META"
-ALL_TASKS: tuple[str, ...] = SPECIALIST_TASKS + (META_TASK,)
-META_REVIEWER_NAME = "Final Meta-Reviewer"
+ALL_TASKS: tuple[str, ...] = SPECIALIST_TASKS
+META_REVIEWER_NAME = "Final Meta Synthesizer"
 
 
 def _sha256_text(value: str) -> str:
@@ -70,43 +76,61 @@ def _sha256_text(value: str) -> str:
 
 
 def reviewer_request_protocols() -> dict[str, dict[str, str]]:
+    """Return protocols owned by the five-role Specialist suite."""
     return {
         "specialist": {
             "version": SPECIALIST_REQUEST_PROTOCOL_VERSION,
             "template_sha256": _sha256_text(SPECIALIST_REQUEST_TEMPLATE),
-        },
-        "meta": {
-            "version": META_REQUEST_PROTOCOL_VERSION,
-            "template_sha256": _sha256_text(META_REQUEST_TEMPLATE),
-        },
+        }
     }
 
 
-def _review_request_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "REVIEW_Request.md"
+def meta_synthesis_request_protocol() -> dict[str, str]:
+    return {
+        "version": META_REQUEST_PROTOCOL_VERSION,
+        "template_sha256": _sha256_text(META_REQUEST_TEMPLATE),
+    }
+
+
+def _project_file(name: str) -> Path:
+    return Path(__file__).resolve().parent.parent / name
 
 
 def load_review_request_sections() -> dict[str, str]:
-    """Load the six source sections after verifying the frozen file identity."""
-    raw = _review_request_path().read_bytes()
+    """Load the five Specialist sections after verifying source identity."""
+    source = _project_file("REVIEW_Request.md")
+    raw = source.read_bytes()
     actual_hash = hashlib.sha256(raw).hexdigest()
     if actual_hash != EXPECTED_REVIEW_REQUEST_SHA256:
         raise RuntimeError(
-            "Frozen reviewer source identity mismatch: "
-            f"expected sha256={EXPECTED_REVIEW_REQUEST_SHA256}, got {actual_hash}"
+            "Frozen Specialist source identity mismatch: "
+            f"expected sha256={EXPECTED_REVIEW_REQUEST_SHA256}, got={actual_hash}"
         )
     text = raw.decode("utf-8")
-    matches = list(re.finditer(r"(?m)^([1-6])\. ([A-Z]+) ", text))
+    matches = list(re.finditer(r"(?m)^([1-5])\. ([A-Z]+) ", text))
     sections: dict[str, str] = {}
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         sections[match.group(2)] = text[match.start() : end].strip()
-    if tuple(sections) != ALL_TASKS:
+    if tuple(sections) != SPECIALIST_TASKS:
         raise RuntimeError(
-            "Frozen reviewer section order mismatch: "
-            f"expected={list(ALL_TASKS)}, got={list(sections)}"
+            "Frozen Specialist section order mismatch: "
+            f"expected={list(SPECIALIST_TASKS)}, got={list(sections)}"
         )
     return sections
+
+
+def load_meta_synthesis_request() -> str:
+    """Load the independent stateless Meta prompt after hash verification."""
+    source = _project_file("META_SYNTHESIS_Request_v1.md")
+    raw = source.read_bytes()
+    actual_hash = hashlib.sha256(raw).hexdigest()
+    if actual_hash != EXPECTED_META_SYNTHESIS_REQUEST_SHA256:
+        raise RuntimeError(
+            "Frozen Meta synthesis source identity mismatch: "
+            f"expected sha256={EXPECTED_META_SYNTHESIS_REQUEST_SHA256}, got={actual_hash}"
+        )
+    return raw.decode("utf-8").strip()
 
 
 def _specialist_output_format(dimension: str) -> str:
@@ -148,7 +172,8 @@ def _render_specialist_prompt(
         "## Official Rubric Section\n"
         f"{section_text}\n\n"
         "## Reviewing Instructions\n"
-        f"- Evaluate the paper only through the {dimension} lens while still grounding every claim in the paper content and retrieved references.\n"
+        f"- Evaluate the paper only through the {dimension} lens while grounding every claim in the Frozen Paper.\n"
+        "- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n"
         "- Be rigorous, evidence-based, and constructive.\n"
         "- Explicitly comment on the listed sub-dimensions from the rubric.\n"
         "- Base experiments and claims on evidence present in the paper.\n"
@@ -169,9 +194,7 @@ class FrozenReviewer:
     system_prompt_sha256: str
 
     def identity(self, suite_identity_sha256: str) -> dict[str, str]:
-        protocol = reviewer_request_protocols()[
-            "meta" if self.task_id == META_TASK else "specialist"
-        ]
+        protocol = reviewer_request_protocols()["specialist"]
         return {
             "identity_version": REVIEWER_IDENTITY_VERSION,
             "task_id": self.task_id,
@@ -215,7 +238,7 @@ class FrozenReviewerSuite:
         for reviewer in self.reviewers:
             if reviewer.task_id == task_id:
                 return reviewer
-        raise ValueError(f"Unknown review task: {task_id}")
+        raise ValueError(f"Unknown Specialist task: {task_id}")
 
     def identity(self, task_id: str) -> dict[str, str]:
         return self.task(task_id).identity(self.suite_identity_sha256)
@@ -239,37 +262,27 @@ class FrozenReviewerSuite:
             "suite_identity_sha256": self.suite_identity_sha256,
         }
 
-    def build_meta_question(
-        self,
-        paper_id: str,
-        specialist_reviews: Mapping[str, str],
-        paper_context: str,
-    ) -> str:
-        """Build the sole META request shape in stable specialist order."""
-        if len(specialist_reviews) == len(SPECIALIST_TASKS) and set(
-            specialist_reviews
-        ) == set(SPECIALIST_TASKS):
-            ordered_reviews = {
-                task_id: str(specialist_reviews[task_id])
-                for task_id in SPECIALIST_TASKS
-            }
-        else:
-            raise ValueError(
-                "META request requires this specialist set: "
-                + ", ".join(SPECIALIST_TASKS)
-            )
-        context = str(paper_context).strip()
-        if context:
-            specialist_block = "\n\n".join(
-                f"=== {task_id} SPECIALIST REVIEW ===\n{ordered_reviews[task_id]}"
-                for task_id in SPECIALIST_TASKS
-            )
-            return META_REQUEST_TEMPLATE.format(
-                paper_id=paper_id,
-                paper_context=context,
-                specialist_block=specialist_block,
-            )
-        raise ValueError("META request requires canonical paper context")
+
+@dataclass(frozen=True)
+class FrozenMetaSynthesizer:
+    name: str
+    system_prompt: str
+    system_prompt_sha256: str
+
+    def identity(self) -> dict[str, str]:
+        protocol = meta_synthesis_request_protocol()
+        return {
+            "identity_version": META_SYNTHESIS_IDENTITY_VERSION,
+            "name": self.name,
+            "system_prompt_sha256": self.system_prompt_sha256,
+            "source_path": "META_SYNTHESIS_Request_v1.md",
+            "source_sha256": EXPECTED_META_SYNTHESIS_REQUEST_SHA256,
+            "request_protocol_version": protocol["version"],
+            "request_template_sha256": protocol["template_sha256"],
+        }
+
+    def manifest_payload(self) -> dict[str, Any]:
+        return self.identity()
 
 
 def load_reviewer_suite() -> FrozenReviewerSuite:
@@ -290,26 +303,37 @@ def load_reviewer_suite() -> FrozenReviewerSuite:
                 system_prompt_sha256=_sha256_text(prompt),
             )
         )
-    meta_prompt = sections[META_TASK]
-    reviewers.append(
-        FrozenReviewer(
-            task_id=META_TASK,
-            reviewer_name=META_REVIEWER_NAME,
-            system_prompt=meta_prompt,
-            system_prompt_sha256=_sha256_text(meta_prompt),
-        )
-    )
     return FrozenReviewerSuite(tuple(reviewers))
 
 
+def load_meta_synthesizer() -> FrozenMetaSynthesizer:
+    prompt = load_meta_synthesis_request()
+    return FrozenMetaSynthesizer(
+        name=META_REVIEWER_NAME,
+        system_prompt=prompt,
+        system_prompt_sha256=_sha256_text(prompt),
+    )
+
+
 def validate_reviewer_identity_manifest(path: str | Path) -> dict[str, Any]:
-    """Verify the checked-in semantic manifest against the rendered suite."""
+    """Verify a checked-in five-Specialist manifest."""
     manifest_path = Path(path).expanduser().resolve()
     recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
     expected = load_reviewer_suite().manifest_payload()
     if recorded != expected:
         raise ValueError(
-            f"Reviewer Identity manifest differs from the rendered suite: {manifest_path}"
+            f"Specialist Identity manifest differs from the rendered suite: {manifest_path}"
+        )
+    return expected
+
+
+def validate_meta_synthesis_manifest(path: str | Path) -> dict[str, Any]:
+    manifest_path = Path(path).expanduser().resolve()
+    recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected = load_meta_synthesizer().manifest_payload()
+    if recorded != expected:
+        raise ValueError(
+            f"Meta synthesis manifest differs from the rendered prompt: {manifest_path}"
         )
     return expected
 
@@ -320,9 +344,23 @@ def build_meta_review_question(
     specialist_reviews: Mapping[str, str],
     paper_context: str,
 ) -> str:
-    """Build the current frozen META synthesis request."""
-    return load_reviewer_suite().build_meta_question(
-        paper_id,
-        specialist_reviews,
-        paper_context,
+    """Build a stateless Meta request in stable Specialist order."""
+    if len(specialist_reviews) != len(SPECIALIST_TASKS) or set(
+        specialist_reviews
+    ) != set(SPECIALIST_TASKS):
+        raise ValueError(
+            "META request requires this Specialist set: "
+            + ", ".join(SPECIALIST_TASKS)
+        )
+    context = str(paper_context).strip()
+    if not context:
+        raise ValueError("META request requires Frozen Paper context")
+    specialist_block = "\n\n".join(
+        f"=== {task_id} SPECIALIST REVIEW ===\n{specialist_reviews[task_id]}"
+        for task_id in SPECIALIST_TASKS
+    )
+    return META_REQUEST_TEMPLATE.format(
+        paper_id=paper_id,
+        paper_context=context,
+        specialist_block=specialist_block,
     )

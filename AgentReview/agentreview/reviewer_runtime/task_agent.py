@@ -3,14 +3,6 @@ import re
 from dataclasses import MISSING, fields
 from typing import Any
 
-from agentreview.single_paper_review_roles import (
-    build_meta_reviewer_config,
-    build_specialist_reviewer_configs,
-)
-
-from .tasks import META_TASK, SPECIALIST_TASKS
-
-
 def _annotation_name(annotation: Any) -> str:
     return getattr(annotation, "__name__", str(annotation).replace("typing.", ""))
 
@@ -190,25 +182,3 @@ Memory context:
 Provide the final answer only.
 """.strip()
         return self._complete(prompt, agent_name="Memory Response").strip()
-
-
-def build_task_agent(toolkit, task_id: str) -> TaskAgent:
-    """Build the fixed task agent; candidates cannot alter this system prompt."""
-    if task_id == META_TASK:
-        config = build_meta_reviewer_config()
-        return TaskAgent(
-            toolkit,
-            system_prompt=config["role_desc"],
-            task_id=task_id,
-        )
-    if task_id not in SPECIALIST_TASKS:
-        raise ValueError(f"Unknown review task: {task_id}")
-    configs = {
-        config["metadata"]["review_dimension"]: config
-        for config in build_specialist_reviewer_configs()
-    }
-    return TaskAgent(
-        toolkit,
-        system_prompt=configs[task_id]["role_desc"],
-        task_id=task_id,
-    )

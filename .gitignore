@@ -6,3 +6,6 @@ AgentReview/cache/*.sqlite3
 # Workstation secrets and generated review outputs
 .vscode/
 outputs*/
+
+# Research v2 generated immutable run/data artifacts (hashes are recorded in logs)
+artifacts/research_v2/

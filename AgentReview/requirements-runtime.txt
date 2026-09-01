@@ -1,17 +1,9 @@
-# Direct dependencies for AgentReview formal execution, memory evolution,
-# CoCo adapter/evaluator imports, and Qwen3-Embedding-8B precomputation.
-#
-# Install the CUDA wheel for torch first from the PyTorch cu126 index. The
-# repeated torch pin below records the runtime contract and remains satisfied.
+# Direct dependencies for Research Core v2 and Qwen3-Embedding-8B.
+# The Qwen3.8-27B vLLM server is a separate process/environment.
 
-httpx==0.28.1
 numpy==2.2.6
 openai==1.109.1
-packaging==25.0
-pandas==2.2.3
 requests==2.32.5
 sentence-transformers==5.1.2
-tenacity==9.1.2
 torch==2.7.1
-tqdm==4.67.1
 transformers==4.57.1

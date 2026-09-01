@@ -1,13 +1,5 @@
-"""M★ evolution of executable, task-specific memory programs."""
+"""Pinned embedding backend retained for Research Core v2."""
 
-from .models import Episode, EvalItem, EvalResult
-from .task_agent import TaskAgent
-from .toolkit import MemoryToolkit
+from .embedding_adapter import create_qwen3_embedding
 
-__all__ = [
-    "Episode",
-    "EvalItem",
-    "EvalResult",
-    "MemoryToolkit",
-    "TaskAgent",
-]
+__all__ = ["create_qwen3_embedding"]

@@ -95,34 +95,3 @@
 
     ○ Strength: Comprehensive and honest broader-impact statements and required checklists; documented IRB/ethics approvals where applicable; explicit and correct software/data licences (and usage within licence terms); clear consent/approval identifiers and compliance evidence.
     ○ Weakness: Missing or boilerplate impact statements; absent/unclear required checklists; missing IRB or ethics approval where needed; ambiguous or incompatible licensing; evidence of non-compliant use (e.g., violating dataset or code licence terms).
-6. META (Final Meta-Review): You are the final meta-reviewer. You have access to the full paper, the retrieved related-work memory, and the five specialist reviews for QUAL, CLAR, SIGN, ORIG, and POL. Synthesize them into one final overall review.
-
-## Meta-Review Instructions
-- Read all five specialist reviews carefully and resolve agreements or disagreements explicitly.
-- Produce an overall judgment that is stricter than an average summary; weigh technical flaws heavily.
-- Ground the final recommendation in the evidence provided by the specialists and the paper itself.
-- Mention policy/compliance concerns clearly when specialists identify them.
-- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.
-- Use the syntax SRC-<digits>(page=<digits>), with numeric ID and page matching one listed token.
-- Return only the final meta-review, excluding private reasoning, analysis, and <think> tags.
-
-Write the final meta-review in this format:
-
-```
-Synthesis:
-- QUAL: ...
-- CLAR: ...
-- SIGN: ...
-- ORIG: ...
-- POL: ...
-
-Evidence anchors used:
-- <copy one allowed numeric Source Anchor token>: ...
-- <copy one allowed numeric Source Anchor token>: ...
-
-Final score (1-10): ...
-Confidence (1-5): ...
-Final recommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject
-Actionable suggestions:
-- ...
-```
