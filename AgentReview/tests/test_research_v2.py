@@ -1,5 +1,6 @@
 import fcntl
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -100,6 +101,42 @@ class ResearchV2Test(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def _git_coco_runner(
+        self,
+        name: str,
+        source: str,
+    ) -> tuple[Path, Path, dict]:
+        root = self.root / name
+        runner = root / "scripts" / "run_official_candidate.py"
+        runner.parent.mkdir(parents=True)
+        runner.write_text(source, encoding="utf-8")
+        runner.chmod(0o700)
+        for command in (
+            ["git", "init", "-q"],
+            ["git", "config", "user.email", "research-v2@example.invalid"],
+            ["git", "config", "user.name", "Research V2 Test"],
+            ["git", "add", "scripts/run_official_candidate.py"],
+            ["git", "commit", "-q", "-m", "test external coco runner"],
+        ):
+            subprocess.run(command, cwd=root, check=True, capture_output=True)
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        identity = {
+            "protocol": "research-v2-external-coco-identity-v1",
+            "repository_root": str(root.resolve()),
+            "git_commit": commit,
+            "runner": {
+                "path": str(runner.resolve()),
+                "sha256": file_sha256(runner),
+            },
+        }
+        return root, runner, identity
+
     def _review_artifact(self, role="QUAL", review_id="r1", text="review"):
         return {
             "review_id": review_id,
@@ -189,18 +226,6 @@ class ResearchV2Test(unittest.TestCase):
             },
         )
         system_path = self.root / "system.json"
-        atomic_write_json(
-            system_path,
-            {
-                "system_id": "system-1",
-                "external_evaluation": {
-                    "coco_1300_manifest": {
-                        "path": str(manifest_path),
-                        "sha256": file_sha256(manifest_path),
-                    }
-                },
-            },
-        )
         final_path = self.root / "final.json"
         atomic_write_json(final_path, {"paper_id": "p1", "review_text": "final"})
         fake_coco = self.root / "fake-coco-success"
@@ -232,17 +257,55 @@ classify_path.write_text(
 def binding(path):
     return {{"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}
 
+def value_sha(value):
+    rendered = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(rendered).hexdigest()
+
+def checkpoint(stage, input_binding, output_path, settings, candidate_binding):
+    path = output / ".candidate_official_stages" / stage / "stage.json"
+    path.parent.mkdir(parents=True)
+    body = {{
+        "protocol": "coco-official-candidate-stage-v1",
+        "stage": stage,
+        "candidate_input": candidate_binding,
+        "input_artifact": input_binding,
+        "settings": settings,
+        "output_filename": output_path.name,
+        "output_sha256": binding(output_path)["sha256"],
+    }}
+    body["checkpoint_id"] = value_sha(body)
+    path.write_text(json.dumps(body) + "\\n", encoding="utf-8")
+    return binding(path)
+
 candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
+candidate_binding = binding(candidate_input)
+settings = {{
+    "split": {{"model": "split-test"}},
+    "classify": {{"model": "classify-test"}},
+    "evaluation": {{"enabled": evaluation_enabled}},
+}}
+artifacts = {{
+    "split": binding(split_path),
+    "classify": binding(classify_path),
+}}
+stage_checkpoints = {{
+    "split": checkpoint(
+        "split", candidate_binding, split_path, settings["split"], candidate_binding
+    ),
+    "classify": checkpoint(
+        "classify", artifacts["split"], classify_path, settings["classify"],
+        candidate_binding,
+    ),
+}}
 (output / "candidate_official_runner.json").write_text(
     json.dumps({{
         "protocol": "coco-official-candidate-runner-v1",
         "status": "complete",
         "evaluation_enabled": evaluation_enabled,
-        "candidate_input": binding(candidate_input),
-        "artifacts": {{
-            "split": binding(split_path),
-            "classify": binding(classify_path),
-        }},
+        "candidate_input": candidate_binding,
+        "settings": settings,
+        "artifacts": artifacts,
+        "stage_checkpoints": stage_checkpoints,
     }}) + "\\n",
     encoding="utf-8",
 )
@@ -250,10 +313,27 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
             encoding="utf-8",
         )
         fake_coco.chmod(0o700)
+        coco_root, fake_coco, coco_identity = self._git_coco_runner(
+            "fake-coco-success-repository",
+            fake_coco.read_text(encoding="utf-8"),
+        )
+        atomic_write_json(
+            system_path,
+            {
+                "system_id": "system-1",
+                "external_evaluation": {
+                    "coco_1300_manifest": {
+                        "path": str(manifest_path),
+                        "sha256": file_sha256(manifest_path),
+                    },
+                    "coco_runner": coco_identity,
+                },
+            },
+        )
         result = run_coco_evaluation(
             final_review_paths=[final_path],
             frozen_system_path=system_path,
-            coco_root=self.root,
+            coco_root=coco_root,
             output_root=self.root / "coco-output",
             command=[str(fake_coco)],
         )
@@ -268,11 +348,11 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
                 for value in result["artifacts"].values()
             )
         )
-        with self.assertRaisesRegex(RuntimeError, "enabled evaluation"):
+        with self.assertRaisesRegex(RuntimeError, "artifact bindings"):
             run_coco_evaluation(
                 final_review_paths=[final_path],
                 frozen_system_path=system_path,
-                coco_root=self.root,
+                coco_root=coco_root,
                 output_root=self.root / "missing-evaluation-output",
                 command=[str(fake_coco)],
             )
@@ -299,6 +379,10 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
             },
         )
         system_path = self.root / "missing-artifacts-system.json"
+        coco_root, fake_coco, coco_identity = self._git_coco_runner(
+            "fake-coco-missing-artifacts-repository",
+            "#!" + sys.executable + "\n",
+        )
         atomic_write_json(
             system_path,
             {
@@ -307,7 +391,8 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
                     "coco_1300_manifest": {
                         "path": str(manifest_path),
                         "sha256": file_sha256(manifest_path),
-                    }
+                    },
+                    "coco_runner": coco_identity,
                 },
             },
         )
@@ -318,9 +403,9 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
             run_coco_evaluation(
                 final_review_paths=[final_path],
                 frozen_system_path=system_path,
-                coco_root=self.root,
+                coco_root=coco_root,
                 output_root=self.root / "missing-artifacts-output",
-                command=["/bin/true"],
+                command=[str(fake_coco)],
             )
         failed_report = read_json(self.root / "missing-artifacts-output" / "run.json")
         self.assertEqual(failed_report["status"], "failed")

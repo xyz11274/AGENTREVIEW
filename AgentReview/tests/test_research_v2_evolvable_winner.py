@@ -418,6 +418,21 @@ class EvolvableWinnerTests(unittest.TestCase):
                 "manifest_sha256": "sealed-manifest",
             },
         )
+        external_coco_root = self.root / "external-coco"
+        external_coco_runner = (
+            external_coco_root / "scripts" / "run_official_candidate.py"
+        )
+        external_coco_runner.parent.mkdir(parents=True)
+        external_coco_runner.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        external_coco_identity = {
+            "protocol": "research-v2-external-coco-identity-v1",
+            "repository_root": str(external_coco_root.resolve()),
+            "git_commit": "a" * 40,
+            "runner": {
+                "path": str(external_coco_runner.resolve()),
+                "sha256": file_sha256(external_coco_runner),
+            },
+        }
         with self.assertRaisesRegex(ValueError, "embedding identity mismatch"):
             freeze_system(
                 output_path=self.root / "invalid-embedding-system.json",
@@ -439,6 +454,7 @@ class EvolvableWinnerTests(unittest.TestCase):
                 evaluator_config={},
                 reflector_config={},
                 summarizer_config={},
+                external_coco_identity=external_coco_identity,
             )
         self.assertFalse((self.root / "invalid-embedding-system.json").exists())
         with self.assertRaisesRegex(ValueError, "completion identity mismatch"):
@@ -462,6 +478,7 @@ class EvolvableWinnerTests(unittest.TestCase):
                 evaluator_config={},
                 reflector_config={},
                 summarizer_config={},
+                external_coco_identity=external_coco_identity,
             )
         self.assertFalse((self.root / "invalid-completion-system.json").exists())
         frozen = freeze_system(
@@ -484,6 +501,7 @@ class EvolvableWinnerTests(unittest.TestCase):
             evaluator_config={},
             reflector_config={},
             summarizer_config={},
+            external_coco_identity=external_coco_identity,
         )
         self.assertEqual(frozen["protocol"], "research-v2-frozen-system-v2")
         runtime = frozen["review_runtime"]

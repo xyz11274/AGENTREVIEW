@@ -165,10 +165,12 @@ GPU 0 在 Split 占用约19.7 GiB 时，已实际加载正式
 `Qwen/Qwen3-Embedding-8B` 并成功生成4096维向量；两者可共存。预检日志是
 `artifacts/research_v2/runtime/coco_split_gpu0_reserve/embedding_coexist_preflight.log`。
 
-当前 GPU 0 Split 的 8K 是预留兼容参数，不是最终 CoCo scoring 参数。正式
-Split 前必须先完成 Evolution、释放 in-process embedding model，再把 Split 重启为
-冻结的 40K 配置并执行真实 CoCo prompt smoke。不得直接用 8K 预留服务开始
-1,300篇正式 Split。
+当前 GPU 0 Split 的 8K 是预留兼容参数，不是最终 CoCo scoring 参数。Formal
+Evolution 完成后也不能立即切换40K：winner batch 仍会在 GPU 0 加载
+Qwen3-Embedding-8B。必须保持8K/0.40预留服务直到 winner batch 完整退出、
+Specialist/Meta/concat 各自通过1,300 exact-set barrier并释放 embedding，随后才定向停止
+该 Split tmux、重启冻结的40K服务并执行真实 CoCo prompt smoke。不得直接用8K预留
+服务开始1,300篇正式 Split，也不得让40K Split与 winner embedding争用 GPU 0。
 
 服务日志：
 
@@ -315,6 +317,11 @@ Evolution 的 original/context-fix/resume commits；`code_commit` 不得把这�
 误归因成 transition commit。`primary_meta_enabled` 固定为 true，指的是最终系统包含
 独立 Meta synthesizer，并不改变 evolved Program 是否调用 S2 的自主权。
 
+过渡还会绑定独立 `CoCoReviewBench` 仓库的 clean Git commit、仓库根路径、
+`scripts/run_official_candidate.py` 路径与 SHA256；该文件也进入 freeze spec 的 source
+bindings。`coco-eval` 在外部 subprocess 前后都会复核这份身份，并拒绝 dirty worktree、
+commit漂移、runner内容漂移或绕过 frozen runner 的命令。
+
 随后以唯一正式 run ID 启动可恢复的 winner batch：
 
 启动前 Git 必须继续保持干净，且 HEAD 必须与 freeze spec/frozen system 中记录的
@@ -355,6 +362,13 @@ Meta 必须回连匹配的 meta raw/request。改写正文后重算旧式 ID 也
 保留该不可变 staging prefix 供审计，因此同一 run ID 会确定性重现同一失败。需要重新
 请求时使用新 run ID；受控清理 staging 只允许在没有 canonical promotion、已记录原因并
 建立 Git/运行审计后人工执行，小时探针不会自动清理或改写 staging。
+
+外部 CoCo runner 同样采用 output-root scoped 非阻塞锁。Split、Classify 与可选
+Evaluation 各自在 `.candidate_official_stages/<stage>/` 写入输入、设置、输出 SHA 和
+checkpoint ID；只有完整验证后才通过硬链接发布 fixed artifact。相同身份恢复会跳过
+已完成阶段，不再请求模型；失败 attempt 保留在隐藏 staging 中。任一输入、endpoint、
+model、worker、effort、cache version 或 evaluation 设置改变都会在新调用前失败，必须
+使用新的 scoring arm output root，而不是覆盖旧产物。
 
 故障恢复顺序固定为：确认精确 PID 为0且 flock 无 owner；保护当前 worktree 并建立
 Git checkpoint；复现根因并添加回归测试；提交修复；记录启动前/恢复后的 commit；

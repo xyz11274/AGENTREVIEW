@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,42 @@ FORMAL_ROLE_EVOLUTION_PROTOCOL = "research-v2-formal-role-evolution-v1"
 FORMAL_WINNER_PROTOCOL = "research-v2-formal-role-winner-v1"
 FORMAL_MUTATION_ATTEMPTS = 20
 NON_INDUCTIVE_SEED_KINDS = {"no_memory", "vector_search", "llm_summarizer"}
+EXTERNAL_COCO_IDENTITY_PROTOCOL = "research-v2-external-coco-identity-v1"
+EXTERNAL_COCO_RUNNER_RELATIVE_PATH = Path("scripts/run_official_candidate.py")
+
+
+def _validate_external_coco_identity(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != {
+        "protocol",
+        "repository_root",
+        "git_commit",
+        "runner",
+    }:
+        raise ValueError("freeze-system requires a complete external CoCo identity")
+    root = Path(str(value.get("repository_root") or "")).expanduser().resolve()
+    runner = value.get("runner")
+    expected_runner = (root / EXTERNAL_COCO_RUNNER_RELATIVE_PATH).resolve()
+    if (
+        value.get("protocol") != EXTERNAL_COCO_IDENTITY_PROTOCOL
+        or str(root) != value.get("repository_root")
+        or not re.fullmatch(r"[0-9a-f]{40}", str(value.get("git_commit") or ""))
+        or not isinstance(runner, dict)
+        or set(runner) != {"path", "sha256"}
+        or Path(str(runner.get("path") or "")).expanduser().resolve()
+        != expected_runner
+        or not expected_runner.is_file()
+        or runner.get("sha256") != file_sha256(expected_runner)
+    ):
+        raise ValueError("freeze-system external CoCo identity mismatch")
+    return {
+        "protocol": EXTERNAL_COCO_IDENTITY_PROTOCOL,
+        "repository_root": str(root),
+        "git_commit": value["git_commit"],
+        "runner": {
+            "path": str(expected_runner),
+            "sha256": file_sha256(expected_runner),
+        },
+    }
 
 
 def _validate_memory_winner_identity(
@@ -157,6 +194,7 @@ def freeze_system(
     evaluator_config: dict[str, Any],
     reflector_config: dict[str, Any],
     summarizer_config: dict[str, Any],
+    external_coco_identity: dict[str, Any],
 ) -> dict[str, Any]:
     if not isinstance(model_identity, dict) or not model_identity:
         raise ValueError("freeze-system requires a non-empty model identity")
@@ -170,6 +208,9 @@ def freeze_system(
         raise ValueError("freeze-system requires five role-local Evolution run IDs")
     if set(evolution_pools) != set(ROLES):
         raise ValueError("freeze-system requires five role-local Evolution pools")
+    verified_external_coco = _validate_external_coco_identity(
+        external_coco_identity
+    )
     verified_winners = {}
     for role in ROLES:
         pool_path = Path(evolution_pools[role]).expanduser().resolve()
@@ -342,7 +383,8 @@ def freeze_system(
                 "protocol": coco_manifest["protocol"],
                 "count": coco_manifest["count"],
                 "manifest_sha256": coco_manifest["manifest_sha256"],
-            }
+            },
+            "coco_runner": verified_external_coco,
         },
     }
     payload["system_id"] = value_sha256(payload)

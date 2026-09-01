@@ -71,6 +71,8 @@ DEVELOPMENT_MANIFEST_PROTOCOL = "research-v2-development-split-v1"
 DEVELOPMENT_S2_VERSION = "frozen_s2_external_development_v1"
 COCO_S2_VERSION = "frozen_s2_coco1300_v1"
 COCO_1300_COUNT = 1300
+EXTERNAL_COCO_IDENTITY_PROTOCOL = "research-v2-external-coco-identity-v1"
+EXTERNAL_COCO_RUNNER_RELATIVE_PATH = Path("scripts/run_official_candidate.py")
 FREEZE_ARGUMENT_FIELDS = {
     "programs",
     "memory_snapshots",
@@ -87,6 +89,7 @@ FREEZE_ARGUMENT_FIELDS = {
     "reflector_config",
     "summarizer_config",
     "require_bubblewrap",
+    "external_coco_identity",
 }
 
 
@@ -117,6 +120,23 @@ def clean_git_head(repository_root: str | Path) -> str:
     if status.stdout.strip():
         raise RuntimeError("Formal freeze requires a clean Git worktree")
     return commit
+
+
+def _external_coco_identity(config: ResearchConfig) -> dict[str, Any]:
+    root = Path(config.coco_root).expanduser().resolve()
+    runner = _required_file(
+        root / EXTERNAL_COCO_RUNNER_RELATIVE_PATH,
+        "the official external CoCo runner",
+    )
+    return {
+        "protocol": EXTERNAL_COCO_IDENTITY_PROTOCOL,
+        "repository_root": str(root),
+        "git_commit": clean_git_head(root),
+        "runner": {
+            "path": str(runner),
+            "sha256": file_sha256(runner),
+        },
+    }
 
 
 def _required_file(path: str | Path, label: str) -> Path:
@@ -970,6 +990,9 @@ def _expected_source_paths(
             "coco_1300.s2_pool": Path(
                 arguments["frozen_s2_pools"]["coco_1300"]
             ).expanduser().resolve(),
+            "external_coco.runner": Path(
+                arguments["external_coco_identity"]["runner"]["path"]
+            ).expanduser().resolve(),
         }
     )
     for role in ROLES:
@@ -1617,6 +1640,7 @@ def build_formal_freeze_arguments(
         "coco_manifest_path": str(coco_manifest),
         "evolution_run_ids": run_ids,
         "evolution_pools": pools,
+        "external_coco_identity": _external_coco_identity(config),
         **_provenance_configs(model_identity),
     }
     if set(arguments) != FREEZE_ARGUMENT_FIELDS:

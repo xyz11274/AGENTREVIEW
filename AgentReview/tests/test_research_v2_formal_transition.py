@@ -798,6 +798,14 @@ class FormalTransitionTest(unittest.TestCase):
             arguments["evolution_run_ids"],
             {role: "formal-evolution-v1" for role in ROLES},
         )
+        self.assertEqual(
+            arguments["external_coco_identity"]["git_commit"],
+            "a" * 40,
+        )
+        self.assertIn(
+            "external_coco.runner",
+            spec["source_bindings"]["files"],
+        )
         self.assertEqual(frozen["protocol"], "research-v2-frozen-system-v2")
         self.assertEqual(
             frozen["system_id"],
@@ -807,6 +815,10 @@ class FormalTransitionTest(unittest.TestCase):
         )
         self.assertTrue(frozen["review_runtime"]["primary_meta"]["enabled"])
         self.assertTrue(frozen["review_runtime"]["require_bubblewrap"])
+        self.assertEqual(
+            frozen["external_evaluation"]["coco_runner"],
+            arguments["external_coco_identity"],
+        )
         self.assertEqual(
             frozen["reproducibility"]["transition_code_commit"],
             "a" * 40,
@@ -1195,10 +1207,19 @@ class FormalTransitionTest(unittest.TestCase):
     def test_git_head_change_rejects_materialize_and_load(self):
         config, _ = self._formal_fixture(self.root)
         changed_spec = self.root / "changed-head-spec.json"
+        transition_head_calls = 0
+
+        def moving_transition_head(repository_root):
+            nonlocal transition_head_calls
+            if Path(repository_root).expanduser().resolve() != self.root.resolve():
+                return "c" * 40
+            transition_head_calls += 1
+            return ("a" if transition_head_calls == 1 else "b") * 40
+
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                side_effect=("a" * 40, "b" * 40),
+                side_effect=moving_transition_head,
             ),
             self.assertRaisesRegex(RuntimeError, "Git HEAD changed"),
         ):
