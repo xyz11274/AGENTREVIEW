@@ -187,6 +187,7 @@ def _review_request_input_identity(
     snapshot_id: str,
     program_version: str,
     frozen_s2_path: str | Path | None,
+    frozen_s2_sha256: str | None,
     s2_intervention: dict[str, Any] | None,
     model_identity: dict[str, Any],
     embedding_identity: dict[str, Any] | None,
@@ -197,6 +198,11 @@ def _review_request_input_identity(
     s2_source = (
         Path(frozen_s2_path).expanduser().resolve()
         if frozen_s2_path is not None
+        else None
+    )
+    s2_sha256 = (
+        frozen_s2_sha256 or file_sha256(s2_source)
+        if s2_source is not None
         else None
     )
     return {
@@ -213,7 +219,7 @@ def _review_request_input_identity(
         "snapshot_sha256": file_sha256(snapshot_source),
         "snapshot_id": snapshot_id,
         "frozen_s2_path": str(s2_source) if s2_source is not None else None,
-        "frozen_s2_sha256": file_sha256(s2_source) if s2_source is not None else None,
+        "frozen_s2_sha256": s2_sha256,
         "s2_intervention": normalize_s2_intervention(s2_intervention),
     }
 
@@ -285,6 +291,7 @@ def run_specialist_review(
     model_identity: dict[str, Any],
     program_version: str,
     frozen_s2_path: str | Path | None = None,
+    frozen_s2_store: Any = None,
     s2_intervention: dict[str, Any] | None = None,
     embedding_client: Any = None,
     embedding_identity: dict[str, Any] | None = None,
@@ -304,6 +311,21 @@ def run_specialist_review(
         )
     output = Path(output_root).expanduser().resolve()
     target_dir = output / "reviews" / run_id / paper.paper_id
+    frozen_s2_sha256 = None
+    if frozen_s2_store is not None:
+        store_path = (
+            Path(str(getattr(frozen_s2_store, "path", ""))).expanduser().resolve()
+        )
+        expected_s2_path = (
+            Path(frozen_s2_path).expanduser().resolve()
+            if frozen_s2_path is not None
+            else None
+        )
+        if expected_s2_path is None or store_path != expected_s2_path:
+            raise ValueError("Injected Frozen S2 store path differs from Review input")
+        frozen_s2_sha256 = str(getattr(frozen_s2_store, "sha256", ""))
+        if not frozen_s2_sha256:
+            raise ValueError("Injected Frozen S2 store lacks a content identity")
     review_plan_identity = None
     review_plan_identity_sha256 = ""
     if _canonical_bootstrap_s2_enabled is None:
@@ -316,6 +338,7 @@ def run_specialist_review(
             snapshot_id=str(snapshot.get("snapshot_id") or ""),
             program_version=program_version,
             frozen_s2_path=frozen_s2_path,
+            frozen_s2_sha256=frozen_s2_sha256,
             s2_intervention=s2_intervention,
             model_identity=model_identity,
             embedding_identity=embedding_identity,
@@ -334,6 +357,7 @@ def run_specialist_review(
                     program_path=program_path,
                     snapshot_path=snapshot_path,
                     frozen_s2_path=frozen_s2_path,
+                    frozen_s2_store=frozen_s2_store,
                     s2_intervention=s2_intervention,
                     embedding_client=embedding_client,
                     embedding_identity=embedding_identity,
@@ -404,7 +428,12 @@ def run_specialist_review(
         if _canonical_bootstrap_s2_enabled:
             if frozen_s2_path is None:
                 raise ValueError("canonical bootstrap with S2 requires its frozen pool")
-            s2_values, s2_provenance = FrozenS2Store(frozen_s2_path).retrieve(
+            s2_store = (
+                frozen_s2_store
+                if frozen_s2_store is not None
+                else FrozenS2Store(frozen_s2_path)
+            )
+            s2_values, s2_provenance = s2_store.retrieve(
                 paper_id=paper.paper_id,
                 target_title=paper.title,
                 limit=5,

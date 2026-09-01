@@ -5,6 +5,7 @@ from pathlib import Path
 
 from agentreview.research_v2.io import atomic_write_json, read_json
 from agentreview.research_v2.memory import (
+    DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY,
     build_memory_snapshot,
     retrieve_memory,
     seed_program_path,
@@ -23,6 +24,11 @@ class InterruptingCompletion:
         if self.fail_on_call == len(self.calls):
             raise RuntimeError("simulated interruption")
         return self.responses.pop(0)
+
+
+class FixedEmbedding:
+    def embed(self, texts):
+        return [[1.0, float(bool(str(text).strip()))] for text in texts]
 
 
 def _experience_payload(label):
@@ -93,6 +99,7 @@ class ResumableMemoryBuildTest(unittest.TestCase):
             "evaluation_paths": self.evaluations,
             "output_path": output,
             "seed_kind": "experience_learner",
+            "embedding_client": FixedEmbedding(),
             "embedding_identity": self.embedding_identity,
             "completion_client": client,
             "completion_identity": self.completion_identity,
@@ -232,6 +239,7 @@ class ResumableMemoryBuildTest(unittest.TestCase):
             evaluation_paths=[],
             output_path=output,
             seed_kind="vector_search",
+            embedding_client=FixedEmbedding(),
             embedding_identity=self.embedding_identity,
             require_bubblewrap=False,
         )
@@ -259,6 +267,56 @@ class ResumableMemoryBuildTest(unittest.TestCase):
         arguments.pop("embedding_client")
         with self.assertRaisesRegex(ValueError, "identity differs"):
             retrieve_memory(**arguments)
+        with self.assertRaisesRegex(ValueError, "deterministic fallback"):
+            retrieve_memory(
+                **arguments,
+                embedding_identity=self.embedding_identity,
+            )
+
+    def test_build_rejects_external_identity_without_its_client(self):
+        with self.assertRaisesRegex(ValueError, "deterministic fallback"):
+            build_memory_snapshot(
+                role="QUAL",
+                program_path=seed_program_path("vector_search"),
+                program_version="vector-invalid-runtime-v1",
+                review_paths=[],
+                evaluation_paths=[],
+                output_path=self.root / "invalid-runtime" / "snapshot.json",
+                seed_kind="vector_search",
+                embedding_identity=self.embedding_identity,
+                require_bubblewrap=False,
+            )
+
+    def test_fallback_built_snapshot_remains_readable_without_a_client(self):
+        output = self.root / "fallback-runtime" / "snapshot.json"
+        build_memory_snapshot(
+            role="QUAL",
+            program_path=seed_program_path("vector_search"),
+            program_version="vector-fallback-v1",
+            review_paths=[],
+            evaluation_paths=[],
+            output_path=output,
+            seed_kind="vector_search",
+            require_bubblewrap=False,
+        )
+        self.assertEqual(
+            read_json(output)["embedding_identity"],
+            DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY,
+        )
+        result = retrieve_memory(
+            paper=Paper(
+                paper_id="paper-fallback",
+                title="Paper",
+                abstract="Abstract",
+                text="Text",
+                source={},
+            ),
+            role="QUAL",
+            program_path=seed_program_path("vector_search"),
+            snapshot_path=output,
+            require_bubblewrap=False,
+        )
+        self.assertEqual(result["snapshot_id"], read_json(output)["snapshot_id"])
 
 
 if __name__ == "__main__":

@@ -16,16 +16,33 @@ from agentreview.reviewer_identity import (
 
 from .constants import META_MAX_TOKENS
 from .io import atomic_write_json, read_json, value_sha256
-from .llm import CompletionClient
+from .llm import CompletionClient, EmptyCompletionOutput
 from .models import FinalReview, Paper
 from .review import frozen_paper_context
+
+META_RAW_PROTOCOL = "research-v2-meta-raw-v1"
+META_MAX_ATTEMPTS = 2
+
+
+class MetaSynthesisFailure(RuntimeError):
+    """Base class for an exhausted Meta synthesis invocation."""
+
+
+class MetaSynthesisPaperFailure(MetaSynthesisFailure):
+    """The endpoint responded, but no valid paper-local synthesis was produced."""
+
+
+class MetaSynthesisInfrastructureFailure(MetaSynthesisFailure):
+    """The completion transport or shared runtime failed."""
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _load_bundle(review_paths: list[str | Path]) -> tuple[str, dict[str, dict[str, Any]]]:
+def _load_bundle(
+    review_paths: list[str | Path],
+) -> tuple[str, dict[str, dict[str, Any]]]:
     values = [read_json(path) for path in review_paths]
     if len(values) != len(SPECIALIST_TASKS):
         raise ValueError("Final Review requires exactly five Specialist Reviews")
@@ -47,7 +64,57 @@ def _concat(by_role: dict[str, dict[str, Any]]) -> str:
 
 def _meta_output_valid(value: str) -> bool:
     forbidden = re.compile(r"(?im)^\s*(final\s+score|confidence)\s*:")
-    return not forbidden.search(value)
+    return bool(value.strip()) and not forbidden.search(value)
+
+
+def _load_resumable_meta_raw(
+    path: Path,
+    *,
+    expected_identity: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    value = read_json(path)
+    if not isinstance(value, dict):
+        raise TypeError(f"Committed Meta raw artifact must be an object: {path}")
+    observed = {name: value.get(name) for name in expected_identity}
+    if observed != expected_identity:
+        raise ValueError(
+            f"Committed Meta raw identity mismatch at {path}: "
+            f"observed={observed!r}, expected={expected_identity!r}"
+        )
+    if "raw_model_output" not in value:
+        raise ValueError(f"Committed Meta raw artifact has no output field: {path}")
+    if not isinstance(value.get("created_at"), str) or not value["created_at"].strip():
+        raise ValueError(f"Committed Meta raw artifact has no creation time: {path}")
+    return value
+
+
+def _load_resumable_final(
+    path: Path,
+    *,
+    expected_identity: dict[str, Any],
+    expected_text: str | None,
+) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    value = read_json(path)
+    if not isinstance(value, dict):
+        raise TypeError(f"Committed Final Review must be an object: {path}")
+    observed = {name: value.get(name) for name in expected_identity}
+    if observed != expected_identity:
+        raise ValueError(
+            f"Committed Final Review identity mismatch at {path}: "
+            f"observed={observed!r}, expected={expected_identity!r}"
+        )
+    text = value.get("review_text")
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError(f"Committed Final Review is empty: {path}")
+    if expected_text is not None and text != expected_text:
+        raise ValueError(f"Committed concat Final Review content mismatch: {path}")
+    if not isinstance(value.get("created_at"), str) or not value["created_at"].strip():
+        raise ValueError(f"Committed Final Review has no creation time: {path}")
+    return value
 
 
 def generate_final_review(
@@ -66,14 +133,54 @@ def generate_final_review(
         raise ValueError("Frozen Paper does not match the Specialist bundle")
     output = Path(output_root).expanduser().resolve()
     target = output / "final_reviews" / run_id / f"{paper_id}.json"
+    source_ids = [
+        str(by_role[role].get("review_id") or "") for role in SPECIALIST_TASKS
+    ]
+    final_id = hashlib.sha256(
+        f"{run_id}\n{paper_id}\n{mode}\n".encode("utf-8")
+        + "\n".join(source_ids).encode("utf-8")
+    ).hexdigest()
     meta_identity = None
+    generation_config = None
+    expected_text = None
     if mode == "concat":
-        text = _concat(by_role)
+        expected_text = _concat(by_role)
     elif mode == "meta":
         if completion_client is None:
             raise ValueError("meta mode requires a completion client")
         synthesizer = load_meta_synthesizer()
         meta_identity = synthesizer.identity()
+        generation_config = {
+            "temperature": 0.0,
+            "enable_thinking": False,
+            "max_tokens": META_MAX_TOKENS,
+        }
+    else:
+        raise ValueError("mode must be meta or concat")
+    expected_final_identity = {
+        "schema_version": "research-core-v2-artifact-v1",
+        "final_review_id": final_id,
+        "paper_id": paper_id,
+        "mode": mode,
+        "source_review_ids": source_ids,
+        "meta_identity": meta_identity,
+        "run_id": run_id,
+    }
+    if mode == "meta" and model_identity is not None:
+        expected_final_identity["model_identity"] = dict(model_identity)
+        expected_final_identity["generation_config"] = generation_config
+    resumed = _load_resumable_final(
+        target,
+        expected_identity=expected_final_identity,
+        expected_text=expected_text,
+    )
+    if resumed is not None:
+        return resumed
+
+    created_at = _utc_now()
+    if mode == "concat":
+        text = str(expected_text)
+    else:
         question = build_meta_review_question(
             paper_id=paper_id,
             specialist_reviews={
@@ -88,29 +195,64 @@ def generate_final_review(
         ]
         errors = []
         text = ""
-        for attempt in (1, 2):
-            try:
-                candidate = completion_client.complete(
-                    messages,
-                    max_tokens=META_MAX_TOKENS,
-                    component="meta_synthesis",
+        infrastructure_failed = False
+        request_sha256 = value_sha256(messages)
+        raw_identity = {
+            "protocol": META_RAW_PROTOCOL,
+            "paper_id": paper_id,
+            "run_id": run_id,
+            "source_review_ids": source_ids,
+            "meta_identity": meta_identity,
+            "model_identity": dict(model_identity or {}),
+            "generation_config": generation_config,
+            "request_sha256": request_sha256,
+        }
+        for attempt in range(1, META_MAX_ATTEMPTS + 1):
+            raw_path = (
+                output
+                / "final_reviews"
+                / run_id
+                / f"{paper_id}.meta.raw.{attempt}.json"
+            )
+            raw = _load_resumable_meta_raw(
+                raw_path,
+                expected_identity={**raw_identity, "attempt": attempt},
+            )
+            if raw is None:
+                try:
+                    candidate = completion_client.complete(
+                        messages,
+                        max_tokens=META_MAX_TOKENS,
+                        component="meta_synthesis",
+                    )
+                except EmptyCompletionOutput as exc:
+                    errors.append(f"{type(exc).__name__}: {exc}")
+                    continue
+                except Exception as exc:
+                    infrastructure_failed = True
+                    errors.append(f"{type(exc).__name__}: {exc}")
+                    continue
+                raw = {
+                    **raw_identity,
+                    "attempt": attempt,
+                    "raw_model_output": candidate,
+                    "created_at": _utc_now(),
+                }
+                atomic_write_json(raw_path, raw)
+            candidate = raw["raw_model_output"]
+            if not isinstance(candidate, str) or not candidate.strip():
+                errors.append(
+                    "EmptyCompletionOutput: meta_synthesis returned empty output"
                 )
-                atomic_write_json(
-                    output / "final_reviews" / run_id / f"{paper_id}.meta.raw.{attempt}.json",
-                    {
-                        "paper_id": paper_id,
-                        "attempt": attempt,
-                        "raw_model_output": candidate,
-                        "request_sha256": value_sha256(messages),
-                        "created_at": _utc_now(),
-                    },
+                continue
+            if not _meta_output_valid(candidate):
+                errors.append(
+                    "ValueError: Meta output contains a forbidden score/confidence field"
                 )
-                if not _meta_output_valid(candidate):
-                    raise ValueError("Meta output contains a forbidden score/confidence field")
-                text = candidate
-                break
-            except Exception as exc:
-                errors.append(f"{type(exc).__name__}: {exc}")
+                continue
+            text = candidate
+            created_at = str(raw["created_at"])
+            break
         if not text:
             failure = {
                 "paper_id": paper_id,
@@ -122,15 +264,16 @@ def generate_final_review(
             atomic_write_json(
                 output / "final_reviews" / run_id / f"{paper_id}.failure.json",
                 failure,
+                immutable=False,
             )
-            raise RuntimeError(f"Meta synthesis failed; concat fallback is forbidden: {errors}")
-    else:
-        raise ValueError("mode must be meta or concat")
-    source_ids = [str(by_role[role].get("review_id") or "") for role in SPECIALIST_TASKS]
-    final_id = hashlib.sha256(
-        f"{run_id}\n{paper_id}\n{mode}\n".encode("utf-8")
-        + "\n".join(source_ids).encode("utf-8")
-    ).hexdigest()
+            failure_type = (
+                MetaSynthesisInfrastructureFailure
+                if infrastructure_failed
+                else MetaSynthesisPaperFailure
+            )
+            raise failure_type(
+                f"Meta synthesis failed; concat fallback is forbidden: {errors}"
+            )
     final = FinalReview(
         final_review_id=final_id,
         paper_id=paper_id,
@@ -139,15 +282,11 @@ def generate_final_review(
         source_review_ids=source_ids,
         meta_identity=meta_identity,
         run_id=run_id,
-        created_at=_utc_now(),
+        created_at=created_at,
     )
     payload = final.to_dict()
     if model_identity is not None and mode == "meta":
         payload["model_identity"] = dict(model_identity)
-        payload["generation_config"] = {
-            "temperature": 0.0,
-            "enable_thinking": False,
-            "max_tokens": META_MAX_TOKENS,
-        }
+        payload["generation_config"] = generation_config
     atomic_write_json(target, payload)
     return payload

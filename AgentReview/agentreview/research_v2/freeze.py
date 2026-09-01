@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,80 @@ from .program_checks import (
 )
 
 RETRIEVAL_PROVENANCE_PROTOCOL = "retrieval-provenance-v2"
+FORMAL_ROLE_EVOLUTION_PROTOCOL = "research-v2-formal-role-evolution-v1"
+FORMAL_WINNER_PROTOCOL = "research-v2-formal-role-winner-v1"
+FORMAL_MUTATION_ATTEMPTS = 20
+
+
+def _validate_completed_evolution(
+    *,
+    role: str,
+    run_id: str,
+    pool_path: Path,
+    pool: EvolutionPool,
+) -> dict[str, Any]:
+    expected_pool = pool_path.parent / "pool.json"
+    if (
+        pool_path != expected_pool
+        or pool_path.parent.name != run_id
+        or pool_path.parent.parent.name != role
+    ):
+        raise ValueError(f"Evolution pool path does not identify role/run: {role}")
+    coordinator_path = pool_path.parent / "coordinator.json"
+    winner_path = pool_path.parent / "winner.json"
+    if not coordinator_path.is_file() or not winner_path.is_file():
+        raise FileNotFoundError(f"Evolution role is not complete: {role}")
+    coordinator = read_json(coordinator_path)
+    expected_coordinator = {
+        "protocol": FORMAL_ROLE_EVOLUTION_PROTOCOL,
+        "role": role,
+        "run_id": run_id,
+        "status": "complete",
+    }
+    if any(
+        coordinator.get(name) != expected
+        for name, expected in expected_coordinator.items()
+    ):
+        raise ValueError(f"Evolution coordinator is not complete: {role}")
+    expected_attempts = {
+        f"{attempt:03d}" for attempt in range(1, FORMAL_MUTATION_ATTEMPTS + 1)
+    }
+    attempts = coordinator.get("attempts")
+    if not isinstance(attempts, dict) or set(attempts) != expected_attempts:
+        raise ValueError(f"Evolution coordinator does not contain 20 attempts: {role}")
+    terminal_statuses = {"committed", "failed", "candidate_failed"}
+    if any(
+        not isinstance(value, dict) or value.get("status") not in terminal_statuses
+        for value in attempts.values()
+    ):
+        raise ValueError(f"Evolution coordinator has a non-terminal attempt: {role}")
+    winner_artifact = read_json(winner_path)
+    expected_winner_identity = {
+        "protocol": FORMAL_WINNER_PROTOCOL,
+        "role": role,
+        "run_id": run_id,
+        "pool_path": str(pool_path),
+        "pool_sha256": file_sha256(pool_path),
+    }
+    if any(
+        winner_artifact.get(name) != expected
+        for name, expected in expected_winner_identity.items()
+    ):
+        raise ValueError(f"Evolution winner artifact identity mismatch: {role}")
+    unhashed = {
+        name: value
+        for name, value in winner_artifact.items()
+        if name != "winner_id"
+    }
+    if winner_artifact.get("winner_id") != value_sha256(unhashed):
+        raise ValueError(f"Evolution winner artifact hash mismatch: {role}")
+    if coordinator.get("winner_id") != winner_artifact["winner_id"]:
+        raise ValueError(f"Evolution coordinator winner differs: {role}")
+    winner = pool.best(require_snapshot=True)
+    recorded = winner_artifact.get("winner")
+    if not isinstance(recorded, dict) or recorded != asdict(winner):
+        raise ValueError(f"Evolution winner differs from current pool best: {role}")
+    return winner_artifact
 
 
 def freeze_system(
@@ -52,6 +127,12 @@ def freeze_system(
         pool = EvolutionPool.from_dict(read_json(pool_path))
         if pool.role != role:
             raise ValueError(f"Evolution pool role mismatch: {role}")
+        winner_artifact = _validate_completed_evolution(
+            role=role,
+            run_id=evolution_run_ids[role],
+            pool_path=pool_path,
+            pool=pool,
+        )
         winner = pool.best(require_snapshot=True)
         requested_program = Path(programs[role]).expanduser().resolve()
         requested_snapshot = Path(memory_snapshots[role]).expanduser().resolve()
@@ -72,6 +153,8 @@ def freeze_system(
         verified_winners[role] = {
             "pool_path": str(pool_path),
             "pool_sha256": file_sha256(pool_path),
+            "winner_artifact_path": str(pool_path.parent / "winner.json"),
+            "winner_artifact_id": winner_artifact["winner_id"],
             "candidate_id": winner.candidate_id,
             "static_score": winner.static_score,
             "program_sha256": winner.program_sha256,

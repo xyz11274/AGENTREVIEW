@@ -24,6 +24,34 @@ from .program_checks import program_capability_manifest
 SEED_NAMES = ("vector_search", "llm_summarizer", "experience_learner")
 BUILD_KINDS = ("no_memory", *SEED_NAMES)
 ITEM_CHECKPOINT_PROTOCOL = "research-v2-memory-item-checkpoint-v1"
+DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY = {
+    "provider": "deterministic-fallback-v1"
+}
+
+
+def _runtime_embedding_identity(
+    *,
+    embedding_client: Any,
+    embedding_identity: dict[str, Any] | None,
+    operation: str,
+) -> dict[str, Any]:
+    if embedding_client is None:
+        fallback_identity = dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY)
+        if (
+            embedding_identity is not None
+            and dict(embedding_identity) != fallback_identity
+        ):
+            raise ValueError(
+                f"Memory {operation} without an embedding client requires "
+                "the deterministic fallback embedding_identity"
+            )
+        return fallback_identity
+    if not embedding_identity:
+        raise ValueError(
+            f"Memory {operation} with an embedding client requires "
+            "embedding_identity"
+        )
+    return dict(embedding_identity)
 
 
 def seed_program_path(seed_name: str) -> Path:
@@ -249,15 +277,15 @@ def build_memory_snapshot(
         raise ValueError(
             "Evolved KnowledgeItem build requires an offline completion client"
         )
-    if (
-        seed_kind != "no_memory"
-        and embedding_client is not None
-        and not embedding_identity
-    ):
-        raise ValueError(
-            "Memory build with an embedding client requires embedding_identity"
+    normalized_embedding_identity = (
+        {"provider": "none"}
+        if seed_kind == "no_memory"
+        else _runtime_embedding_identity(
+            embedding_client=embedding_client,
+            embedding_identity=embedding_identity,
+            operation="build",
         )
-    normalized_embedding_identity = dict(embedding_identity or {"provider": "none"})
+    )
     review_sources = [_load_hashed_json(path) for path in review_paths]
     reviews = [value["artifact"] for value in review_sources]
     if any(str(review.get("role")) != role for review in reviews):
@@ -520,11 +548,11 @@ def retrieve_memory(
         raise ValueError("Memory snapshot role mismatch")
     seed_kind = str(snapshot_artifact.get("seed_kind") or "")
     if seed_kind != "no_memory":
-        if embedding_client is not None and not embedding_identity:
-            raise ValueError(
-                "Memory retrieval with an embedding client requires embedding_identity"
-            )
-        runtime_embedding_identity = dict(embedding_identity or {"provider": "none"})
+        runtime_embedding_identity = _runtime_embedding_identity(
+            embedding_client=embedding_client,
+            embedding_identity=embedding_identity,
+            operation="retrieval",
+        )
         if snapshot_artifact.get("embedding_identity") != runtime_embedding_identity:
             raise ValueError(
                 "Memory retrieval embedding identity differs from snapshot"

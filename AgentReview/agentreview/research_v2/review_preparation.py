@@ -126,6 +126,7 @@ def _load_s2_capability(
     *,
     paper: Paper,
     frozen_s2_path: str | Path | None,
+    frozen_s2_store: Any = None,
     intervention: dict[str, str],
 ) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
     mode = intervention["mode"]
@@ -142,7 +143,15 @@ def _load_s2_capability(
             "result_ids": [],
         }, False
 
-    values, provenance = FrozenS2Store(frozen_s2_path).retrieve(
+    store = (
+        frozen_s2_store
+        if frozen_s2_store is not None
+        else FrozenS2Store(frozen_s2_path)
+    )
+    store_path = Path(str(getattr(store, "path", ""))).expanduser().resolve()
+    if store_path != Path(frozen_s2_path).expanduser().resolve():
+        raise ReviewPlanError("Injected Frozen S2 store path differs from the request")
+    values, provenance = store.retrieve(
         paper_id=paper.paper_id,
         target_title=paper.title,
         limit=_MAX_SELECTED_S2,
@@ -275,6 +284,7 @@ def prepare_review_invocation(
     snapshot_path: str | Path,
     completion_client: CompletionClient,
     frozen_s2_path: str | Path | None,
+    frozen_s2_store: Any = None,
     s2_intervention: dict[str, Any] | None = None,
     embedding_client: Any = None,
     embedding_identity: dict[str, Any] | None = None,
@@ -285,6 +295,7 @@ def prepare_review_invocation(
     available_evidence, pool_provenance, capability_available = _load_s2_capability(
         paper=paper,
         frozen_s2_path=frozen_s2_path,
+        frozen_s2_store=frozen_s2_store,
         intervention=intervention,
     )
     exposed_evidence = available_evidence if capability_available else []

@@ -297,6 +297,7 @@ class EvolvableWinnerTests(unittest.TestCase):
         programs = {role: str(program) for role in ROLES}
         snapshots = {}
         pools = {}
+        evolution_run_ids = {}
         for role in ROLES:
             snapshot_payload = {
                 "snapshot_protocol": "research-v2-memory-snapshot-v1",
@@ -334,8 +335,40 @@ class EvolvableWinnerTests(unittest.TestCase):
                     )
                 ],
             )
-            pool_path = self._json(f"pools/{role}.json", pool.to_dict())
+            evolution_run_id = f"evolution-{role}"
+            evolution_run_ids[role] = evolution_run_id
+            pool_path = self._json(
+                f"evolution/{role}/{evolution_run_id}/pool.json",
+                pool.to_dict(),
+            )
             pools[role] = str(pool_path)
+            winner_payload = {
+                "protocol": "research-v2-formal-role-winner-v1",
+                "role": role,
+                "run_id": evolution_run_id,
+                "pool_path": str(pool_path),
+                "pool_sha256": file_sha256(pool_path),
+                "winner": pool.to_dict()["entries"][0],
+            }
+            winner_payload["winner_id"] = value_sha256(winner_payload)
+            self._json(
+                f"evolution/{role}/{evolution_run_id}/winner.json",
+                winner_payload,
+            )
+            self._json(
+                f"evolution/{role}/{evolution_run_id}/coordinator.json",
+                {
+                    "protocol": "research-v2-formal-role-evolution-v1",
+                    "role": role,
+                    "run_id": evolution_run_id,
+                    "status": "complete",
+                    "winner_id": winner_payload["winner_id"],
+                    "attempts": {
+                        f"{attempt:03d}": {"status": "failed"}
+                        for attempt in range(1, 21)
+                    },
+                },
+            )
         development_s2 = self.root / "development-s2.jsonl"
         development_s2.write_text("{}\n", encoding="utf-8")
         coco_s2 = self.root / "coco-s2.jsonl"
@@ -363,7 +396,7 @@ class EvolvableWinnerTests(unittest.TestCase):
             code_commit="commit",
             development_manifest_path=development_manifest,
             coco_manifest_path=coco_manifest,
-            evolution_run_ids={role: f"evolution-{role}" for role in ROLES},
+            evolution_run_ids=evolution_run_ids,
             evolution_pools=pools,
             evaluator_config={},
             reflector_config={},
