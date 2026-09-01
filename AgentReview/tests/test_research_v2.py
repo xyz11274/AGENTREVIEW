@@ -9,7 +9,11 @@ from pathlib import Path
 from agentreview.research_v2.evaluation import run_internal_evaluation
 from agentreview.research_v2.coco_protocol import proportional_quotas
 from agentreview.research_v2.config import ResearchConfig
-from agentreview.research_v2.coco import run_coco_evaluation
+from agentreview.research_v2.coco import (
+    TABLE_1_COLUMNS,
+    _validate_evaluation_summary,
+    run_coco_evaluation,
+)
 from agentreview.research_v2.data import prepare_data
 from agentreview.research_v2.evolution import (
     EvolutionPool,
@@ -213,6 +217,35 @@ class ResearchV2Test(unittest.TestCase):
             proportional_quotas({"0-3": 14, "3-5": 98, "5-7": 148, "7-10": 40}, 100),
             {"0-3": 5, "3-5": 33, "5-7": 49, "7-10": 13},
         )
+
+    def test_coco_evaluation_requires_exact_table_1_coverage(self):
+        summary_path = self.root / "evaluation-summary.json"
+        table = {
+            "input_label": "candidate_official_classify",
+            "absolute_scores": {name: 1.0 for name in TABLE_1_COLUMNS},
+            "paper_counts": {name: 1 for name in TABLE_1_COLUMNS},
+            "category_coverage": {
+                "item_count": 1,
+                "metric_counts": {"Complete.": 1},
+                "metrics": {"Complete.": 1.0},
+            },
+        }
+        summary = {
+            "input_label": "candidate_official_classify",
+            "overall_metrics": {
+                "full_text": {},
+                "category_correct": {},
+                "paper_level": {},
+            },
+            "category_breakdown": {"category_correct": {}},
+            "table_1_summary": table,
+        }
+        atomic_write_json(summary_path, summary)
+        _validate_evaluation_summary(summary_path, expected_count=1)
+        table["paper_counts"]["Paper."] = 0
+        atomic_write_json(summary_path, summary, immutable=False)
+        with self.assertRaisesRegex(RuntimeError, "exact frozen paper set"):
+            _validate_evaluation_summary(summary_path, expected_count=1)
 
     def test_coco_process_requires_exact_manifest_bound_final_review_ids(self):
         manifest_path = self.root / "coco-manifest.json"

@@ -370,6 +370,12 @@ checkpoint ID；只有完整验证后才通过硬链接发布 fixed artifact。�
 model、worker、effort、cache version 或 evaluation 设置改变都会在新调用前失败，必须
 使用新的 scoring arm output root，而不是覆盖旧产物。
 
+Evaluation 不能只凭进程返回0或输出一个 JSON object 判定成功。外部 runner 与
+AgentReview 边界会独立要求完整 Table-1 schema；BLEU、ROUGE-L、BERT、五项 judge、
+Average、Paper 与 Complete 的 `paper_counts` 均必须精确等于该臂冻结的1,300 IDs，分数
+必须为有限数，category coverage 也必须覆盖1,300。任何 judge skip、空 `{}` 或部分输出
+都会保留为失败 evidence，不能进入 complete contract。
+
 故障恢复顺序固定为：确认精确 PID 为0且 flock 无 owner；保护当前 worktree 并建立
 Git checkpoint；复现根因并添加回归测试；提交修复；记录启动前/恢复后的 commit；
 使用相同 run ID、输入身份与参数追加日志恢复。不得删除不可变 artifact 来“重跑”。

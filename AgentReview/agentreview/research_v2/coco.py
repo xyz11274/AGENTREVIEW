@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import math
 import re
 import subprocess
 from pathlib import Path
@@ -27,6 +28,19 @@ COCO_STAGE_ROOT = ".candidate_official_stages"
 COCO_STAGE_CHECKPOINT = "stage.json"
 EXTERNAL_COCO_IDENTITY_PROTOCOL = "research-v2-external-coco-identity-v1"
 EXTERNAL_COCO_RUNNER_RELATIVE_PATH = Path("scripts/run_official_candidate.py")
+TABLE_1_COLUMNS = {
+    "BLEU",
+    "ROUGE-L",
+    "BERT.",
+    "Correct.",
+    "Thoro.",
+    "Ground.",
+    "Verify.",
+    "Clarity",
+    "Average",
+    "Paper.",
+    "Complete.",
+}
 COCO_FORWARDED_ENV = (
     "COCO_SPLIT_BASE_URL",
     "COCO_SPLIT_MODEL",
@@ -216,6 +230,61 @@ def _validate_candidate_stage(
             )
 
 
+def _validate_evaluation_summary(path: Path, *, expected_count: int) -> None:
+    try:
+        value = read_json(path)
+    except Exception as exc:
+        raise RuntimeError(f"External CoCo evaluation artifact is invalid: {path}") from exc
+    if not isinstance(value, dict) or set(value) != {
+        "input_label",
+        "overall_metrics",
+        "category_breakdown",
+        "table_1_summary",
+    }:
+        raise RuntimeError(f"External CoCo evaluation artifact is invalid: {path}")
+    expected_label = Path(COCO_CLASSIFY_ARTIFACT).stem
+    overall = value.get("overall_metrics")
+    breakdown = value.get("category_breakdown")
+    table = value.get("table_1_summary")
+    if (
+        value.get("input_label") != expected_label
+        or not isinstance(overall, dict)
+        or not {"full_text", "category_correct", "paper_level"}.issubset(overall)
+        or not isinstance(breakdown, dict)
+        or "category_correct" not in breakdown
+        or not isinstance(table, dict)
+        or set(table) != {
+            "input_label",
+            "absolute_scores",
+            "paper_counts",
+            "category_coverage",
+        }
+        or table.get("input_label") != expected_label
+    ):
+        raise RuntimeError("External CoCo evaluation summary is incomplete")
+    scores = table.get("absolute_scores")
+    counts = table.get("paper_counts")
+    coverage = table.get("category_coverage")
+    if (
+        not isinstance(scores, dict)
+        or set(scores) != TABLE_1_COLUMNS
+        or not isinstance(counts, dict)
+        or set(counts) != TABLE_1_COLUMNS
+        or any(type(counts[name]) is not int for name in TABLE_1_COLUMNS)
+        or any(counts[name] != expected_count for name in TABLE_1_COLUMNS)
+        or any(
+            isinstance(scores[name], bool)
+            or not isinstance(scores[name], (int, float))
+            or not math.isfinite(float(scores[name]))
+            for name in TABLE_1_COLUMNS
+        )
+        or not isinstance(coverage, dict)
+        or coverage.get("item_count") != expected_count
+        or (coverage.get("metric_counts") or {}).get("Complete.") != expected_count
+    ):
+        raise RuntimeError(
+            "External CoCo evaluation does not cover the exact frozen paper set"
+        )
 def _validate_coco_artifacts(
     output: Path,
     *,
@@ -301,16 +370,10 @@ def _validate_coco_artifacts(
                 "External CoCo process enabled evaluation and requires the evaluation "
                 f"artifact: {evaluation_path}"
             )
-        try:
-            evaluation = read_json(evaluation_path)
-        except Exception as exc:
-            raise RuntimeError(
-                f"External CoCo evaluation artifact is invalid: {evaluation_path}"
-            ) from exc
-        if not isinstance(evaluation, dict):
-            raise RuntimeError(
-                f"External CoCo evaluation artifact is invalid: {evaluation_path}"
-            )
+        _validate_evaluation_summary(
+            evaluation_path,
+            expected_count=len(expected_ids),
+        )
         _validate_contract_binding(
             declared_artifacts.get("evaluation"),
             expected_path=evaluation_path,
