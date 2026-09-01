@@ -516,3 +516,21 @@
 - parallel launcher 的默认 `RUN_ROOT`/`BASELINE_ROOT` 指向上述 0831 v2 路径，运行日志、
   readiness gate 和最终 parallel summary 仍写入 0901 worktree。所有路径都可用
   `PARALLEL_*` 环境变量覆盖；duplicate-process gate 按规范化的精确 output path 检查。
+
+### 2026-09-01 22:02：提交远程并启动 parallel reduced full-flow
+
+- 全仓测试使用正式环境 `/data/xyj/envs/env_shengao/bin/python` 再次通过 `236/236`；
+  `bash -n`、`git diff --check`、复用路径 preflight 均通过。分支
+  `parallel-role-workers-20260901` 已推送远程，首个启动提交=
+  `0f1c4ff2d41d3e187a7d32f042946b15c6a0842a`。
+- 22:02:50 启动 tmux=`ar0901_mstar_parallel4`；22:03:02 完成门禁并进入
+  `SPECIALIST_EVOLUTION_START`。单 Evolution Python PID=`3179416`，实际参数=
+  `role_workers=4`、iterations=8、static=16、rotating=4、episodes=32、META-OFF、TP=4。
+- 日志确认 QUAL/CLAR/SIGN/ORIG 四角色同时启动，POL 尚无 checkpoint 并在第五位排队；
+  Qwen metrics 当时为 running=3、waiting=0，GPU0-3 利用率100%。QUAL controller identity
+  仍为 `e53dff...a649`，旧 history checkpoint 保持32篇，已进入原 seed static evaluation，
+  未提交 B 按预期重新执行。启动观察窗口内无 Traceback/ERROR/FAILED。
+- 运行日志=
+  `runs/0901_mstar_full_reduced_parallel_runtime/reduced_fullflow_parallel.log`，阶段日志=
+  `runs/0901_mstar_full_reduced_parallel_runtime/stages.tsv`，最终 summary 目标=
+  `artifacts/reduced_fullflow_parallel_summary.json`。
