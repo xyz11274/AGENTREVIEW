@@ -67,6 +67,22 @@ def _meta_output_valid(value: str) -> bool:
     return bool(value.strip()) and not forbidden.search(value)
 
 
+def _final_review_id(
+    *,
+    run_id: str,
+    paper_id: str,
+    mode: str,
+    source_review_ids: list[str],
+    review_text: str,
+) -> str:
+    """Content-address a Final Review while excluding wall-clock metadata."""
+    return hashlib.sha256(
+        f"{run_id}\n{paper_id}\n{mode}\n".encode("utf-8")
+        + "\n".join(source_review_ids).encode("utf-8")
+        + f"\n{value_sha256(review_text)}".encode("utf-8")
+    ).hexdigest()
+
+
 def _load_resumable_meta_raw(
     path: Path,
     *,
@@ -111,7 +127,7 @@ def _load_resumable_final(
     if not isinstance(text, str) or not text.strip():
         raise ValueError(f"Committed Final Review is empty: {path}")
     if expected_text is not None and text != expected_text:
-        raise ValueError(f"Committed concat Final Review content mismatch: {path}")
+        raise ValueError(f"Committed Final Review content identity mismatch: {path}")
     if not isinstance(value.get("created_at"), str) or not value["created_at"].strip():
         raise ValueError(f"Committed Final Review has no creation time: {path}")
     return value
@@ -136,15 +152,11 @@ def generate_final_review(
     source_ids = [
         str(by_role[role].get("review_id") or "") for role in SPECIALIST_TASKS
     ]
-    final_id = hashlib.sha256(
-        f"{run_id}\n{paper_id}\n{mode}\n".encode("utf-8")
-        + "\n".join(source_ids).encode("utf-8")
-    ).hexdigest()
     meta_identity = None
     generation_config = None
-    expected_text = None
+    created_at = _utc_now()
     if mode == "concat":
-        expected_text = _concat(by_role)
+        text = _concat(by_role)
     elif mode == "meta":
         if completion_client is None:
             raise ValueError("meta mode requires a completion client")
@@ -157,30 +169,7 @@ def generate_final_review(
         }
     else:
         raise ValueError("mode must be meta or concat")
-    expected_final_identity = {
-        "schema_version": "research-core-v2-artifact-v1",
-        "final_review_id": final_id,
-        "paper_id": paper_id,
-        "mode": mode,
-        "source_review_ids": source_ids,
-        "meta_identity": meta_identity,
-        "run_id": run_id,
-    }
-    if mode == "meta" and model_identity is not None:
-        expected_final_identity["model_identity"] = dict(model_identity)
-        expected_final_identity["generation_config"] = generation_config
-    resumed = _load_resumable_final(
-        target,
-        expected_identity=expected_final_identity,
-        expected_text=expected_text,
-    )
-    if resumed is not None:
-        return resumed
-
-    created_at = _utc_now()
-    if mode == "concat":
-        text = str(expected_text)
-    else:
+    if mode == "meta":
         question = build_meta_review_question(
             paper_id=paper_id,
             specialist_reviews={
@@ -219,6 +208,8 @@ def generate_final_review(
                 expected_identity={**raw_identity, "attempt": attempt},
             )
             if raw is None:
+                if target.is_file():
+                    continue
                 try:
                     candidate = completion_client.complete(
                         messages,
@@ -254,6 +245,10 @@ def generate_final_review(
             created_at = str(raw["created_at"])
             break
         if not text:
+            if target.is_file():
+                raise ValueError(
+                    f"Committed Meta Final Review has no matching raw output: {target}"
+                )
             failure = {
                 "paper_id": paper_id,
                 "mode": "meta",
@@ -274,6 +269,32 @@ def generate_final_review(
             raise failure_type(
                 f"Meta synthesis failed; concat fallback is forbidden: {errors}"
             )
+    final_id = _final_review_id(
+        run_id=run_id,
+        paper_id=paper_id,
+        mode=mode,
+        source_review_ids=source_ids,
+        review_text=text,
+    )
+    expected_final_identity = {
+        "schema_version": "research-core-v2-artifact-v1",
+        "final_review_id": final_id,
+        "paper_id": paper_id,
+        "mode": mode,
+        "source_review_ids": source_ids,
+        "meta_identity": meta_identity,
+        "run_id": run_id,
+    }
+    if mode == "meta" and model_identity is not None:
+        expected_final_identity["model_identity"] = dict(model_identity)
+        expected_final_identity["generation_config"] = generation_config
+    resumed = _load_resumable_final(
+        target,
+        expected_identity=expected_final_identity,
+        expected_text=text,
+    )
+    if resumed is not None:
+        return resumed
     final = FinalReview(
         final_review_id=final_id,
         paper_id=paper_id,

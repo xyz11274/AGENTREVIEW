@@ -1,12 +1,15 @@
 import fcntl
+import hashlib
 import json
 import tempfile
 import threading
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from agentreview.reviewer_identity import load_meta_synthesizer, load_reviewer_suite
+from agentreview.research_v2 import coco_review_batch as batch_module
 from agentreview.research_v2.coco_review_batch import (
     CocoReviewInfrastructureFailure,
     CocoReviewPaperFailure,
@@ -21,12 +24,14 @@ from agentreview.research_v2.memory import (
     build_memory_snapshot,
     seed_program_path,
 )
+from agentreview.research_v2.meta import _final_review_id
 from agentreview.research_v2.models import Paper
 from agentreview.research_v2.program_checks import (
     REVIEW_PLAN_PROTOCOL,
     program_capability_manifest,
 )
 from agentreview.research_v2.review_preparation import RETRIEVAL_PROVENANCE_PROTOCOL
+from agentreview.research_v2.review import _review_id
 
 
 class _UnusedGenerationAdapter:
@@ -41,9 +46,31 @@ class _UnusedGenerationAdapter:
         self.calls += 1
         raise AssertionError("generation must not start during invalid preflight")
 
+    def validate_frozen_runtime(self, **_):
+        return None
+
 
 class _Completion:
+    class Config:
+        def __init__(self, identity):
+            self._identity = dict(identity)
+
+        def identity(self):
+            return dict(self._identity)
+
+    def __init__(self, model_identity=None):
+        self.config = self.Config(
+            model_identity
+            or {
+                "model": "mock-27b",
+                "temperature": 0.0,
+                "enable_thinking": False,
+            }
+        )
+        self.calls = 0
+
     def complete(self, messages, *, max_tokens, component):
+        self.calls += 1
         if component.startswith("specialist_review:"):
             return f"Complete {component} output."
         if component == "meta_synthesis":
@@ -55,6 +82,7 @@ class _OnePaperGenerationAdapter:
     def __init__(self):
         self.delegate = ResearchV2ReviewGenerationAdapter(
             completion_client=_Completion(),
+            embedding_identity=dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY),
             require_bubblewrap=False,
         )
         self.lock = threading.Lock()
@@ -73,6 +101,9 @@ class _OnePaperGenerationAdapter:
     def _exit(self):
         with self.lock:
             self.active -= 1
+
+    def validate_frozen_runtime(self, **identities):
+        self.delegate.validate_frozen_runtime(**identities)
 
     def generate_specialist(self, invocation):
         self._enter()
@@ -110,8 +141,25 @@ class _InfrastructureAdapter:
     def generate_final(self, invocation):
         raise AssertionError("no Final Review should be scheduled after outage")
 
+    def validate_frozen_runtime(self, **_):
+        return None
+
 
 class CocoReviewBatchTest(unittest.TestCase):
+    def test_specialist_review_id_keeps_the_existing_resume_protocol(self):
+        values = "run\npaper\nQUAL\nprogram-v1\nsnapshot-v1\nplan-v1"
+        self.assertEqual(
+            _review_id(
+                run_id="run",
+                paper_id="paper",
+                role="QUAL",
+                program_version="program-v1",
+                snapshot_id="snapshot-v1",
+                review_plan_identity_sha256="plan-v1",
+            ),
+            hashlib.sha256(values.encode("utf-8")).hexdigest(),
+        )
+
     def _formal_fixture(self, root):
         embedding_identity = dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY)
         model_identity = {
@@ -223,6 +271,7 @@ class CocoReviewBatchTest(unittest.TestCase):
                 "specialist_identity": load_reviewer_suite().manifest_payload(),
                 "model_identity": model_identity,
                 "embedding_identity": embedding_identity,
+                "require_bubblewrap": False,
                 "frozen_s2_pools": {
                     "coco_1300": {
                         "path": str(s2_path.resolve()),
@@ -262,6 +311,197 @@ class CocoReviewBatchTest(unittest.TestCase):
         system["system_id"] = value_sha256(system)
         atomic_write_json(system_path, system)
         return system_path, manifest_path
+
+    def test_production_adapter_identity_mismatch_stops_before_generation(self):
+        class EmbeddingClient:
+            provider = "qwen3_embedding"
+            model_name = "Qwen/Qwen3-Embedding-8B"
+            revision = "1" * 40
+
+            def __init__(self, cache_path):
+                self.cache_path = cache_path
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            fallback = dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY)
+            embedding_cache = (root / "embedding.sqlite3").resolve()
+            production_embedding = {
+                "provider": "qwen3_embedding",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "revision": "1" * 40,
+                "cache_path": str(embedding_cache),
+            }
+            missing_cache_client = EmbeddingClient(embedding_cache)
+            del missing_cache_client.cache_path
+            with self.assertRaisesRegex(
+                CocoReviewInfrastructureFailure,
+                "cache_path is required",
+            ):
+                ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(),
+                    embedding_client=missing_cache_client,
+                    embedding_identity={
+                        **production_embedding,
+                        "cache_path": str(Path.cwd()),
+                    },
+                    require_bubblewrap=False,
+                )
+            cases = {
+                "model": ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(
+                        {
+                            "model": "different-27b",
+                            "temperature": 0.0,
+                            "enable_thinking": False,
+                        }
+                    ),
+                    embedding_identity=fallback,
+                    require_bubblewrap=False,
+                ),
+                "embedding": ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(),
+                    embedding_client=EmbeddingClient(embedding_cache),
+                    embedding_identity=production_embedding,
+                    require_bubblewrap=False,
+                ),
+                "bubblewrap": ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(),
+                    embedding_identity=fallback,
+                    require_bubblewrap=True,
+                ),
+            }
+            cases["model"].validate_frozen_runtime = lambda **_: None
+            messages = {
+                "model": "Completion client identity",
+                "embedding": "Embedding client identity",
+                "bubblewrap": "Bubblewrap requirement",
+            }
+            for name, adapter in cases.items():
+                with self.subTest(name=name):
+                    with self.assertRaisesRegex(
+                        CocoReviewInfrastructureFailure,
+                        messages[name],
+                    ):
+                        run_coco_review_batch(
+                            frozen_system_path=system_path,
+                            coco_manifest_path=manifest_path,
+                            output_root=root,
+                            options=CocoReviewBatchOptions(
+                                run_id=f"identity-mismatch-{name}",
+                            ),
+                            generation_adapter=adapter,
+                        )
+                    self.assertEqual(adapter.completion_client.calls, 0)
+                    self.assertFalse(
+                        (root / "reviews" / f"identity-mismatch-{name}").exists()
+                    )
+
+            class ProxyWithoutIdentityGate:
+                def __init__(self, delegate):
+                    self.delegate = delegate
+
+                def generate_specialist(self, invocation):
+                    return self.delegate.generate_specialist(invocation)
+
+                def generate_final(self, invocation):
+                    return self.delegate.generate_final(invocation)
+
+            proxied = ProxyWithoutIdentityGate(cases["bubblewrap"])
+            with self.assertRaisesRegex(
+                TypeError,
+                "must validate the frozen runtime",
+            ):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(run_id="identity-proxy"),
+                    generation_adapter=proxied,
+                )
+            self.assertEqual(proxied.delegate.completion_client.calls, 0)
+
+    def test_frozen_runtime_requires_complete_execution_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            base = json.loads(system_path.read_text(encoding="utf-8"))
+            cases = {
+                "model_identity": ({}, "model_identity is required"),
+                "embedding_identity": ({}, "embedding_identity is required"),
+                "require_bubblewrap": (None, "require_bubblewrap must be a boolean"),
+            }
+            for field, (replacement, message) in cases.items():
+                with self.subTest(field=field):
+                    value = json.loads(json.dumps(base))
+                    if replacement is None:
+                        value["review_runtime"].pop(field)
+                    else:
+                        value["review_runtime"][field] = replacement
+                    value["system_id"] = value_sha256(
+                        {
+                            name: item
+                            for name, item in value.items()
+                            if name != "system_id"
+                        }
+                    )
+                    invalid_path = root / f"invalid-{field}.json"
+                    atomic_write_json(invalid_path, value)
+                    adapter = _UnusedGenerationAdapter()
+                    with self.assertRaisesRegex((TypeError, ValueError), message):
+                        run_coco_review_batch(
+                            frozen_system_path=invalid_path,
+                            coco_manifest_path=manifest_path,
+                            output_root=root,
+                            options=CocoReviewBatchOptions(
+                                run_id=f"invalid-{field}",
+                            ),
+                            generation_adapter=adapter,
+                        )
+                    self.assertEqual(adapter.calls, 0)
+
+    def test_batch_rejects_system_changed_after_formal_preflight(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            system = json.loads(system_path.read_text(encoding="utf-8"))
+            system["reproducibility"]["formal_freeze_spec"] = {
+                "spec_id": "formal-spec-id"
+            }
+            system["system_id"] = value_sha256(
+                {
+                    name: value
+                    for name, value in system.items()
+                    if name != "system_id"
+                }
+            )
+            atomic_write_json(system_path, system, immutable=False)
+            expected = {
+                "system_id": system["system_id"],
+                "system_sha256": file_sha256(system_path),
+                "spec_id": "formal-spec-id",
+            }
+
+            system["reproducibility"]["post_preflight_substitution"] = True
+            system["system_id"] = value_sha256(
+                {
+                    name: value
+                    for name, value in system.items()
+                    if name != "system_id"
+                }
+            )
+            atomic_write_json(system_path, system, immutable=False)
+            adapter = _UnusedGenerationAdapter()
+            with self.assertRaisesRegex(ValueError, "changed after formal"):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(run_id="formal-identity-race"),
+                    generation_adapter=adapter,
+                    expected_frozen_identity=expected,
+                )
+            self.assertEqual(adapter.calls, 0)
 
     def test_rejects_non_1300_manifest_before_generation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -399,6 +639,301 @@ class CocoReviewBatchTest(unittest.TestCase):
         self.assertLess(adapter.meta_started_after_specialist_calls, 6500)
         self.assertFalse(adapter.saw_forbidden_manifest_field)
         self.assertEqual(len(adapter.s2_store_ids), 1)
+
+    def test_resume_rejects_review_text_tampering_before_generation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            cases = {
+                "specialist": (
+                    Path("reviews/formal-coco/paper-0000/QUAL.json"),
+                    "Specialist Review content identity",
+                ),
+                "meta": (
+                    Path("final_reviews/formal-coco-meta/paper-0000.json"),
+                    "Final Review content identity",
+                ),
+                "concat": (
+                    Path("final_reviews/formal-coco-concat/paper-0000.json"),
+                    "Final Review content identity",
+                ),
+            }
+            for name, (relative_path, message) in cases.items():
+                with self.subTest(name=name):
+                    output_root = root / name
+                    run_coco_review_batch(
+                        frozen_system_path=system_path,
+                        coco_manifest_path=manifest_path,
+                        output_root=output_root,
+                        options=CocoReviewBatchOptions(run_id="formal-coco"),
+                        generation_adapter=_OnePaperGenerationAdapter(),
+                    )
+                    artifact_path = output_root / relative_path
+                    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+                    artifact["review_text"] += "\n\nFORGED RESUME TEXT"
+                    if name == "specialist":
+                        artifact["raw_model_output"] = artifact["review_text"]
+                        provenance = artifact["retrieval_provenance"]
+                        review_plan_identity = {
+                            "intervention": provenance["s2"]["intervention"],
+                            "capability_manifest": provenance["s2"][
+                                "capability_manifest"
+                            ],
+                            "plan_sha256": provenance["s2"]["plan_sha256"],
+                            "preparation_sha256": artifact["generation_config"][
+                                "preparation_sha256"
+                            ],
+                        }
+                        artifact["review_id"] = _review_id(
+                            run_id=artifact["run_id"],
+                            paper_id=artifact["paper_id"],
+                            role=artifact["role"],
+                            program_version=artifact["program_version"],
+                            snapshot_id=artifact["memory_snapshot_id"],
+                            review_plan_identity_sha256=value_sha256(
+                                review_plan_identity
+                            ),
+                        )
+                    else:
+                        artifact["final_review_id"] = _final_review_id(
+                            run_id=artifact["run_id"],
+                            paper_id=artifact["paper_id"],
+                            mode=artifact["mode"],
+                            source_review_ids=artifact["source_review_ids"],
+                            review_text=artifact["review_text"],
+                        )
+                    artifact_path.write_text(
+                        json.dumps(artifact, ensure_ascii=False, sort_keys=True),
+                        encoding="utf-8",
+                    )
+                    unused = _UnusedGenerationAdapter()
+                    with self.assertRaisesRegex(ValueError, message):
+                        run_coco_review_batch(
+                            frozen_system_path=system_path,
+                            coco_manifest_path=manifest_path,
+                            output_root=output_root,
+                            options=CocoReviewBatchOptions(run_id="formal-coco"),
+                            generation_adapter=unused,
+                        )
+                    self.assertEqual(unused.calls, 0)
+
+    def test_source_drift_discards_staging_and_same_run_id_can_resume(self):
+        class MutatingAdapter:
+            def __init__(self):
+                self.delegate = ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(),
+                    embedding_identity=dict(
+                        DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY
+                    ),
+                    require_bubblewrap=False,
+                )
+                self.mutated = False
+
+            def validate_frozen_runtime(self, **identities):
+                self.delegate.validate_frozen_runtime(**identities)
+
+            def generate_specialist(self, invocation):
+                if not self.mutated:
+                    paper = json.loads(
+                        invocation.paper_path.read_text(encoding="utf-8")
+                    )
+                    paper["title"] = "Changed after coordinator preflight"
+                    invocation.paper_path.write_text(
+                        json.dumps(paper, ensure_ascii=False, sort_keys=True),
+                        encoding="utf-8",
+                    )
+                    self.mutated = True
+                return self.delegate.generate_specialist(invocation)
+
+            def generate_final(self, invocation):
+                return self.delegate.generate_final(invocation)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            paper_path = root / "papers" / "paper-0000.json"
+            original_paper = paper_path.read_bytes()
+            with self.assertRaises(CocoReviewInfrastructureFailure):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(
+                        run_id="source-drift",
+                        max_workers=1,
+                    ),
+                    generation_adapter=MutatingAdapter(),
+                )
+
+            target = root / "reviews" / "source-drift" / "paper-0000"
+            self.assertFalse((target / "QUAL.request.json").exists())
+            self.assertFalse((target / "QUAL.raw.json").exists())
+            self.assertFalse((target / "QUAL.json").exists())
+            staging = root / "runs" / "source-drift" / ".staging"
+            self.assertEqual(list(staging.iterdir()), [])
+
+            paper_path.write_bytes(original_paper)
+            outage = _InfrastructureAdapter()
+            with self.assertRaises(CocoReviewInfrastructureFailure):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(
+                        run_id="source-drift",
+                        max_workers=1,
+                    ),
+                    generation_adapter=outage,
+                )
+            self.assertEqual(outage.calls, 1)
+
+    def test_crash_after_raw_promotion_resumes_without_a_second_llm_call(self):
+        class ResumeThenOutageAdapter:
+            def __init__(self):
+                self.completion = _Completion()
+                self.delegate = ResearchV2ReviewGenerationAdapter(
+                    completion_client=self.completion,
+                    embedding_identity=dict(
+                        DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY
+                    ),
+                    require_bubblewrap=False,
+                )
+                self.specialist_calls = 0
+
+            def validate_frozen_runtime(self, **identities):
+                self.delegate.validate_frozen_runtime(**identities)
+
+            def generate_specialist(self, invocation):
+                self.specialist_calls += 1
+                if self.specialist_calls > 1:
+                    raise CocoReviewInfrastructureFailure("stop after resume")
+                return self.delegate.generate_specialist(invocation)
+
+            def generate_final(self, invocation):
+                raise AssertionError("Final generation is not ready")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system_path, manifest_path = self._formal_fixture(root)
+            original_promote = batch_module._promote_staged_json
+            promotions = 0
+
+            def crash_after_first_promotion(**kwargs):
+                nonlocal promotions
+                original_promote(**kwargs)
+                promotions += 1
+                if promotions == 1:
+                    raise CocoReviewInfrastructureFailure(
+                        "simulated process interruption"
+                    )
+
+            first_adapter = ResearchV2ReviewGenerationAdapter(
+                completion_client=_Completion(),
+                embedding_identity=dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY),
+                require_bubblewrap=False,
+            )
+            with (
+                patch.object(
+                    batch_module,
+                    "_promote_staged_json",
+                    side_effect=crash_after_first_promotion,
+                ),
+                self.assertRaises(CocoReviewInfrastructureFailure),
+            ):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(
+                        run_id="promotion-crash",
+                        max_workers=1,
+                    ),
+                    generation_adapter=first_adapter,
+                )
+
+            target = root / "reviews" / "promotion-crash" / "paper-0000"
+            self.assertTrue((target / "QUAL.raw.json").is_file())
+            self.assertFalse((target / "QUAL.request.json").exists())
+            self.assertFalse((target / "QUAL.json").exists())
+
+            resume_adapter = ResumeThenOutageAdapter()
+            with self.assertRaises(CocoReviewInfrastructureFailure):
+                run_coco_review_batch(
+                    frozen_system_path=system_path,
+                    coco_manifest_path=manifest_path,
+                    output_root=root,
+                    options=CocoReviewBatchOptions(
+                        run_id="promotion-crash",
+                        max_workers=1,
+                    ),
+                    generation_adapter=resume_adapter,
+                )
+            self.assertEqual(resume_adapter.completion.calls, 0)
+            self.assertTrue((target / "QUAL.request.json").is_file())
+            self.assertTrue((target / "QUAL.json").is_file())
+
+    def test_unvalidated_staged_files_never_reach_canonical_paths(self):
+        class TamperingAdapter:
+            def __init__(self, target):
+                self.target = target
+                self.delegate = ResearchV2ReviewGenerationAdapter(
+                    completion_client=_Completion(),
+                    embedding_identity=dict(
+                        DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY
+                    ),
+                    require_bubblewrap=False,
+                )
+
+            def validate_frozen_runtime(self, **identities):
+                self.delegate.validate_frozen_runtime(**identities)
+
+            def generate_specialist(self, invocation):
+                value = self.delegate.generate_specialist(invocation)
+                path = (
+                    invocation.output_path
+                    if self.target == "final"
+                    else invocation.output_path.with_name(
+                        f"{invocation.role}.request.json"
+                    )
+                )
+                artifact = json.loads(path.read_text(encoding="utf-8"))
+                artifact["tampered_after_return"] = True
+                path.write_text(
+                    json.dumps(artifact, ensure_ascii=False, sort_keys=True),
+                    encoding="utf-8",
+                )
+                return value
+
+            def generate_final(self, invocation):
+                raise AssertionError("Final generation is not ready")
+
+        for target_kind in ("final", "request"):
+            with (
+                self.subTest(target_kind=target_kind),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory)
+                system_path, manifest_path = self._formal_fixture(root)
+                with self.assertRaises(CocoReviewInfrastructureFailure):
+                    run_coco_review_batch(
+                        frozen_system_path=system_path,
+                        coco_manifest_path=manifest_path,
+                        output_root=root,
+                        options=CocoReviewBatchOptions(
+                            run_id=f"tampered-stage-{target_kind}",
+                            max_workers=1,
+                        ),
+                        generation_adapter=TamperingAdapter(target_kind),
+                    )
+                canonical = (
+                    root
+                    / "reviews"
+                    / f"tampered-stage-{target_kind}"
+                    / "paper-0000"
+                )
+                self.assertFalse((canonical / "QUAL.request.json").exists())
+                self.assertFalse((canonical / "QUAL.raw.json").exists())
+                self.assertFalse((canonical / "QUAL.json").exists())
 
 
 if __name__ == "__main__":

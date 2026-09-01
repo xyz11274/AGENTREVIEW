@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -19,7 +20,10 @@ from agentreview.research_v2.evolution import (
     feedback_packet,
     initialize_pool,
 )
-from agentreview.research_v2.freeze import freeze_system
+from agentreview.research_v2.freeze import (
+    _validate_memory_winner_identity,
+    freeze_system,
+)
 from agentreview.research_v2.io import (
     atomic_write_json,
     file_sha256,
@@ -311,7 +315,7 @@ class EvolvableWinnerTests(unittest.TestCase):
         self.assertNotIn("review_strategy", call)
 
     def test_freeze_binds_each_winner_and_primary_program_authority(self):
-        program = seed_program_path("vector_search").resolve()
+        program = seed_program_path("experience_learner").resolve()
         programs = {role: str(program) for role in ROLES}
         snapshots = {}
         pools = {}
@@ -323,12 +327,26 @@ class EvolvableWinnerTests(unittest.TestCase):
                 "program_path": str(program),
                 "program_sha256": file_sha256(program),
                 "program_version": f"{role.lower()}-winner-v1",
-                "seed_kind": "vector_search",
+                "seed_kind": "experience_learner",
                 "source_review_ids": [],
                 "source_evaluation_ids": [],
                 "items": [],
                 "snapshot": {},
                 "capability_manifest": program_capability_manifest(path=program),
+                "embedding_identity": {"model": "embedding"},
+                "completion_identity": {"model": "reviewer"},
+            }
+            snapshot_payload["build_identity"] = {
+                "protocol": "research-v2-memory-build-input-v1",
+                "role": role,
+                "program_path": str(program),
+                "program_sha256": file_sha256(program),
+                "capability_manifest": program_capability_manifest(path=program),
+                "seed_kind": "experience_learner",
+                "program_version": f"{role.lower()}-winner-v1",
+                "embedding_identity": {"model": "embedding"},
+                "completion_identity": {"model": "reviewer"},
+                "sources": [],
             }
             snapshot_payload["snapshot_id"] = value_sha256(snapshot_payload)
             snapshot_path = self._json(
@@ -345,7 +363,7 @@ class EvolvableWinnerTests(unittest.TestCase):
                         program_sha256=file_sha256(program),
                         parent_id=None,
                         static_score=4.0,
-                        seed_kind="vector_search",
+                        seed_kind="experience_learner",
                         memory_snapshot_path=str(snapshot_path),
                         memory_snapshot_sha256=file_sha256(snapshot_path),
                         memory_snapshot_id=snapshot_payload["snapshot_id"],
@@ -400,12 +418,59 @@ class EvolvableWinnerTests(unittest.TestCase):
                 "manifest_sha256": "sealed-manifest",
             },
         )
+        with self.assertRaisesRegex(ValueError, "embedding identity mismatch"):
+            freeze_system(
+                output_path=self.root / "invalid-embedding-system.json",
+                programs=programs,
+                memory_snapshots=snapshots,
+                model_identity={"model": "reviewer"},
+                embedding_identity={"model": "different"},
+                require_bubblewrap=False,
+                frozen_s2_pools={
+                    "development": str(development_s2),
+                    "coco_1300": str(coco_s2),
+                },
+                primary_meta_enabled=False,
+                code_commit="commit",
+                development_manifest_path=development_manifest,
+                coco_manifest_path=coco_manifest,
+                evolution_run_ids=evolution_run_ids,
+                evolution_pools=pools,
+                evaluator_config={},
+                reflector_config={},
+                summarizer_config={},
+            )
+        self.assertFalse((self.root / "invalid-embedding-system.json").exists())
+        with self.assertRaisesRegex(ValueError, "completion identity mismatch"):
+            freeze_system(
+                output_path=self.root / "invalid-completion-system.json",
+                programs=programs,
+                memory_snapshots=snapshots,
+                model_identity={"model": "different"},
+                embedding_identity={"model": "embedding"},
+                require_bubblewrap=False,
+                frozen_s2_pools={
+                    "development": str(development_s2),
+                    "coco_1300": str(coco_s2),
+                },
+                primary_meta_enabled=False,
+                code_commit="commit",
+                development_manifest_path=development_manifest,
+                coco_manifest_path=coco_manifest,
+                evolution_run_ids=evolution_run_ids,
+                evolution_pools=pools,
+                evaluator_config={},
+                reflector_config={},
+                summarizer_config={},
+            )
+        self.assertFalse((self.root / "invalid-completion-system.json").exists())
         frozen = freeze_system(
             output_path=self.root / "frozen-system.json",
             programs=programs,
             memory_snapshots=snapshots,
             model_identity={"model": "reviewer"},
             embedding_identity={"model": "embedding"},
+            require_bubblewrap=False,
             frozen_s2_pools={
                 "development": str(development_s2),
                 "coco_1300": str(coco_s2),
@@ -432,11 +497,89 @@ class EvolvableWinnerTests(unittest.TestCase):
             runtime["retrieval_provenance"]["protocol"],
             "retrieval-provenance-v2",
         )
+        self.assertIs(runtime["require_bubblewrap"], False)
         for role in ROLES:
             self.assertEqual(
                 runtime["programs"][role]["capability_manifest"],
                 program_capability_manifest(path=program),
             )
+
+    def test_llm_induced_memory_build_identity_is_exact(self):
+        program = seed_program_path("experience_learner").resolve()
+        embedding_identity = {"model": "embedding"}
+        model_identity = {"model": "reviewer"}
+        manifest = program_capability_manifest(path=program)
+        snapshot = {
+            "role": "QUAL",
+            "program_path": str(program),
+            "program_sha256": file_sha256(program),
+            "program_version": "qual-winner-v1",
+            "seed_kind": "experience_learner",
+            "capability_manifest": manifest,
+            "embedding_identity": embedding_identity,
+            "completion_identity": model_identity,
+            "build_identity": {
+                "protocol": "research-v2-memory-build-input-v1",
+                "role": "QUAL",
+                "program_path": str(program),
+                "program_sha256": file_sha256(program),
+                "capability_manifest": manifest,
+                "seed_kind": "experience_learner",
+                "program_version": "qual-winner-v1",
+                "embedding_identity": embedding_identity,
+                "completion_identity": model_identity,
+                "sources": [],
+            },
+        }
+        _validate_memory_winner_identity(
+            role="QUAL",
+            program=program,
+            snapshot=snapshot,
+            expected_seed_kind="experience_learner",
+            model_identity=model_identity,
+            embedding_identity=embedding_identity,
+        )
+
+        cases = {
+            "role": "OTHER",
+            "program_path": "/different/program.py",
+            "program_sha256": "different",
+            "capability_manifest": {"different": True},
+            "seed_kind": "different",
+            "program_version": "different",
+            "embedding_identity": {"model": "different"},
+            "completion_identity": {"model": "different"},
+        }
+        for field_name, invalid_value in cases.items():
+            with self.subTest(field_name=field_name):
+                invalid = deepcopy(snapshot)
+                invalid["build_identity"][field_name] = invalid_value
+                with self.assertRaisesRegex(
+                    ValueError,
+                    f"build identity mismatch for {field_name}",
+                ):
+                    _validate_memory_winner_identity(
+                        role="QUAL",
+                        program=program,
+                        snapshot=invalid,
+                        expected_seed_kind="experience_learner",
+                        model_identity=model_identity,
+                        embedding_identity=embedding_identity,
+                    )
+
+        for field_name in ("completion_identity", "build_identity"):
+            with self.subTest(missing_field=field_name):
+                invalid = deepcopy(snapshot)
+                del invalid[field_name]
+                with self.assertRaises(ValueError):
+                    _validate_memory_winner_identity(
+                        role="QUAL",
+                        program=program,
+                        snapshot=invalid,
+                        expected_seed_kind="experience_learner",
+                        model_identity=model_identity,
+                        embedding_identity=embedding_identity,
+                    )
 
 
 if __name__ == "__main__":

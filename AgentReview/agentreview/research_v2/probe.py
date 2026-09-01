@@ -22,16 +22,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .io import read_jsonl, value_sha256
 from .s2 import (
-    FrozenS2Store,
     S2_RECORD_BUILDER_SHA256,
-    _external_ids,
-    _expected_record_identity,
-    _family_title,
-    _validate_record_identity,
+    validate_frozen_s2_pool,
 )
-from .data import canonical_title
 
 PROBE_PROTOCOL = "research-v2-hourly-probe-v3"
 FORMAL_RUN_ID = "formal-evolution-v1"
@@ -568,111 +562,16 @@ def _formal_progress(artifact_root: Path) -> dict[str, Any]:
 
 
 def _validate_s2_final(final_path: Path, query_path: Path) -> dict[str, Any]:
-    targets = read_jsonl(query_path)
-    records = read_jsonl(final_path)
-    if len(targets) != COCO_S2_TOTAL:
-        raise ValueError(
-            f"CoCo S2 target count is {len(targets)}, expected {COCO_S2_TOTAL}"
-        )
-    if len(records) != COCO_S2_TOTAL:
-        raise ValueError(
-            f"CoCo S2 record count is {len(records)}, expected {COCO_S2_TOTAL}"
-        )
-    target_ids = [str(target.get("paper_id") or "") for target in targets]
-    if "" in target_ids or len(set(target_ids)) != len(target_ids):
-        raise ValueError("CoCo S2 targets require 1300 unique non-empty paper IDs")
-    store = FrozenS2Store(final_path)
-    if len(store.pool) != COCO_S2_TOTAL:
-        raise ValueError(
-            f"CoCo S2 indexed record count is {len(store.pool)}, "
-            f"expected {COCO_S2_TOTAL}"
-        )
-    for target, record in zip(targets, records, strict=True):
-        paper_id = str(target.get("paper_id") or "")
-        title = str(
-            target.get("canonical_query_title") or target.get("title") or ""
-        ).strip()
-        if not title:
-            raise ValueError(f"CoCo S2 target {paper_id} has no query title")
-        expected = _expected_record_identity(
-            target=target,
-            paper_id=paper_id,
-            title=title,
-            pool_version="frozen_s2_coco1300_v1",
-            raw_limit=50,
-            top_k=5,
-            builder_sha256=S2_RECORD_BUILDER_SHA256,
-        )
-        _validate_record_identity(record, expected, source=final_path)
-        raw_evidence = record.get("retrieved_papers")
-        if not isinstance(raw_evidence, list) or not all(
-            isinstance(value, dict) for value in raw_evidence
-        ):
-            raise ValueError(
-                f"CoCo S2 record {paper_id} retrieved_papers must be a list of objects"
-            )
-        if len(raw_evidence) > 5:
-            raise ValueError(
-                f"CoCo S2 record {paper_id} contains more than top-5 evidence"
-            )
-        if record.get("result_sha256") != value_sha256(raw_evidence):
-            raise ValueError(f"CoCo S2 record {paper_id} result hash mismatch")
-        target_title_key = canonical_title(title)
-        target_family = _family_title(title)
-        target_s2_id = str(target.get("s2_paper_id") or "")
-        target_external_ids = _external_ids(target)
-        seen_evidence_ids: set[str] = set()
-        seen_evidence_titles: set[str] = set()
-        for evidence_index, value in enumerate(raw_evidence):
-            evidence_id = str(
-                value.get("paperId") or value.get("paper_id") or value.get("id") or ""
-            )
-            evidence_title = str(value.get("title") or "").strip()
-            if not evidence_id or not evidence_title:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} evidence {evidence_index} "
-                    "requires a non-empty paper ID and title"
-                )
-            evidence_title_key = canonical_title(evidence_title)
-            if target_s2_id and evidence_id == target_s2_id:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains target S2 ID {evidence_id}"
-                )
-            if evidence_title_key == target_title_key:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains an exact-title self match"
-                )
-            if _family_title(evidence_title) == target_family:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains a same-family self match"
-                )
-            if target_external_ids & _external_ids(value):
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains a shared-external-ID self match"
-                )
-            if evidence_id in seen_evidence_ids:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains duplicate evidence ID {evidence_id}"
-                )
-            if evidence_title_key in seen_evidence_titles:
-                raise ValueError(
-                    f"CoCo S2 record {paper_id} contains a duplicate evidence title"
-                )
-            seen_evidence_ids.add(evidence_id)
-            seen_evidence_titles.add(evidence_title_key)
-        evidence, _ = store.retrieve(
-            paper_id=paper_id,
-            target_title=title,
-            limit=5,
-        )
-        if len(evidence) != len(raw_evidence):
-            raise ValueError(f"CoCo S2 record {paper_id} evidence schema is incomplete")
-    return {
-        "validated": True,
-        "target_count": len(targets),
-        "record_count": len(records),
-        "pool_sha256": store.sha256,
-    }
+    return validate_frozen_s2_pool(
+        pool_path=final_path,
+        query_path=query_path,
+        expected_count=COCO_S2_TOTAL,
+        pool_version="frozen_s2_coco1300_v1",
+        raw_limit=50,
+        top_k=5,
+        builder_sha256=S2_RECORD_BUILDER_SHA256,
+        label="CoCo S2",
+    )
 
 
 def _s2_progress(artifact_root: Path) -> dict[str, Any]:

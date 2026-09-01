@@ -14,6 +14,7 @@ from agentreview.reviewer_identity import (
 from .constants import ROLES
 from .evolution import EvolutionPool
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
+from .memory import validate_memory_snapshot_artifact
 from .program_checks import (
     REVIEW_PLAN_PROTOCOL,
     program_capability_manifest,
@@ -24,6 +25,47 @@ RETRIEVAL_PROVENANCE_PROTOCOL = "retrieval-provenance-v2"
 FORMAL_ROLE_EVOLUTION_PROTOCOL = "research-v2-formal-role-evolution-v1"
 FORMAL_WINNER_PROTOCOL = "research-v2-formal-role-winner-v1"
 FORMAL_MUTATION_ATTEMPTS = 20
+NON_INDUCTIVE_SEED_KINDS = {"no_memory", "vector_search", "llm_summarizer"}
+
+
+def _validate_memory_winner_identity(
+    *,
+    role: str,
+    program: Path,
+    snapshot: dict[str, Any],
+    expected_seed_kind: str,
+    model_identity: dict[str, Any],
+    embedding_identity: dict[str, Any],
+) -> None:
+    """Bind LLM-induced Memory to the exact runtime identities being frozen."""
+    if snapshot.get("seed_kind") != expected_seed_kind:
+        raise ValueError(f"Memory snapshot seed kind mismatch: {role}")
+    if expected_seed_kind in NON_INDUCTIVE_SEED_KINDS:
+        return
+    build_identity = snapshot.get("build_identity")
+    if not isinstance(build_identity, dict):
+        raise ValueError(
+            f"LLM-induced Memory snapshot lacks build identity: {role}"
+        )
+    if snapshot.get("completion_identity") != model_identity:
+        raise ValueError(f"Memory snapshot completion identity mismatch: {role}")
+    expected_build_identity = {
+        "protocol": "research-v2-memory-build-input-v1",
+        "role": role,
+        "program_path": str(program),
+        "program_sha256": file_sha256(program),
+        "capability_manifest": program_capability_manifest(path=program),
+        "seed_kind": expected_seed_kind,
+        "program_version": snapshot.get("program_version"),
+        "embedding_identity": embedding_identity,
+        "completion_identity": model_identity,
+    }
+    for field_name, expected in expected_build_identity.items():
+        if build_identity.get(field_name) != expected:
+            raise ValueError(
+                "Memory snapshot build identity mismatch for "
+                f"{field_name}: {role}"
+            )
 
 
 def _validate_completed_evolution(
@@ -104,6 +146,7 @@ def freeze_system(
     memory_snapshots: dict[str, str],
     model_identity: dict[str, Any],
     embedding_identity: dict[str, Any],
+    require_bubblewrap: bool,
     frozen_s2_pools: dict[str, str],
     primary_meta_enabled: bool,
     code_commit: str,
@@ -115,6 +158,12 @@ def freeze_system(
     reflector_config: dict[str, Any],
     summarizer_config: dict[str, Any],
 ) -> dict[str, Any]:
+    if not isinstance(model_identity, dict) or not model_identity:
+        raise ValueError("freeze-system requires a non-empty model identity")
+    if not isinstance(embedding_identity, dict) or not embedding_identity:
+        raise ValueError("freeze-system requires a non-empty embedding identity")
+    if not isinstance(require_bubblewrap, bool):
+        raise TypeError("freeze-system require_bubblewrap must be a boolean")
     if set(programs) != set(ROLES) or set(memory_snapshots) != set(ROLES):
         raise ValueError("freeze-system requires five role-local Programs and snapshots")
     if set(evolution_run_ids) != set(ROLES):
@@ -160,20 +209,39 @@ def freeze_system(
             "program_sha256": winner.program_sha256,
             "memory_snapshot_sha256": winner.memory_snapshot_sha256,
             "memory_snapshot_id": winner.memory_snapshot_id,
+            "seed_kind": winner.seed_kind,
         }
     runtime_programs = {}
     runtime_memories = {}
     for role in ROLES:
         program = Path(programs[role]).expanduser().resolve()
         snapshot_path = Path(memory_snapshots[role]).expanduser().resolve()
-        snapshot = read_json(snapshot_path)
+        snapshot = validate_memory_snapshot_artifact(
+            read_json(snapshot_path),
+            path=snapshot_path,
+        )
         program_errors = static_check(program.read_text(encoding="utf-8"))
         if program_errors:
             raise ValueError(f"Invalid frozen Program for {role}: {program_errors}")
         if snapshot.get("role") != role:
             raise ValueError(f"Memory snapshot role mismatch: {role}")
+        if snapshot.get("program_path") != str(program):
+            raise ValueError(f"Memory snapshot Program path mismatch: {role}")
         if file_sha256(program) != snapshot.get("program_sha256"):
             raise ValueError(f"Program differs from Memory snapshot: {role}")
+        if (
+            snapshot.get("seed_kind") != "no_memory"
+            and snapshot.get("embedding_identity") != embedding_identity
+        ):
+            raise ValueError(f"Memory snapshot embedding identity mismatch: {role}")
+        _validate_memory_winner_identity(
+            role=role,
+            program=program,
+            snapshot=snapshot,
+            expected_seed_kind=verified_winners[role]["seed_kind"],
+            model_identity=model_identity,
+            embedding_identity=embedding_identity,
+        )
         capability_manifest = dict(program_capability_manifest(path=program))
         required_capability_fields = {
             "interface_version",
@@ -187,6 +255,11 @@ def freeze_system(
             raise ValueError(f"Program has an incompatible Review Plan interface: {role}")
         if capability_manifest.get("program_sha256") != file_sha256(program):
             raise ValueError(f"Program capability manifest source hash mismatch: {role}")
+        if (
+            snapshot.get("seed_kind") != "no_memory"
+            and snapshot.get("capability_manifest") != capability_manifest
+        ):
+            raise ValueError(f"Memory snapshot Program capability mismatch: {role}")
         runtime_programs[role] = {
             "path": str(program),
             "sha256": file_sha256(program),
@@ -237,6 +310,7 @@ def freeze_system(
             "specialist_identity": load_reviewer_suite().manifest_payload(),
             "model_identity": dict(model_identity),
             "embedding_identity": dict(embedding_identity),
+            "require_bubblewrap": require_bubblewrap,
             "frozen_s2_pools": {
                 name: {"path": str(path), "sha256": file_sha256(path)}
                 for name, path in sorted(s2_pools.items())

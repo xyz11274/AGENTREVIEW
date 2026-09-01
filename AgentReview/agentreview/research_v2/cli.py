@@ -16,13 +16,22 @@ from .bootstrap import (
 )
 from .coco import run_coco_evaluation
 from .coco_protocol import prepare_coco_1300
+from .coco_review_batch import (
+    CocoReviewBatchOptions,
+    ResearchV2ReviewGenerationAdapter,
+    run_coco_review_batch,
+)
 from .config import ResearchConfig
 from .constants import ROLES
 from .data import prepare_data
 from .evaluation import run_internal_evaluation
 from .evaluation_batch import EvaluationBatchOptions, run_evaluation_batch
 from .evolution import EvolutionPool, commit_candidate, initialize_pool, propose_candidate
-from .freeze import freeze_system
+from .formal_transition import (
+    freeze_formal_system,
+    materialize_formal_freeze_spec,
+    validate_frozen_system_transition,
+)
 from .formal_evolution import (
     advance_role_attempt,
     materialize_role_attempt,
@@ -30,7 +39,7 @@ from .formal_evolution import (
     run_formal_evolution_roles,
     run_formal_role_evolution,
 )
-from .io import atomic_write_json, read_json, read_jsonl
+from .io import atomic_write_json, file_sha256, read_json, read_jsonl
 from .llm import OpenAICompletionClient
 from .memory import build_memory_snapshot, seed_program_path
 from .meta import generate_final_review
@@ -166,6 +175,16 @@ def _base_parser() -> argparse.ArgumentParser:
     freeze = stages.add_parser("freeze-system")
     freeze.add_argument("--spec", required=True)
     freeze.add_argument("--output", required=True)
+
+    materialize_freeze = stages.add_parser("materialize-freeze-spec")
+    materialize_freeze.add_argument("--run-id", required=True)
+    materialize_freeze.add_argument("--output", required=True)
+
+    coco_reviews = stages.add_parser("generate-coco-reviews")
+    coco_reviews.add_argument("--frozen-system", required=True)
+    coco_reviews.add_argument("--coco-manifest", default="")
+    coco_reviews.add_argument("--run-id", required=True)
+    coco_reviews.add_argument("--max-workers", type=int, default=8)
 
     coco = stages.add_parser("coco-eval")
     coco.add_argument("--final-reviews", nargs="+", required=True)
@@ -687,8 +706,58 @@ def main(argv: list[str] | None = None) -> int:
                             flush=True,
                         ),
                     )
+    elif args.stage == "materialize-freeze-spec":
+        result = materialize_formal_freeze_spec(
+            config=config,
+            formal_run_id=args.run_id,
+            repository_root=Path(__file__).resolve().parents[3],
+            output_path=args.output,
+        )
     elif args.stage == "freeze-system":
-        result = freeze_system(output_path=args.output, **read_json(args.spec))
+        result = freeze_formal_system(
+            spec_path=args.spec,
+            output_path=args.output,
+            repository_root=Path(__file__).resolve().parents[3],
+        )
+    elif args.stage == "generate-coco-reviews":
+        options = CocoReviewBatchOptions(
+            run_id=args.run_id,
+            max_workers=args.max_workers,
+        )
+        options.validate()
+        validated_system = validate_frozen_system_transition(
+            frozen_system_path=args.frozen_system,
+            repository_root=Path(__file__).resolve().parents[3],
+        )
+        formal_binding = validated_system["reproducibility"]["formal_freeze_spec"]
+        expected_frozen_identity = {
+            "system_id": validated_system["system_id"],
+            "system_sha256": file_sha256(args.frozen_system),
+            "spec_id": formal_binding["spec_id"],
+        }
+        completion_client = OpenAICompletionClient(config.model)
+        adapter = ResearchV2ReviewGenerationAdapter(
+            completion_client=completion_client,
+            embedding_client=_embedding_client(config),
+            embedding_identity=config.embedding_identity(),
+            require_bubblewrap=config.require_bubblewrap,
+        )
+        result = run_coco_review_batch(
+            frozen_system_path=args.frozen_system,
+            coco_manifest_path=(
+                args.coco_manifest
+                or str(output_root / "data" / "coco_1300" / "manifest.json")
+            ),
+            output_root=output_root,
+            options=options,
+            generation_adapter=adapter,
+            expected_frozen_identity=expected_frozen_identity,
+            progress=lambda event: print(
+                json.dumps(event, ensure_ascii=False, sort_keys=True),
+                file=sys.stderr,
+                flush=True,
+            ),
+        )
     elif args.stage == "coco-eval":
         result = run_coco_evaluation(
             final_review_paths=args.final_reviews,

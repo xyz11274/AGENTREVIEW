@@ -137,9 +137,9 @@ Memory 与 S2 policy 的效果归因使用冻结 development set 的四格诊断
 
 ## CoCo 两个服务与 Review 并行
 
-CoCo Split 和 Classify 是两个独立的单 GPU、TP=1 vLLM endpoint。服务端启动参数目前没有显式 `max_num_seqs`，因此服务端实际活跃序列数由 vLLM 默认值和 KV 容量动态决定；客户端 semaphore 不是 GPU 真并行数。
+CoCo Split 和 Classify 是两个独立的单 GPU、TP=1 vLLM endpoint。当前服务端已显式冻结 `max_num_seqs`：Split 为8、Classify 为16；这是服务端最大活跃序列数，实际并行仍受 KV 容量约束。客户端 semaphore 只是 HTTP 在途/排队上限，不等于 GPU 真并行数。
 
-旧本地配置中的 Split 512、Classify 1024 是 HTTP 在途上限。安全的 official candidate runner 默认收紧为 Split 64、Classify 128，并允许显式覆盖；它们仍是排队上限，不是“512/1024 路 GPU 同时推理”。部署服务时应另外显式冻结 `--max-num-seqs`，再用 metrics 确认实际运行/等待数。
+旧本地配置中的 Split 512、Classify 1024 是 HTTP 在途上限。安全的 official candidate runner 默认收紧为 Split 64、Classify 128，并允许显式覆盖；它们仍只是排队上限，不是“64/128 路 GPU 同时推理”。正式 Split 切换到40K配置时必须再次显式冻结 `--max-num-seqs`，并用 metrics 与真实 prompt smoke 确认运行/等待数。
 
 一条实验臂 A 的完整 1,300 篇 CoCo scoring 可以与另一条实验臂 B 的 Review 同时排队和运行，条件是：
 
@@ -205,7 +205,7 @@ Review raw、完整 Review、Memory snapshot 和 S2 parts 是不可变 artifact�
 canonical run: complete（历史 session ar0831_formal_canonical_c8 已退出）
 internal eval: complete（历史 session 已退出）
 Formal Evolution: ar0831_formal_evolution_v1
-S2 build:     ar0831_s2_coco1300（1.2秒间隔并持续重试）
+S2 build:     complete（历史 session ar0831_s2_coco1300 已退出）
 hourly probe: ar0831_hourly_probe
 service log:  artifacts/research_v2/runtime/qwen_tp2_gpu36_64k/qwen.log
 development S2 log: artifacts/research_v2/runtime/s2_development/build.log
@@ -278,6 +278,83 @@ record/result hash、top-5 数量、去重，以及 exact title、same-family、
 ID self-match 校验后才会标记 complete，单纯达到1300行不能触发 `transition_ready`。
 Formal 与 CoCo S2 的精确 PID 还必须分别等于其 flock owner PID，只有进程或只有 lock
 均为 critical。
+
+## Formal 完成后的确定性过渡
+
+只有小时探针给出 `transition_ready=true`，且 Git worktree 已提交并保持干净时，才按
+以下固定身份从五角色 winner 进入 sealed CoCo 阶段：
+
+```bash
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  materialize-freeze-spec \
+  --run-id formal-evolution-v1 \
+  --output artifacts/research_v2/frozen/formal-evolution-v1.freeze-spec.json
+
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  freeze-system \
+  --spec artifacts/research_v2/frozen/formal-evolution-v1.freeze-spec.json \
+  --output artifacts/research_v2/frozen/formal-evolution-v1.system.json
+```
+
+materializer 会验证 all-role summary 的五角色 complete 状态，以及每个角色的
+pool/coordinator/winner/run-spec、所有 candidate Program/snapshot 与 attempt artifact、
+三种 seed 的 static Review/Evaluation、每轮 rotating feedback 和成功 candidate 的
+static Review/Evaluation；它从证据重算 seed/candidate 分数、Reflector feedback、历史
+pool 顺序和确定性 parent，拒绝未完成 attempt、游离 candidate 与未绑定的部分产物。
+同时验证 run-spec 引用的 canonical summary/三份 split/seed Program、模型和 embedding identity、
+autonomous S2 intervention、development S2 SHA/版本/275计数。语义验证与源哈希绑定必须
+连续两遍完全一致，随后 freeze spec 才绑定两套 S2、development/CoCo manifest 与当前
+clean transition Git HEAD。`resume_20260901T230625+0800.json` 及其 SHA 单独绑定
+Evolution 的 original/context-fix/resume commits；`code_commit` 不得把这段多提交执行史
+误归因成 transition commit。`primary_meta_enabled` 固定为 true，指的是最终系统包含
+独立 Meta synthesizer，并不改变 evolved Program 是否调用 S2 的自主权。
+
+随后以唯一正式 run ID 启动可恢复的 winner batch：
+
+启动前 Git 必须继续保持干净，且 HEAD 必须与 freeze spec/frozen system 中记录的
+transition commit 完全一致；仅“代码内容看起来相同”不能替代提交身份一致。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 TOKENIZERS_PARALLELISM=false \
+PYTHONPATH=AgentReview \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python -u \
+  -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  generate-coco-reviews \
+  --frozen-system artifacts/research_v2/frozen/formal-evolution-v1.system.json \
+  --run-id formal-coco1300-winner-v1 \
+  --max-workers 8
+```
+
+这里 `CUDA_VISIBLE_DEVICES=0` 只约束进程内 Qwen3-Embedding-8B；27B 请求仍连接
+GPU 3/6 的 endpoint。Specialist 与 Meta 共享同一个最多8路 executor：论文 A 的五份
+Specialist 齐备后，其 Meta 可以与论文 B 的 Specialist 同时排队；不会出现 Meta 阶段
+让27B空闲。每篇 concat 在五份 Specialist 齐备后确定性生成，不占27B。正式输出为：
+
+```text
+artifacts/research_v2/reviews/formal-coco1300-winner-v1/<paper_id>/<role>.json
+artifacts/research_v2/final_reviews/formal-coco1300-winner-v1-meta/<paper_id>.json
+artifacts/research_v2/final_reviews/formal-coco1300-winner-v1-concat/<paper_id>.json
+artifacts/research_v2/runs/formal-coco1300-winner-v1/coco_review_batch.json
+```
+
+Meta 与 concat 必须分别达到严格1300 ID exact-set 后再作为两个独立 CoCo scoring arm；
+两臂使用不同输出目录与缓存 identity，不能把一个臂的结果反馈到另一个臂或 Review。
+恢复时 Specialist/Meta/concat ID 均绑定正文内容；Specialist 必须回连匹配的 raw output，
+Meta 必须回连匹配的 meta raw/request。改写正文后重算旧式 ID 也必须在新请求前失败。
+
+每个 winner task 使用 run-scoped、确定性 persistent staging。进程在 raw/request/final
+依次 promotion 的任一点退出后，同一 run ID 会从已经验证的 staged prefix 继续；只有
+完整 source identity 一致的 final 才进入 canonical 路径。PaperFailure 或基础设施失败会
+保留该不可变 staging prefix 供审计，因此同一 run ID 会确定性重现同一失败。需要重新
+请求时使用新 run ID；受控清理 staging 只允许在没有 canonical promotion、已记录原因并
+建立 Git/运行审计后人工执行，小时探针不会自动清理或改写 staging。
 
 故障恢复顺序固定为：确认精确 PID 为0且 flock 无 owner；保护当前 worktree 并建立
 Git checkpoint；复现根因并添加回归测试；提交修复；记录启动前/恢复后的 commit；

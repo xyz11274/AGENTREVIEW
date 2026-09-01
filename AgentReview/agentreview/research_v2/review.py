@@ -191,7 +191,10 @@ def _review_request_input_identity(
     s2_intervention: dict[str, Any] | None,
     model_identity: dict[str, Any],
     embedding_identity: dict[str, Any] | None,
+    require_bubblewrap: bool,
 ) -> dict[str, Any]:
+    if not isinstance(require_bubblewrap, bool):
+        raise TypeError("Review request require_bubblewrap must be a boolean")
     paper_source = Path(paper_path).expanduser().resolve()
     program_source = Path(program_path).expanduser().resolve()
     snapshot_source = Path(snapshot_path).expanduser().resolve()
@@ -215,6 +218,7 @@ def _review_request_input_identity(
         "program_version": program_version,
         "model_identity": dict(model_identity),
         "embedding_identity": dict(embedding_identity or {}),
+        "require_bubblewrap": require_bubblewrap,
         "snapshot_path": str(snapshot_source),
         "snapshot_sha256": file_sha256(snapshot_source),
         "snapshot_id": snapshot_id,
@@ -342,6 +346,7 @@ def run_specialist_review(
             s2_intervention=s2_intervention,
             model_identity=model_identity,
             embedding_identity=embedding_identity,
+            require_bubblewrap=require_bubblewrap,
         )
         request_path = target_dir / f"{role}.request.json"
         if request_path.is_file():

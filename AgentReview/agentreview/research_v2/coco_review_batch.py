@@ -11,11 +11,12 @@ import fcntl
 import hashlib
 import json
 import re
+import shutil
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import BoundedSemaphore
@@ -23,6 +24,7 @@ from typing import Any, Callable, Protocol
 
 from agentreview.reviewer_identity import (
     SPECIALIST_REQUEST_TEMPLATE,
+    build_meta_review_question,
     load_meta_synthesizer,
     load_reviewer_suite,
 )
@@ -30,10 +32,17 @@ from agentreview.reviewer_identity import (
 from .constants import META_MAX_TOKENS, ROLES, SCHEMA_VERSION
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
 from .llm import CompletionClient, EmptyCompletionOutput
-from .memory import validate_memory_snapshot_artifact
+from .memory import (
+    DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY,
+    validate_memory_snapshot_artifact,
+)
 from .meta import (
+    META_MAX_ATTEMPTS,
+    META_RAW_PROTOCOL,
     MetaSynthesisInfrastructureFailure,
     MetaSynthesisPaperFailure,
+    _final_review_id,
+    _load_resumable_meta_raw,
     generate_final_review,
 )
 from .models import Paper
@@ -42,6 +51,8 @@ from .review import (
     REVIEW_REQUEST_MATERIALIZATION_PROTOCOL,
     SpecialistReviewInfrastructureFailure,
     SpecialistReviewPaperFailure,
+    _load_review_request,
+    _load_resumable_raw_artifact,
     _review_id,
     frozen_paper_context,
     run_specialist_review,
@@ -89,19 +100,6 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _final_review_id(
-    *,
-    run_id: str,
-    paper_id: str,
-    mode: str,
-    source_review_ids: list[str],
-) -> str:
-    return hashlib.sha256(
-        f"{run_id}\n{paper_id}\n{mode}\n".encode("utf-8")
-        + "\n".join(source_review_ids).encode("utf-8")
-    ).hexdigest()
-
-
 def _is_nonempty_text(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -133,6 +131,10 @@ class CocoReviewPaperFailure(RuntimeError):
 
 class CocoReviewInfrastructureFailure(RuntimeError):
     """A shared dependency failed; committed work can be resumed by run ID."""
+
+
+class _CocoReviewSourceDrift(CocoReviewInfrastructureFailure):
+    """A frozen file changed while an isolated task was executing."""
 
 
 @dataclass(frozen=True)
@@ -189,6 +191,7 @@ class SpecialistInvocation:
     output_root: Path
     model_identity: dict[str, Any]
     embedding_identity: dict[str, Any]
+    require_bubblewrap: bool
     program_version: str
     frozen_s2_path: Path
     frozen_s2_store: Any
@@ -216,6 +219,8 @@ class FinalInvocation:
     run_id: str
     output_root: Path
     model_identity: dict[str, Any]
+    embedding_identity: dict[str, Any]
+    require_bubblewrap: bool
 
     @property
     def output_path(self) -> Path:
@@ -226,6 +231,14 @@ class FinalInvocation:
 
 class ReviewGenerationAdapter(Protocol):
     """Synchronous boundary whose calls are globally bounded by the coordinator."""
+
+    def validate_frozen_runtime(
+        self,
+        *,
+        model_identity: dict[str, Any],
+        embedding_identity: dict[str, Any],
+        require_bubblewrap: bool,
+    ) -> None: ...
 
     def generate_specialist(
         self,
@@ -243,17 +256,67 @@ class ResearchV2ReviewGenerationAdapter:
         *,
         completion_client: CompletionClient,
         embedding_client: Any = None,
+        embedding_identity: dict[str, Any],
         require_bubblewrap: bool = True,
     ):
+        if not isinstance(require_bubblewrap, bool):
+            raise TypeError("Review adapter require_bubblewrap must be a boolean")
         self.completion_client = completion_client
         self.embedding_client = embedding_client
+        self.model_identity = (
+            ResearchV2ReviewGenerationAdapter._actual_model_identity(self)
+        )
+        self.embedding_identity = (
+            ResearchV2ReviewGenerationAdapter._actual_embedding_identity(
+                self,
+                embedding_identity,
+            )
+        )
         self.require_bubblewrap = require_bubblewrap
+
+    def validate_frozen_runtime(
+        self,
+        *,
+        model_identity: dict[str, Any],
+        embedding_identity: dict[str, Any],
+        require_bubblewrap: bool,
+    ) -> None:
+        """Fail before generation when production clients differ from the freeze."""
+        actual_model = ResearchV2ReviewGenerationAdapter._actual_model_identity(
+            self
+        )
+        if actual_model != self.model_identity or actual_model != model_identity:
+            raise CocoReviewInfrastructureFailure(
+                "Completion client identity differs from the frozen system"
+            )
+        actual_embedding = (
+            ResearchV2ReviewGenerationAdapter._actual_embedding_identity(
+                self,
+                self.embedding_identity,
+            )
+        )
+        if actual_embedding != embedding_identity:
+            raise CocoReviewInfrastructureFailure(
+                "Embedding client identity differs from the frozen system"
+            )
+        if (
+            not isinstance(require_bubblewrap, bool)
+            or self.require_bubblewrap is not require_bubblewrap
+        ):
+            raise CocoReviewInfrastructureFailure(
+                "Bubblewrap requirement differs from the frozen system"
+            )
 
     def generate_specialist(
         self,
         invocation: SpecialistInvocation,
     ) -> dict[str, Any]:
-        self._validate_model_identity(invocation.model_identity)
+        ResearchV2ReviewGenerationAdapter.validate_frozen_runtime(
+            self,
+            model_identity=invocation.model_identity,
+            embedding_identity=invocation.embedding_identity,
+            require_bubblewrap=invocation.require_bubblewrap,
+        )
         try:
             return run_specialist_review(
                 paper_path=invocation.paper_path,
@@ -282,8 +345,12 @@ class ResearchV2ReviewGenerationAdapter:
             raise CocoReviewInfrastructureFailure(str(exc)) from exc
 
     def generate_final(self, invocation: FinalInvocation) -> dict[str, Any]:
-        if invocation.mode == "meta":
-            self._validate_model_identity(invocation.model_identity)
+        ResearchV2ReviewGenerationAdapter.validate_frozen_runtime(
+            self,
+            model_identity=invocation.model_identity,
+            embedding_identity=invocation.embedding_identity,
+            require_bubblewrap=invocation.require_bubblewrap,
+        )
         try:
             return generate_final_review(
                 paper_path=invocation.paper_path,
@@ -303,13 +370,75 @@ class ResearchV2ReviewGenerationAdapter:
         except MetaSynthesisInfrastructureFailure as exc:
             raise CocoReviewInfrastructureFailure(str(exc)) from exc
 
-    def _validate_model_identity(self, expected: dict[str, Any]) -> None:
+    def _actual_model_identity(self) -> dict[str, Any]:
         config = getattr(self.completion_client, "config", None)
         identity = getattr(config, "identity", None)
-        if callable(identity) and identity() != expected:
+        actual = identity() if callable(identity) else None
+        if not isinstance(actual, dict) or not actual:
             raise CocoReviewInfrastructureFailure(
-                "Completion client identity differs from the frozen system"
+                "Completion client must expose a non-empty config.identity()"
             )
+        return dict(actual)
+
+    def _actual_embedding_identity(
+        self,
+        declared: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(declared, dict) or not declared:
+            raise ValueError("Review adapter embedding_identity is required")
+        if self.embedding_client is None:
+            fallback = dict(DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY)
+            if declared != fallback:
+                raise ValueError(
+                    "Review adapter without an embedding client requires the "
+                    "deterministic fallback embedding identity"
+                )
+            return fallback
+        expected_fields = {"provider", "model", "revision", "cache_path"}
+        if set(declared) != expected_fields:
+            raise ValueError(
+                "Review adapter embedding_identity must contain exactly "
+                "provider, model, revision, and cache_path"
+            )
+        cache_path = declared.get("cache_path")
+        normalized = {
+            "provider": declared.get("provider"),
+            "model": declared.get("model"),
+            "revision": declared.get("revision"),
+            "cache_path": str(Path(str(cache_path or "")).expanduser().resolve()),
+        }
+        if (
+            declared != normalized
+            or any(
+                not _is_nonempty_text(normalized[name])
+                for name in ("provider", "model", "revision", "cache_path")
+            )
+        ):
+            raise ValueError("Review adapter embedding_identity is not canonical")
+        actual_cache_path = getattr(self.embedding_client, "cache_path", None)
+        if not _is_nonempty_text(str(actual_cache_path or "")):
+            raise CocoReviewInfrastructureFailure(
+                "Embedding client cache_path is required"
+            )
+        actual = {
+            "provider": getattr(self.embedding_client, "provider", None),
+            "model": getattr(self.embedding_client, "model_name", None),
+            "revision": getattr(self.embedding_client, "revision", None),
+            "cache_path": str(
+                Path(str(actual_cache_path or "")).expanduser().resolve()
+            ),
+        }
+        if (
+            any(
+                not _is_nonempty_text(actual[name])
+                for name in ("provider", "model", "revision", "cache_path")
+            )
+            or actual != normalized
+        ):
+            raise CocoReviewInfrastructureFailure(
+                "Embedding client attributes differ from its declared identity"
+            )
+        return normalized
 
 
 class _BoundedGenerationAdapter:
@@ -334,6 +463,7 @@ class _FrozenRuntime:
     system_path: Path
     system_sha256: str
     system_id: str
+    formal_spec_id: str | None
     manifest_path: Path
     manifest_sha256: str
     manifest_id: str
@@ -341,6 +471,7 @@ class _FrozenRuntime:
     papers: tuple[_CocoPaper, ...]
     model_identity: dict[str, Any]
     embedding_identity: dict[str, Any]
+    require_bubblewrap: bool
     s2_path: Path
     s2_sha256: str
     s2_store: Any
@@ -374,6 +505,164 @@ class _WorkItem:
     kind: str
     paper_index: int
     role: str = ""
+
+
+def _require_file_sha256(path: Path, expected: str, *, label: str) -> None:
+    try:
+        observed = file_sha256(path)
+    except OSError as exc:
+        raise _CocoReviewSourceDrift(
+            f"Frozen source became unreadable during {label}: {path}"
+        ) from exc
+    if observed != expected:
+        raise _CocoReviewSourceDrift(
+            f"Frozen source changed during {label}: {path}"
+        )
+
+
+def _validate_task_sources(
+    *,
+    runtime: _FrozenRuntime,
+    paper: _CocoPaper,
+    role: str = "",
+    review_bindings: tuple[tuple[Path, str], ...] = (),
+    label: str,
+) -> None:
+    """Recheck every file one task can read before canonical promotion."""
+    bindings = [
+        (paper.paper_path, paper.paper_sha256, f"Paper {paper.paper_id}"),
+    ]
+    if role:
+        role_runtime = runtime.roles[role]
+        bindings.extend(
+            [
+                (
+                    role_runtime.program_path,
+                    role_runtime.program_sha256,
+                    f"{role} Program",
+                ),
+                (
+                    role_runtime.snapshot_path,
+                    role_runtime.snapshot_sha256,
+                    f"{role} Memory snapshot",
+                ),
+            ]
+        )
+    bindings.extend(
+        (path, sha256, f"source Specialist Review {path.name}")
+        for path, sha256 in review_bindings
+    )
+    for path, sha256, source_label in bindings:
+        _require_file_sha256(
+            path,
+            sha256,
+            label=f"{label} ({source_label})",
+        )
+
+
+def _review_file_bindings(
+    review_paths: tuple[Path, ...],
+) -> tuple[tuple[Path, str], ...]:
+    values = []
+    for path in review_paths:
+        try:
+            values.append((path, file_sha256(path)))
+        except OSError as exc:
+            raise CocoReviewInfrastructureFailure(
+                f"Source Specialist Review became unreadable: {path}"
+            ) from exc
+    return tuple(values)
+
+
+def _task_staging_root(
+    *,
+    staging_parent: Path,
+    kind: str,
+    paper_id: str,
+    role: str = "",
+) -> Path:
+    task_key = hashlib.sha256(
+        f"{kind}\n{paper_id}\n{role}".encode("utf-8")
+    ).hexdigest()[:20]
+    path = (staging_parent / f"{kind}-{task_key}").resolve()
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _discard_task_stage(*, staging_root: Path, staging_parent: Path) -> None:
+    root = staging_root.resolve()
+    parent = staging_parent.resolve()
+    if root.parent != parent:
+        raise ValueError(f"Task staging directory escaped its parent: {root}")
+    if root.exists():
+        shutil.rmtree(root)
+
+
+@contextmanager
+def _persistent_task_stage(
+    *,
+    staging_parent: Path,
+    kind: str,
+    paper_id: str,
+    role: str = "",
+):
+    """Keep resumable prefixes across outages and hard process interruption."""
+    staging_root = _task_staging_root(
+        staging_parent=staging_parent,
+        kind=kind,
+        paper_id=paper_id,
+        role=role,
+    )
+    try:
+        yield staging_root
+    except _CocoReviewSourceDrift:
+        _discard_task_stage(
+            staging_root=staging_root,
+            staging_parent=staging_parent,
+        )
+        raise
+    except (CocoReviewPaperFailure, CocoReviewInfrastructureFailure):
+        raise
+    except Exception:
+        _discard_task_stage(
+            staging_root=staging_root,
+            staging_parent=staging_parent,
+        )
+        raise
+
+
+def _seed_staged_json(
+    *,
+    canonical_path: Path,
+    staged_path: Path,
+) -> None:
+    """Carry a committed resumable prefix into an isolated task workspace."""
+    if canonical_path.is_file():
+        atomic_write_json(staged_path, read_json(canonical_path))
+
+
+def _promote_staged_json(
+    *,
+    staged_path: Path,
+    canonical_path: Path,
+) -> None:
+    if not staged_path.is_file():
+        raise CocoReviewInfrastructureFailure(
+            f"Validated staged artifact is missing: {staged_path}"
+        )
+    atomic_write_json(canonical_path, read_json(staged_path))
+
+
+def _validate_staged_value(
+    *,
+    staged_path: Path,
+    returned_value: dict[str, Any],
+    label: str,
+) -> None:
+    if not staged_path.is_file() or read_json(staged_path) != returned_value:
+        raise ValueError(
+            f"{label} adapter return differs from its staged artifact"
+        )
 
 
 def _validate_manifest_envelope(
@@ -584,6 +873,7 @@ def _validate_runtime(
     dict[str, _RoleRuntime],
     dict[str, Any],
     dict[str, Any],
+    bool,
     Path,
     str,
     _ReadOnlyFrozenS2Store,
@@ -594,10 +884,13 @@ def _validate_runtime(
         raise TypeError("Frozen system review_runtime must be an object")
     model_identity = runtime.get("model_identity")
     embedding_identity = runtime.get("embedding_identity")
+    require_bubblewrap = runtime.get("require_bubblewrap")
     if not isinstance(model_identity, dict) or not model_identity:
         raise ValueError("Frozen system model_identity is required")
-    if not isinstance(embedding_identity, dict):
-        raise TypeError("Frozen system embedding_identity must be an object")
+    if not isinstance(embedding_identity, dict) or not embedding_identity:
+        raise ValueError("Frozen system embedding_identity is required")
+    if not isinstance(require_bubblewrap, bool):
+        raise TypeError("Frozen system require_bubblewrap must be a boolean")
     if runtime.get("specialist_identity") != load_reviewer_suite().manifest_payload():
         raise ValueError("Frozen Specialist identity differs from the checked-in suite")
     if runtime.get("primary_meta") != {
@@ -714,6 +1007,7 @@ def _validate_runtime(
         roles,
         dict(model_identity),
         dict(embedding_identity),
+        require_bubblewrap,
         s2_path,
         s2_sha256,
         _ReadOnlyFrozenS2Store(
@@ -741,6 +1035,17 @@ def _load_frozen_runtime(
         "system_id"
     ) != value_sha256(system_body):
         raise ValueError("Frozen system identity mismatch")
+    reproducibility = system.get("reproducibility")
+    formal_binding = (
+        reproducibility.get("formal_freeze_spec")
+        if isinstance(reproducibility, dict)
+        else None
+    )
+    formal_spec_id = (
+        str(formal_binding.get("spec_id") or "")
+        if isinstance(formal_binding, dict)
+        else ""
+    )
     records = _validate_manifest_envelope(
         system=system,
         manifest=manifest,
@@ -751,6 +1056,7 @@ def _load_frozen_runtime(
         roles,
         model,
         embedding,
+        require_bubblewrap,
         s2_path,
         s2_sha256,
         s2_store,
@@ -760,6 +1066,7 @@ def _load_frozen_runtime(
         system_path=system_source,
         system_sha256=file_sha256(system_source),
         system_id=str(system["system_id"]),
+        formal_spec_id=formal_spec_id or None,
         manifest_path=manifest_source,
         manifest_sha256=file_sha256(manifest_source),
         manifest_id=str(manifest["manifest_sha256"]),
@@ -767,6 +1074,7 @@ def _load_frozen_runtime(
         papers=hydrated,
         model_identity=model,
         embedding_identity=embedding,
+        require_bubblewrap=require_bubblewrap,
         s2_path=s2_path,
         s2_sha256=s2_sha256,
         s2_store=s2_store,
@@ -780,6 +1088,7 @@ def run_coco_review_batch(
     output_root: str | Path,
     options: CocoReviewBatchOptions,
     generation_adapter: ReviewGenerationAdapter,
+    expected_frozen_identity: dict[str, str] | None = None,
     progress: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     """Generate or resume exact CoCo-1300 Specialist and Final Reviews.
@@ -798,6 +1107,47 @@ def run_coco_review_batch(
             frozen_system_path=frozen_system_path,
             coco_manifest_path=coco_manifest_path,
         )
+        if expected_frozen_identity is not None:
+            expected_fields = {"system_id", "system_sha256", "spec_id"}
+            if set(expected_frozen_identity) != expected_fields or any(
+                not _is_nonempty_text(expected_frozen_identity.get(name))
+                for name in expected_fields
+            ):
+                raise ValueError(
+                    "Expected frozen identity requires system_id, system_sha256, "
+                    "and spec_id"
+                )
+            observed_frozen_identity = {
+                "system_id": runtime.system_id,
+                "system_sha256": runtime.system_sha256,
+                "spec_id": runtime.formal_spec_id,
+            }
+            if observed_frozen_identity != expected_frozen_identity:
+                raise ValueError(
+                    "Frozen system changed after formal transition validation"
+                )
+        if isinstance(generation_adapter, ResearchV2ReviewGenerationAdapter):
+            ResearchV2ReviewGenerationAdapter.validate_frozen_runtime(
+                generation_adapter,
+                model_identity=runtime.model_identity,
+                embedding_identity=runtime.embedding_identity,
+                require_bubblewrap=runtime.require_bubblewrap,
+            )
+        else:
+            validate_runtime = getattr(
+                generation_adapter,
+                "validate_frozen_runtime",
+                None,
+            )
+            if not callable(validate_runtime):
+                raise TypeError(
+                    "CoCo Review generation adapter must validate the frozen runtime"
+                )
+            validate_runtime(
+                model_identity=runtime.model_identity,
+                embedding_identity=runtime.embedding_identity,
+                require_bubblewrap=runtime.require_bubblewrap,
+            )
         run_spec = _run_spec(runtime, options)
         run_spec_sha256 = value_sha256(run_spec)
         started_at = (
@@ -845,32 +1195,119 @@ def run_coco_review_batch(
             generation_adapter,
             options.max_workers,
         )
+        staging_parent = run_dir / ".staging"
+        staging_parent.mkdir(parents=True, exist_ok=True)
 
         def execute(item: _WorkItem) -> dict[str, Any]:
             paper = runtime.papers[item.paper_index]
             if item.kind == "specialist":
-                invocation = _specialist_invocation(
+                canonical_invocation = _specialist_invocation(
                     runtime=runtime,
                     output_root=root,
                     run_id=options.run_id,
                     paper=paper,
                     role=item.role,
                 )
-                value = bounded_adapter.generate_specialist(invocation)
-                value = _validated_specialist_payload(
-                    value,
-                    invocation=invocation,
+                _validate_task_sources(
+                    runtime=runtime,
                     paper=paper,
-                    role_runtime=runtime.roles[item.role],
+                    role=item.role,
+                    label="Specialist preflight",
                 )
-                atomic_write_json(invocation.output_path, value)
+                with _persistent_task_stage(
+                    staging_parent=staging_parent,
+                    kind="specialist",
+                    paper_id=paper.paper_id,
+                    role=item.role,
+                ) as staging_root:
+                    invocation = replace(
+                        canonical_invocation,
+                        output_root=staging_root,
+                    )
+                    for suffix in ("request", "raw"):
+                        canonical_prefix = canonical_invocation.output_path.with_name(
+                            f"{item.role}.{suffix}.json"
+                        )
+                        staged_prefix = invocation.output_path.with_name(
+                            f"{item.role}.{suffix}.json"
+                        )
+                        _seed_staged_json(
+                            canonical_path=canonical_prefix,
+                            staged_path=staged_prefix,
+                        )
+                    try:
+                        value = bounded_adapter.generate_specialist(invocation)
+                    except (
+                        CocoReviewPaperFailure,
+                        CocoReviewInfrastructureFailure,
+                    ):
+                        _validate_task_sources(
+                            runtime=runtime,
+                            paper=paper,
+                            role=item.role,
+                            label="failed Specialist staging",
+                        )
+                        raise
+                    value = _validated_specialist_payload(
+                        value,
+                        invocation=invocation,
+                        paper=paper,
+                        role_runtime=runtime.roles[item.role],
+                    )
+                    _validate_staged_value(
+                        staged_path=invocation.output_path,
+                        returned_value=value,
+                        label="Specialist",
+                    )
+                    _load_review_request(
+                        invocation.output_path.with_name(
+                            f"{item.role}.request.json"
+                        ),
+                        input_identity=_specialist_input_identity(
+                            invocation,
+                            paper=paper,
+                            role_runtime=runtime.roles[item.role],
+                        ),
+                    )
+                    _validate_task_sources(
+                        runtime=runtime,
+                        paper=paper,
+                        role=item.role,
+                        label="Specialist promotion",
+                    )
+                    for suffix in ("raw", "request"):
+                        _promote_staged_json(
+                            staged_path=invocation.output_path.with_name(
+                                f"{item.role}.{suffix}.json"
+                            ),
+                            canonical_path=canonical_invocation.output_path.with_name(
+                                f"{item.role}.{suffix}.json"
+                            ),
+                        )
+                    _promote_staged_json(
+                        staged_path=invocation.output_path,
+                        canonical_path=canonical_invocation.output_path,
+                    )
+                _validate_task_sources(
+                    runtime=runtime,
+                    paper=paper,
+                    role=item.role,
+                    label="Specialist post-commit",
+                )
+                _discard_task_stage(
+                    staging_root=staging_root,
+                    staging_parent=staging_parent,
+                )
                 return value
-            invocation = _final_invocation(
+            canonical_invocation = _final_invocation(
                 runtime=runtime,
                 output_root=root,
                 run_id=options.run_id,
                 paper=paper,
                 mode="meta",
+            )
+            review_bindings = _review_file_bindings(
+                canonical_invocation.review_paths
             )
             reviews = _paper_reviews(
                 runtime=runtime,
@@ -883,16 +1320,101 @@ def run_coco_review_batch(
                     "Meta scheduled without five committed Specialists: "
                     f"{paper.paper_id}"
                 )
-            value = bounded_adapter.generate_final(invocation)
-            value = _validated_final_payload(
-                value,
-                invocation=invocation,
-                reviews=reviews,
+            _validate_task_sources(
+                runtime=runtime,
+                paper=paper,
+                review_bindings=review_bindings,
+                label="Meta preflight",
             )
-            atomic_write_json(invocation.output_path, value)
+            with _persistent_task_stage(
+                staging_parent=staging_parent,
+                kind="meta",
+                paper_id=paper.paper_id,
+            ) as staging_root:
+                invocation = replace(
+                    canonical_invocation,
+                    output_root=staging_root,
+                )
+                for attempt in range(1, META_MAX_ATTEMPTS + 1):
+                    canonical_raw = canonical_invocation.output_path.with_name(
+                        f"{paper.paper_id}.meta.raw.{attempt}.json"
+                    )
+                    staged_raw = invocation.output_path.with_name(
+                        f"{paper.paper_id}.meta.raw.{attempt}.json"
+                    )
+                    _seed_staged_json(
+                        canonical_path=canonical_raw,
+                        staged_path=staged_raw,
+                    )
+                try:
+                    value = bounded_adapter.generate_final(invocation)
+                except (
+                    CocoReviewPaperFailure,
+                    CocoReviewInfrastructureFailure,
+                ):
+                    _validate_task_sources(
+                        runtime=runtime,
+                        paper=paper,
+                        review_bindings=review_bindings,
+                        label="failed Meta staging",
+                    )
+                    raise
+                value = _validated_final_payload(
+                    value,
+                    invocation=invocation,
+                    reviews=reviews,
+                )
+                _validate_staged_value(
+                    staged_path=invocation.output_path,
+                    returned_value=value,
+                    label="Meta",
+                )
+                _validate_task_sources(
+                    runtime=runtime,
+                    paper=paper,
+                    review_bindings=review_bindings,
+                    label="Meta promotion",
+                )
+                for attempt in range(1, META_MAX_ATTEMPTS + 1):
+                    staged_raw = invocation.output_path.with_name(
+                        f"{paper.paper_id}.meta.raw.{attempt}.json"
+                    )
+                    if staged_raw.is_file():
+                        _promote_staged_json(
+                            staged_path=staged_raw,
+                            canonical_path=(
+                                canonical_invocation.output_path.with_name(
+                                    f"{paper.paper_id}.meta.raw.{attempt}.json"
+                                )
+                            ),
+                        )
+                _promote_staged_json(
+                    staged_path=invocation.output_path,
+                    canonical_path=canonical_invocation.output_path,
+                )
+            _validate_task_sources(
+                runtime=runtime,
+                paper=paper,
+                review_bindings=review_bindings,
+                label="Meta post-commit",
+            )
+            _discard_task_stage(
+                staging_root=staging_root,
+                staging_parent=staging_parent,
+            )
             return value
 
         def commit_concat(paper: _CocoPaper) -> None:
+            canonical_invocation = _final_invocation(
+                runtime=runtime,
+                output_root=root,
+                run_id=options.run_id,
+                paper=paper,
+                mode="concat",
+            )
+            review_bindings = _review_file_bindings(
+                canonical_invocation.review_paths
+            )
             reviews = _paper_reviews(
                 runtime=runtime,
                 output_root=root,
@@ -901,22 +1423,66 @@ def run_coco_review_batch(
             )
             if len(reviews) != len(ROLES):
                 return
-            invocation = _final_invocation(
-                runtime=runtime,
-                output_root=root,
-                run_id=options.run_id,
-                paper=paper,
-                mode="concat",
-            )
             if concat[paper.index].get("status") in {"completed", "resumed"}:
                 return
-            value = generation_adapter.generate_final(invocation)
-            value = _validated_final_payload(
-                value,
-                invocation=invocation,
-                reviews=reviews,
+            _validate_task_sources(
+                runtime=runtime,
+                paper=paper,
+                review_bindings=review_bindings,
+                label="concat preflight",
             )
-            atomic_write_json(invocation.output_path, value)
+            with _persistent_task_stage(
+                staging_parent=staging_parent,
+                kind="concat",
+                paper_id=paper.paper_id,
+            ) as staging_root:
+                invocation = replace(
+                    canonical_invocation,
+                    output_root=staging_root,
+                )
+                try:
+                    value = bounded_adapter.generate_final(invocation)
+                except (
+                    CocoReviewPaperFailure,
+                    CocoReviewInfrastructureFailure,
+                ):
+                    _validate_task_sources(
+                        runtime=runtime,
+                        paper=paper,
+                        review_bindings=review_bindings,
+                        label="failed concat staging",
+                    )
+                    raise
+                value = _validated_final_payload(
+                    value,
+                    invocation=invocation,
+                    reviews=reviews,
+                )
+                _validate_staged_value(
+                    staged_path=invocation.output_path,
+                    returned_value=value,
+                    label="concat",
+                )
+                _validate_task_sources(
+                    runtime=runtime,
+                    paper=paper,
+                    review_bindings=review_bindings,
+                    label="concat promotion",
+                )
+                _promote_staged_json(
+                    staged_path=invocation.output_path,
+                    canonical_path=canonical_invocation.output_path,
+                )
+            _validate_task_sources(
+                runtime=runtime,
+                paper=paper,
+                review_bindings=review_bindings,
+                label="concat post-commit",
+            )
+            _discard_task_stage(
+                staging_root=staging_root,
+                staging_parent=staging_parent,
+            )
             concat[paper.index] = {
                 "status": "completed",
                 "final_review_id": value["final_review_id"],
@@ -1151,6 +1717,38 @@ def run_coco_review_batch(
                     meta[paper.index] = {"status": "blocked"}
                 if concat[paper.index].get("status") == "pending":
                     concat[paper.index] = {"status": "blocked"}
+        if not infrastructure_failures:
+            try:
+                confirmed_runtime = _load_frozen_runtime(
+                    frozen_system_path=frozen_system_path,
+                    coco_manifest_path=coco_manifest_path,
+                )
+                if _run_spec(confirmed_runtime, options) != run_spec:
+                    raise CocoReviewInfrastructureFailure(
+                        "Frozen runtime changed before terminal batch validation"
+                    )
+                _validate_completed_batch_state(
+                    runtime=confirmed_runtime,
+                    output_root=root,
+                    run_id=options.run_id,
+                    specialist=specialist,
+                    meta=meta,
+                    concat=concat,
+                )
+            except Exception as exc:
+                first_infrastructure_error = exc
+                infrastructure_failures.append(
+                    _save_failure(
+                        run_dir=run_dir,
+                        run_id=options.run_id,
+                        run_spec_sha256=run_spec_sha256,
+                        stage="terminal_validation",
+                        paper_id="",
+                        role="",
+                        category="infrastructure",
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                )
         if infrastructure_failures:
             interrupted = _summary(
                 options=options,
@@ -1221,6 +1819,7 @@ def _specialist_input_identity(
         "program_version": role_runtime.program_version,
         "model_identity": dict(invocation.model_identity),
         "embedding_identity": dict(invocation.embedding_identity),
+        "require_bubblewrap": invocation.require_bubblewrap,
         "snapshot_path": str(role_runtime.snapshot_path),
         "snapshot_sha256": role_runtime.snapshot_sha256,
         "snapshot_id": role_runtime.snapshot_id,
@@ -1460,6 +2059,29 @@ def _validated_specialist_payload(
         "plan_sha256": value_sha256(plan),
         "preparation_sha256": preparation_sha256,
     }
+    raw_path = invocation.output_path.with_name(f"{invocation.role}.raw.json")
+    raw_artifact = _load_resumable_raw_artifact(
+        raw_path,
+        paper_id=paper.paper_id,
+        role=invocation.role,
+        run_id=invocation.run_id,
+        request_sha256=request_sha256,
+        model_identity=invocation.model_identity,
+        generation_identity=generation,
+        program_version=role_runtime.program_version,
+        snapshot_id=role_runtime.snapshot_id,
+        review_plan_identity=review_plan_identity,
+    )
+    if raw_artifact is None:
+        raise ValueError(f"Specialist Review has no committed raw artifact: {raw_path}")
+    raw_output = raw_artifact.get("raw_model_output")
+    if (
+        value.get("review_text") != raw_output
+        or value.get("raw_model_output") != raw_output
+        or value.get("created_at") != raw_artifact.get("created_at")
+        or attempts != raw_artifact.get("attempts")
+    ):
+        raise ValueError("Specialist Review content identity mismatch")
     expected_review_id = _review_id(
         run_id=invocation.run_id,
         paper_id=paper.paper_id,
@@ -1489,6 +2111,9 @@ def _validated_final_payload(
     if not isinstance(value, dict):
         raise TypeError("Final Review artifact must be an object")
     source_ids = [str(reviews[role]["review_id"]) for role in ROLES]
+    text = value.get("review_text")
+    if not _is_nonempty_text(text) or not _is_nonempty_text(value.get("created_at")):
+        raise ValueError("Final Review output or creation time is invalid")
     expected_fields = {
         "schema_version",
         "final_review_id",
@@ -1507,6 +2132,7 @@ def _validated_final_payload(
             paper_id=invocation.paper_id,
             mode=invocation.mode,
             source_review_ids=source_ids,
+            review_text=str(text),
         ),
         "paper_id": invocation.paper_id,
         "mode": invocation.mode,
@@ -1539,18 +2165,60 @@ def _validated_final_payload(
             f"Final Review identity mismatch: observed={observed!r}, "
             f"expected={expected_identity!r}"
         )
-    text = value.get("review_text")
-    if not _is_nonempty_text(text) or not _is_nonempty_text(value.get("created_at")):
-        raise ValueError("Final Review output or creation time is invalid")
     if invocation.mode == "concat":
         if text != _concat_text(reviews):
             raise ValueError(
-                "Concat Final Review is not the deterministic five-role bundle"
+                "Final Review content identity is not the deterministic "
+                "five-role concat bundle"
             )
-    elif re.search(r"(?im)^\s*(final\s+score|confidence)\s*:", str(text)):
-        raise ValueError(
-            "Meta Final Review contains a forbidden score/confidence field"
+    else:
+        if re.search(r"(?im)^\s*(final\s+score|confidence)\s*:", str(text)):
+            raise ValueError(
+                "Meta Final Review contains a forbidden score/confidence field"
+            )
+        paper = Paper.from_dict(read_json(invocation.paper_path))
+        synthesizer = load_meta_synthesizer()
+        question = build_meta_review_question(
+            paper_id=invocation.paper_id,
+            specialist_reviews={
+                role: str(reviews[role]["review_text"]) for role in ROLES
+            },
+            paper_context=frozen_paper_context(paper, "META"),
         )
+        messages = [
+            {"role": "system", "content": synthesizer.system_prompt},
+            {"role": "user", "content": question},
+        ]
+        raw_identity = {
+            "protocol": META_RAW_PROTOCOL,
+            "paper_id": invocation.paper_id,
+            "run_id": invocation.run_id,
+            "source_review_ids": source_ids,
+            "meta_identity": synthesizer.identity(),
+            "model_identity": dict(invocation.model_identity),
+            "generation_config": {
+                "temperature": 0.0,
+                "enable_thinking": False,
+                "max_tokens": META_MAX_TOKENS,
+            },
+            "request_sha256": value_sha256(messages),
+        }
+        matching_raw = False
+        for attempt in range(1, META_MAX_ATTEMPTS + 1):
+            raw_path = invocation.output_path.with_name(
+                f"{invocation.paper_id}.meta.raw.{attempt}.json"
+            )
+            raw = _load_resumable_meta_raw(
+                raw_path,
+                expected_identity={**raw_identity, "attempt": attempt},
+            )
+            if raw is not None and (
+                raw.get("raw_model_output") == text
+                and raw.get("created_at") == value.get("created_at")
+            ):
+                matching_raw = True
+        if not matching_raw:
+            raise ValueError("Meta Final Review content identity mismatch")
     return value
 
 
@@ -1596,6 +2264,7 @@ def _run_spec(
         },
         "model_identity": runtime.model_identity,
         "embedding_identity": runtime.embedding_identity,
+        "require_bubblewrap": runtime.require_bubblewrap,
         "s2": {
             "path": str(runtime.s2_path),
             "sha256": runtime.s2_sha256,
@@ -1680,6 +2349,7 @@ def _specialist_invocation(
         output_root=output_root,
         model_identity=dict(runtime.model_identity),
         embedding_identity=dict(runtime.embedding_identity),
+        require_bubblewrap=runtime.require_bubblewrap,
         program_version=role_runtime.program_version,
         frozen_s2_path=runtime.s2_path,
         frozen_s2_store=runtime.s2_store,
@@ -1706,6 +2376,8 @@ def _final_invocation(
         run_id=f"{run_id}-{mode}",
         output_root=output_root,
         model_identity=dict(runtime.model_identity),
+        embedding_identity=dict(runtime.embedding_identity),
+        require_bubblewrap=runtime.require_bubblewrap,
     )
 
 
@@ -1910,6 +2582,43 @@ def _load_existing_artifacts(
             meta[paper.index] = {"status": "pending"}
             ready_meta.append(_WorkItem("meta", paper.index))
     return specialist, meta, concat, pending, ready_meta
+
+
+def _validate_completed_batch_state(
+    *,
+    runtime: _FrozenRuntime,
+    output_root: Path,
+    run_id: str,
+    specialist: dict[tuple[int, str], dict[str, Any]],
+    meta: dict[int, dict[str, Any]],
+    concat: dict[int, dict[str, Any]],
+) -> None:
+    """Reread every completed artifact before declaring the batch terminal."""
+    confirmed_specialist, confirmed_meta, confirmed_concat, _, _ = (
+        _load_existing_artifacts(
+            runtime=runtime,
+            output_root=output_root,
+            run_id=run_id,
+        )
+    )
+    groups = (
+        ("Specialist", specialist, confirmed_specialist, "review_id"),
+        ("Meta", meta, confirmed_meta, "final_review_id"),
+        ("concat", concat, confirmed_concat, "final_review_id"),
+    )
+    for label, expected, observed, identity_field in groups:
+        for key, state in expected.items():
+            if state.get("status") not in {"completed", "resumed"}:
+                continue
+            confirmed = observed.get(key)
+            if (
+                not isinstance(confirmed, dict)
+                or confirmed.get("status") != "resumed"
+                or confirmed.get(identity_field) != state.get(identity_field)
+            ):
+                raise CocoReviewInfrastructureFailure(
+                    f"Completed {label} artifact failed terminal revalidation: {key}"
+                )
 
 
 def _paper_reviews(

@@ -63,9 +63,13 @@ bootstrap-corpus
 build-memory
 review
 internal-eval
+evaluate-corpus
 evolve-step
 run-evolution
+formal-evolution
+materialize-freeze-spec
 freeze-system
+generate-coco-reviews
 coco-eval
 ```
 
@@ -85,7 +89,7 @@ python -m agentreview.research_v2 \
   build-s2 --dataset development
 ```
 
-S2 全机只运行一个构建进程，development 与 CoCo 不并发；每个进程严格串行且最多每秒启动一个请求。限流和恢复规则见 [EXPERIMENT_CONFIGURATION.md](../docs/EXPERIMENT_CONFIGURATION.md)。
+S2 全机只运行一个构建进程，development 与 CoCo 不并发；每个进程严格串行，任意两次请求的启动间隔至少为1.2秒。限流和恢复规则见 [EXPERIMENT_CONFIGURATION.md](../docs/EXPERIMENT_CONFIGURATION.md)。
 
 独立冻结 protocol-compatible CoCo-1300；该集合不是作者未公开的 original IDs：
 
@@ -97,7 +101,39 @@ python -m agentreview.research_v2 \
 
 加 `--build-s2` 时构建独立 `frozen_s2_coco1300_v1`。development 与 CoCo 的 S2 pool 不允许混用。
 
-冻结系统和 1300 份 Final Review 齐备后，`coco-eval` 可调用
+五角色 Formal Evolution 与两套 S2 均完整后，先从五个已验证 winner 确定性生成
+self-hashed freeze spec，再冻结系统并生成可恢复的 1,300 篇 winner Review：
+
+```bash
+python -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  materialize-freeze-spec \
+  --run-id formal-evolution-v1 \
+  --output artifacts/research_v2/frozen/formal-evolution-v1.freeze-spec.json
+
+python -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  freeze-system \
+  --spec artifacts/research_v2/frozen/formal-evolution-v1.freeze-spec.json \
+  --output artifacts/research_v2/frozen/formal-evolution-v1.system.json
+
+python -m agentreview.research_v2 \
+  --config AgentReview/configs/research_v2_formal_v1.json \
+  generate-coco-reviews \
+  --frozen-system artifacts/research_v2/frozen/formal-evolution-v1.system.json \
+  --run-id formal-coco1300-winner-v1 \
+  --max-workers 8
+```
+
+`materialize-freeze-spec` 要求五角色 all-role summary、pool、coordinator、winner、
+run-spec 与当前配置完全一致，并对语义和源哈希执行两遍一致性检查；它还分别记录
+Evolution 多提交恢复审计与 clean transition Git HEAD，不会把旧 Evolution 执行误写成
+新 transition commit，也不会人工改变 winner 的 S2 策略。`generate-coco-reviews` 的
+Specialist 与 Meta 共用同一个最多8路的27B队列，每篇五份 Specialist 完成后即可排队
+Meta；concat 不调用 LLM。相同 run ID 仅在正文、raw output、请求与完整 frozen identity
+均一致时恢复。
+
+冻结系统和两组各 1300 份 Final Review 齐备后，`coco-eval` 可调用
 CoCoReviewBench 的 `scripts/run_official_candidate.py`。该 runner 只连接已经
 常驻、在外部完成 GPU pin 的 split/classify endpoint；Review 生成、vLLM
 生命周期和进程清理由外部服务负责。命令返回 0 后，本侧会按冻结 ID 集合

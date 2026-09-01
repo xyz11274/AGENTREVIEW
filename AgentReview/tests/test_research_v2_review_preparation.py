@@ -102,6 +102,7 @@ class ReviewPreparationTest(unittest.TestCase):
         embedding_identity = kwargs.pop(
             "embedding_identity", {"provider": "deterministic-fallback-v1"}
         )
+        require_bubblewrap = kwargs.pop("require_bubblewrap", False)
         return run_specialist_review(
             paper_path=self.paper_path,
             role="QUAL",
@@ -115,7 +116,7 @@ class ReviewPreparationTest(unittest.TestCase):
             frozen_s2_path=self.s2_path,
             s2_intervention=self.intervention,
             embedding_identity=embedding_identity,
-            require_bubblewrap=False,
+            require_bubblewrap=require_bubblewrap,
             **kwargs,
         )
 
@@ -229,6 +230,13 @@ class ReviewPreparationTest(unittest.TestCase):
                 snapshot=snapshot,
                 run_id="resume-run",
                 embedding_identity={"provider": "different"},
+            )
+        with self.assertRaisesRegex(ValueError, "input identity mismatch"):
+            self._review(
+                program=program,
+                snapshot=snapshot,
+                run_id="resume-run",
+                require_bubblewrap=True,
             )
 
     def test_request_materialization_rejects_pool_or_payload_change(self):

@@ -478,6 +478,146 @@ class FrozenS2Store:
         return selected, provenance
 
 
+def validate_frozen_s2_pool(
+    *,
+    pool_path: str | Path,
+    expected_count: int,
+    pool_version: str,
+    raw_limit: int,
+    top_k: int,
+    builder_sha256: str,
+    targets: list[dict[str, Any]] | None = None,
+    query_path: str | Path | None = None,
+    label: str = "Frozen S2",
+) -> dict[str, Any]:
+    """Validate one completed Frozen S2 pool against its exact build inputs.
+
+    Exactly one of ``targets`` and ``query_path`` must be supplied.  Validation
+    is deliberately stricter than runtime retrieval: it verifies build and
+    content identities, target/record ordering, self-match exclusion, and the
+    complete evidence list rather than only the prefix requested at runtime.
+    """
+    if (targets is None) == (query_path is None):
+        raise ValueError("Exactly one of targets and query_path is required")
+    target_values = (
+        read_jsonl(query_path) if query_path is not None else list(targets or [])
+    )
+    records = read_jsonl(pool_path)
+    if len(target_values) != expected_count:
+        raise ValueError(
+            f"{label} target count is {len(target_values)}, expected {expected_count}"
+        )
+    if len(records) != expected_count:
+        raise ValueError(
+            f"{label} record count is {len(records)}, expected {expected_count}"
+        )
+    if not all(isinstance(target, dict) for target in target_values):
+        raise ValueError(f"{label} targets must be objects")
+    target_ids = [str(target.get("paper_id") or "") for target in target_values]
+    if "" in target_ids or len(set(target_ids)) != len(target_ids):
+        raise ValueError(
+            f"{label} targets require {expected_count} unique non-empty paper IDs"
+        )
+
+    store = FrozenS2Store(pool_path)
+    if len(store.pool) != expected_count:
+        raise ValueError(
+            f"{label} indexed record count is {len(store.pool)}, "
+            f"expected {expected_count}"
+        )
+    for target, record in zip(target_values, records, strict=True):
+        paper_id = str(target.get("paper_id") or "")
+        title = str(
+            target.get("canonical_query_title") or target.get("title") or ""
+        ).strip()
+        if not title:
+            raise ValueError(f"{label} target {paper_id} has no query title")
+        expected = _expected_record_identity(
+            target=target,
+            paper_id=paper_id,
+            title=title,
+            pool_version=pool_version,
+            raw_limit=raw_limit,
+            top_k=top_k,
+            builder_sha256=builder_sha256,
+        )
+        _validate_record_identity(record, expected, source=store.path)
+        raw_evidence = record.get("retrieved_papers")
+        if not isinstance(raw_evidence, list) or not all(
+            isinstance(value, dict) for value in raw_evidence
+        ):
+            raise ValueError(
+                f"{label} record {paper_id} retrieved_papers must be a list of objects"
+            )
+        if len(raw_evidence) > top_k:
+            raise ValueError(
+                f"{label} record {paper_id} contains more than top-{top_k} evidence"
+            )
+        if record.get("result_sha256") != value_sha256(raw_evidence):
+            raise ValueError(f"{label} record {paper_id} result hash mismatch")
+        target_title_key = canonical_title(title)
+        target_family = _family_title(title)
+        target_s2_id = str(target.get("s2_paper_id") or "")
+        target_external_ids = _external_ids(target)
+        seen_evidence_ids: set[str] = set()
+        seen_evidence_titles: set[str] = set()
+        for evidence_index, value in enumerate(raw_evidence):
+            evidence_id = str(
+                value.get("paperId")
+                or value.get("paper_id")
+                or value.get("id")
+                or ""
+            )
+            evidence_title = str(value.get("title") or "").strip()
+            if not evidence_id or not evidence_title:
+                raise ValueError(
+                    f"{label} record {paper_id} evidence {evidence_index} "
+                    "requires a non-empty paper ID and title"
+                )
+            evidence_title_key = canonical_title(evidence_title)
+            if target_s2_id and evidence_id == target_s2_id:
+                raise ValueError(
+                    f"{label} record {paper_id} contains target S2 ID {evidence_id}"
+                )
+            if evidence_title_key == target_title_key:
+                raise ValueError(
+                    f"{label} record {paper_id} contains an exact-title self match"
+                )
+            if _family_title(evidence_title) == target_family:
+                raise ValueError(
+                    f"{label} record {paper_id} contains a same-family self match"
+                )
+            if target_external_ids & _external_ids(value):
+                raise ValueError(
+                    f"{label} record {paper_id} contains a shared-external-ID "
+                    "self match"
+                )
+            if evidence_id in seen_evidence_ids:
+                raise ValueError(
+                    f"{label} record {paper_id} contains duplicate evidence ID "
+                    f"{evidence_id}"
+                )
+            if evidence_title_key in seen_evidence_titles:
+                raise ValueError(
+                    f"{label} record {paper_id} contains a duplicate evidence title"
+                )
+            seen_evidence_ids.add(evidence_id)
+            seen_evidence_titles.add(evidence_title_key)
+        evidence, _ = store.retrieve(
+            paper_id=paper_id,
+            target_title=title,
+            limit=top_k,
+        )
+        if len(evidence) != len(raw_evidence):
+            raise ValueError(f"{label} record {paper_id} evidence schema is incomplete")
+    return {
+        "validated": True,
+        "target_count": len(target_values),
+        "record_count": len(records),
+        "pool_sha256": store.sha256,
+    }
+
+
 def format_s2_evidence(values: list[dict[str, Any]]) -> str:
     sections = []
     for index, value in enumerate(values, start=1):
