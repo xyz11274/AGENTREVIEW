@@ -17,6 +17,7 @@ from .bootstrap import (
 from .coco import run_coco_evaluation
 from .coco_protocol import prepare_coco_1300
 from .config import ResearchConfig
+from .constants import ROLES
 from .data import prepare_data
 from .evaluation import run_internal_evaluation
 from .evaluation_batch import EvaluationBatchOptions, run_evaluation_batch
@@ -25,6 +26,8 @@ from .freeze import freeze_system
 from .formal_evolution import (
     advance_role_attempt,
     materialize_role_attempt,
+    preflight_formal_role_evolution,
+    run_formal_evolution_roles,
     run_formal_role_evolution,
 )
 from .io import atomic_write_json, read_json, read_jsonl
@@ -133,13 +136,20 @@ def _base_parser() -> argparse.ArgumentParser:
     formal_evolution = stages.add_parser("formal-evolution")
     formal_evolution.add_argument(
         "--action",
-        choices=("materialize-attempt", "advance-attempt", "run-role"),
+        choices=(
+            "materialize-attempt",
+            "advance-attempt",
+            "preflight-all",
+            "preflight-role",
+            "run-all-roles",
+            "run-role",
+        ),
         required=True,
     )
-    formal_evolution.add_argument("--role", required=True)
+    formal_evolution.add_argument("--role", default="")
     formal_evolution.add_argument("--run-id", required=True)
     formal_evolution.add_argument("--attempt", type=int, default=0)
-    formal_evolution.add_argument("--pool", required=True)
+    formal_evolution.add_argument("--pool", default="")
     formal_evolution.add_argument("--canonical-evaluation-summary", default="")
     formal_evolution.add_argument("--canonical-split", default="")
     formal_evolution.add_argument("--static-split", default="")
@@ -553,6 +563,8 @@ def main(argv: list[str] | None = None) -> int:
     elif args.stage == "formal-evolution":
         if args.action == "materialize-attempt":
             required = {
+                "role": args.role,
+                "pool": args.pool,
                 "canonical-evaluation-summary": args.canonical_evaluation_summary,
                 "static-split": args.static_split,
                 "rotating-split": args.rotating_split,
@@ -573,8 +585,10 @@ def main(argv: list[str] | None = None) -> int:
                 output_root=output_root,
             )
         elif args.action == "advance-attempt":
-            if not args.work:
-                raise ValueError("advance-attempt requires --work")
+            required = {"pool": args.pool, "work": args.work}
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ValueError("advance-attempt requires " + ", ".join(missing))
             result = advance_role_attempt(
                 work_path=args.work,
                 pool_path=args.pool,
@@ -603,24 +617,76 @@ def main(argv: list[str] | None = None) -> int:
             }
             missing = [name for name, value in required.items() if not value]
             if missing:
-                raise ValueError("run-role requires " + ", ".join(missing))
-            result = run_formal_role_evolution(
-                role=args.role,
-                run_id=args.run_id,
-                pool_path=args.pool,
-                canonical_evaluation_summary_path=args.canonical_evaluation_summary,
-                canonical_split_path=args.canonical_split,
-                static_split_path=args.static_split,
-                rotating_split_path=args.rotating_split,
-                frozen_s2_path=config.frozen_s2_path,
-                output_root=output_root,
-                completion_client=OpenAICompletionClient(config.model),
-                model_identity=config.model.identity(),
-                embedding_client=_embedding_client(config),
-                embedding_identity=config.embedding_identity(),
-                max_workers=config.model.max_num_seqs,
-                require_bubblewrap=config.require_bubblewrap,
-            )
+                raise ValueError(f"{args.action} requires " + ", ".join(missing))
+            common_inputs = {
+                "run_id": args.run_id,
+                "canonical_evaluation_summary_path": args.canonical_evaluation_summary,
+                "canonical_split_path": args.canonical_split,
+                "static_split_path": args.static_split,
+                "rotating_split_path": args.rotating_split,
+                "frozen_s2_path": config.frozen_s2_path,
+                "output_root": output_root,
+                "model_identity": config.model.identity(),
+                "embedding_identity": config.embedding_identity(),
+                "require_bubblewrap": config.require_bubblewrap,
+            }
+            if args.action in {"preflight-all", "run-all-roles"}:
+                if args.role or args.pool:
+                    raise ValueError(
+                        f"{args.action} derives all role-local pool paths; "
+                        "omit --role and --pool"
+                    )
+                if args.action == "preflight-all":
+                    result = {
+                        role: preflight_formal_role_evolution(
+                            **common_inputs,
+                            role=role,
+                            pool_path=(
+                                output_root
+                                / "evolution"
+                                / role
+                                / args.run_id
+                                / "pool.json"
+                            ),
+                        )
+                        for role in ROLES
+                    }
+                else:
+                    result = run_formal_evolution_roles(
+                        **common_inputs,
+                        completion_client=OpenAICompletionClient(config.model),
+                        embedding_client=_embedding_client(config),
+                        max_workers=config.model.max_num_seqs,
+                        progress=lambda event: print(
+                            json.dumps(event, ensure_ascii=False, sort_keys=True),
+                            file=sys.stderr,
+                            flush=True,
+                        ),
+                    )
+            else:
+                if not args.role or not args.pool:
+                    raise ValueError(
+                        f"{args.action} requires role and pool"
+                    )
+                common = {
+                    **common_inputs,
+                    "role": args.role,
+                    "pool_path": args.pool,
+                }
+                if args.action == "preflight-role":
+                    result = preflight_formal_role_evolution(**common)
+                else:
+                    result = run_formal_role_evolution(
+                        **common,
+                        completion_client=OpenAICompletionClient(config.model),
+                        embedding_client=_embedding_client(config),
+                        max_workers=config.model.max_num_seqs,
+                        progress=lambda event: print(
+                            json.dumps(event, ensure_ascii=False, sort_keys=True),
+                            file=sys.stderr,
+                            flush=True,
+                        ),
+                    )
     elif args.stage == "freeze-system":
         result = freeze_system(output_path=args.output, **read_json(args.spec))
     elif args.stage == "coco-eval":

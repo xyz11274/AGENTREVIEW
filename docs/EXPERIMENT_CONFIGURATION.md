@@ -151,6 +151,45 @@ CoCo Split 和 Classify 是两个独立的单 GPU、TP=1 vLLM endpoint。服务�
 
 `scripts/run_official_candidate.py` 不负责启动、停止或清理任何 vLLM 服务，因此不会让专用 27B 在 CoCo 期间休息，也不会误杀其他实验服务。
 
+### GPU 0/1 预留服务（2026-09-01）
+
+为防止正式实验期间 GPU 0/1 被其他任务占用，当前已部署两个真实 CoCo
+endpoint，而不是无业务意义的显存占位进程：
+
+| GPU | tmux | endpoint | 模型 | 当前参数 | 用途 |
+|---|---|---|---|---|---|
+| 0 | `ar0831_coco_split_gpu0` | `127.0.0.1:13099/v1` | `Qwen3-8B-Split` | 8K、`max_num_seqs=8`、`gpu_memory_utilization=0.40` | 预留兼容模式，为 Evolution 的 Qwen3-Embedding-8B 保留显存 |
+| 1 | `ar0831_coco_classify_gpu1` | `127.0.0.1:13098/v1` | `Qwen3-8B-Classify` | 32K、`max_num_seqs=16`、`gpu_memory_utilization=0.90` | 正式 Classify 常驻服务 |
+
+GPU 0 在 Split 占用约19.7 GiB 时，已实际加载正式
+`Qwen/Qwen3-Embedding-8B` 并成功生成4096维向量；两者可共存。预检日志是
+`artifacts/research_v2/runtime/coco_split_gpu0_reserve/embedding_coexist_preflight.log`。
+
+当前 GPU 0 Split 的 8K 是预留兼容参数，不是最终 CoCo scoring 参数。正式
+Split 前必须先完成 Evolution、释放 in-process embedding model，再把 Split 重启为
+冻结的 40K 配置并执行真实 CoCo prompt smoke。不得直接用 8K 预留服务开始
+1,300篇正式 Split。
+
+服务日志：
+
+```text
+artifacts/research_v2/runtime/coco_split_gpu0_reserve/server.log
+artifacts/research_v2/runtime/coco_classify_gpu1/server.log
+```
+
+健康检查：
+
+```bash
+curl --fail --silent http://127.0.0.1:13099/v1/models
+curl --fail --silent http://127.0.0.1:13098/v1/models
+```
+
+不要使用 `env_shengao/bin/vllm` 启动这两个服务。该环境当前的 vLLM 0.11.2
+扩展与已安装 PyTorch CUDA ABI 不一致，会在导入 `vllm._C` 时报告
+`undefined symbol`。当前两个服务使用已验证的
+`/data0/xyj/miniconda3/envs/qwen38serve/bin/python` 和 vLLM 0.20.1；切换环境或
+版本属于服务 identity 变更，必须重新做 endpoint smoke 并记录版本。
+
 ## Run ID 与不可变 artifact
 
 正式 canonical bootstrap 保留 run ID `canonical-bootstrap-v1`。它是 migration 前已完成的固定 S2 来源 corpus，不改写。smoke、`--limit` 或 `--no-s2` diagnostic 必须使用独立 run ID，例如 `qwen-live-smoke-20260901-01`；seed/static/winner Primary 使用 `program_autonomous` intervention，不沿用 canonical 的固定 S2 控制面。
