@@ -13,6 +13,8 @@ from agentreview.research_v2.data import prepare_data
 from agentreview.research_v2.evolution import (
     EvolutionPool,
     PoolEntry,
+    ReflectorContextBudgetError,
+    _reflector_context_budget,
     propose_candidate,
 )
 from agentreview.research_v2.io import atomic_write_json, file_sha256, read_json
@@ -66,6 +68,17 @@ class FakeCompletion:
                 "Actionable suggestions:\n- add ablation"
             )
         raise AssertionError(component)
+
+
+class CountingCompletion(FakeCompletion):
+    def __init__(self, input_tokens, responses=None):
+        super().__init__(responses=responses)
+        self.input_tokens = input_tokens
+        self.tokenize_calls = 0
+
+    def count_chat_tokens(self, messages):
+        self.tokenize_calls += 1
+        return {"input_tokens": self.input_tokens, "max_model_len": 65536}
 
 
 class ResearchV2Test(unittest.TestCase):
@@ -872,6 +885,34 @@ Title: Clarify grounding
                 output_root=self.root,
                 completion_client=FakeCompletion(),
                 require_bubblewrap=False,
+            )
+
+    def test_reflector_uses_exact_context_budget_with_headroom(self):
+        client = CountingCompletion(56832)
+        budget = _reflector_context_budget(
+            messages=[{"role": "user", "content": "feedback"}],
+            completion_client=client,
+            completion_identity={"max_model_len": 65536},
+        )
+        self.assertEqual(budget["input_tokens"], 56832)
+        self.assertEqual(budget["max_tokens"], 8192)
+        self.assertEqual(client.tokenize_calls, 1)
+
+        client.input_tokens = 56833
+        with self.assertRaisesRegex(ReflectorContextBudgetError, "fixed output"):
+            _reflector_context_budget(
+                messages=[{"role": "user", "content": "feedback"}],
+                completion_client=client,
+                completion_identity={"max_model_len": 65536},
+            )
+        with self.assertRaisesRegex(
+            ReflectorContextBudgetError,
+            "requires count_chat_tokens",
+        ):
+            _reflector_context_budget(
+                messages=[{"role": "user", "content": "feedback"}],
+                completion_client=FakeCompletion(),
+                completion_identity={"max_model_len": 65536},
             )
 
     def test_tiny_five_role_review_then_separate_evaluation_and_finalization(self):

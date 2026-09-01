@@ -14,6 +14,8 @@ from agentreview.research_v2.constants import ROLES
 from agentreview.research_v2.evolution import (
     EvolutionPool,
     PoolEntry,
+    _reflector_feedback_view,
+    _reflector_prompt,
     feedback_packet,
     initialize_pool,
 )
@@ -184,6 +186,22 @@ class EvolvableWinnerTests(unittest.TestCase):
         self.assertEqual(case["s2_selected_evidence"], evidence)
         self.assertEqual(case["s2_injected_ids"], ["s2-1"])
         self.assertEqual(case["review_plan"]["decision_label"], "novelty-check")
+        view = _reflector_feedback_view(packet)
+        rendered_case = view["rotating_failure_cases"][0]
+        self.assertEqual(view["parent"], packet["parent"])
+        self.assertEqual(rendered_case["complete_review"], "Complete review.")
+        self.assertEqual(rendered_case["retrieval_trace"]["memory"], memory_trace)
+        self.assertEqual(rendered_case["retrieval_trace"]["s2"], s2_trace)
+        self.assertEqual(
+            rendered_case["retrieval_trace"]["assembly"],
+            {"prompt_sha256": "prompt-hash"},
+        )
+        self.assertNotIn("memory_trace", rendered_case)
+        self.assertNotIn("s2_trace", rendered_case)
+        prompt = _reflector_prompt("PROGRAM = True", packet)
+        self.assertIn("research-v2-reflector-feedback-view-v1", prompt)
+        self.assertNotIn('"memory_trace":', prompt)
+        self.assertNotIn('"s2_trace":', prompt)
 
     def test_cli_host_switch_is_rejected_and_no_s2_is_named_diagnostic(self):
         with self.assertRaisesRegex(ValueError, "legacy host policy keys"):

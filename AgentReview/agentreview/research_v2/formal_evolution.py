@@ -757,6 +757,15 @@ class BoundedCompletionClient:
                 component=component,
             )
 
+    def count_chat_tokens(
+        self, messages: list[dict[str, str]]
+    ) -> dict[str, int] | None:
+        counter = getattr(self.client, "count_chat_tokens", None)
+        if not callable(counter):
+            return None
+        with self._semaphore:
+            return counter(messages)
+
 
 def _artifact_paths(
     *,

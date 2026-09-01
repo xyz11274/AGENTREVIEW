@@ -26,6 +26,14 @@ from .program_checks import (
 )
 
 MAX_MUTATION_ATTEMPTS = 20
+REFLECTOR_PROMPT_PROTOCOL = "research-v2-reflector-prompt-v2"
+REFLECTOR_FEEDBACK_VIEW_PROTOCOL = "research-v2-reflector-feedback-view-v1"
+REFLECTOR_CONTEXT_BUDGET_PROTOCOL = "research-v2-reflector-context-budget-v1"
+REFLECTOR_CONTEXT_HEADROOM_TOKENS = 512
+
+
+class ReflectorContextBudgetError(RuntimeError):
+    """The measured Reflector request cannot preserve a usable output budget."""
 
 
 @dataclass(frozen=True)
@@ -447,7 +455,40 @@ def feedback_packet(
     }
 
 
+def _reflector_feedback_view(packet: dict[str, Any]) -> dict[str, Any]:
+    """Render every feedback fact once while preserving both complete traces."""
+    cases = []
+    for value in list(packet.get("rotating_failure_cases") or []):
+        cases.append(
+            {
+                "paper_id": value.get("paper_id"),
+                "complete_review": value.get("complete_review"),
+                "retrieval_trace": {
+                    "memory": value.get("memory_trace"),
+                    "s2": value.get("s2_trace"),
+                    "assembly": value.get("retrieval_assembly"),
+                },
+                "internal_evaluation": {
+                    "review_quality": value.get("review_quality"),
+                    "major_missing_points": value.get("major_missing_points"),
+                    "factual_evidence_issues": value.get(
+                        "factual_evidence_issues"
+                    ),
+                    "improvement_suggestions": value.get(
+                        "improvement_suggestions"
+                    ),
+                },
+            }
+        )
+    return {
+        "protocol": REFLECTOR_FEEDBACK_VIEW_PROTOCOL,
+        "parent": packet.get("parent"),
+        "rotating_failure_cases": cases,
+    }
+
+
 def _reflector_prompt(parent_code: str, packet: dict[str, Any]) -> str:
+    feedback_view = _reflector_feedback_view(packet)
     return f"""You are the M★ Reflector for one Specialist Reviewer's evolvable Reviewer Program. Improve the Program using only the saved Review and Internal Evaluation feedback below.
 
 The candidate-visible Program consists of Program instructions, KnowledgeItem, Query, KnowledgeBase.write/read, and plan_review(toolkit, query, memory_context). Preserve the M★ interfaces and the {REVIEW_PLAN_PROTOCOL} Review Plan protocol. plan_review autonomously decides whether S2 is useful, which returned evidence to select, how to use it, the context order, and the versioned Review strategy. It may call toolkit.retrieve_current_s2(limit=...) only for the current paper and only against the host-provided frozen pool. The capability performs no LLM or network call and accepts no paper identifier. plan_review itself must not call an LLM, embed, log, read time/datetime, depend on Memory instruction constants, or delegate to a top-level helper. Its query exposes only canonical query_text and reviewer_dimension. It may skip the capability, consult it and select nothing, or select a valid ordered subset of returned evidence.
@@ -468,14 +509,117 @@ Title: <one-line change>
  context
 *** End Patch
 
-Feedback packet:
-{json.dumps(packet, ensure_ascii=False)}
+Feedback view (complete traces retained; repeated projections omitted):
+{json.dumps(feedback_view, ensure_ascii=False, separators=(",", ":"))}
 
 Parent program:
 ```python
 {parent_code}
 ```
 """.strip()
+
+
+def _reflector_context_budget(
+    *,
+    messages: list[dict[str, str]],
+    completion_client: CompletionClient,
+    completion_identity: dict[str, Any],
+) -> dict[str, Any]:
+    counter = getattr(completion_client, "count_chat_tokens", None)
+    measured = counter(messages) if callable(counter) else None
+    if measured is None:
+        if completion_identity.get("max_model_len") is not None:
+            raise ReflectorContextBudgetError(
+                "Formal Reflector requires count_chat_tokens for context gating"
+            )
+        return {
+            "protocol": REFLECTOR_CONTEXT_BUDGET_PROTOCOL,
+            "method": "unmeasured-test-client",
+            "input_tokens": None,
+            "max_model_len": completion_identity.get("max_model_len"),
+            "requested_max_tokens": REFLECTOR_MAX_TOKENS,
+            "headroom_tokens": REFLECTOR_CONTEXT_HEADROOM_TOKENS,
+            "max_tokens": REFLECTOR_MAX_TOKENS,
+        }
+    if isinstance(measured, int):
+        input_tokens = measured
+        measured_max_model_len = completion_identity.get("max_model_len")
+    elif isinstance(measured, dict):
+        input_tokens = int(measured.get("input_tokens") or 0)
+        measured_max_model_len = measured.get("max_model_len")
+    else:
+        raise TypeError("count_chat_tokens must return a token-count object")
+    max_model_len = int(completion_identity.get("max_model_len") or 0)
+    if max_model_len <= 0:
+        raise ReflectorContextBudgetError(
+            "Reflector completion identity requires max_model_len"
+        )
+    if (
+        measured_max_model_len is not None
+        and int(measured_max_model_len) != max_model_len
+    ):
+        raise ReflectorContextBudgetError(
+            "Reflector tokenizer endpoint max_model_len differs from completion identity"
+        )
+    required_tokens = (
+        input_tokens
+        + REFLECTOR_MAX_TOKENS
+        + REFLECTOR_CONTEXT_HEADROOM_TOKENS
+    )
+    if required_tokens > max_model_len:
+        raise ReflectorContextBudgetError(
+            "Reflector prompt cannot preserve the fixed output token budget: "
+            f"input={input_tokens}, context={max_model_len}, "
+            f"headroom={REFLECTOR_CONTEXT_HEADROOM_TOKENS}, "
+            f"fixed_output={REFLECTOR_MAX_TOKENS}"
+        )
+    return {
+        "protocol": REFLECTOR_CONTEXT_BUDGET_PROTOCOL,
+        "method": "frozen-model-tokenize-endpoint",
+        "input_tokens": input_tokens,
+        "max_model_len": max_model_len,
+        "requested_max_tokens": REFLECTOR_MAX_TOKENS,
+        "headroom_tokens": REFLECTOR_CONTEXT_HEADROOM_TOKENS,
+        "max_tokens": REFLECTOR_MAX_TOKENS,
+    }
+
+
+def _validate_recorded_context_budget(
+    value: Any,
+    *,
+    completion_identity: dict[str, Any],
+) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError("Committed Reflector response lacks context budget identity")
+    budget = dict(value)
+    expected_constants = {
+        "protocol": REFLECTOR_CONTEXT_BUDGET_PROTOCOL,
+        "requested_max_tokens": REFLECTOR_MAX_TOKENS,
+        "headroom_tokens": REFLECTOR_CONTEXT_HEADROOM_TOKENS,
+    }
+    if {name: budget.get(name) for name in expected_constants} != expected_constants:
+        raise ValueError("Committed Reflector context budget identity mismatch")
+    if budget.get("method") == "frozen-model-tokenize-endpoint":
+        input_tokens = int(budget.get("input_tokens") or 0)
+        max_model_len = int(budget.get("max_model_len") or 0)
+        if max_model_len != int(completion_identity.get("max_model_len") or 0):
+            raise ValueError("Committed Reflector context window identity mismatch")
+        if (
+            input_tokens
+            + REFLECTOR_MAX_TOKENS
+            + REFLECTOR_CONTEXT_HEADROOM_TOKENS
+            > max_model_len
+            or budget.get("max_tokens") != REFLECTOR_MAX_TOKENS
+        ):
+            raise ValueError("Committed Reflector context budget is invalid")
+    elif budget.get("method") == "unmeasured-test-client":
+        if budget.get("input_tokens") is not None or budget.get(
+            "max_tokens"
+        ) != REFLECTOR_MAX_TOKENS:
+            raise ValueError("Committed unmeasured Reflector budget is invalid")
+    else:
+        raise ValueError("Committed Reflector context budget method is unknown")
+    return budget
 
 
 def _repair_prompt(parent_code: str, response: str, error: str) -> str:
@@ -683,16 +827,26 @@ def _load_or_call_reflector(
             "request_sha256": request_sha256,
             "component": component,
             "completion_identity": completion_identity,
+            "prompt_protocol": REFLECTOR_PROMPT_PROTOCOL,
         }
         if {name: value.get(name) for name in expected} != expected:
             raise ValueError("Committed Reflector response identity mismatch")
         output = value.get("raw_model_output")
         if not isinstance(output, str) or not output.strip():
             raise ValueError("Committed Reflector response is empty")
+        _validate_recorded_context_budget(
+            value.get("context_budget"),
+            completion_identity=completion_identity,
+        )
         return output
+    context_budget = _reflector_context_budget(
+        messages=messages,
+        completion_client=completion_client,
+        completion_identity=completion_identity,
+    )
     output = completion_client.complete(
         messages,
-        max_tokens=REFLECTOR_MAX_TOKENS,
+        max_tokens=int(context_budget["max_tokens"]),
         component=component,
     )
     atomic_write_json(
@@ -702,6 +856,8 @@ def _load_or_call_reflector(
             "request_sha256": request_sha256,
             "component": component,
             "completion_identity": completion_identity,
+            "prompt_protocol": REFLECTOR_PROMPT_PROTOCOL,
+            "context_budget": context_budget,
             "raw_model_output": output,
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
