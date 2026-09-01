@@ -293,3 +293,20 @@
   `e8f3ba91d446f6efbc9859f05b07bca8967c42ad4f66938cee410b74e4bdf782`；CLAR checkpoint=
   `5acb16fd610004a75ce6b6d59a327c447b6d76d931b1399f8682c919f085b8f7`；selection manifest=
   `c26091ddd8cb98d4b1d747ed453d81e2f4dba83325a1ce1ddd2e253c6588e2ad`。
+
+### 2026-09-01 16:22：重新启动五 Specialist × 10 篇全流程
+
+- 按用户要求重新开始此前约定的 10 篇/角色全流程：QUAL/CLAR/SIGN/ORIG/POL 各
+  10 个稳定 D 子集样本，共 50 个角色-D 评审；五个 overall champion、META-OFF、
+  Qwen 64K/`max-num-seqs=4`、evaluation pipeline depth=2、Split=1、Classify=4。
+  因使用 D 子集，产物继续如实标记 `final_test=false`、`non_reportable=true`。
+- 旧 subset10 目录保留 QUAL/CLAR/SIGN/ORIG checkpoint，属于旧流水线 identity，未
+  删除也未复用。launcher 增加可选的 `D_SUBSET10_RUN_ROOT`、
+  `D_SUBSET10_RUNTIME_ROOT`、`D_SUBSET10_REPORT`、`D_SUBSET10_LOG`，默认路径与旧行为
+  不变；`bash -n` 与 CLI 参数合同通过。launcher SHA256=
+  `c8efc7b6ff1631c704bc04d72bc4f76e7df604687f8ec8a8f1163802b39de083`。
+- 新 tmux=`ar0831_subset10_pipeline2`；实验 PID=`2988431`；report target=
+  `runs/0831_smoke_champions_specialists_d_subset10_pipeline2/d_subset10_pipeline2_report.json`；
+  log=`runs/0831_smoke_champions_specialists_d_subset10_pipeline2_runtime/d_subset10_pipeline2.log`。
+  启动时 GPU6=15 MiB，8000/13099/13098 均健康；Split/Classify formal preflight、首个
+  Qwen3 embedding cache hit 已通过，现已进入 QUAL 的串行 A/history replay。
