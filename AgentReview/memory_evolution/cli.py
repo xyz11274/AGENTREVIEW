@@ -990,6 +990,16 @@ def build_parser():
             "--max-specialist-test-items."
         ),
     )
+    final_suite.add_argument(
+        "--evaluation-pipeline-depth",
+        type=int,
+        default=1,
+        help=(
+            "Maximum frozen reviews awaiting ordered evaluator scoring. "
+            "Use 2 to overlap review N+1 with Judge/CoCo scoring of review N; "
+            "A/history replay remains serial (default: 1)."
+        ),
+    )
     _add_runtime_args(final_suite)
     return parser
 
@@ -1385,6 +1395,21 @@ def _final_evaluate_suite(args):
     subset_limit = getattr(args, "max_specialist_test_items", None)
     subset_seed = int(getattr(args, "specialist_test_subset_seed", 0))
     retry_ids_value = str(getattr(args, "specialist_test_item_ids", "") or "")
+    evaluation_pipeline_depth = int(
+        getattr(args, "evaluation_pipeline_depth", 1)
+    )
+    if evaluation_pipeline_depth < 1:
+        raise SystemExit("--evaluation-pipeline-depth must be at least 1.")
+    evaluation_pipeline = {
+        "version": "ordered-frozen-review-v1",
+        "depth": evaluation_pipeline_depth,
+        "score_workers": 1,
+        "parallel_judge_and_classifier": evaluation_pipeline_depth > 1,
+        "split_workers": 1,
+        "classify_workers": int(os.environ.get("COCO_CLASSIFY_WORKERS", "4")),
+        "ordered_commit": True,
+        "historical_replay_pipelined": False,
+    }
     retry_ids_path = (
         Path(retry_ids_value).expanduser().resolve() if retry_ids_value else None
     )
@@ -1503,6 +1528,7 @@ def _final_evaluate_suite(args):
                 "retry_max_tokens": args.retry_max_tokens,
                 "reasoning_effort": args.reasoning_effort,
             },
+            "evaluation_pipeline": evaluation_pipeline,
         }
         if nonreportable_mode:
             config_identity["evaluation_scope"] = (
@@ -1637,6 +1663,7 @@ def _final_evaluate_suite(args):
                 task_id=task_id,
                 judge_toolkit=judge_toolkit,
                 formal=True,
+                parallel_judge_and_classifier=(evaluation_pipeline_depth > 1),
             ),
             benchmark_adapter_factory=CoCoMetricBenchmarkAdapter,
             formal=True,
@@ -1651,6 +1678,7 @@ def _final_evaluate_suite(args):
             ),
             write_timeout=args.write_timeout,
             read_timeout=args.read_timeout,
+            evaluation_pipeline_depth=evaluation_pipeline_depth,
         )
         if evaluation.error:
             raise RuntimeError(f"{task_id} test evaluation failed: {evaluation.error}")
@@ -1694,6 +1722,7 @@ def _final_evaluate_suite(args):
             "program_selection": "suite_manifest.promoted overall champions",
             "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
             "benchmark_adapter_bypassed": False,
+            "evaluation_pipeline": evaluation_pipeline,
             "official_coco_adapter_entry": "python -m agentreview.coco_eval",
             "asset_gate": asset_gate,
             "formal_test_gate": formal_test_gate,
@@ -1793,6 +1822,7 @@ def _final_evaluate_suite(args):
             task_id=META_TASK,
             judge_toolkit=judge_toolkit,
             formal=True,
+            parallel_judge_and_classifier=(evaluation_pipeline_depth > 1),
         ),
         benchmark_adapter_factory=CoCoMetricBenchmarkAdapter,
         formal=True,
@@ -1807,6 +1837,7 @@ def _final_evaluate_suite(args):
         ),
         write_timeout=args.write_timeout,
         read_timeout=args.read_timeout,
+        evaluation_pipeline_depth=evaluation_pipeline_depth,
     )
     if meta_evaluation.error:
         raise RuntimeError(f"META test evaluation failed: {meta_evaluation.error}")
@@ -1816,6 +1847,7 @@ def _final_evaluate_suite(args):
         "evaluation_identity": "sealed_d_coco_style",
         "benchmark_adapter": "CoCoMetricBenchmarkAdapter",
         "benchmark_adapter_bypassed": False,
+        "evaluation_pipeline": evaluation_pipeline,
         "official_coco_adapter_entry": "python -m agentreview.coco_eval",
         "asset_gate": asset_gate,
         "formal_test_gate": formal_test_gate,

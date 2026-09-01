@@ -2,6 +2,7 @@ import json
 import re
 from collections import Counter
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from .tasks import META_TASK, SPECIALIST_TASKS
@@ -154,6 +155,7 @@ class CoCoReviewFitness:
         judge_toolkit,
         task_id: str,
         formal: bool = True,
+        parallel_judge_and_classifier: bool = False,
     ):
         if task_id not in SPECIALIST_TASKS + (META_TASK,):
             raise ValueError(f"Unknown review task: {task_id}")
@@ -161,6 +163,7 @@ class CoCoReviewFitness:
         self.judge_toolkit = judge_toolkit
         self.task_id = task_id
         self.formal = bool(formal)
+        self.parallel_judge_and_classifier = bool(parallel_judge_and_classifier)
         self.last_details: dict[str, Any] = {}
 
     def _candidate_categories(self, prediction: str) -> set:
@@ -210,13 +213,34 @@ class CoCoReviewFitness:
             if self.task_id == META_TASK
             else self._specialist_prompt(prediction, gold, question)
         )
-        response = self.judge_toolkit.llm_completion(
-            [{"role": "user", "content": prompt}]
+        candidate_categories = None
+        parallel_branches = bool(
+            self.parallel_judge_and_classifier and self.task_id != META_TASK
         )
+        if parallel_branches:
+            with ThreadPoolExecutor(
+                max_workers=2,
+                thread_name_prefix="coco-score-branch",
+            ) as executor:
+                judge_future = executor.submit(
+                    self.judge_toolkit.llm_completion,
+                    [{"role": "user", "content": prompt}],
+                )
+                classifier_future = executor.submit(
+                    self._candidate_categories,
+                    prediction,
+                )
+                response = judge_future.result()
+                candidate_categories = classifier_future.result()
+        else:
+            response = self.judge_toolkit.llm_completion(
+                [{"role": "user", "content": prompt}]
+            )
         self.last_details = {
             "task_id": self.task_id,
             "raw_response_prefix": response[:500],
             "parser_success": False,
+            "parallel_judge_and_classifier": parallel_branches,
         }
         try:
             parsed = _json_object(response)
@@ -293,7 +317,8 @@ class CoCoReviewFitness:
         values = [value for value in normalized.values() if value is not None]
         quality = sum(values) / len(values) if values else 0.0
         human_categories = set(metadata.get("categories") or [])
-        candidate_categories = self._candidate_categories(prediction)
+        if candidate_categories is None:
+            candidate_categories = self._candidate_categories(prediction)
         coverage = (
             len(candidate_categories & human_categories) / len(human_categories)
             if human_categories
@@ -310,6 +335,7 @@ class CoCoReviewFitness:
             "candidate_categories": sorted(candidate_categories),
             "intersection_coverage": coverage,
             "fitness": score,
+            "parallel_judge_and_classifier": parallel_branches,
         }
         return score
 
@@ -321,6 +347,7 @@ def get_metric(
     task_id: str | None = None,
     judge_toolkit=None,
     formal: bool = True,
+    parallel_judge_and_classifier: bool = False,
 ) -> Callable:
     metrics = {
         "exact_match": exact_match,
@@ -342,6 +369,7 @@ def get_metric(
             judge_toolkit,
             task_id=task_id,
             formal=formal,
+            parallel_judge_and_classifier=parallel_judge_and_classifier,
         )
     try:
         return metrics[name]

@@ -1,6 +1,7 @@
 import time
 from collections.abc import Callable
 from contextlib import nullcontext
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,20 @@ from agentreview.reviewer_runtime.tasks import ALL_TASKS
 
 from .benchmark_adapter import ReviewSubmission, evaluate_frozen_review
 from .checkpoint import load_checkpoint, save_checkpoint
+from .evaluation_orchestrator import run_ordered_evaluation_pipeline
 from .models import Episode, EvalItem, EvalResult, to_serializable
+
+
+@dataclass(frozen=True)
+class _PreparedEvaluation:
+    """Frozen handoff from Reviewer production to evaluator-only scoring."""
+
+    eval_item: EvalItem
+    case: dict[str, Any]
+    submission: ReviewSubmission | None
+    candidate_review_record: dict[str, Any] | None
+    parser_debug: dict[str, Any]
+    started_at: float
 
 
 def candidate_safe_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -78,6 +92,7 @@ def evaluate_program(
     run_identity: dict[str, Any] | None = None,
     benchmark_adapter_factory: Callable | None = None,
     candidate_review_sink: Callable[[dict[str, Any]], None] | None = None,
+    evaluation_pipeline_depth: int = 1,
 ) -> EvalResult:
     started = time.monotonic()
     resource_before = (
@@ -279,7 +294,8 @@ def evaluate_program(
     evaluated_cases = []
     scores = []
     read_durations = []
-    for eval_item in item_values:
+
+    def produce_review(eval_item: EvalItem) -> _PreparedEvaluation:
         if formal:
             # B is read-only state: every Validation paper starts from exactly
             # the same A-prefix snapshot, so B ordering cannot alter fitness.
@@ -344,24 +360,68 @@ def evaluate_program(
                     "candidate_review": candidate_review_record,
                 }
             )
+            submission = ReviewSubmission(
+                paper_id=eval_item.id.split("::", 1)[0],
+                review=answer,
+                metadata=to_serializable(eval_item),
+            )
+        except Exception as exc:
+            parser_debug = getattr(task_agent, "last_parser_debug", None)
+            case.update(
+                {
+                    "context": case.get("context", ""),
+                    "answer": case.get("answer", ""),
+                    "score": 0.0,
+                    "success": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "parser_debug": (
+                        dict(parser_debug) if isinstance(parser_debug, dict) else {}
+                    ),
+                    "evaluator_debug": {},
+                }
+            )
+            submission = None
+        parser_debug = getattr(task_agent, "last_parser_debug", None)
+        return _PreparedEvaluation(
+            eval_item=eval_item,
+            case=case,
+            submission=submission,
+            candidate_review_record=candidate_review_record,
+            parser_debug=(
+                dict(parser_debug) if isinstance(parser_debug, dict) else {}
+            ),
+            started_at=read_started,
+        )
+
+    def score_review(prepared: _PreparedEvaluation):
+        eval_item = prepared.eval_item
+        case = prepared.case
+        score = 0.0
+        if prepared.submission is None:
+            prepared.case["duration_seconds"] = (
+                time.monotonic() - prepared.started_at
+            )
+            return prepared, score
+        try:
             if benchmark_adapter_factory is not None:
                 adapter = benchmark_adapter_factory(
                     metric, eval_item.answer, to_serializable(eval_item)
                 )
                 benchmark_result = evaluate_frozen_review(
                     adapter,
-                    ReviewSubmission(
-                        paper_id=eval_item.id.split("::", 1)[0],
-                        review=answer,
-                        metadata=to_serializable(eval_item),
-                    ),
+                    prepared.submission,
                 )
                 adapter_result = benchmark_result["result"]
                 score = float(adapter_result["score"])
                 metric_details = adapter_result.get("structured_metrics")
                 case["benchmark_adapter"] = benchmark_result["benchmark"]
             else:
-                score = _score_metric(metric, answer, eval_item.answer, eval_item)
+                score = _score_metric(
+                    metric,
+                    prepared.submission.review,
+                    eval_item.answer,
+                    eval_item,
+                )
                 metric_details = getattr(metric, "last_details", None)
             case.update(
                 {
@@ -374,7 +434,6 @@ def evaluate_program(
             )
         except Exception as exc:
             score = 0.0
-            parser_debug = getattr(task_agent, "last_parser_debug", None)
             evaluator_debug = getattr(metric, "last_details", None)
             case.update(
                 {
@@ -383,9 +442,7 @@ def evaluate_program(
                     "score": 0.0,
                     "success": False,
                     "error": f"{type(exc).__name__}: {exc}",
-                    "parser_debug": (
-                        dict(parser_debug) if isinstance(parser_debug, dict) else {}
-                    ),
+                    "parser_debug": prepared.parser_debug,
                     "evaluator_debug": (
                         dict(evaluator_debug)
                         if isinstance(evaluator_debug, dict)
@@ -393,14 +450,27 @@ def evaluate_program(
                     ),
                 }
             )
-        duration = time.monotonic() - read_started
-        if candidate_review_record is not None and candidate_review_sink is not None:
+        case["duration_seconds"] = time.monotonic() - prepared.started_at
+        return prepared, score
+
+    pipeline_run = run_ordered_evaluation_pipeline(
+        item_values,
+        produce=produce_review,
+        score=score_review,
+        max_inflight=evaluation_pipeline_depth,
+    )
+    for prepared, score in pipeline_run.results:
+        case = prepared.case
+        duration = float(case["duration_seconds"])
+        if (
+            prepared.candidate_review_record is not None
+            and candidate_review_sink is not None
+        ):
             try:
-                candidate_review_sink(candidate_review_record)
+                candidate_review_sink(prepared.candidate_review_record)
             except Exception as exc:
                 case["candidate_artifact_error"] = f"{type(exc).__name__}: {exc}"
         read_durations.append(duration)
-        case["duration_seconds"] = duration
         scores.append(score)
         evaluated_cases.append(case)
         if collect_traces:
@@ -425,6 +495,7 @@ def evaluate_program(
             "write_failures": write_failures,
             "completed_historical_prefix": list(completed_ids),
             "validation_state_reset_per_item": bool(formal),
+            "evaluation_pipeline": pipeline_run.stats,
             "mean_read_seconds": (
                 sum(read_durations) / len(read_durations) if read_durations else 0.0
             ),

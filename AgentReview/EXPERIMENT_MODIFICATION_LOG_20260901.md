@@ -253,3 +253,43 @@
   `ecf47e7c355a5664d48414deb258f99c494c8ba3afba9a0e663b3798e101b9e9`；
   通用 retry launcher SHA256=
   `585e363e087b692db5ff80f0a84cfe7ddd201c4b3559a10d1e1cb4a0024044ed`。
+
+### 2026-09-01 15:56-16:16：最终 D review/CoCo 有界流水线与两篇在线验证
+
+- 新增 `memory_evolution/evaluation_orchestrator.py`，只在 Candidate review 已冻结为
+  `ReviewSubmission` 后进入深度可控的 evaluator queue。主线程生产 review，单一
+  score worker 消费；最大未提交深度默认仍为 1，D launcher 显式使用 2。结果严格按
+  EvalItem 输入顺序提交并施加背压。A/history replay、逐篇 snapshot restore、fitness
+  公式、CoCo 三档投票和 benchmark adapter 均未更改。
+- `evaluate_program` 新增 `evaluation_pipeline_depth`，runtime_stats 记录版本、开关、
+  配置/实测最大深度、score worker 数和实际 review/score overlap 次数。CLI 新增
+  `--evaluation-pipeline-depth`，并把完整 topology 写入 checkpoint identity 与最终报告。
+  四个现有 Specialist D launcher 默认 `D_EVALUATION_PIPELINE_DEPTH=2`，仍可通过环境
+  变量回退为 1。
+- Specialist CoCo fitness 在 opt-in 流水线路径中并行启动独立的 27B Judge 和
+  Split/Classify 分支；META 不启用该内部 fork。外层始终只有 1 个 score worker，
+  因而不会把每篇内部 `COCO_CLASSIFY_WORKERS=4` 乘成 8/12。最终部署合同为 Qwen
+  review+judge 最大 2 路、Split 1 路、Classify 全局 4 路。
+- 新增合同测试覆盖：depth=1 保持串行、depth=2 真实 overlap、输入顺序提交、非法深度
+  fail-fast、`evaluate_program` 接线，以及 Judge/CoCo 并行前后分数不漂移。仓库当前
+  220/220 项 tests 全通过；最终聚焦回归 24/24 passed；`git diff --check` 与四个
+  launcher `bash -n` 通过。环境没有安装 optional `ruff`，因此未把 ruff 计入通过项。
+- 在线验证选择两篇此前 32K 失败的同角色 D：`URCfZ2NgaR::CLAR`、
+  `Y58T1MQhh6::CLAR`。run=`ar0831_pipeline2_clar2_64k`，报告=
+  `runs/0831_smoke_champions_pipeline2_clar2_64k/pipeline2_clar2_64k_report.json`，
+  日志=`runs/0831_smoke_champions_pipeline2_clar2_64k_runtime/pipeline2_clar2_64k.log`。
+  两篇均 success：score 分别为 `0.888888888888889`、`0.7179487179487178`，mean=
+  `0.8034188034188035`；HTTP 400/Traceback/Exception/ERROR 均为 0。该 retry pilot
+  明确为 `final_test=false`、`non_reportable=true`。
+- 在线 runtime_stats 证实 depth configured/observed=`2/2`、score_workers=1、
+  `reviews_produced_while_scoring=1`、历史 replay 2/2 完成且 write_failures=0。
+  应用日志第 24-26 行依次交错出现第一篇 `Memory Harness`、第二篇 `Memory Query` 和
+  CoCo Split；Qwen 服务日志 16:11:05 为 `Running: 2, Waiting: 0`，Classify 服务
+  日志 16:11:07 为 `Running: 4, Waiting: 0`。两篇共 6 次正式 Split、114 次正式
+  Classify、2 次 Judge；总墙钟 `1205.19s`。
+- 验证结束后 experiment tmux 正常退出，GPU6 回到 15 MiB；8000/13099/13098 三个
+  共享服务保持健康。证据 SHA256：report=
+  `530c69fa52cba079c0da5527668ecffa077ec644a508731a11b246e1c20a3814`；log=
+  `e8f3ba91d446f6efbc9859f05b07bca8967c42ad4f66938cee410b74e4bdf782`；CLAR checkpoint=
+  `5acb16fd610004a75ce6b6d59a327c447b6d76d931b1399f8682c919f085b8f7`；selection manifest=
+  `c26091ddd8cb98d4b1d747ed453d81e2f4dba83325a1ce1ddd2e253c6588e2ad`。

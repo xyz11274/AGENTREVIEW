@@ -1,3 +1,4 @@
+import threading
 import unittest
 
 from memory_evolution.metrics import CoCoReviewFitness
@@ -76,6 +77,43 @@ class MstarFidelityTest(unittest.TestCase):
         )
         self.assertAlmostEqual(score, 2.0 / 3.0)
         self.assertEqual(metric.last_details["intersection_coverage"], 0.5)
+
+    def test_final_evaluation_can_fork_judge_and_coco_without_score_drift(self):
+        rendezvous = threading.Barrier(2, timeout=1.0)
+
+        class ConcurrentClassifier:
+            def classify_review(self, review_text, task_id):
+                rendezvous.wait()
+                return ["QUAL-MET"]
+
+        class ConcurrentJudge:
+            def llm_completion(self, messages):
+                rendezvous.wait()
+                return (
+                    '{"alignment": 5, "completeness": 5, '
+                    '"grounding_specificity": 5, "verifiability": 5, '
+                    '"clarity": 5}'
+                )
+
+        metric = CoCoReviewFitness(
+            ConcurrentClassifier(),
+            ConcurrentJudge(),
+            task_id="QUAL",
+            formal=True,
+            parallel_judge_and_classifier=True,
+        )
+
+        score = metric(
+            "candidate",
+            "reference",
+            {
+                "question": "paper",
+                "metadata": {"categories": ["QUAL-MET", "QUAL-EXP"]},
+            },
+        )
+
+        self.assertAlmostEqual(score, 2.0 / 3.0)
+        self.assertTrue(metric.last_details["parallel_judge_and_classifier"])
 
 
 if __name__ == "__main__":

@@ -78,6 +78,24 @@ class CliModeTest(unittest.TestCase):
         )
         self.assertEqual(args.specialist_test_item_ids, "failed-ids.json")
 
+    def test_final_suite_evaluation_pipeline_depth_is_parsed(self):
+        args = build_parser().parse_args(
+            [
+                "final-evaluate-suite",
+                "--data-root",
+                "data/formal",
+                "--test-data-root",
+                "data/test",
+                "--program-root",
+                "runs/formal",
+                "--output",
+                "runs/formal/d-pipelined.json",
+                "--evaluation-pipeline-depth",
+                "2",
+            ]
+        )
+        self.assertEqual(args.evaluation_pipeline_depth, 2)
+
     def test_specialist_d_subset_is_stable_and_order_independent(self):
         items = [
             EvalItem(id=f"paper-{index}", question="q", answer="a")
