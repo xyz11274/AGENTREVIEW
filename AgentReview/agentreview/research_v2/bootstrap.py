@@ -751,10 +751,10 @@ def _run_canonical_bootstrap_locked(
             completion_client=completion_client,
             model_identity=model_identity,
             program_version=CANONICAL_PROGRAM_VERSION,
-            s2_enabled=options.s2_enabled,
             frozen_s2_path=s2_path,
             embedding_client=None,
             require_bubblewrap=config.require_bubblewrap,
+            _canonical_bootstrap_s2_enabled=options.s2_enabled,
         )
 
     next_pending = 0

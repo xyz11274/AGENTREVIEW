@@ -7,14 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from agentreview.paper_context import format_canonical_paper_context
 from agentreview.reviewer_identity import SPECIALIST_REQUEST_TEMPLATE, load_reviewer_suite
 
 from .constants import ENABLE_THINKING, REVIEW_MAX_TOKENS, ROLES, TEMPERATURE
-from .io import atomic_write_json, read_json, value_sha256
+from .io import atomic_write_json, file_sha256, read_json, value_sha256
 from .llm import CompletionClient, EmptyCompletionOutput
-from .memory import retrieve_memory
+from .memory import retrieve_memory, seed_program_path
 from .models import Paper, SpecialistReview
+from .review_preparation import (
+    frozen_paper_context,
+    normalize_s2_intervention,
+    prepare_review_invocation,
+)
 from .s2 import FrozenS2Store, format_s2_evidence
 
 
@@ -24,6 +28,7 @@ def _utc_now() -> str:
 
 SPECIALIST_INVOCATION_PROTOCOL = "research-v2-specialist-invocation-v1"
 SPECIALIST_RETRY_PROTOCOL = "identical-request-at-most-two-v1"
+REVIEW_REQUEST_MATERIALIZATION_PROTOCOL = "research-v2-review-request-v1"
 SPECIALIST_MAX_ATTEMPTS = 2
 
 
@@ -55,38 +60,6 @@ def specialist_generation_identity(
             "sdk_max_retries": 0,
         },
     }
-
-
-def _fallback_anchors(text: str, maximum: int = 40) -> list[dict[str, Any]]:
-    anchors = []
-    for start in range(0, min(len(text), 40000), 1000):
-        excerpt = text[start : start + 500].replace("\n", " ").strip()
-        if excerpt:
-            anchors.append(
-                {
-                    "source_id": f"SRC-{len(anchors) + 1:03d}",
-                    "page_idx": 0,
-                    "type": "text",
-                    "text": excerpt,
-                }
-            )
-        if len(anchors) >= maximum:
-            break
-    return anchors
-
-
-def frozen_paper_context(paper: Paper, role: str) -> str:
-    return format_canonical_paper_context(
-        paper.text,
-        {
-            "paper_id": paper.paper_id,
-            "title": paper.title,
-            "venue": str(paper.source.get("conference") or ""),
-            "year": "",
-            "reviewer_role": role,
-        },
-        _fallback_anchors(paper.text),
-    )
 
 
 def _call_with_identical_retry(
@@ -137,11 +110,13 @@ def _review_id(
     role: str,
     program_version: str,
     snapshot_id: str,
+    review_plan_identity_sha256: str = "",
 ) -> str:
+    values = f"{run_id}\n{paper_id}\n{role}\n{program_version}\n{snapshot_id}"
+    if review_plan_identity_sha256:
+        values += f"\n{review_plan_identity_sha256}"
     return hashlib.sha256(
-        f"{run_id}\n{paper_id}\n{role}\n{program_version}\n{snapshot_id}".encode(
-            "utf-8"
-        )
+        values.encode("utf-8")
     ).hexdigest()
 
 
@@ -156,6 +131,7 @@ def _load_resumable_raw_artifact(
     generation_identity: dict[str, Any],
     program_version: str,
     snapshot_id: str,
+    review_plan_identity: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Return a committed model response after verifying its request identity."""
     if not path.is_file():
@@ -171,6 +147,8 @@ def _load_resumable_raw_artifact(
         "program_version": program_version,
         "memory_snapshot_id": snapshot_id,
     }
+    if review_plan_identity is not None:
+        expected["review_plan_identity"] = review_plan_identity
     observed = {name: value.get(name) for name in expected}
     if observed != expected:
         raise ValueError(
@@ -199,6 +177,102 @@ def _save_failure_attempt(target_dir: Path, role: str, failure: dict[str, Any]) 
     )
 
 
+def _review_request_input_identity(
+    *,
+    paper_path: str | Path,
+    paper: Paper,
+    role: str,
+    program_path: str | Path,
+    snapshot_path: str | Path,
+    snapshot_id: str,
+    program_version: str,
+    frozen_s2_path: str | Path | None,
+    s2_intervention: dict[str, Any] | None,
+    model_identity: dict[str, Any],
+    embedding_identity: dict[str, Any] | None,
+) -> dict[str, Any]:
+    paper_source = Path(paper_path).expanduser().resolve()
+    program_source = Path(program_path).expanduser().resolve()
+    snapshot_source = Path(snapshot_path).expanduser().resolve()
+    s2_source = (
+        Path(frozen_s2_path).expanduser().resolve()
+        if frozen_s2_path is not None
+        else None
+    )
+    return {
+        "paper_id": paper.paper_id,
+        "paper_path": str(paper_source),
+        "paper_sha256": file_sha256(paper_source),
+        "role": role,
+        "program_path": str(program_source),
+        "program_sha256": file_sha256(program_source),
+        "program_version": program_version,
+        "model_identity": dict(model_identity),
+        "embedding_identity": dict(embedding_identity or {}),
+        "snapshot_path": str(snapshot_source),
+        "snapshot_sha256": file_sha256(snapshot_source),
+        "snapshot_id": snapshot_id,
+        "frozen_s2_path": str(s2_source) if s2_source is not None else None,
+        "frozen_s2_sha256": file_sha256(s2_source) if s2_source is not None else None,
+        "s2_intervention": normalize_s2_intervention(s2_intervention),
+    }
+
+
+def _materialize_review_request(
+    *,
+    path: Path,
+    input_identity: dict[str, Any],
+    messages: list[dict[str, str]],
+    retrieval_provenance: dict[str, Any],
+    review_plan: dict[str, Any],
+) -> dict[str, Any]:
+    body = {
+        "protocol": REVIEW_REQUEST_MATERIALIZATION_PROTOCOL,
+        "input_identity": input_identity,
+        "messages": messages,
+        "retrieval_provenance": retrieval_provenance,
+        "review_plan": review_plan,
+        "request_sha256": value_sha256(messages),
+    }
+    payload = {**body, "preparation_sha256": value_sha256(body)}
+    atomic_write_json(path, payload)
+    return payload
+
+
+def _load_review_request(
+    path: Path,
+    *,
+    input_identity: dict[str, Any],
+) -> dict[str, Any]:
+    value = read_json(path)
+    if value.get("protocol") != REVIEW_REQUEST_MATERIALIZATION_PROTOCOL:
+        raise ValueError(f"Review request protocol mismatch at {path}")
+    if value.get("input_identity") != input_identity:
+        raise ValueError(f"Review request input identity mismatch at {path}")
+    body = {name: item for name, item in value.items() if name != "preparation_sha256"}
+    if value.get("preparation_sha256") != value_sha256(body):
+        raise ValueError(f"Review request materialization hash mismatch at {path}")
+    messages = value.get("messages")
+    if not isinstance(messages, list) or value.get("request_sha256") != value_sha256(
+        messages
+    ):
+        raise ValueError(f"Review request prompt hash mismatch at {path}")
+    provenance = value.get("retrieval_provenance")
+    plan = value.get("review_plan")
+    if not isinstance(provenance, dict) or not isinstance(plan, dict):
+        raise ValueError(f"Review request plan/provenance is invalid at {path}")
+    assembly = provenance.get("assembly")
+    s2 = provenance.get("s2")
+    if (
+        not isinstance(assembly, dict)
+        or assembly.get("prompt_sha256") != value["request_sha256"]
+        or not isinstance(s2, dict)
+        or s2.get("plan_sha256") != value_sha256(plan)
+    ):
+        raise ValueError(f"Review request provenance identity mismatch at {path}")
+    return value
+
+
 def run_specialist_review(
     *,
     paper_path: str | Path,
@@ -210,11 +284,12 @@ def run_specialist_review(
     completion_client: CompletionClient,
     model_identity: dict[str, Any],
     program_version: str,
-    review_strategy: str = "",
-    s2_enabled: bool = True,
     frozen_s2_path: str | Path | None = None,
+    s2_intervention: dict[str, Any] | None = None,
     embedding_client: Any = None,
+    embedding_identity: dict[str, Any] | None = None,
     require_bubblewrap: bool = True,
+    _canonical_bootstrap_s2_enabled: bool | None = None,
 ) -> dict[str, Any]:
     """Generate and save one full Review; this function has no evaluator hook."""
     if role not in ROLES:
@@ -223,46 +298,138 @@ def run_specialist_review(
     snapshot = read_json(snapshot_path)
     if str(snapshot.get("program_version") or "") != program_version:
         raise ValueError("Review Program version differs from its Memory snapshot")
-    memory = retrieve_memory(
-        paper=paper,
-        role=role,
-        program_path=program_path,
-        snapshot_path=snapshot_path,
-        embedding_client=embedding_client,
-        completion_client=completion_client,
-        require_bubblewrap=require_bubblewrap,
-    )
-    s2_values: list[dict[str, Any]] = []
-    s2_provenance: dict[str, Any] = {"enabled": False, "result_ids": []}
-    if s2_enabled:
-        if frozen_s2_path is None:
-            raise ValueError("s2_enabled=true requires a Frozen S2 Pool")
-        s2_values, s2_provenance = FrozenS2Store(frozen_s2_path).retrieve(
-            paper_id=paper.paper_id,
-            target_title=paper.title,
-            limit=5,
+    if embedding_client is not None and not embedding_identity:
+        raise ValueError(
+            "Review preparation with an embedding client requires embedding_identity"
         )
-        s2_provenance["enabled"] = True
-    paper_context = frozen_paper_context(paper, role)
-    user_parts = [
-        SPECIALIST_REQUEST_TEMPLATE.format(
-            task_id=role,
-            paper_context=paper_context,
-        ),
-        "[REVIEW EXPERIENCE]\n" + (memory["context"] or "(none)"),
-        "[FROZEN S2 EVIDENCE]\n" + (format_s2_evidence(s2_values) or "(disabled or empty)"),
-    ]
-    if review_strategy.strip():
-        user_parts.append("[VERSIONED REVIEW STRATEGY]\n" + review_strategy.strip())
-    messages = [
-        {
-            "role": "system",
-            "content": load_reviewer_suite().task(role).system_prompt,
-        },
-        {"role": "user", "content": "\n\n".join(user_parts)},
-    ]
     output = Path(output_root).expanduser().resolve()
     target_dir = output / "reviews" / run_id / paper.paper_id
+    review_plan_identity = None
+    review_plan_identity_sha256 = ""
+    if _canonical_bootstrap_s2_enabled is None:
+        input_identity = _review_request_input_identity(
+            paper_path=paper_path,
+            paper=paper,
+            role=role,
+            program_path=program_path,
+            snapshot_path=snapshot_path,
+            snapshot_id=str(snapshot.get("snapshot_id") or ""),
+            program_version=program_version,
+            frozen_s2_path=frozen_s2_path,
+            s2_intervention=s2_intervention,
+            model_identity=model_identity,
+            embedding_identity=embedding_identity,
+        )
+        request_path = target_dir / f"{role}.request.json"
+        if request_path.is_file():
+            request_materialization = _load_review_request(
+                request_path,
+                input_identity=input_identity,
+            )
+        else:
+            try:
+                prepared = prepare_review_invocation(
+                    paper=paper,
+                    role=role,
+                    program_path=program_path,
+                    snapshot_path=snapshot_path,
+                    frozen_s2_path=frozen_s2_path,
+                    s2_intervention=s2_intervention,
+                    embedding_client=embedding_client,
+                    embedding_identity=embedding_identity,
+                    completion_client=completion_client,
+                    require_bubblewrap=require_bubblewrap,
+                )
+            except Exception as exc:
+                _save_failure_attempt(
+                    target_dir,
+                    role,
+                    {
+                        "paper_id": paper.paper_id,
+                        "role": role,
+                        "run_id": run_id,
+                        "status": "failed",
+                        "phase": "review_preparation",
+                        "error": f"{type(exc).__name__}: {exc}",
+                        "input_identity": input_identity,
+                        "created_at": _utc_now(),
+                    },
+                )
+                raise
+            request_materialization = _materialize_review_request(
+                path=request_path,
+                input_identity=input_identity,
+                messages=prepared.messages,
+                retrieval_provenance=prepared.retrieval_provenance,
+                review_plan=prepared.review_plan,
+            )
+        messages = list(request_materialization["messages"])
+        retrieval_provenance = dict(
+            request_materialization["retrieval_provenance"]
+        )
+        s2_provenance = dict(retrieval_provenance["s2"])
+        review_plan_identity = {
+            "intervention": dict(s2_provenance["intervention"]),
+            "capability_manifest": dict(s2_provenance["capability_manifest"]),
+            "plan_sha256": str(s2_provenance["plan_sha256"]),
+            "preparation_sha256": str(
+                request_materialization["preparation_sha256"]
+            ),
+        }
+        review_plan_identity_sha256 = value_sha256(review_plan_identity)
+    else:
+        if program_version != "canonical-no-memory-v1":
+            raise ValueError(
+                "The fixed Review path is reserved for canonical no-Memory bootstrap"
+            )
+        if Path(program_path).expanduser().resolve() != seed_program_path(
+            "no_memory"
+        ).resolve():
+            raise ValueError(
+                "Canonical bootstrap requires the frozen no-Memory seed Program"
+            )
+        if s2_intervention is not None:
+            raise ValueError("Canonical bootstrap does not accept s2_intervention")
+        memory = retrieve_memory(
+            paper=paper,
+            role=role,
+            program_path=program_path,
+            snapshot_path=snapshot_path,
+            embedding_client=embedding_client,
+            completion_client=completion_client,
+            require_bubblewrap=require_bubblewrap,
+        )
+        s2_values: list[dict[str, Any]] = []
+        s2_provenance: dict[str, Any] = {"enabled": False, "result_ids": []}
+        if _canonical_bootstrap_s2_enabled:
+            if frozen_s2_path is None:
+                raise ValueError("canonical bootstrap with S2 requires its frozen pool")
+            s2_values, s2_provenance = FrozenS2Store(frozen_s2_path).retrieve(
+                paper_id=paper.paper_id,
+                target_title=paper.title,
+                limit=5,
+            )
+            s2_provenance["enabled"] = True
+        user_parts = [
+            SPECIALIST_REQUEST_TEMPLATE.format(
+                task_id=role,
+                paper_context=frozen_paper_context(paper, role),
+            ),
+            "[REVIEW EXPERIENCE]\n" + (memory["context"] or "(none)"),
+            "[FROZEN S2 EVIDENCE]\n"
+            + (format_s2_evidence(s2_values) or "(disabled or empty)"),
+        ]
+        messages = [
+            {
+                "role": "system",
+                "content": load_reviewer_suite().task(role).system_prompt,
+            },
+            {"role": "user", "content": "\n\n".join(user_parts)},
+        ]
+        retrieval_provenance = {
+            "memory": memory,
+            "s2": {**s2_provenance, "evidence": s2_values},
+        }
     request_sha256 = value_sha256(messages)
     generation_identity = specialist_generation_identity(model_identity)
     raw_path = target_dir / f"{role}.raw.json"
@@ -276,6 +443,7 @@ def run_specialist_review(
         generation_identity=generation_identity,
         program_version=program_version,
         snapshot_id=str(snapshot.get("snapshot_id") or ""),
+        review_plan_identity=review_plan_identity,
     )
     if raw_artifact is None:
         try:
@@ -299,6 +467,9 @@ def run_specialist_review(
                 "memory_snapshot_id": str(snapshot.get("snapshot_id") or ""),
                 "created_at": _utc_now(),
             }
+            if review_plan_identity is not None:
+                failure["review_plan_identity"] = review_plan_identity
+                failure["review_plan_identity_sha256"] = review_plan_identity_sha256
             _save_failure_attempt(target_dir, role, failure)
             raise
         raw_artifact = {
@@ -314,6 +485,9 @@ def run_specialist_review(
             "attempts": attempts,
             "created_at": _utc_now(),
         }
+        if review_plan_identity is not None:
+            raw_artifact["review_plan_identity"] = review_plan_identity
+            raw_artifact["review_plan_identity_sha256"] = review_plan_identity_sha256
         atomic_write_json(raw_path, raw_artifact)
     raw_output = str(raw_artifact["raw_model_output"])
     attempts = int(raw_artifact["attempts"])
@@ -323,7 +497,22 @@ def run_specialist_review(
         role=role,
         program_version=program_version,
         snapshot_id=str(snapshot.get("snapshot_id") or ""),
+        review_plan_identity_sha256=review_plan_identity_sha256,
     )
+    generation_config = {
+        "temperature": generation_identity["temperature"],
+        "enable_thinking": generation_identity["enable_thinking"],
+        "max_tokens": generation_identity["max_tokens"],
+        "retry": generation_identity["retry"],
+        "attempts": attempts,
+    }
+    if review_plan_identity is not None:
+        generation_config.update(
+            {
+                "request_sha256": request_sha256,
+                "preparation_sha256": review_plan_identity["preparation_sha256"],
+            }
+        )
     review = SpecialistReview(
         review_id=review_id,
         paper_id=paper.paper_id,
@@ -334,17 +523,8 @@ def run_specialist_review(
         raw_model_output=raw_output,
         reviewer_identity=load_reviewer_suite().identity(role),
         model_identity=dict(model_identity),
-        generation_config={
-            "temperature": generation_identity["temperature"],
-            "enable_thinking": generation_identity["enable_thinking"],
-            "max_tokens": generation_identity["max_tokens"],
-            "retry": generation_identity["retry"],
-            "attempts": attempts,
-        },
-        retrieval_provenance={
-            "memory": memory,
-            "s2": {**s2_provenance, "evidence": s2_values},
-        },
+        generation_config=generation_config,
+        retrieval_provenance=retrieval_provenance,
         run_id=run_id,
         created_at=str(raw_artifact["created_at"]),
     )

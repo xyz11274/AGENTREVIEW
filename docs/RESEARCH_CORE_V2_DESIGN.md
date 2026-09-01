@@ -1,10 +1,10 @@
 # AgentReview Research Core v2 设计
 
-> 状态：已确认，待实现。本文是 Research Core v2 的目标设计；本轮只定稿文档，不修改 prompt 源文件或运行代码。
+> 状态：已确认并进入实现。本文定义 Research Core v2 的目标协议；实际完成项与迁移状态见 `RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md`。
 
 ## 1. 研究目标
 
-Research Core v2 要回答的核心问题是：角色独立、可演化的 Memory 是否能让系统生成更准确、深入、有用的论文 Review。
+Research Core v2 要回答的核心问题是：角色独立的 Reviewer Program 能否通过共同进化 Memory 与 S2 使用策略，生成更准确、深入、有用的论文 Review。S2 不是预先固定开启或关闭的系统因子；Evolution 要学习是否查询、何时查询、选择什么 evidence，以及如何使用它。
 
 系统首先服务 Review 能力和可解释实验。manifest、gate、audit、eligibility、runtime protocol 或额外 selection 层只有在缺少它就无法保证实验正确性时才进入主链。
 
@@ -37,13 +37,13 @@ Research Core v2 要回答的核心问题是：角色独立、可演化的 Memor
 25. Formal development 只包含互斥的 Canonical Review Corpus 125、Evolution static 25 和 Evolution rotating pool 125，共275篇；不设置 Bundle Diagnostic 分区。
 26. 论文输入是带独立规范标题的 JSON record；S2 只在数据准备阶段按标题查询并冻结，Review Run 只按 `paper_id` 本地读取。
 27. External Development Corpus 与 CoCo-1300 各自拥有独立 Frozen S2 Pool，不能混用 evidence universe。
-28. 每个 Seed 可以显式选择是否使用 Frozen S2；三个 initial seeds 默认 `s2_enabled=true`。
+28. 每个 Program Version 必须针对每篇论文自主决定是否查询 Frozen S2、查询后是否使用、选择哪些 evidence 以及如何使用；三个 initial seeds 以 `always-top5` 作为共同起点，而不是宿主固定 `s2_enabled=true`。
 29. Reviewer Memory 检索 Review Experience，不把历史论文正文切块后复制给 Reviewer。
 30. Frozen S2 Pool 必须在冻结前确定性排除目标论文、同 family/version 副本和重复结果；exact-title self match 不能作为外部证据。
 31. Memory 只冻结最小 provenance envelope，payload schema 由 Program Version 进化；初始 Experience Learner 使用 trigger/heuristic/evidence/failure/importance 五类语义。
 32. Reflector 只接收父代及其五个 rotating failure packets，不接收 human review、CoCo、其他角色或 evaluator hidden reasoning。
 33. 三个 development 分区按 venue-year 尽量均衡、使用稳定 hash seed `0` 依次抽样，不使用 decision、human score 或 review。
-34. Canonical no-memory Review 固定 `memory_enabled=false, s2_enabled=true`；625份完整 Review 冻结后统一执行一次 Internal Evaluation。
+34. 已生成的 Canonical no-memory Review 固定 `memory_enabled=false, s2_enabled=true`，可保留为共享来源语料；它不属于 evolved winner，也不能作为 Autonomous S2 Policy 的行为或效果证据。625份完整 Review 冻结后统一执行一次 Internal Evaluation。
 35. 保留 M★ 的 KnowledgeItem、Query、KnowledgeBase.write/read、Program、pool、Reflector、patcher 和 lineage；生命周期改为 offline build → frozen snapshot → read-only Review Run。
 36. 每个 Evolution Attempt 生成一次 V4A patch，失败时最多一次显式 repair；任何 outcome 都消费一次预算，失败 candidate 不进入 pool。
 37. Candidate Sandbox 以 M★ Program/Toolkit 语义为权威，只在外层增加独立 worker/bubblewrap 安全隔离。
@@ -55,6 +55,9 @@ Research Core v2 要回答的核心问题是：角色独立、可演化的 Memor
 43. 第一版必须通过边界能力测试和 Tiny E2E；Tiny 不产生正式 winner、不启动275篇正式实验或 CoCo-1300。
 44. Meta Final Review 不输出自定义最终分数或独立 confidence 字段；recommendation 是审稿结论，不作为 Internal Evaluation 或 Evolution 指标。
 45. 首个正式实验的所有生成阶段共享同一冻结 BF16 Qwen3.8-27B 基础模型，并显式关闭 thinking；Internal Evaluator 仍保留可替换模型接口。
+46. Primary 的 S2 intervention 固定为 `program_autonomous`；`forced_consult/forced_off` 只用于有独立 identity 的预注册 diagnostic，不参与 winner 选择；前者只强制查询，不强制选择或注入。
+47. winner evaluation 与 freeze/reload 后的 Review 使用同一 Program planning interface，不由 CLI 或宿主替 winner 决定 S2。
+48. S2 usage trace 是 Review 一级 provenance；usage rate 描述行为，Memory 与 S2 policy 的效果归因使用冻结 development 数据上的2×2 diagnostic，不使用 CoCo 反馈。
 
 ## 3. 唯一主链
 
@@ -64,7 +67,8 @@ Data preparation
   → freeze local paper/S2 assets
 
 Review Run
-  Frozen Paper + Frozen S2 + role-local Memory
+  Frozen Paper + current-paper Frozen S2 Capability + role-local Memory
+  → Program autonomously plans S2 call/skip, selection and usage
   → deterministic Retrieval + freeze hit IDs
   → optional explicit summarization (LLM Summarizer Seed only)
   → QUAL / CLAR / SIGN / ORIG / POL independently
@@ -143,6 +147,35 @@ run_id
 created_at
 ```
 
+`retrieval_provenance` v2 必须保留真实 Memory context 与完整 S2 决策 trace，而不是一个宿主 `enabled` 布尔值：
+
+```text
+memory
+  logs
+  context
+s2
+  capability_available
+  intervention
+    protocol = s2-intervention-v1
+    mode = program_autonomous | forced_off | forced_consult
+    label
+  s2_disposition = not_consulted | consulted_no_use | use
+  decision_label
+  lookup_count
+  requested_limits
+  candidate_ids
+  selected_ids
+  injected_ids
+  usage_instruction
+  context_order
+  evidence
+  pool_version
+  pool_sha256
+  context_sha256
+```
+
+Primary 固定使用 `mode=program_autonomous, label=formal-primary-v1`。Capability availability、lookup、selection 与 injection 是四个不同事实：available 不能记作 lookup，candidate 不能记作 selected，selected 也必须以实际注入 ID 再确认。该 provenance 随 Review 一起冻结，使 winner evaluation 与 reload 后的行为可复核。
+
 最小 Final Review 记录需要表达：
 
 ```text
@@ -207,7 +240,21 @@ frozen_s2_external_development_v1
 frozen_s2_coco1300_v1
 ```
 
-每个 Seed/Program Version 显式记录 `s2_enabled`；三个 initial seeds 默认启用。Evolution 可以产生关闭 S2 的 candidate 作为策略选择，但同一 Candidate 的配置在 Review batch 开始前冻结。S2 和 Reviewer Memory 分 lane 检索，provenance 分别记录。
+Frozen S2 在 Review Run 中是受限 capability，不是宿主预先拼入 prompt 的固定区块。Program 的版本化 `plan_review` 对每篇论文和角色读取 Memory context，并获得只绑定当前 `paper_id` 的 evidence access。它可以零次或一次调用 `retrieve_current_s2(limit<=5)`；零次表示不需要，调用后可以选择不用，也可以选择返回集合的有序子集。Program 没有可指定任意 `paper_id` 的接口，不能跨论文读取或联网。
+
+Program 返回结构化 Review Plan，至少冻结：
+
+```text
+protocol = evolvable-review-plan-v1
+s2_disposition = not_consulted | consulted_no_use | use
+selected_s2_ids
+decision_label
+usage_instruction
+context_order = permutation(memory, s2, strategy)
+review_strategy
+```
+
+可信宿主验证 plan 后只按 `selected_s2_ids` 从本次候选集合格式化 evidence。非法 ID、disposition 与 trace 不一致、重复查询或非法 context order 都使 candidate-local 执行失败，不静默回退到固定开启或关闭。三个 initial seeds 的共同 seed policy 是 `always-top5`，之后 mutation 可以改变逐 case 决策；Primary caller 始终使用 `program_autonomous` intervention。
 
 初始双 lane 协议固定为：
 
@@ -218,12 +265,16 @@ Memory lane
   top_k = 5 Review Experience items
 
 S2 lane
-  runtime exact paper_id lookup
-  top_k = 5 self-filtered frozen papers
-  s2_enabled = true
+  Program may call runtime exact-paper capability once
+  maximum returned candidates = 5 self-filtered frozen papers
+  Program may use none or an ordered subset
 ```
 
-两个 lane 各自排序，不归一化或混合分数；Reviewer context 使用独立的 `[REVIEW EXPERIENCE]` 与 `[FROZEN S2 EVIDENCE]` 区块。Program 可以进化 Memory query 字段、top-k、filter、排序、context 顺序与 `s2_enabled`，但不能改变冻结 S2 Pool。LLM Summarizer 只摘要已经冻结的 Memory hits，S2 evidence 与其他 initial seeds 保持一致。
+两个 lane 各自排序，不归一化或混合分数；Reviewer context 使用独立的 `[REVIEW EXPERIENCE]` 与 `[FROZEN S2 EVIDENCE]` 区块。Program 可以进化 Memory query 字段、top-k、filter、排序、S2 call/skip、S2 子集、context 顺序与 evidence usage instruction，但不能改变冻结 S2 Pool。LLM Summarizer 只摘要已经冻结的 Memory hits。
+
+当前两个 pool 每篇只冻结 top-5，所以第一版搜索空间能学习是否调用、查看后不用、子集、顺序和使用方式，不能学习从更宽 S2 candidate bank 中 rerank。若后续把该能力纳入研究问题，必须先为 development 与 CoCo 同步构建版本化的 wider pool（例如 top-20）并在打开 sealed test 前冻结；不能只修改 CoCo pool。
+
+已完成的 canonical bootstrap 使用旧的固定 S2 注入，可保留为所有 Program 共享的 Review 来源语料，因为所有 candidate 看到相同 corpus；它不进入 S2 usage report，也不能用于宣称 S2 policy improvement。正式 seed/static/Evolution 在本 capability seam、provenance v2、winner reload 与 Tiny E2E 验证完成后开始。CoCo S2 pool 仍必须完成，因为它是 sealed paper 上供 winner 自主选择的能力资产，而不是 CoCo scorer 的输入。
 
 Reviewer Memory 的检索单位必须是 Review Experience，例如审查启发、证据模式、失败模式、方法学检查点或完整 Review 的可追溯片段。历史论文正文只作为该 Review 的来源上下文，不作为 Memory chunk 直接复制给当前 Reviewer；论文外部证据由独立 Frozen S2 lane 提供。
 
@@ -265,6 +316,7 @@ Evolution 产生的 Program Version 可以修改：
 
 - Memory representation 与从完整 Review 派生 Memory 的策略；
 - deterministic query construction、Retrieval、filter、ranking 与 hydration；
+- 每篇 Review 的 S2 call/skip、consulted-but-unused、候选子集与 evidence usage instruction；
 - Review workflow；
 - Review strategy，包括如何使用已经检索出的证据。
 
@@ -287,7 +339,9 @@ Parent static mean review_quality
 5 rotating failure cases:
   paper identity + compact paper context
   complete candidate Review
-  retrieved Memory/S2 IDs
+  retrieved Memory IDs
+  S2 lookup/candidate/selected/injected IDs
+  S2 disposition, decision label, usage instruction and evidence shown
   summarizer output (Summarizer only)
   review_quality
   major_missing_points
@@ -296,6 +350,29 @@ Parent static mean review_quality
 ```
 
 Reflector 不读取 human review、CoCo、其他角色输出、其他 candidate 私有反馈或 evaluator hidden reasoning。输出是一份新的完整可执行 Program Version，并记录 M★ lineage。
+
+### 7.1 S2 usage 与2×2归因诊断
+
+每个 Review 的 provenance 可以派生 overall 以及按 role、Program Version、decision label 分组的 S2 usage summary。策略统计的 eligible 定义固定为：`capability_available=true` 且 intervention mode 为 `program_autonomous`。除 eligible rate 外，以下 rate 均以 eligible Reviews 为分母；无 eligible 样本时记为 `0.0` 并同时报告分母：
+
+- lookup rate：`lookup_count > 0`；
+- injection rate：`injected_ids` 非空；
+- consulted-but-unused rate：disposition 为 `consulted_no_use`；
+- empty-result rate：发生 lookup 且 `candidate_ids` 为空；
+- mean selected count：`selected_ids` 数量的 eligible-sample 均值。
+
+`forced_consult/forced_off` 样本按 intervention mode 单列，不能进入上述 policy rates。若还要判断 Reviewer 文本是否实际援引 evidence，应另用统一 S2 citation marker 统计 cited IDs；injection 本身不等于 textual use。
+
+usage 行为与质量提升来源是两个问题。Memory/S2 归因只在冻结 development static set 上组装四个可比系统：
+
+```text
+baseline Memory + baseline autonomous S2 policy
+evolved Memory  + baseline autonomous S2 policy
+baseline Memory + evolved autonomous S2 policy
+evolved Memory  + evolved autonomous S2 policy
+```
+
+四格共享论文、Reviewer identity、模型、generation config、评测器与非目标组件，各 S2 policy 仍自主运行，不用 forced intervention 替代。设四格分数依次为 `y00/y10/y01/y11`，则 Memory 主效应为 `((y10-y00)+(y11-y01))/2`，S2 policy 主效应为 `((y01-y00)+(y11-y10))/2`，interaction 为 `y11-y10-y01+y00`。该报告是 winner 冻结后的 diagnostic，不参与 candidate 选择；若要在 CoCo 上运行，必须在打开 Sealed CoCo Test 前预注册，且结果永不反馈 Evolution。
 
 ## 8. CoCo Firewall
 
@@ -356,14 +433,14 @@ Canonical Review Corpus 为每篇论文生成五角色 no-memory 完整 Review�
 
 抽样不读取 decision、human score、reviews 或 metareview。最小直接去重后，按13个 venue-year 尽量均衡分配每个 split 的名额；组内使用 `sha256("split-seed-0" + split_name + paper_id)` 排序。按 Canonical 125 → static 25 → rotating 125 的顺序从尚未使用的记录中冻结，保存 ID 列表、输入 JSON hash、去重结果和抽样代码 hash。
 
-Canonical Review 的 no-memory 精确定义为：
+已提交 canonical bootstrap 的 legacy no-memory 精确定义为：
 
 ```text
 memory_enabled = false
 s2_enabled = true
 ```
 
-这125篇生成 `125 × 5 = 625` 份完整 Specialist Review，全部成功/失败 artifact 先永久保存。完成后统一运行一次 Internal Evaluation，并与 Review 分开保存。Vector/Direct 与 Summarizer 从完整 Review 派生原始 Review Experience，不按 evaluator 分数删除记录；Experience Learner 可以读取 Review 与对应 Internal Evaluation 做离线经验归纳。
+这一定义只描述共享来源语料，不延续到 seed/static/winner Review 的 S2 控制面。125篇生成 `125 × 5 = 625` 份完整 Specialist Review，全部成功/失败 artifact 先永久保存。完成后统一运行一次 Internal Evaluation，并与 Review 分开保存。Vector/Direct 与 Summarizer 从完整 Review 派生原始 Review Experience，不按 evaluator 分数删除记录；Experience Learner 可以读取 Review 与对应 Internal Evaluation 做离线经验归纳。
 
 ### CoCo-1300 最终协议
 
@@ -576,6 +653,9 @@ Review runtime
   embedding identity
   retrieval/query versions
   Frozen S2 Pool identity
+  evolvable Review Plan protocol + capability contract
+  5 role-local Autonomous S2 Policy hashes
+  Primary S2 intervention identity
   Primary Meta model/prompt/config
   META_SYNTHESIS_Request_v1.md SHA
   Concat Ablation config
@@ -638,18 +718,21 @@ artifacts/
 2. 五角色的 Memory、snapshot、pool 与 lineage 相互隔离；
 3. Review Run 不调用 Internal Evaluation、Reflection、`write` 或 Evolution；
 4. Query/召回确定性，Summarizer 只能处理冻结 hit IDs；
-5. Frozen S2 无网络、排除 self/same-family、按 `paper_id` 读取；
+5. Frozen S2 无网络、排除 self/same-family，Program 只能对当前 `paper_id` 零次或一次查询；
 6. 新 Review 不写入冻结 Memory，只形成 Evolution Feedback；
 7. Meta 无 Memory/Evolution，失败不 fallback concat；
 8. CoCo 资产对 Review/Evolution 不可见；
 9. Paper-local failure 不使其他成功 Review 作废；
 10. Candidate failure 消耗 attempt 但不进入 pool；
-11. concurrency 参数不改变 Program/System identity。
+11. concurrency 参数不改变 Program/System identity；
+12. Program 能分别产生 call、skip、empty-result、consulted-but-unused 和 subset-use plan，非法 ID/trace 被拒绝；
+13. winner freeze/reload 后通过同一 autonomous interface 决策，Primary caller 不提供固定 S2 on/off；
+14. usage summary 排除 forced diagnostics，2×2 attribution 的主效应与 interaction 由四格纯计算复现。
 
 Tiny E2E 顺序为：
 
 ```text
-2 papers × 5 roles no-memory smoke
+2 papers × 5 roles no-memory + autonomous-S2 smoke
 → 10 papers: no-memory vs 3 seeds
 → 1 role × 3 seeds × 3 attempts
 → 5 roles each complete 1 tiny evolution
@@ -662,7 +745,7 @@ Tiny E2E 顺序为：
 
 ## 12. 设计树结论
 
-设计树已经闭合。默认模型与 generation config、Specialist/Meta prompt 边界、research_v2 替换策略、legacy 删除顺序、首条命令和本轮交付边界均已确认。下一阶段只有在用户明确要求实施后才修改 `REVIEW_Request.md`、新增 `META_SYNTHESIS_Request_v1.md`、建立 research_v2 源码并删除 legacy 路径。
+设计树已经闭合。默认模型与 generation config、Specialist/Meta prompt 边界、research_v2 stage 和 Autonomous S2 Capability 均已确认。固定 S2 canonical corpus 可以保留；正式 Evolution 尚未开始，因此 migration 的生效边界是 seed/static/Evolution 之前完成 capability、provenance、mutation、winner reload、usage 与 Tiny E2E 验证，不改写已经提交的 canonical artifact。
 
 ## 13. 明确不进入第一版
 

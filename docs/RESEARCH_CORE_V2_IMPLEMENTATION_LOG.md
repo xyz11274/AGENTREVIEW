@@ -1,6 +1,6 @@
 # Research Core v2 修改记录
 
-> 状态：development 数据与 S2 已冻结；专用 27B 和真实 8 并发 smoke 已验证；正式 canonical bootstrap 与串行 CoCo S2 正在运行
+> 状态：development 数据与 S2 已冻结；专用 27B 和真实8并发 smoke 已验证；canonical bootstrap 已完成且其后置 Internal Evaluation 正在运行；正式 seed/static/Evolution 前正在迁移 Autonomous S2 Capability；串行 CoCo S2 保留 checkpoint 待恢复
 > 实施日期：2026-09-01  
 > 本轮实验起点 branch / commit：`20260831-minimal` / `827289a`
 
@@ -55,7 +55,7 @@ coco-eval
 - Memory 只在 offline build 阶段写入；Review Run 只读 snapshot。
 - Query 由 Frozen Paper title/abstract 和 role 确定性构造，不调用生成模型。
 - Vector 与 Experience read path 是 deterministic top-k；Summarizer 只能在命中集合和 IDs 已记录后调用一次，失败不回退。
-- S2 只在 data preparation 联网；runtime 按 exact paper ID 读取并拒绝 self-match / duplicate evidence。
+- S2 只在 data preparation 联网；runtime 只向 Program 暴露当前 exact paper ID 的本地 capability，并拒绝 self-match / duplicate evidence。
 - Internal Evaluation 后置运行，只读 Frozen Paper、角色、完整 Review 和 Reviewer 当时所见 evidence；输出四个已确认字段。
 - Meta 和 concat 是两个明确 final mode；Meta 失败不回退 concat。
 - CoCo 只由外部子进程读取 Final Review 的 `{id,text}` 视图。
@@ -73,13 +73,30 @@ coco-eval
 - Reflector 每次 attempt 允许一次主要 patch；失败时最多一次显式 repair。
 - Candidate 先经过 AST capability check 和 sandbox protocol smoke；完成独立 static Review/Internal Evaluation 后才进入 pool。
 - rotating feedback 包含完整 Review 与 qualitative Internal Evaluation，不包含 human reference、CoCo、Meta 或其他角色结果。
+- Review Plan 与 Autonomous S2 Policy 是 Program mutation target；Primary 不再由宿主 `s2_enabled` 固定注入。
+
+## 4.1 Autonomous S2 Capability 迁移
+
+正式 Evolution 开始前的审计确认：旧 `review.py` 由宿主统一 exact-ID top-5 并固定注入，Program mutation 不能改变 S2 call/skip、selection 或 usage；winner artifact 也没有可重放的 S2 policy。该状态不满足“Evolution 学习是否、何时及如何使用 S2”的研究目标。
+
+迁移后的边界是：
+
+- Program 的 `plan_review` 获得 current-paper-only evidence access，最多查询一次；没有任意 `paper_id`、网络或跨论文能力；
+- plan 固定表达 `not_consulted / consulted_no_use / use`、selected IDs、decision label、usage instruction、context order 与 review strategy；
+- Primary intervention 固定为 `program_autonomous / formal-primary-v1`；CLI `--no-s2` 仅保留为 `forced_off / cli-no-s2-diagnostic-v1`，`forced_consult` 只预留查询诊断且不强制注入；
+- Review provenance v2 保存 Memory `logs/context` 和 S2 capability、intervention、lookup/candidate/selected/injected trace、evidence 与 pool/context hash；
+- Reflector、patch validation、candidate smoke、pool/winner/freeze 必须保留相同 capability contract，winner reload 后不由宿主重写策略；
+- 新增 `research_v2/usage.py`，从不可变 Review 计算 overall 及 role/program/decision-label 分组的 usage，并提供四格 Memory/S2 policy 纯计算归因；forced diagnostics 不进入 policy-rate 分母。
+
+已于本次迁移前完成的 `canonical-bootstrap-v1` 是固定 `memory=false, s2=true` 的625份共享来源 Review，保持不可变并继续用于所有 Program 的 Memory build。它不进入 provenance-v2 usage summary，也不作为 S2 policy improvement 证据。正式 seed/static/Evolution 尚未开始，因此无需废弃 canonical corpus；迁移验证和 Tiny E2E 通过后再启动这些阶段。
 
 ## 5. Data、S2 与 CoCo-1300
 
 - development preparation 扫描 OpenReview `train_clean`，只接受实际存在的 Markdown asset。
 - 采用 exact ID、canonical title、paperhash、full-text SHA256 的最小直接去重；三组 125/25/125 互斥。
 - development 和 CoCo 分别配置 `frozen_s2_external_development_v1` 与 `frozen_s2_coco1300_v1`。
-- CLI 根据 Frozen Paper `source.dataset` 自动选择正确 S2 pool；`freeze-system` 强制同时绑定两套 pool。
+- CLI 根据 Frozen Paper `source.dataset` 自动选择正确 S2 pool 作为可调用 capability；`freeze-system` 强制同时绑定两套 pool，但不表示 Program 必须使用。
+- 当前 pool 每篇最多返回 top-5；第一版 policy 可进化 call/skip、查看后不用、子集与使用方式，不能在更宽 candidate bank 上学习 reranking。
 - 旧 `frozen_s2_temporal_v2` 只覆盖 CoCo family representative，且含大量 self-match，未复用到 v2 并已随 legacy 配置删除。
 
 实际执行 `prepare-data`：
@@ -179,17 +196,19 @@ paper assets    63.21 MiB
 | compileall after legacy removal | passed |
 | CLI `--help` | 10 stage entries loaded successfully |
 | CoCo-1300 actual freeze | 1,300 assets、13 groups、paper-only boundary verified |
+| S2 usage / 2×2 attribution unit | 4 passed；Ruff passed；compileall passed |
 
 Tiny 测试按实际边界执行：五个 role-local no-memory snapshot → 五次独立完整 Review → 确认 Review 阶段没有 Evaluation → 五次后置 Internal Evaluation → 独立 Meta 与 concat Final Review；使用 fake completion client，不占用正在执行其他任务的正式 Qwen GPU 服务。
 
 ## 9. 正式运行状态与后续队列
 
-`canonical-bootstrap-v1` 已于 2026-09-01 16:40 CST 启动：125篇 canonical paper × 5角色，共625个任务，S2 开启，`max_workers=8`。启动核验时已完成7个角色，0 paper failure、0 infrastructure failure，vLLM 为8 running / 0 waiting；tmux session 是 `ar0831_formal_canonical_c8`，进度日志是 `artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log`。
+`canonical-bootstrap-v1` 于 2026-09-01 16:40 CST 启动、18:33 CST 完成：125篇 canonical paper × 5角色，共625/625个任务，固定 S2、`max_workers=8`，0 infrastructure failure。run record 状态为 `complete`，进度日志是 `artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log`。该阶段先于 Autonomous S2 migration，身份保持 canonical fixed-S2 corpus，不原地重写。
 
-尚未执行：
+当前迁移与后续队列：
 
-1. canonical Review 完成后的后置 Internal Evaluation、三 seed Memory 与五角色 Evolution；
-2. 独立的 CoCo-1300 S2 pool 已在 development S2 释放全局锁后顺序启动；它与 GPU Review 并行，但全机仍只有这一个 S2 HTTP 流，tmux session 为 `ar0831_s2_coco1300`；
-3. Frozen System、1,300份 CoCo Final Review，以及随后独立运行的 split/classify/evaluation。
+1. `canonical-internal-eval-v1` 正在以8 worker 后置评价已保存的 canonical Review；该 stage 只复核 Review 当时实际看到的固定 evidence，可以与 capability migration 并行且不改变 S2 policy；
+2. Autonomous S2 Capability migration 的集成测试和 Tiny E2E；通过后才执行三 seed static Review 与五角色正式 Evolution；
+3. 独立 CoCo-1300 S2 pool 当前保留31/1300个 immutable parts，最近一次串行运行因 Semantic Scholar HTTP 500 退出；使用同一命令恢复，继续保持全机单进程、最多1 request/s；
+4. CoCo S2 pool 完成后作为 winner 的可调用能力资产，再执行 Frozen System、1,300份 CoCo Final Review及独立 split/classify/evaluation。
 
 正式服务与常见环境问题统一记录在 [EXPERIMENT_CONFIGURATION.md](EXPERIMENT_CONFIGURATION.md)。这些剩余项目是实验队列，不是当前核心代码或边界测试失败。

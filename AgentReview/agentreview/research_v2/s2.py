@@ -40,15 +40,17 @@ class SemanticScholarSearchClient:
         self,
         api_key_env: str = "S2_API_KEY",
         *,
-        max_attempts: int = 6,
+        max_attempts: int | None = 6,
         retry_base_seconds: float = 2.0,
-        min_request_interval_seconds: float = 1.0,
+        min_request_interval_seconds: float = 1.2,
     ):
         import requests
 
         self.requests = requests
         self.api_key = os.environ.get(api_key_env, "")
-        self.max_attempts = max(1, int(max_attempts))
+        self.max_attempts = (
+            None if max_attempts is None else max(1, int(max_attempts))
+        )
         self.retry_base_seconds = max(0.0, float(retry_base_seconds))
         self.min_request_interval_seconds = max(
             0.0,
@@ -59,14 +61,16 @@ class SemanticScholarSearchClient:
     def search_title(self, title: str, *, limit: int) -> list[dict[str, Any]]:
         headers = {"x-api-key": self.api_key} if self.api_key else {}
         retry_statuses = {408, 425, 429, 500, 502, 503, 504}
-        response = None
-        for attempt in range(1, self.max_attempts + 1):
+        attempt = 0
+        while True:
+            attempt += 1
             remaining = self.min_request_interval_seconds - (
                 time.monotonic() - self._last_request_started
             )
             if remaining > 0.0:
                 time.sleep(remaining)
             self._last_request_started = time.monotonic()
+            response = None
             try:
                 response = self.requests.get(
                     "https://api.semanticscholar.org/graph/v1/paper/search",
@@ -79,22 +83,39 @@ class SemanticScholarSearchClient:
                     timeout=60,
                 )
             except self.requests.RequestException:
-                if attempt >= self.max_attempts:
+                if self.max_attempts is not None and attempt >= self.max_attempts:
                     raise
             else:
                 if response.ok:
                     break
                 if response.status_code not in retry_statuses:
                     response.raise_for_status()
-            if attempt >= self.max_attempts:
+            if self.max_attempts is not None and attempt >= self.max_attempts:
                 assert response is not None
                 response.raise_for_status()
             retry_after = "" if response is None else response.headers.get("Retry-After", "")
             try:
                 delay = float(retry_after)
             except (TypeError, ValueError):
-                delay = self.retry_base_seconds * (2 ** (attempt - 1))
-            time.sleep(min(max(0.0, delay), 60.0))
+                delay = self.retry_base_seconds * (2 ** min(attempt - 1, 5))
+            delay = min(max(0.0, delay), 60.0)
+            print(
+                json.dumps(
+                    {
+                        "event": "s2_transport_retry",
+                        "attempt": attempt,
+                        "status_code": (
+                            None if response is None else response.status_code
+                        ),
+                        "delay_seconds": delay,
+                        "query": title,
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+            time.sleep(delay)
         assert response is not None
         payload = response.json()
         values = payload.get("data") if isinstance(payload, dict) else None

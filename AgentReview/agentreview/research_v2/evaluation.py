@@ -36,12 +36,62 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _escape_invalid_json_string_backslashes(value: str) -> str:
+    """Preserve literal LaTeX backslashes emitted inside JSON strings.
+
+    Review text commonly contains sequences such as ``\\mathcal`` or ``\\Sigma``.
+    They are valid text but invalid JSON escapes.  This scanner changes only an
+    invalid backslash inside a quoted JSON string into an escaped literal
+    backslash; valid JSON escapes and all structure outside strings stay exact.
+    """
+    output: list[str] = []
+    in_string = False
+    index = 0
+    hexadecimal = set("0123456789abcdefABCDEF")
+    while index < len(value):
+        character = value[index]
+        if character == '"':
+            in_string = not in_string
+            output.append(character)
+            index += 1
+            continue
+        if character != "\\" or not in_string:
+            output.append(character)
+            index += 1
+            continue
+
+        following = value[index + 1] if index + 1 < len(value) else ""
+        if following in {'"', "\\", "/", "b", "f", "n", "r", "t"}:
+            output.extend((character, following))
+            index += 2
+            continue
+        if (
+            following == "u"
+            and index + 5 < len(value)
+            and all(item in hexadecimal for item in value[index + 2 : index + 6])
+        ):
+            output.append(value[index : index + 6])
+            index += 6
+            continue
+
+        # Two backslashes encode one literal backslash in the repaired JSON.
+        output.extend(("\\", "\\"))
+        index += 1
+    return "".join(output)
+
+
 def _parse_json_object(text: str) -> dict[str, Any]:
     value = text.strip()
     if value.startswith("```"):
         value = re.sub(r"^```(?:json)?\s*", "", value)
         value = re.sub(r"\s*```$", "", value)
-    parsed = json.loads(value)
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        repaired = _escape_invalid_json_string_backslashes(value)
+        if repaired == value:
+            raise
+        parsed = json.loads(repaired)
     if not isinstance(parsed, dict):
         raise ValueError("Internal Evaluator output must be a JSON object")
     expected = {
@@ -99,27 +149,83 @@ def run_internal_evaluation(
     ]
     output = Path(output_root).expanduser().resolve()
     target_dir = output / "evaluations" / run_id / paper.paper_id
+    final_path = target_dir / f"{role}.json"
+    expected_evaluation_id = hashlib.sha256(
+        f"{run_id}\n{review.get('review_id')}\n{INTERNAL_EVALUATOR_PROMPT_VERSION}".encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    if final_path.is_file():
+        existing = read_json(final_path)
+        expected_identity = {
+            "evaluation_id": expected_evaluation_id,
+            "review_id": review.get("review_id"),
+            "paper_id": paper.paper_id,
+            "role": role,
+            "evaluator_identity": evaluator_identity,
+            "prompt_version": INTERNAL_EVALUATOR_PROMPT_VERSION,
+            "run_id": run_id,
+        }
+        if any(existing.get(key) != value for key, value in expected_identity.items()):
+            raise ValueError("Existing Internal Evaluation identity does not match request")
+        InternalEvaluation(
+            evaluation_id=str(existing["evaluation_id"]),
+            review_id=str(existing["review_id"]),
+            paper_id=str(existing["paper_id"]),
+            role=str(existing["role"]),
+            review_quality=float(existing["review_quality"]),
+            major_missing_points=list(existing["major_missing_points"]),
+            factual_evidence_issues=list(existing["factual_evidence_issues"]),
+            improvement_suggestions=list(existing["improvement_suggestions"]),
+            raw_model_output=str(existing["raw_model_output"]),
+            evaluator_identity=dict(existing["evaluator_identity"]),
+            prompt_version=str(existing["prompt_version"]),
+            run_id=str(existing["run_id"]),
+            created_at=str(existing["created_at"]),
+        ).validate()
+        return existing
     errors = []
     parsed = None
     raw = ""
+    committed_at = ""
     for attempt in (1, 2):
         try:
-            raw = completion_client.complete(
-                messages,
-                max_tokens=EVALUATOR_MAX_TOKENS,
-                component=f"internal_evaluator:{role}",
-            )
-            atomic_write_json(
-                target_dir / f"{role}.raw.{attempt}.json",
-                {
+            raw_path = target_dir / f"{role}.raw.{attempt}.json"
+            if raw_path.is_file():
+                raw_artifact = read_json(raw_path)
+                expected_raw_identity = {
                     "paper_id": paper.paper_id,
                     "role": role,
                     "attempt": attempt,
-                    "raw_model_output": raw,
                     "request_sha256": value_sha256(messages),
-                    "created_at": _utc_now(),
-                },
-            )
+                }
+                if any(
+                    raw_artifact.get(key) != value
+                    for key, value in expected_raw_identity.items()
+                ):
+                    raise ValueError(
+                        "Existing Internal Evaluation raw identity does not match request"
+                    )
+                raw = str(raw_artifact.get("raw_model_output") or "")
+                committed_at = str(raw_artifact.get("created_at") or "")
+            else:
+                raw = completion_client.complete(
+                    messages,
+                    max_tokens=EVALUATOR_MAX_TOKENS,
+                    component=f"internal_evaluator:{role}",
+                )
+                committed_at = _utc_now()
+                atomic_write_json(
+                    raw_path,
+                    {
+                        "paper_id": paper.paper_id,
+                        "role": role,
+                        "attempt": attempt,
+                        "raw_model_output": raw,
+                        "request_sha256": value_sha256(messages),
+                        "created_at": committed_at,
+                    },
+                )
             parsed = _parse_json_object(raw)
             break
         except Exception as exc:
@@ -136,11 +242,8 @@ def run_internal_evaluation(
         }
         atomic_write_json(target_dir / f"{role}.failure.json", failure)
         raise RuntimeError(f"Internal Evaluation failed twice: {errors}")
-    evaluation_id = hashlib.sha256(
-        f"{run_id}\n{review.get('review_id')}\n{INTERNAL_EVALUATOR_PROMPT_VERSION}".encode("utf-8")
-    ).hexdigest()
     artifact = InternalEvaluation(
-        evaluation_id=evaluation_id,
+        evaluation_id=expected_evaluation_id,
         review_id=str(review.get("review_id") or ""),
         paper_id=paper.paper_id,
         role=role,
@@ -152,8 +255,8 @@ def run_internal_evaluation(
         evaluator_identity=dict(evaluator_identity),
         prompt_version=INTERNAL_EVALUATOR_PROMPT_VERSION,
         run_id=run_id,
-        created_at=_utc_now(),
+        created_at=committed_at,
     )
     payload = artifact.to_dict()
-    atomic_write_json(target_dir / f"{role}.json", payload)
+    atomic_write_json(final_path, payload)
     return payload

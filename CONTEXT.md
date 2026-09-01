@@ -126,6 +126,30 @@ _Avoid_: Live S2、runtime S2
 以规范论文标题在数据准备阶段查询、排除目标论文及其 family/version 副本后，按稳定 `paper_id` 冻结的 S2 evidence 集合。External Development Corpus 与 CoCo-1300 使用不同 Pool，Review Run 只按 ID 本地读取。
 _Avoid_: Shared live database、title search at runtime
 
+**S2 Capability**:
+Program Version 对当前论文的 Frozen S2 Evidence 进行受限查询、选择和使用的能力。Capability 可用不表示 Program 实际查询或注入了证据。
+_Avoid_: Always-on S2、固定 S2 输入
+
+**Autonomous S2 Policy**:
+Program Version 针对每篇论文与 Reviewer Role 自主决定是否查询 S2、选择哪些 evidence，以及如何约束其用途的策略。
+_Avoid_: Dataset-level S2 toggle、Primary S2 开关
+
+**S2 Disposition**:
+一次 Review 对 S2 Capability 的结果分类：未查询、查询后不用，或选择并注入证据。它区分 Capability availability、consultation 与实际 injection。
+_Avoid_: S2 enabled、S2 hit
+
+**Diagnostic S2 Intervention**:
+为归因诊断预注册的强制查询或屏蔽 S2 操作。它拥有独立实验身份，不属于 Primary，也不参与 winner 选择。
+_Avoid_: Primary policy、默认 S2 配置
+
+**S2 Usage Summary**:
+基于 Review provenance 汇总 Program 自主查询、注入、查询后不用和空结果行为的派生报告。强制诊断样本不进入自主策略使用率分母。
+_Avoid_: S2 quality attribution、CoCo score
+
+**Factorial Attribution Diagnostic**:
+在冻结 development 数据上组合 baseline/evolved Memory 与 baseline/evolved Autonomous S2 Policy 的四格诊断。它估计两个主效应及交互，不改变 Primary winner。
+_Avoid_: Primary comparison、forced-consult/off comparison
+
 **Review Experience**:
 从完整 Specialist Review 派生的可复用审稿知识，例如审查启发、证据模式、失败模式与方法学检查点。它可以引用来源论文身份，但不复制来源论文正文充当 Memory。
 _Avoid_: Paper chunk、S2 paper、raw manuscript copy

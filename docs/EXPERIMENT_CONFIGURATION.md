@@ -70,8 +70,13 @@ S2 有请求并发和速率限制，正式规则是：
 - 全机同一时间只运行一个 Research v2 `build-s2` 进程；
 - development 与 CoCo S2 不并行；
 - 单个进程按目标顺序串行查询，不使用线程池或异步请求；
-- 任意两次 HTTP 请求的启动时间至少间隔 1 秒，即最多 1 request/s；
+- 任意两次 HTTP 请求的启动时间至少间隔 1.2 秒，即最多约 0.83 request/s；
 - retry 也在同一串行调用内完成，不形成额外并发。
+
+正式 CoCo S2 构建使用 `--retry-until-success`。对于 408、425、429、500、
+502、503、504 和连接异常，进程持续指数退避（单次最多60秒）并保持同一个
+paper checkpoint，不因固定重试次数耗尽而退出；非重试型 HTTP、响应 schema、
+checkpoint identity 或本地落盘错误仍立即退出。
 
 若 `S2_API_KEY` 写在登录 shell 配置中，非交互命令可能看不到它。只检查是否存在，不打印值：
 
@@ -88,11 +93,47 @@ bash -lic '
   /data0/xyj/miniconda3/envs/env_shengao/bin/python \
     -m agentreview.research_v2 \
     --config AgentReview/configs/research_v2_formal_v1.json \
-    build-s2 --dataset development
+    build-s2 --dataset development \
+    --min-request-interval-seconds 1.2 \
+    --retry-until-success
 '
 ```
 
 每条成功结果立即写入 `*.jsonl.parts/`。进程中断后用同一命令恢复，不删除 parts，也不要另开第二个恢复进程。Semantic Scholar 对零命中查询会返回 `total: 0` 且省略 `data`；该响应应冻结为空结果。`total > 0` 却没有 `data` 仍按异常退出，防止冻结损坏响应。
+
+## S2 是 Program capability，不是 Primary 开关
+
+Frozen S2 pool 只决定 evidence capability 是否可用，不决定某篇 Review 是否使用它。正式 Primary 的 intervention identity 固定为：
+
+```json
+{
+  "protocol": "s2-intervention-v1",
+  "mode": "program_autonomous",
+  "label": "formal-primary-v1"
+}
+```
+
+Program 对每篇论文自主执行 call/skip；调用后也可以记录 `consulted_no_use`，或选择候选子集并给出 usage instruction。Development 与 CoCo pool 都必须冻结，是因为 winner 在两类论文上都需要同一能力接口；CoCo Split/Classify scorer 本身不读取 S2。
+
+当前 pool 的 per-paper 上限是 top-5。因此第一版能进化是否调用、查询后不用、子集、context 顺序和使用方式，不能从更宽候选集中学习 reranking。若未来扩为 top-20，development 与 CoCo 两个 pool、配置 identity 和 freeze binding 必须在 sealed evaluation 前一起升级。
+
+`--no-s2` 只表示有独立 run ID 的诊断干预：
+
+```json
+{
+  "protocol": "s2-intervention-v1",
+  "mode": "forced_off",
+  "label": "cli-no-s2-diagnostic-v1"
+}
+```
+
+它不能用于 Primary、winner 选择或替代 Autonomous S2 Policy。`forced_consult` 仅预留给预注册的强制查询诊断，并不强制选择或注入；固定 intervention 结果不能反馈 Evolution。
+
+Review provenance v2 必须同时保存 Memory `logs/context`，以及 S2 的 capability、intervention、disposition、decision label、lookup count/limits、candidate/selected/injected IDs、usage instruction、context order、evidence、pool version/SHA 和 context SHA。缺少这些字段的旧 canonical Review 保持历史 artifact 身份，但不进入 autonomous usage 统计。
+
+`summarize_s2_usage(review_paths)` 固定报告 eligible、lookup、injection、consulted-but-unused、empty-result rates 与平均 selected 数，并按 role、program version、decision label 分组。policy-rate 分母只包含 `capability_available=true` 且 `mode=program_autonomous` 的 Review；forced diagnostics 单列。
+
+Memory 与 S2 policy 的效果归因使用冻结 development set 的四格诊断：baseline/evolved Memory × baseline/evolved autonomous S2 policy。四格都让各自 policy 自主决策，不用 forced on/off 代替；报告 Memory/S2 主效应与 interaction，但不参与 winner 选择。若计划在 CoCo 上报告四格，必须在打开 sealed set 前预注册，结果不得返回 Evolution。
 
 ## CoCo 两个服务与 Review 并行
 
@@ -112,7 +153,7 @@ CoCo Split 和 Classify 是两个独立的单 GPU、TP=1 vLLM endpoint。服务�
 
 ## Run ID 与不可变 artifact
 
-正式 canonical bootstrap 保留 run ID `canonical-bootstrap-v1`。smoke、`--limit` 或 `--no-s2` 必须使用独立 run ID，例如 `qwen-live-smoke-20260901-01`。
+正式 canonical bootstrap 保留 run ID `canonical-bootstrap-v1`。它是 migration 前已完成的固定 S2 来源 corpus，不改写。smoke、`--limit` 或 `--no-s2` diagnostic 必须使用独立 run ID，例如 `qwen-live-smoke-20260901-01`；seed/static/winner Primary 使用 `program_autonomous` intervention，不沿用 canonical 的固定 S2 控制面。
 
 Review raw、完整 Review、Memory snapshot 和 S2 parts 是不可变 artifact；同路径只允许字节等价/内容等价重放。模型身份、generation 参数、S2 pool 或选中论文集合改变后，应使用新 run ID。恢复正式任务时使用原 run ID；runner 会验证完整 invocation identity 后跳过已完成角色。
 
@@ -122,12 +163,14 @@ Review raw、完整 Review、Memory snapshot 和 S2 parts 是不可变 artifact�
 
 ```text
 27B service:  ar0831_qwen_gpu36_tp2c8_64k
-formal run:   ar0831_formal_canonical_c8
-S2 build:     ar0831_s2_coco1300（development 275/275 完成后顺序启动）
+canonical run: complete（历史 session ar0831_formal_canonical_c8 已退出）
+internal eval: ar0831_internal_eval_c8
+S2 build:     ar0831_s2_coco1300（从31/1300断点恢复，1.2秒间隔并持续重试）
 service log:  artifacts/research_v2/runtime/qwen_tp2_gpu36_64k/qwen.log
 development S2 log: artifacts/research_v2/runtime/s2_development/build.log
 CoCo S2 log:  artifacts/research_v2/runtime/s2_coco1300/build.log
 formal log:   artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log
+internal eval log: artifacts/research_v2/runtime/canonical_internal_eval_v1/stderr.log
 ```
 
 查看正式进度：

@@ -17,6 +17,23 @@ class SandboxError(RuntimeError):
 
 
 _BWRAP_USABLE: bool | None = None
+_REVIEW_PLAN_PROTOCOL = "evolvable-review-plan-v1"
+_REVIEW_PLAN_FIELDS = {
+    "protocol",
+    "s2_disposition",
+    "selected_s2_ids",
+    "decision_label",
+    "usage_instruction",
+    "context_order",
+    "review_strategy",
+}
+_S2_DISPOSITIONS = {"not_consulted", "consulted_no_use", "use"}
+_CONTEXT_NAMES = {"memory", "s2", "strategy"}
+_REVIEW_PLAN_TEXT_LIMITS = {
+    "decision_label": 128,
+    "usage_instruction": 1500,
+    "review_strategy": 2000,
+}
 
 
 def _bubblewrap_usable(binary: str | None) -> bool:
@@ -54,6 +71,58 @@ def _value_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
         return dict(value)
     raise TypeError(f"Expected dataclass or dict, got {type(value).__name__}")
+
+
+def _validated_review_plan(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise SandboxError("plan_review() must return a dict")
+    fields = set(value)
+    if fields != _REVIEW_PLAN_FIELDS:
+        missing = sorted(_REVIEW_PLAN_FIELDS - fields)
+        extra = sorted(fields - _REVIEW_PLAN_FIELDS)
+        raise SandboxError(
+            f"plan_review() fields mismatch: missing={missing}, extra={extra}"
+        )
+    if value.get("protocol") != _REVIEW_PLAN_PROTOCOL:
+        raise SandboxError(f"plan_review() protocol must be {_REVIEW_PLAN_PROTOCOL!r}")
+    disposition = value.get("s2_disposition")
+    if disposition not in _S2_DISPOSITIONS:
+        raise SandboxError(f"Invalid s2_disposition: {disposition!r}")
+    selected_ids = value.get("selected_s2_ids")
+    if not isinstance(selected_ids, list) or any(
+        not isinstance(item, str) or not item or len(item) > 256
+        for item in selected_ids
+    ):
+        raise SandboxError(
+            "selected_s2_ids must be a list of bounded non-empty strings"
+        )
+    if len(selected_ids) != len(set(selected_ids)):
+        raise SandboxError("selected_s2_ids must not contain duplicates")
+    if len(selected_ids) > 5:
+        raise SandboxError("selected_s2_ids must contain at most five IDs")
+    if disposition == "use" and not selected_ids:
+        raise SandboxError("s2_disposition='use' requires selected_s2_ids")
+    if disposition != "use" and selected_ids:
+        raise SandboxError(
+            f"s2_disposition={disposition!r} requires empty selected_s2_ids"
+        )
+    for field_name, maximum in _REVIEW_PLAN_TEXT_LIMITS.items():
+        text = value.get(field_name)
+        if not isinstance(text, str):
+            raise SandboxError(f"{field_name} must be a string")
+        if len(text) > maximum:
+            raise SandboxError(f"{field_name} exceeds {maximum} characters")
+    context_order = value.get("context_order")
+    if (
+        not isinstance(context_order, list)
+        or len(context_order) != len(_CONTEXT_NAMES)
+        or any(not isinstance(item, str) for item in context_order)
+        or set(context_order) != _CONTEXT_NAMES
+    ):
+        raise SandboxError(
+            "context_order must be a permutation of memory, s2, and strategy"
+        )
+    return dict(value)
 
 
 class SandboxSession:
@@ -233,12 +302,13 @@ class SandboxSession:
         args = list(message.get("args") or [])
         kwargs = dict(message.get("kwargs") or {})
         try:
+            self.toolkit.require_capability(str(name))
             if name == "llm_completion":
                 value = self.toolkit.llm_completion(*args, **kwargs)
             elif name == "embed":
                 value = self.toolkit.embed(*args, **kwargs)
-            elif name == "retrieve_s2":
-                value = self.toolkit.retrieve_s2(*args, **kwargs)
+            elif name == "retrieve_current_s2":
+                value = self.toolkit.retrieve_current_s2(*args, **kwargs)
             elif name == "log":
                 self.logs.append(
                     {"event": args[0], "payload": args[1] if len(args) > 1 else None}
@@ -378,6 +448,20 @@ class SandboxSession:
         if not isinstance(value, str):
             raise SandboxError("KnowledgeBase.read() returned a non-string")
         return value
+
+    def plan_review(self, query, memory_context: str) -> dict[str, Any]:
+        query_values = _value_dict(query)
+        value = self._command(
+            "plan_review",
+            query={
+                "query_text": str(query_values.get("query_text") or ""),
+                "reviewer_dimension": str(
+                    query_values.get("reviewer_dimension") or ""
+                ),
+            },
+            memory_context=str(memory_context),
+        )
+        return _validated_review_plan(value)
 
     def close(self, force: bool = False):
         process = self._process

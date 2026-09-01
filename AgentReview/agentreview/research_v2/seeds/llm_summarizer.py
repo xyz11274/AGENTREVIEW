@@ -3,8 +3,12 @@
 from dataclasses import dataclass
 from hashlib import sha256
 
-INSTRUCTION_KNOWLEDGE_ITEM = "Store complete traceable Review Experience for deterministic retrieval."
-INSTRUCTION_QUERY = "Use the deterministic title and abstract query supplied by the host."
+INSTRUCTION_KNOWLEDGE_ITEM = (
+    "Store complete traceable Review Experience for deterministic retrieval."
+)
+INSTRUCTION_QUERY = (
+    "Use the deterministic title and abstract query supplied by the host."
+)
 INSTRUCTION_RESPONSE = "Summarize only the already frozen retrieved Review Experience."
 ALWAYS_ON_KNOWLEDGE = "The summary is guidance, not evidence about the Frozen Paper."
 
@@ -20,6 +24,32 @@ class KnowledgeItem:
 class Query:
     query_text: str = ""
     reviewer_dimension: str = ""
+
+
+def plan_review(toolkit, query, memory_context):
+    evidence = toolkit.retrieve_current_s2(limit=5)
+    selected_ids = []
+    for item in evidence:
+        result_id = str(
+            item.get("paperId") or item.get("paper_id") or item.get("id") or ""
+        )
+        if result_id and result_id not in selected_ids:
+            selected_ids.append(result_id)
+    return {
+        "protocol": "evolvable-review-plan-v1",
+        "s2_disposition": "use" if selected_ids else "consulted_no_use",
+        "selected_s2_ids": selected_ids,
+        "decision_label": "seed_always_consult_top5",
+        "usage_instruction": (
+            "Use selected frozen S2 evidence only for related-work context; cite its "
+            "IDs and do not treat it as evidence for claims about the current paper."
+        ),
+        "context_order": ["memory", "s2", "strategy"],
+        "review_strategy": (
+            "Review the Frozen Paper for the assigned specialist dimension. Apply "
+            "Memory conditionally and keep current-paper claims grounded in the paper."
+        ),
+    }
 
 
 class KnowledgeBase:

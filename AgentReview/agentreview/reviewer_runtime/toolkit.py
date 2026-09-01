@@ -390,7 +390,12 @@ class MemoryToolkit:
         }
 
     @contextmanager
-    def operation(self, name: str, max_llm_calls: int | None = None):
+    def operation(
+        self,
+        name: str,
+        max_llm_calls: int | None = None,
+        allowed_capabilities: set[str] | None = None,
+    ):
         previous = getattr(self._operation_state, "budget", None)
         self._operation_state.budget = {
             "name": name,
@@ -398,20 +403,58 @@ class MemoryToolkit:
             if max_llm_calls is None
             else max(0, int(max_llm_calls)),
             "used": 0,
+            "allowed_capabilities": (
+                None
+                if allowed_capabilities is None
+                else frozenset(str(value) for value in allowed_capabilities)
+            ),
         }
         try:
             yield
         finally:
             self._operation_state.budget = previous
 
+    def require_capability(self, name: str) -> None:
+        """Enforce the active operation's candidate-visible capability set."""
+        budget = getattr(self._operation_state, "budget", None)
+        allowed = None if budget is None else budget.get("allowed_capabilities")
+        if allowed is not None and name not in allowed:
+            raise PermissionError(
+                f"Capability {name!r} is unavailable during {budget['name']!r}"
+            )
+
     @contextmanager
     def paper_scope(self, paper_id: str):
         previous = getattr(self._operation_state, "paper_id", None)
+        previous_called = getattr(self._operation_state, "current_s2_called", None)
+        previous_trace = getattr(self._operation_state, "current_s2_trace", None)
         self._operation_state.paper_id = str(paper_id or "").split("::", 1)[0]
+        self._operation_state.current_s2_called = False
+        self._operation_state.current_s2_trace = {
+            "paper_id": self._operation_state.paper_id,
+            "calls": [],
+        }
         try:
             yield
         finally:
+            self._operation_state.last_s2_trace = dict(
+                self._operation_state.current_s2_trace
+            )
             self._operation_state.paper_id = previous
+            if previous_called is None:
+                try:
+                    del self._operation_state.current_s2_called
+                except AttributeError:
+                    pass
+            else:
+                self._operation_state.current_s2_called = previous_called
+            if previous_trace is None:
+                try:
+                    del self._operation_state.current_s2_trace
+                except AttributeError:
+                    pass
+            else:
+                self._operation_state.current_s2_trace = previous_trace
 
     def _consume_llm_budget(self) -> None:
         budget = getattr(self._operation_state, "budget", None)
@@ -521,6 +564,54 @@ class MemoryToolkit:
             self._resources["s2_call_count"] += 1
             self._resources["s2_result_count"] += len(selected)
         return selected
+
+    def retrieve_current_s2(self, limit: int = 5) -> list[dict[str, Any]]:
+        """Read the current paper's frozen S2 candidates at most once per scope.
+
+        Candidate Programs receive this paper-id-free capability. The host owns
+        ``paper_scope`` and therefore the Program cannot select or probe another
+        paper's retrieval record.
+        """
+        active = getattr(self._operation_state, "paper_id", None)
+        if active is None:
+            raise RuntimeError("Current-paper S2 retrieval requires paper_scope")
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError("Current-paper S2 limit must be an integer")
+        if not 1 <= limit <= 5:
+            raise ValueError("Current-paper S2 limit must be between 1 and 5")
+        if getattr(self._operation_state, "current_s2_called", False):
+            raise RuntimeError(
+                "Current-paper S2 retrieval is limited to one call per paper scope"
+            )
+        self._operation_state.current_s2_called = True
+        selected = self.retrieve_s2(active, limit=limit)
+        result_ids = []
+        for value in selected:
+            result_id = str(
+                value.get("paperId") or value.get("paper_id") or value.get("id") or ""
+            )
+            if result_id:
+                result_ids.append(result_id)
+        trace = getattr(self._operation_state, "current_s2_trace", None)
+        if not isinstance(trace, dict):
+            trace = {"paper_id": active, "calls": []}
+            self._operation_state.current_s2_trace = trace
+        trace.setdefault("calls", []).append(
+            {"requested_limit": limit, "result_ids": result_ids}
+        )
+        return selected
+
+    def s2_trace_snapshot(self) -> dict[str, Any]:
+        """Return the active, or most recently completed, current-paper trace."""
+        trace = getattr(self._operation_state, "current_s2_trace", None)
+        if trace is None:
+            trace = getattr(self._operation_state, "last_s2_trace", None)
+        if not isinstance(trace, dict):
+            return {"paper_id": "", "calls": []}
+        return {
+            "paper_id": str(trace.get("paper_id") or ""),
+            "calls": [dict(value) for value in trace.get("calls", [])],
+        }
 
     def resource_snapshot(self) -> dict[str, Any]:
         with self._resource_lock:

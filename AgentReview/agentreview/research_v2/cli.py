@@ -19,14 +19,32 @@ from .coco_protocol import prepare_coco_1300
 from .config import ResearchConfig
 from .data import prepare_data
 from .evaluation import run_internal_evaluation
+from .evaluation_batch import EvaluationBatchOptions, run_evaluation_batch
 from .evolution import EvolutionPool, commit_candidate, initialize_pool, propose_candidate
 from .freeze import freeze_system
+from .formal_evolution import (
+    advance_role_attempt,
+    materialize_role_attempt,
+    run_formal_role_evolution,
+)
 from .io import atomic_write_json, read_json, read_jsonl
 from .llm import OpenAICompletionClient
 from .memory import build_memory_snapshot, seed_program_path
 from .meta import generate_final_review
 from .review import run_specialist_review
 from .s2 import SemanticScholarSearchClient, build_frozen_s2_pool
+
+CLI_NO_S2_DIAGNOSTIC_INTERVENTION = {
+    "protocol": "s2-intervention-v1",
+    "mode": "forced_off",
+    "label": "cli-no-s2-diagnostic-v1",
+}
+CLI_AUTONOMOUS_REVIEW_INTERVENTION = {
+    "protocol": "s2-intervention-v1",
+    "mode": "program_autonomous",
+    "label": "cli-autonomous-review-v1",
+}
+EVOLUTION_AUTONOMOUS_REVIEW_LABEL = "evolution-development-v1"
 
 
 def _base_parser() -> argparse.ArgumentParser:
@@ -53,6 +71,12 @@ def _base_parser() -> argparse.ArgumentParser:
     )
     build_s2.add_argument("--output", default="")
     build_s2.add_argument("--s2-api-key-env", default="S2_API_KEY")
+    build_s2.add_argument(
+        "--min-request-interval-seconds",
+        type=float,
+        default=1.2,
+    )
+    build_s2.add_argument("--retry-until-success", action="store_true")
 
     build = stages.add_parser("build-memory")
     build.add_argument("--role", required=True)
@@ -70,7 +94,11 @@ def _base_parser() -> argparse.ArgumentParser:
     review.add_argument("--snapshot")
     review.add_argument("--program-version")
     review.add_argument("--run-id", required=True)
-    review.add_argument("--no-s2", action="store_true")
+    review.add_argument(
+        "--no-s2",
+        action="store_true",
+        help="diagnostic intervention: deny Program S2 access and record it in identity",
+    )
     review.add_argument("--final-mode", choices=("meta", "concat"))
     review.add_argument("--reviews", nargs="*", default=[])
 
@@ -78,6 +106,12 @@ def _base_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--paper", required=True)
     evaluate.add_argument("--review", required=True)
     evaluate.add_argument("--run-id", required=True)
+
+    evaluate_corpus = stages.add_parser("evaluate-corpus")
+    evaluate_corpus.add_argument("--review-run-id", default=DEFAULT_FORMAL_RUN_ID)
+    evaluate_corpus.add_argument("--run-id", required=True)
+    evaluate_corpus.add_argument("--max-workers", type=int, default=8)
+    evaluate_corpus.add_argument("--limit", type=int, default=0)
 
     evolve = stages.add_parser("evolve-step")
     evolve.add_argument("--action", choices=("init", "propose", "commit"), required=True)
@@ -89,9 +123,35 @@ def _base_parser() -> argparse.ArgumentParser:
     evolve.add_argument("--evaluations", nargs="*", default=[])
     evolve.add_argument("--attempt-artifact")
     evolve.add_argument("--seed-evaluations", default="")
+    evolve.add_argument("--seed-snapshots", default="")
+    evolve.add_argument("--seed-reviews", default="")
+    evolve.add_argument("--memory-snapshot", default="")
 
     run_evolution = stages.add_parser("run-evolution")
     run_evolution.add_argument("--spec", required=True)
+
+    formal_evolution = stages.add_parser("formal-evolution")
+    formal_evolution.add_argument(
+        "--action",
+        choices=("materialize-attempt", "advance-attempt", "run-role"),
+        required=True,
+    )
+    formal_evolution.add_argument("--role", required=True)
+    formal_evolution.add_argument("--run-id", required=True)
+    formal_evolution.add_argument("--attempt", type=int, default=0)
+    formal_evolution.add_argument("--pool", required=True)
+    formal_evolution.add_argument("--canonical-evaluation-summary", default="")
+    formal_evolution.add_argument("--canonical-split", default="")
+    formal_evolution.add_argument("--static-split", default="")
+    formal_evolution.add_argument("--rotating-split", default="")
+    formal_evolution.add_argument("--work", default="")
+    formal_evolution.add_argument("--rotating-reviews", nargs="*", default=[])
+    formal_evolution.add_argument("--rotating-evaluations", nargs="*", default=[])
+    formal_evolution.add_argument("--candidate-memory-snapshot", default="")
+    formal_evolution.add_argument("--candidate-static-reviews", nargs="*", default=[])
+    formal_evolution.add_argument(
+        "--candidate-static-evaluations", nargs="*", default=[]
+    )
 
     freeze = stages.add_parser("freeze-system")
     freeze.add_argument("--spec", required=True)
@@ -140,6 +200,55 @@ def _s2_path_for_paper(config: ResearchConfig, paper_path: str) -> str:
     )
 
 
+def _diagnostic_s2_intervention(no_s2: bool) -> dict:
+    return dict(
+        CLI_NO_S2_DIAGNOSTIC_INTERVENTION
+        if no_s2
+        else CLI_AUTONOMOUS_REVIEW_INTERVENTION
+    )
+
+
+def _spec_s2_intervention(item: dict) -> dict | None:
+    legacy = sorted({"s2_enabled", "review_strategy"}.intersection(item))
+    if legacy:
+        raise ValueError(
+            "run-evolution Review steps use Program-autonomous S2 planning; "
+            f"remove legacy host policy keys: {legacy}"
+        )
+    value = item.get("s2_intervention")
+    if value is None:
+        label = str(
+            item.get("s2_autonomous_label") or EVOLUTION_AUTONOMOUS_REVIEW_LABEL
+        ).strip()
+        if not label:
+            raise ValueError("s2_autonomous_label must be a non-empty string")
+        return {
+            "protocol": "s2-intervention-v1",
+            "mode": "program_autonomous",
+            "label": label,
+        }
+    if not isinstance(value, dict):
+        raise ValueError("s2_intervention must be an explicit diagnostic object")
+    required = {"protocol", "mode", "label"}
+    missing = sorted(required - set(value))
+    unexpected = sorted(set(value) - required)
+    if missing or unexpected:
+        raise ValueError(
+            "s2_intervention identity fields differ from the diagnostic protocol: "
+            f"missing={missing}, unexpected={unexpected}"
+        )
+    if value.get("protocol") != "s2-intervention-v1":
+        raise ValueError("Unsupported s2_intervention protocol")
+    if value.get("mode") not in {"forced_off", "forced_consult"}:
+        raise ValueError(
+            "run-evolution accepts only forced_off/forced_consult diagnostics; "
+            "omit s2_intervention for the Program-autonomous Primary"
+        )
+    if not str(value.get("label") or "").strip():
+        raise ValueError("s2_intervention requires a non-empty diagnostic label")
+    return dict(value)
+
+
 def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
     """Thin coordinator over explicit saved artifacts; it does not hide stage state."""
     spec = read_json(spec_path)
@@ -164,11 +273,15 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
                 output_path=item["output"],
                 seed_kind=seed_kind,
                 embedding_client=_embedding_client(config),
+                embedding_identity=config.embedding_identity(),
                 completion_client=completion_client,
+                completion_identity=(
+                    config.model.identity() if completion_client is not None else None
+                ),
                 require_bubblewrap=config.require_bubblewrap,
             )
         elif action == "review":
-            s2_enabled = bool(item.get("s2_enabled", True))
+            s2_intervention = _spec_s2_intervention(item)
             outcome = run_specialist_review(
                 paper_path=item["paper"],
                 role=role,
@@ -179,14 +292,10 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
                 completion_client=client,
                 model_identity=config.model.identity(),
                 program_version=str(item["program_version"]),
-                review_strategy=str(item.get("review_strategy") or ""),
-                s2_enabled=s2_enabled,
-                frozen_s2_path=(
-                    _s2_path_for_paper(config, item["paper"])
-                    if s2_enabled
-                    else None
-                ),
+                frozen_s2_path=_s2_path_for_paper(config, item["paper"]),
+                s2_intervention=s2_intervention,
                 embedding_client=_embedding_client(config),
+                embedding_identity=config.embedding_identity(),
                 require_bubblewrap=config.require_bubblewrap,
             )
         elif action == "internal-eval":
@@ -202,6 +311,8 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
             outcome = initialize_pool(
                 role=role,
                 seed_static_evaluations=dict(item["seed_evaluations"]),
+                seed_memory_snapshots=dict(item["seed_snapshots"]),
+                seed_static_reviews=dict(item["seed_reviews"]),
                 pool_path=item["pool"],
             ).to_dict()
         elif action == "propose":
@@ -216,6 +327,7 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
                 run_id=str(spec["run_id"]),
                 output_root=config.artifact_path(),
                 completion_client=client,
+                completion_identity=config.model.identity(),
                 require_bubblewrap=config.require_bubblewrap,
             )
         elif action == "commit":
@@ -225,8 +337,10 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
                 commit_candidate(
                     pool=pool,
                     attempt_path=item["attempt_artifact"],
+                    static_review_paths=list(item["static_reviews"]),
                     static_evaluation_paths=list(item["static_evaluations"]),
                     pool_path=pool_path,
+                    memory_snapshot_path=item["memory_snapshot"],
                 )
             )
         else:
@@ -297,7 +411,11 @@ def main(argv: list[str] | None = None) -> int:
         result = build_frozen_s2_pool(
             targets=read_jsonl(query_path),
             output_path=args.output or default_output,
-            client=SemanticScholarSearchClient(args.s2_api_key_env),
+            client=SemanticScholarSearchClient(
+                args.s2_api_key_env,
+                max_attempts=None if args.retry_until_success else 6,
+                min_request_interval_seconds=args.min_request_interval_seconds,
+            ),
             pool_version=pool_version,
         )
     elif args.stage == "build-memory":
@@ -317,12 +435,16 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             seed_kind=args.seed_kind,
             embedding_client=_embedding_client(config),
+            embedding_identity=config.embedding_identity(),
             completion_client=client,
+            completion_identity=(config.model.identity() if client is not None else None),
             require_bubblewrap=config.require_bubblewrap,
         )
     elif args.stage == "review":
         client = OpenAICompletionClient(config.model)
         if args.final_mode:
+            if args.no_s2:
+                raise ValueError("--no-s2 is only a Specialist Review diagnostic")
             result = generate_final_review(
                 paper_path=args.paper,
                 review_paths=args.reviews,
@@ -347,9 +469,10 @@ def main(argv: list[str] | None = None) -> int:
                 completion_client=client,
                 model_identity=config.model.identity(),
                 program_version=args.program_version,
-                s2_enabled=not args.no_s2,
                 frozen_s2_path=selected_s2_path or None,
+                s2_intervention=_diagnostic_s2_intervention(args.no_s2),
                 embedding_client=_embedding_client(config),
+                embedding_identity=config.embedding_identity(),
                 require_bubblewrap=config.require_bubblewrap,
             )
     elif args.stage == "internal-eval":
@@ -361,14 +484,40 @@ def main(argv: list[str] | None = None) -> int:
             completion_client=OpenAICompletionClient(config.model),
             evaluator_identity=config.model.identity(),
         )
+    elif args.stage == "evaluate-corpus":
+        result = run_evaluation_batch(
+            output_root=output_root,
+            options=EvaluationBatchOptions(
+                review_run_id=args.review_run_id,
+                run_id=args.run_id,
+                max_workers=args.max_workers,
+                limit=args.limit,
+            ),
+            completion_client=OpenAICompletionClient(config.model),
+            evaluator_identity=config.model.identity(),
+            progress=lambda event: print(
+                json.dumps(event, ensure_ascii=False, sort_keys=True),
+                file=sys.stderr,
+                flush=True,
+            ),
+        )
     elif args.stage == "evolve-step":
         pool = _load_pool(args.pool, args.role)
         if args.action == "init":
-            if not args.seed_evaluations:
-                raise ValueError("init requires --seed-evaluations JSON")
+            if (
+                not args.seed_evaluations
+                or not args.seed_snapshots
+                or not args.seed_reviews
+            ):
+                raise ValueError(
+                    "init requires --seed-evaluations, --seed-snapshots, "
+                    "and --seed-reviews JSON"
+                )
             result = initialize_pool(
                 role=args.role,
                 seed_static_evaluations=read_json(args.seed_evaluations),
+                seed_memory_snapshots=read_json(args.seed_snapshots),
+                seed_static_reviews=read_json(args.seed_reviews),
                 pool_path=args.pool,
             ).to_dict()
         elif args.action == "propose":
@@ -383,19 +532,95 @@ def main(argv: list[str] | None = None) -> int:
                 run_id=args.run_id,
                 output_root=output_root,
                 completion_client=OpenAICompletionClient(config.model),
+                completion_identity=config.model.identity(),
                 require_bubblewrap=config.require_bubblewrap,
             )
         else:
-            if not args.attempt_artifact:
-                raise ValueError("commit requires --attempt-artifact")
+            if not args.attempt_artifact or not args.memory_snapshot:
+                raise ValueError(
+                    "commit requires --attempt-artifact and --memory-snapshot"
+                )
             result = asdict(commit_candidate(
                 pool=pool,
                 attempt_path=args.attempt_artifact,
+                static_review_paths=args.reviews,
                 static_evaluation_paths=args.evaluations,
                 pool_path=args.pool,
+                memory_snapshot_path=args.memory_snapshot,
             ))
     elif args.stage == "run-evolution":
         result = _run_evolution_spec(config, args.spec)
+    elif args.stage == "formal-evolution":
+        if args.action == "materialize-attempt":
+            required = {
+                "canonical-evaluation-summary": args.canonical_evaluation_summary,
+                "static-split": args.static_split,
+                "rotating-split": args.rotating_split,
+            }
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ValueError(
+                    "materialize-attempt requires " + ", ".join(missing)
+                )
+            result = materialize_role_attempt(
+                role=args.role,
+                run_id=args.run_id,
+                attempt=args.attempt,
+                pool_path=args.pool,
+                canonical_evaluation_summary_path=args.canonical_evaluation_summary,
+                static_split_path=args.static_split,
+                rotating_split_path=args.rotating_split,
+                output_root=output_root,
+            )
+        elif args.action == "advance-attempt":
+            if not args.work:
+                raise ValueError("advance-attempt requires --work")
+            result = advance_role_attempt(
+                work_path=args.work,
+                pool_path=args.pool,
+                output_root=output_root,
+                completion_client=OpenAICompletionClient(config.model),
+                completion_identity=config.model.identity(),
+                rotating_review_paths=args.rotating_reviews,
+                rotating_evaluation_paths=args.rotating_evaluations,
+                candidate_memory_snapshot_path=(
+                    args.candidate_memory_snapshot or None
+                ),
+                candidate_static_review_paths=(
+                    args.candidate_static_reviews or None
+                ),
+                candidate_static_evaluation_paths=(
+                    args.candidate_static_evaluations or None
+                ),
+                require_bubblewrap=config.require_bubblewrap,
+            )
+        else:
+            required = {
+                "canonical-evaluation-summary": args.canonical_evaluation_summary,
+                "canonical-split": args.canonical_split,
+                "static-split": args.static_split,
+                "rotating-split": args.rotating_split,
+            }
+            missing = [name for name, value in required.items() if not value]
+            if missing:
+                raise ValueError("run-role requires " + ", ".join(missing))
+            result = run_formal_role_evolution(
+                role=args.role,
+                run_id=args.run_id,
+                pool_path=args.pool,
+                canonical_evaluation_summary_path=args.canonical_evaluation_summary,
+                canonical_split_path=args.canonical_split,
+                static_split_path=args.static_split,
+                rotating_split_path=args.rotating_split,
+                frozen_s2_path=config.frozen_s2_path,
+                output_root=output_root,
+                completion_client=OpenAICompletionClient(config.model),
+                model_identity=config.model.identity(),
+                embedding_client=_embedding_client(config),
+                embedding_identity=config.embedding_identity(),
+                max_workers=config.model.max_num_seqs,
+                require_bubblewrap=config.require_bubblewrap,
+            )
     elif args.stage == "freeze-system":
         result = freeze_system(output_path=args.output, **read_json(args.spec))
     elif args.stage == "coco-eval":

@@ -127,6 +127,22 @@ class ResearchV2Test(unittest.TestCase):
         )
         return path
 
+    def _empty_s2_pool(self) -> Path:
+        path = self.root / "empty-s2.jsonl"
+        if not path.is_file():
+            path.write_text(
+                json.dumps(
+                    {
+                        "paper_id": "p1",
+                        "pool_version": "test-empty-s2-v1",
+                        "retrieved_papers": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+        return path
+
     def test_immutable_json_rejects_changed_content(self):
         path = self.root / "artifact.json"
         atomic_write_json(path, {"value": 1})
@@ -368,15 +384,15 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
 
     def test_review_saves_raw_and_full_without_online_evaluation_or_writeback(self):
         snapshot = self.root / "snapshot-empty.json"
-        program = seed_program_path("no_memory")
+        program = seed_program_path("vector_search")
         build_memory_snapshot(
             role="QUAL",
             program_path=program,
-            program_version="no-memory-v1",
+            program_version="vector-v1",
             review_paths=[],
             evaluation_paths=[],
             output_path=snapshot,
-            seed_kind="no_memory",
+            seed_kind="vector_search",
             require_bubblewrap=False,
         )
         before = file_sha256(snapshot)
@@ -390,14 +406,18 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
             output_root=self.root,
             completion_client=client,
             model_identity={"model": "mock"},
-            program_version="no-memory-v1",
-            s2_enabled=False,
+            program_version="vector-v1",
+            frozen_s2_path=self._empty_s2_pool(),
             require_bubblewrap=False,
         )
         review_dir = self.root / "reviews" / "review-run" / "p1"
         self.assertTrue((review_dir / "QUAL.raw.json").is_file())
         self.assertTrue((review_dir / "QUAL.json").is_file())
         self.assertEqual(review["review_text"], "complete Specialist Review")
+        self.assertEqual(
+            review["retrieval_provenance"]["s2"]["s2_disposition"],
+            "consulted_no_use",
+        )
         self.assertEqual(file_sha256(snapshot), before)
         self.assertFalse((self.root / "evaluations").exists())
         self.assertEqual(len(client.calls), 1)
@@ -412,7 +432,7 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
                 completion_client=client,
                 model_identity={"model": "mock"},
                 program_version="different-version",
-                s2_enabled=False,
+                frozen_s2_path=self._empty_s2_pool(),
                 require_bubblewrap=False,
             )
 
@@ -681,6 +701,22 @@ candidate_input = Path(os.environ["COCO_CANDIDATE_INPUT"])
         )
         self.assertEqual(transient.calls, 2)
 
+        retry_until_success = FakeRequests(
+            [FakeResponse(429) for _ in range(8)]
+            + [FakeResponse(200, {"data": [{"paperId": "eventual"}]})]
+        )
+        persistent_client = SemanticScholarSearchClient(
+            max_attempts=None,
+            retry_base_seconds=0,
+            min_request_interval_seconds=0,
+        )
+        persistent_client.requests = retry_until_success
+        self.assertEqual(
+            persistent_client.search_title("Eventually Available", limit=5),
+            [{"paperId": "eventual"}],
+        )
+        self.assertEqual(retry_until_success.calls, 9)
+
         empty = FakeRequests([FakeResponse(200, {"total": 0, "offset": 0})])
         client.requests = empty
         self.assertEqual(client.search_title("No Matching Paper", limit=5), [])
@@ -807,6 +843,20 @@ Title: Clarify grounding
         self.assertTrue(outcome["repair_used"])
         self.assertEqual(len(client.calls), 2)
         self.assertEqual(len(pool.entries), 1)
+        replay_client = FakeCompletion(error=AssertionError("must not call Reflector"))
+        replayed = propose_candidate(
+            role="QUAL",
+            pool=pool,
+            evaluation_paths=[self._evaluation_path()],
+            review_paths=[self._review_path()],
+            attempt=1,
+            run_id="evolution-run",
+            output_root=self.root,
+            completion_client=replay_client,
+            require_bubblewrap=False,
+        )
+        self.assertEqual(replayed, outcome)
+        self.assertEqual(replay_client.calls, [])
         with self.assertRaisesRegex(ValueError, "cross-role Internal Evaluation"):
             propose_candidate(
                 role="QUAL",
@@ -826,7 +876,8 @@ Title: Clarify grounding
 
     def test_tiny_five_role_review_then_separate_evaluation_and_finalization(self):
         roles = ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
-        program = seed_program_path("no_memory")
+        program = seed_program_path("vector_search")
+        frozen_s2_path = self._empty_s2_pool()
         review_paths = []
         review_client = FakeCompletion()
         for role in roles:
@@ -834,11 +885,11 @@ Title: Clarify grounding
             build_memory_snapshot(
                 role=role,
                 program_path=program,
-                program_version=f"{role.lower()}-no-memory-v1",
+                program_version=f"{role.lower()}-vector-v1",
                 review_paths=[],
                 evaluation_paths=[],
                 output_path=snapshot,
-                seed_kind="no_memory",
+                seed_kind="vector_search",
                 require_bubblewrap=False,
             )
             run_specialist_review(
@@ -850,8 +901,8 @@ Title: Clarify grounding
                 output_root=self.root,
                 completion_client=review_client,
                 model_identity={"model": "mock"},
-                program_version=f"{role.lower()}-no-memory-v1",
-                s2_enabled=False,
+                program_version=f"{role.lower()}-vector-v1",
+                frozen_s2_path=frozen_s2_path,
                 require_bubblewrap=False,
             )
             review_paths.append(self.root / "reviews" / "tiny-review" / "p1" / f"{role}.json")

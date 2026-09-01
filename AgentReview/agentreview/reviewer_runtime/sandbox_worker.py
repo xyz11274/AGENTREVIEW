@@ -8,7 +8,6 @@ import base64
 import builtins
 import collections
 import dataclasses
-import datetime
 import hashlib
 import heapq
 import itertools
@@ -21,7 +20,6 @@ import sqlite3
 import statistics
 import sys
 import textwrap
-import time
 import traceback
 import types
 import typing
@@ -32,6 +30,20 @@ _WIRE_OUT = sys.stdout
 sys.stdout = sys.stderr
 _next_call_id = 0
 _RESTORE_EMBEDDING_BATCH_SIZE = 32
+_REVIEW_PLAN_FIELDS = {
+    "protocol",
+    "s2_disposition",
+    "selected_s2_ids",
+    "decision_label",
+    "usage_instruction",
+    "context_order",
+    "review_strategy",
+}
+_REVIEW_PLAN_TEXT_LIMITS = {
+    "decision_label": 128,
+    "usage_instruction": 1500,
+    "review_strategy": 2000,
+}
 
 
 def _apply_process_limits(memory_mb, cpu_seconds):
@@ -53,6 +65,36 @@ def _receive():
     if not line:
         raise EOFError("sandbox parent closed the command channel")
     return json.loads(line)
+
+
+def _bounded_review_plan(value):
+    """Reject oversized candidate output before it crosses the worker boundary."""
+    if not isinstance(value, dict):
+        raise TypeError("plan_review() must return dict")
+    if set(value) != _REVIEW_PLAN_FIELDS:
+        raise ValueError("plan_review() returned unexpected fields")
+    selected_ids = value.get("selected_s2_ids")
+    if (
+        not isinstance(selected_ids, list)
+        or len(selected_ids) > 5
+        or any(
+            not isinstance(item, str) or not item or len(item) > 256
+            for item in selected_ids
+        )
+    ):
+        raise ValueError("plan_review() selected_s2_ids exceeds protocol bounds")
+    for field_name, maximum in _REVIEW_PLAN_TEXT_LIMITS.items():
+        text = value.get(field_name)
+        if not isinstance(text, str) or len(text) > maximum:
+            raise ValueError(f"plan_review() {field_name} exceeds protocol bounds")
+    context_order = value.get("context_order")
+    if (
+        not isinstance(context_order, list)
+        or len(context_order) != 3
+        or any(not isinstance(item, str) or len(item) > 16 for item in context_order)
+    ):
+        raise ValueError("plan_review() context_order exceeds protocol bounds")
+    return value
 
 
 def _tool_call(name, *args, **kwargs):
@@ -295,11 +337,21 @@ class CapabilityToolkit:
     def create_vector_collection(self, name):
         return self.chroma.get_or_create_collection(name)
 
-    def retrieve_s2(self, paper_id, limit=10):
-        return _tool_call("retrieve_s2", str(paper_id), int(limit))
+    def retrieve_current_s2(self, limit=5):
+        return _tool_call("retrieve_current_s2", limit)
 
     def log(self, event, payload=None):
         _tool_call("log", str(event), payload)
+
+
+class ReviewPlanToolkit:
+    """Narrow runtime facade exposed only to the autonomous S2 policy."""
+
+    __slots__ = ()
+
+    @staticmethod
+    def retrieve_current_s2(limit=5):
+        return _tool_call("retrieve_current_s2", limit)
 
 
 def _snapshot_value(value, toolkit):
@@ -565,7 +617,6 @@ class _SafeSQLite:
 _SAFE_MODULES = {
     "collections": collections,
     "dataclasses": dataclasses,
-    "datetime": datetime,
     "hashlib": hashlib,
     "heapq": heapq,
     "itertools": itertools,
@@ -575,7 +626,6 @@ _SAFE_MODULES = {
     "sqlite3": _SafeSQLite,
     "statistics": statistics,
     "textwrap": textwrap,
-    "time": time,
     "typing": typing,
     "chromadb": _ChromaModule,
 }
@@ -618,6 +668,7 @@ def _load_program(path):
 def _run(program_path):
     program = _load_program(program_path)
     toolkit = CapabilityToolkit()
+    review_plan_toolkit = ReviewPlanToolkit()
     knowledge_base = program.KnowledgeBase(toolkit)
     _send({"type": "ready"})
     while True:
@@ -637,6 +688,14 @@ def _run(program_path):
                 value = knowledge_base.read(query)
                 if not isinstance(value, str):
                     raise TypeError("KnowledgeBase.read() must return str")
+            elif name == "plan_review":
+                query = types.SimpleNamespace(**dict(command.get("query") or {}))
+                value = program.plan_review(
+                    review_plan_toolkit,
+                    query,
+                    str(command.get("memory_context") or ""),
+                )
+                value = _bounded_review_plan(value)
             elif name == "schemas":
 
                 def schema(dataclass_type):
