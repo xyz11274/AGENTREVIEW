@@ -203,27 +203,91 @@ Review raw、完整 Review、Memory snapshot 和 S2 parts 是不可变 artifact�
 ```text
 27B service:  ar0831_qwen_gpu36_tp2c8_64k
 canonical run: complete（历史 session ar0831_formal_canonical_c8 已退出）
-internal eval: ar0831_internal_eval_c8
-S2 build:     ar0831_s2_coco1300（从31/1300断点恢复，1.2秒间隔并持续重试）
+internal eval: complete（历史 session 已退出）
+Formal Evolution: ar0831_formal_evolution_v1
+S2 build:     ar0831_s2_coco1300（1.2秒间隔并持续重试）
+hourly probe: ar0831_hourly_probe
 service log:  artifacts/research_v2/runtime/qwen_tp2_gpu36_64k/qwen.log
 development S2 log: artifacts/research_v2/runtime/s2_development/build.log
 CoCo S2 log:  artifacts/research_v2/runtime/s2_coco1300/build.log
-formal log:   artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log
+formal log:   artifacts/research_v2/runtime/formal_evolution_v1/stderr.log
 internal eval log: artifacts/research_v2/runtime/canonical_internal_eval_v1/stderr.log
 ```
 
 查看正式进度：
 
 ```bash
-tail -f artifacts/research_v2/runtime/canonical_bootstrap_v1/stderr.log
+tail -f artifacts/research_v2/runtime/formal_evolution_v1/stderr.log
 ```
 
-若正式进程意外退出，在 endpoint 恢复后使用同一命令和默认 run ID 重启；已验证的完整角色会直接 resume：
+若 Formal Evolution 意外退出，在 endpoint 恢复、确认旧 PID 与 flock owner 均不存在
+后，使用同一 run ID 与相同输入恢复；已验证 artifact 会直接 resume：
 
 ```bash
-$PYTHON -m agentreview.research_v2 \
+/data0/xyj/miniconda3/envs/env_shengao/bin/python \
+  -m agentreview.research_v2 \
   --config AgentReview/configs/research_v2_formal_v1.json \
-  bootstrap-corpus --max-workers 8
+  formal-evolution --action run-all-roles \
+  --run-id formal-evolution-v1 \
+  --canonical-evaluation-summary artifacts/research_v2/runs/canonical-internal-eval-v1/internal_evaluation.json \
+  --canonical-split artifacts/research_v2/data/splits/canonical_review_corpus.json \
+  --static-split artifacts/research_v2/data/splits/evolution_static.json \
+  --rotating-split artifacts/research_v2/data/splits/evolution_rotating_pool.json
 ```
 
 生成资产位于 `artifacts/research_v2/` 且被 Git ignore；源码配置、commit、manifest SHA256 和运行日志共同构成归档身份。
+
+## 每小时实验探针与故障恢复
+
+正式实验使用独立 tmux `ar0831_hourly_probe`，每3600秒从上一次探针开始时间
+执行一次只读检查：
+
+```bash
+PYTHONPATH=AgentReview \
+  /data0/xyj/miniconda3/envs/env_shengao/bin/python -u \
+  -m agentreview.research_v2.probe --loop-seconds 3600
+```
+
+探针同时核验 Formal/S2 精确进程数与启动参数、实际 lock owner、三个 endpoint
+模型身份、27B running/waiting/KV、GPU、剩余磁盘、Git HEAD、日志新增错误、
+Formal artifact 计数和 CoCo S2 parts。它不会删除 lock/part/sidecar，不会执行
+`pkill`，也不会自行启动第二个 runner。审计输出位于：
+
+```text
+artifacts/research_v2/runtime/hourly_probe/latest.json
+artifacts/research_v2/runtime/hourly_probe/probes.jsonl
+artifacts/research_v2/runtime/hourly_probe/action.json
+artifacts/research_v2/runtime/hourly_probe/runner.log
+```
+
+`healthy` 表示继续运行；`degraded` 要求诊断但不立即重启；
+`action_required` 表示精确进程缺失、重复 S2、身份错误、连续停滞或容量危险；
+`transition_ready` 表示 Formal 与 CoCo S2 均完成，应进入 winner/freeze/CoCo 阶段。
+Formal 单个长请求一小时无新 artifact 先记 warning，连续两个探针间隔无增长才记
+critical。S2 若 parts 一小时不增长但 retry log 仍更新，只记上游 degraded；log 和
+parts 同时一个完整探针间隔不增长才记 stalled。磁盘低于200 GiB warning、低于
+50 GiB critical。
+
+故障恢复顺序固定为：确认精确 PID 为0且 flock 无 owner；保护当前 worktree 并建立
+Git checkpoint；复现根因并添加回归测试；提交修复；记录启动前/恢复后的 commit；
+使用相同 run ID、输入身份与参数追加日志恢复。不得删除不可变 artifact 来“重跑”。
+
+### 64K Reflector 上下文门禁
+
+2026-09-01 首个 QUAL mutation 暴露了固定8192输出与超长 feedback prompt 的组合
+越界：原输入精确为61,796 tokens。根因是 prompt 在保存完整 Memory/S2 trace 后，
+又重复展开相同的 query、evidence、decision 与 selected fields。Reflector 渲染现在
+保留五个 failure case、完整 Review、完整 Memory trace、完整 S2 trace 与 Internal
+Evaluation，但每份事实只出现一次；同一真实请求降为38,172 input tokens。
+
+Reflector 的 mutation budget 仍对所有 attempt 固定为8192 output tokens，不能按
+prompt 长度动态降低。每次真实调用前通过冻结27B的本地 `/tokenize` endpoint 使用
+相同 chat template 精确计数，并要求：
+
+```text
+input_tokens + 8192 + 512 <= 65536
+```
+
+其中512是固定安全余量。门禁不满足时在模型调用前中止并保留 attempt plan，不消费
+mutation attempt；不得把 context 提升、缩短 feedback case 数或动态减少输出预算
+作为无记录的临时修复。
