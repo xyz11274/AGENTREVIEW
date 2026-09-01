@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -15,35 +17,94 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-PROBE_PROTOCOL = "research-v2-hourly-probe-v1"
+from .io import read_jsonl, value_sha256
+from .s2 import (
+    FrozenS2Store,
+    S2_RECORD_BUILDER_SHA256,
+    _external_ids,
+    _expected_record_identity,
+    _family_title,
+    _validate_record_identity,
+)
+from .data import canonical_title
+
+PROBE_PROTOCOL = "research-v2-hourly-probe-v3"
 FORMAL_RUN_ID = "formal-evolution-v1"
 COCO_S2_TOTAL = 1300
 ROLES = ("QUAL", "CLAR", "ORIG", "SIGN", "POL")
-
-FORMAL_TOKENS = (
-    "-m agentreview.research_v2",
-    "formal-evolution",
-    "--action run-all-roles",
-    f"--run-id {FORMAL_RUN_ID}",
+FORMAL_LOCK_RELATIVE = Path(
+    "artifacts/research_v2/runs/formal-evolution-runner.lock"
 )
-S2_TOKENS = (
-    "-m agentreview.research_v2",
+S2_LOCK_RELATIVE = Path("artifacts/research_v2/s2/.s2-build.lock")
+
+FORMAL_PYTHON = "/data0/xyj/miniconda3/envs/env_shengao/bin/python"
+FORMAL_ARGUMENTS = (
+    "-m",
+    "agentreview.research_v2",
+    "--config",
+    "AgentReview/configs/research_v2_formal_v1.json",
+    "formal-evolution",
+    "--action",
+    "run-all-roles",
+    "--run-id",
+    FORMAL_RUN_ID,
+    "--canonical-evaluation-summary",
+    "artifacts/research_v2/runs/canonical-internal-eval-v1/internal_evaluation.json",
+    "--canonical-split",
+    "artifacts/research_v2/data/splits/canonical_review_corpus.json",
+    "--static-split",
+    "artifacts/research_v2/data/splits/evolution_static.json",
+    "--rotating-split",
+    "artifacts/research_v2/data/splits/evolution_rotating_pool.json",
+)
+S2_ARGUMENTS = (
+    "-m",
+    "agentreview.research_v2",
+    "--config",
+    "AgentReview/configs/research_v2_formal_v1.json",
     "build-s2",
-    "--dataset coco",
-    "--min-request-interval-seconds 1.2",
+    "--dataset",
+    "coco",
+    "--min-request-interval-seconds",
+    "1.2",
     "--retry-until-success",
 )
-QWEN_TOKENS = (
+QWEN_PYTHON = "/data0/xyj/miniconda3/envs/qwen38serve/bin/python"
+QWEN_ARGUMENTS = (
+    "-m",
     "vllm.entrypoints.openai.api_server",
-    "--port 18001",
-    "--tensor-parallel-size 2",
-    "--max-model-len 65536",
-    "--max-num-seqs 8",
+    "--model",
+    "/data0/xyj/models/Qwen3.8-27B",
+    "--served-model-name",
+    "qwen3.8-27b",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18001",
+    "--tensor-parallel-size",
+    "2",
+    "--max-model-len",
+    "65536",
+    "--max-num-seqs",
+    "8",
+    "--gpu-memory-utilization",
+    "0.9",
+    "--dtype",
+    "bfloat16",
+    "--language-model-only",
+    "--reasoning-parser",
+    "qwen3",
+    "--enable-prefix-caching",
+    "--disable-custom-all-reduce",
+    "--default-chat-template-kwargs",
+    '{"enable_thinking":false}',
 )
+QWEN_CUDA_VISIBLE_DEVICES = "3,6"
 ENDPOINTS = {
     "qwen_27b": (18001, "qwen3.8-27b"),
     "coco_classify": (13098, "Qwen3-8B-Classify"),
@@ -61,13 +122,19 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _run(command: list[str], *, timeout: float = 10.0) -> subprocess.CompletedProcess:
+def _run(
+    command: list[str],
+    *,
+    timeout: float = 10.0,
+    cwd: Path | None = None,
+) -> subprocess.CompletedProcess:
     return subprocess.run(
         command,
         check=False,
         capture_output=True,
         text=True,
         timeout=timeout,
+        cwd=cwd,
     )
 
 
@@ -110,29 +177,93 @@ def _append_jsonl(path: Path, value: dict[str, Any]) -> None:
 
 
 def _processes() -> list[dict[str, Any]]:
-    result = _run(["ps", "-eo", "pid=,etimes=,args="], timeout=10.0)
-    if result.returncode != 0:
-        return []
+    proc_root = Path("/proc")
+    try:
+        uptime = float((proc_root / "uptime").read_text().split()[0])
+        clock_ticks = int(os.sysconf("SC_CLK_TCK"))
+    except (OSError, ValueError):
+        uptime = 0.0
+        clock_ticks = 100
     values = []
-    for line in result.stdout.splitlines():
-        fields = line.strip().split(maxsplit=2)
-        if len(fields) != 3 or not fields[0].isdigit() or not fields[1].isdigit():
+    for process_root in proc_root.iterdir():
+        if not process_root.name.isdigit():
+            continue
+        try:
+            raw_argv = (process_root / "cmdline").read_bytes()
+            argv = [
+                value.decode("utf-8", errors="replace")
+                for value in raw_argv.split(b"\0")
+                if value
+            ]
+            if not argv:
+                continue
+            cwd = str((process_root / "cwd").resolve())
+            executable = str((process_root / "exe").resolve())
+            stat_text = (process_root / "stat").read_text(encoding="utf-8")
+            stat_fields = stat_text.rsplit(")", maxsplit=1)[1].split()
+            started = int(stat_fields[19]) / clock_ticks
+            elapsed = max(0, int(uptime - started)) if uptime else 0
+            cuda_visible_devices = None
+            if argv[1:3] == ["-m", "vllm.entrypoints.openai.api_server"]:
+                raw_environment = (process_root / "environ").read_bytes()
+                for entry in raw_environment.split(b"\0"):
+                    if entry.startswith(b"CUDA_VISIBLE_DEVICES="):
+                        cuda_visible_devices = entry.split(b"=", maxsplit=1)[1].decode(
+                            "utf-8", errors="replace"
+                        )
+                        break
+        except (FileNotFoundError, PermissionError, OSError, ValueError, IndexError):
             continue
         values.append(
             {
-                "pid": int(fields[0]),
-                "elapsed_seconds": int(fields[1]),
-                "command": fields[2],
+                "pid": int(process_root.name),
+                "elapsed_seconds": elapsed,
+                "argv": argv,
+                "command": shlex.join(argv),
+                "cwd": cwd,
+                "executable": executable,
+                "cuda_visible_devices": cuda_visible_devices,
             }
         )
     return values
 
 
-def _matches(processes: list[dict[str, Any]], tokens: tuple[str, ...]):
+def _research_stage_process(value: dict[str, Any], stage: str) -> bool:
+    argv = list(value.get("argv") or [])
+    return (
+        len(argv) >= 4
+        and argv[1:3] == ["-m", "agentreview.research_v2"]
+        and stage in argv[3:]
+    )
+
+
+def _exact_stage_process(
+    value: dict[str, Any],
+    *,
+    arguments: tuple[str, ...],
+    repo_root: Path,
+) -> bool:
+    return (
+        list(value.get("argv") or []) == [FORMAL_PYTHON, *arguments]
+        and value.get("cwd") == str(repo_root)
+        and value.get("executable") == str(Path(FORMAL_PYTHON).resolve())
+    )
+
+
+def _qwen_process(value: dict[str, Any], repo_root: Path) -> bool:
+    return (
+        list(value.get("argv") or []) == [QWEN_PYTHON, *QWEN_ARGUMENTS]
+        and value.get("cwd") == str(repo_root / "AgentReview")
+        and value.get("executable") == str(Path(QWEN_PYTHON).resolve())
+        and value.get("cuda_visible_devices") == QWEN_CUDA_VISIBLE_DEVICES
+    )
+
+
+def _matching(processes: list[dict[str, Any]], predicate):
     return [
         value
         for value in processes
-        if all(token in str(value.get("command") or "") for token in tokens)
+        if predicate(value)
     ]
 
 
@@ -142,6 +273,9 @@ def _process_view(processes: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "pid": value["pid"],
             "elapsed_seconds": value["elapsed_seconds"],
             "command": value["command"],
+            "cwd": value.get("cwd"),
+            "executable": value.get("executable"),
+            "cuda_visible_devices": value.get("cuda_visible_devices"),
         }
         for value in processes
     ]
@@ -274,18 +408,72 @@ def _gpu_snapshot() -> list[dict[str, int]]:
     return values
 
 
-def _log_snapshot(path: Path, previous_size: int) -> dict[str, Any]:
-    if not path.is_file():
+def _log_snapshot(
+    path: Path,
+    previous: dict[str, Any] | None,
+) -> dict[str, Any]:
+    try:
+        handle = path.open("rb")
+    except (FileNotFoundError, OSError):
         return {"path": str(path), "exists": False, "size": 0}
-    stat = path.stat()
-    start = previous_size if 0 <= previous_size <= stat.st_size else 0
-    with path.open("rb") as handle:
+    with handle:
+        stat = os.fstat(handle.fileno())
+        previous_identity_known = bool(
+            previous
+            and previous.get("device") is not None
+            and previous.get("inode") is not None
+        )
+        same_file = bool(
+            previous_identity_known
+            and previous.get("device") == stat.st_dev
+            and previous.get("inode") == stat.st_ino
+        )
+        previous_size = int((previous or {}).get("size") or 0)
+        previous_checkpoint_start = int(
+            (previous or {}).get("checkpoint_start") or 0
+        )
+        previous_checkpoint_sha256 = str(
+            (previous or {}).get("checkpoint_sha256") or ""
+        )
+        previous_checkpoint_known = bool(
+            previous_checkpoint_sha256
+            and (previous or {}).get("checkpoint_size") == previous_size
+            and 0 <= previous_checkpoint_start <= previous_size
+        )
+        checkpoint_matches = False
+        if same_file and previous_checkpoint_known and previous_size <= stat.st_size:
+            handle.seek(previous_checkpoint_start)
+            previous_bytes = handle.read(previous_size - previous_checkpoint_start)
+            checkpoint_matches = (
+                hashlib.sha256(previous_bytes).hexdigest()
+                == previous_checkpoint_sha256
+            )
+        incremental = same_file and previous_checkpoint_known and checkpoint_matches
+        rotated = previous_identity_known and not same_file
+        rewritten = same_file and previous_checkpoint_known and not incremental
+        if incremental:
+            start = previous_size
+            baseline_only = False
+        elif rotated or rewritten:
+            start = 0
+            baseline_only = False
+        else:
+            start = stat.st_size
+            baseline_only = True
         handle.seek(start)
-        new_text = handle.read().decode("utf-8", errors="replace")
-    latest_event = None
-    with path.open("rb") as handle:
+        new_text = handle.read(max(0, stat.st_size - start)).decode(
+            "utf-8", errors="replace"
+        )
         handle.seek(max(0, stat.st_size - 262_144))
-        tail = handle.read().decode("utf-8", errors="replace")
+        tail = handle.read(min(stat.st_size, 262_144)).decode(
+            "utf-8", errors="replace"
+        )
+        checkpoint_start = max(0, stat.st_size - 4096)
+        handle.seek(checkpoint_start)
+        checkpoint_sha256 = hashlib.sha256(
+            handle.read(stat.st_size - checkpoint_start)
+        ).hexdigest()
+    latest_event = None
     for line in reversed(tail.splitlines()):
         try:
             value = json.loads(line)
@@ -299,6 +487,14 @@ def _log_snapshot(path: Path, previous_size: int) -> dict[str, Any]:
         "path": str(path),
         "exists": True,
         "size": stat.st_size,
+        "device": stat.st_dev,
+        "inode": stat.st_ino,
+        "checkpoint_size": stat.st_size,
+        "checkpoint_start": checkpoint_start,
+        "checkpoint_sha256": checkpoint_sha256,
+        "baseline_only": baseline_only,
+        "rotated": rotated,
+        "truncated": rewritten,
         "mtime_epoch": stat.st_mtime,
         "age_seconds": max(0.0, time.time() - stat.st_mtime),
         "new_exact_failures": [
@@ -371,22 +567,140 @@ def _formal_progress(artifact_root: Path) -> dict[str, Any]:
     return progress
 
 
+def _validate_s2_final(final_path: Path, query_path: Path) -> dict[str, Any]:
+    targets = read_jsonl(query_path)
+    records = read_jsonl(final_path)
+    if len(targets) != COCO_S2_TOTAL:
+        raise ValueError(
+            f"CoCo S2 target count is {len(targets)}, expected {COCO_S2_TOTAL}"
+        )
+    if len(records) != COCO_S2_TOTAL:
+        raise ValueError(
+            f"CoCo S2 record count is {len(records)}, expected {COCO_S2_TOTAL}"
+        )
+    target_ids = [str(target.get("paper_id") or "") for target in targets]
+    if "" in target_ids or len(set(target_ids)) != len(target_ids):
+        raise ValueError("CoCo S2 targets require 1300 unique non-empty paper IDs")
+    store = FrozenS2Store(final_path)
+    if len(store.pool) != COCO_S2_TOTAL:
+        raise ValueError(
+            f"CoCo S2 indexed record count is {len(store.pool)}, "
+            f"expected {COCO_S2_TOTAL}"
+        )
+    for target, record in zip(targets, records, strict=True):
+        paper_id = str(target.get("paper_id") or "")
+        title = str(
+            target.get("canonical_query_title") or target.get("title") or ""
+        ).strip()
+        if not title:
+            raise ValueError(f"CoCo S2 target {paper_id} has no query title")
+        expected = _expected_record_identity(
+            target=target,
+            paper_id=paper_id,
+            title=title,
+            pool_version="frozen_s2_coco1300_v1",
+            raw_limit=50,
+            top_k=5,
+            builder_sha256=S2_RECORD_BUILDER_SHA256,
+        )
+        _validate_record_identity(record, expected, source=final_path)
+        raw_evidence = record.get("retrieved_papers")
+        if not isinstance(raw_evidence, list) or not all(
+            isinstance(value, dict) for value in raw_evidence
+        ):
+            raise ValueError(
+                f"CoCo S2 record {paper_id} retrieved_papers must be a list of objects"
+            )
+        if len(raw_evidence) > 5:
+            raise ValueError(
+                f"CoCo S2 record {paper_id} contains more than top-5 evidence"
+            )
+        if record.get("result_sha256") != value_sha256(raw_evidence):
+            raise ValueError(f"CoCo S2 record {paper_id} result hash mismatch")
+        target_title_key = canonical_title(title)
+        target_family = _family_title(title)
+        target_s2_id = str(target.get("s2_paper_id") or "")
+        target_external_ids = _external_ids(target)
+        seen_evidence_ids: set[str] = set()
+        seen_evidence_titles: set[str] = set()
+        for evidence_index, value in enumerate(raw_evidence):
+            evidence_id = str(
+                value.get("paperId") or value.get("paper_id") or value.get("id") or ""
+            )
+            evidence_title = str(value.get("title") or "").strip()
+            if not evidence_id or not evidence_title:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} evidence {evidence_index} "
+                    "requires a non-empty paper ID and title"
+                )
+            evidence_title_key = canonical_title(evidence_title)
+            if target_s2_id and evidence_id == target_s2_id:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains target S2 ID {evidence_id}"
+                )
+            if evidence_title_key == target_title_key:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains an exact-title self match"
+                )
+            if _family_title(evidence_title) == target_family:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains a same-family self match"
+                )
+            if target_external_ids & _external_ids(value):
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains a shared-external-ID self match"
+                )
+            if evidence_id in seen_evidence_ids:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains duplicate evidence ID {evidence_id}"
+                )
+            if evidence_title_key in seen_evidence_titles:
+                raise ValueError(
+                    f"CoCo S2 record {paper_id} contains a duplicate evidence title"
+                )
+            seen_evidence_ids.add(evidence_id)
+            seen_evidence_titles.add(evidence_title_key)
+        evidence, _ = store.retrieve(
+            paper_id=paper_id,
+            target_title=title,
+            limit=5,
+        )
+        if len(evidence) != len(raw_evidence):
+            raise ValueError(f"CoCo S2 record {paper_id} evidence schema is incomplete")
+    return {
+        "validated": True,
+        "target_count": len(targets),
+        "record_count": len(records),
+        "pool_sha256": store.sha256,
+    }
+
+
 def _s2_progress(artifact_root: Path) -> dict[str, Any]:
     final_path = artifact_root / "s2" / "frozen_s2_coco1300_v1.jsonl"
+    query_path = artifact_root / "data" / "coco_1300" / "s2_title_queries.jsonl"
     parts_root = final_path.with_name(f"{final_path.name}.parts")
     part_count = len(list(parts_root.glob("*.json"))) if parts_root.is_dir() else 0
     final_lines = 0
+    validation = None
+    validation_error = None
     if final_path.is_file():
         with final_path.open("rb") as handle:
             final_lines = sum(1 for line in handle if line.strip())
+        try:
+            validation = _validate_s2_final(final_path, query_path)
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            validation_error = f"{type(exc).__name__}: {exc}"
     return {
         "parts_path": str(parts_root),
         "part_count": part_count,
         "total": COCO_S2_TOTAL,
+        "query_path": str(query_path),
         "final_path": str(final_path),
         "final_exists": final_path.is_file(),
         "final_lines": final_lines,
-        "complete": final_path.is_file() and final_lines == COCO_S2_TOTAL,
+        "validation": validation,
+        "validation_error": validation_error,
+        "complete": validation is not None,
     }
 
 
@@ -402,8 +716,8 @@ def _disk_snapshot(repo_root: Path) -> dict[str, Any]:
 
 
 def _git_snapshot(repo_root: Path) -> dict[str, Any]:
-    head = _run(["git", "rev-parse", "HEAD"], timeout=10.0)
-    status = _run(["git", "status", "--short"], timeout=10.0)
+    head = _run(["git", "rev-parse", "HEAD"], timeout=10.0, cwd=repo_root)
+    status = _run(["git", "status", "--short"], timeout=10.0, cwd=repo_root)
     changed = [line for line in status.stdout.splitlines() if line.strip()]
     return {
         "head": head.stdout.strip() if head.returncode == 0 else "",
@@ -432,16 +746,103 @@ def _issue(issues: list[dict[str, str]], severity: str, code: str, message: str)
     issues.append({"severity": severity, "code": code, "message": message})
 
 
+def _append_s2_stagnation_issues(
+    issues: list[dict[str, str]],
+    *,
+    active: bool,
+    log_exists: bool,
+    parts_stagnant: int,
+    log_stagnant: int,
+) -> None:
+    if active and not log_exists:
+        _issue(
+            issues,
+            "warning",
+            "s2_log_missing",
+            "Active S2 builder has no observable build log",
+        )
+    if not active:
+        return
+    if parts_stagnant >= 2:
+        _issue(
+            issues,
+            "critical",
+            "s2_paper_stalled",
+            "S2 completed no new paper for at least two probe intervals",
+        )
+    elif parts_stagnant >= 1 and log_stagnant >= 1:
+        _issue(
+            issues,
+            "critical",
+            "s2_stalled",
+            "S2 log and completed parts both stopped for a full probe interval",
+        )
+    elif parts_stagnant == 1:
+        _issue(
+            issues,
+            "warning",
+            "s2_upstream_degraded",
+            "S2 retry activity continued but no paper completed in one interval",
+        )
+
+
+def _append_lock_owner_issue(
+    issues: list[dict[str, str]],
+    *,
+    code: str,
+    label: str,
+    active: bool,
+    processes: list[dict[str, Any]],
+    lock_owners: list[dict[str, Any]],
+    lock_path: Path,
+) -> None:
+    if not active:
+        return
+    process_pids = {int(value["pid"]) for value in processes}
+    owner_pids = {
+        int(value["pid"])
+        for value in lock_owners
+        if value.get("path") == str(lock_path)
+    }
+    if owner_pids != process_pids:
+        _issue(
+            issues,
+            "critical",
+            code,
+            f"{label} process PIDs {sorted(process_pids)} differ from "
+            f"lock owner PIDs {sorted(owner_pids)}",
+        )
+
+
 def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str, Any]:
     checked_epoch = time.time()
     artifact_root = repo_root / "artifacts" / "research_v2"
     processes = _processes()
-    formal_processes = _matches(processes, FORMAL_TOKENS)
-    all_s2_processes = _matches(
-        processes, ("-m agentreview.research_v2", "build-s2")
+    formal_processes = _matching(
+        processes,
+        lambda value: _exact_stage_process(
+            value,
+            arguments=FORMAL_ARGUMENTS,
+            repo_root=repo_root,
+        ),
     )
-    coco_s2_processes = _matches(processes, S2_TOKENS)
-    qwen_processes = _matches(processes, QWEN_TOKENS)
+    all_s2_processes = _matching(
+        processes,
+        lambda value: _research_stage_process(value, "build-s2"),
+    )
+    coco_s2_processes = _matching(
+        processes,
+        lambda value: _exact_stage_process(
+            value,
+            arguments=S2_ARGUMENTS,
+            repo_root=repo_root,
+        ),
+    )
+    qwen_processes = _matching(
+        processes,
+        lambda value: _qwen_process(value, repo_root),
+    )
+    lock_owners = _lock_owners()
     formal_progress = _formal_progress(artifact_root)
     s2_progress = _s2_progress(artifact_root)
     formal_active = formal_progress["summary_status"] != "complete"
@@ -449,11 +850,11 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
     previous_logs = dict((previous or {}).get("logs") or {})
     formal_log = _log_snapshot(
         artifact_root / "runtime" / "formal_evolution_v1" / "stderr.log",
-        int(dict(previous_logs.get("formal") or {}).get("size") or 0),
+        dict(previous_logs.get("formal") or {}) or None,
     )
     s2_log = _log_snapshot(
         artifact_root / "runtime" / "s2_coco1300" / "build.log",
-        int(dict(previous_logs.get("s2") or {}).get("size") or 0),
+        dict(previous_logs.get("s2") or {}) or None,
     )
     endpoints = _endpoints()
     previous_progress = dict((previous or {}).get("progress") or {})
@@ -493,6 +894,15 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         )
     if len(formal_processes) > 1:
         _issue(issues, "critical", "duplicate_formal", "Duplicate Formal runners detected")
+    _append_lock_owner_issue(
+        issues,
+        code="formal_lock_owner",
+        label="Formal",
+        active=formal_active,
+        processes=formal_processes,
+        lock_owners=lock_owners,
+        lock_path=(repo_root / FORMAL_LOCK_RELATIVE).resolve(),
+    )
     if formal_stagnant == 1:
         _issue(issues, "warning", "formal_no_hourly_progress", "Formal artifacts did not advance in one probe interval")
     if formal_stagnant >= 2:
@@ -507,16 +917,31 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
             "s2_process_count",
             f"Expected one serial CoCo S2 builder, found {len(coco_s2_processes)}",
         )
+    _append_lock_owner_issue(
+        issues,
+        code="s2_lock_owner",
+        label="CoCo S2",
+        active=s2_active,
+        processes=coco_s2_processes,
+        lock_owners=lock_owners,
+        lock_path=(repo_root / S2_LOCK_RELATIVE).resolve(),
+    )
     if s2_progress["part_count"] > COCO_S2_TOTAL:
         _issue(issues, "critical", "s2_too_many_parts", "CoCo S2 parts exceed the frozen target")
     if s2_progress["final_exists"] and not s2_progress["complete"]:
-        _issue(issues, "critical", "s2_final_count", "CoCo S2 final JSONL does not contain exactly 1300 records")
-    if s2_parts_stagnant == 1 and s2_log_stagnant == 0:
-        _issue(issues, "warning", "s2_upstream_degraded", "S2 retry log is active but no new part completed in one interval")
-    if s2_log_stagnant >= 1:
-        _issue(issues, "critical", "s2_stalled", "S2 log and parts did not advance in a full probe interval")
-    if s2_parts_stagnant >= 2:
-        _issue(issues, "critical", "s2_paper_stalled", "S2 completed no new part for at least two probe intervals")
+        _issue(
+            issues,
+            "critical",
+            "s2_final_invalid",
+            "CoCo S2 final JSONL failed count, JSON, identity, hash, or evidence validation",
+        )
+    _append_s2_stagnation_issues(
+        issues,
+        active=s2_active,
+        log_exists=bool(s2_log.get("exists")),
+        parts_stagnant=s2_parts_stagnant,
+        log_stagnant=s2_log_stagnant,
+    )
 
     if formal_log.get("new_exact_failures"):
         _issue(issues, "critical", "formal_identity_failure", "Formal log contains a new exact artifact or embedding identity failure")
@@ -569,7 +994,7 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
             "s2_coco_exact": _process_view(coco_s2_processes),
             "qwen_27b": _process_view(qwen_processes),
         },
-        "locks": _lock_owners(),
+        "locks": lock_owners,
         "endpoints": endpoints,
         "gpus": _gpu_snapshot(),
         "disk": disk,
@@ -602,6 +1027,75 @@ def run_once(repo_root: Path, state_root: Path) -> tuple[int, dict[str, Any]]:
     return (2 if result["status"] == "action_required" else 0), result
 
 
+class ProbeControllerBusy(RuntimeError):
+    """Raised when a second CLI controller tries to use the same state root."""
+
+
+@contextmanager
+def _controller_lock(state_root: Path):
+    state_root.mkdir(parents=True, exist_ok=True)
+    lock_path = state_root / "controller.lock"
+    with lock_path.open("a+b") as lock:
+        try:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ProbeControllerBusy(
+                "Another Research v2 probe controller owns this state root"
+            ) from exc
+        lock.seek(0)
+        lock.truncate()
+        lock.write(
+            (json.dumps({"pid": os.getpid(), "started_at": _utc_now()}) + "\n").encode(
+                "utf-8"
+            )
+        )
+        lock.flush()
+        os.fsync(lock.fileno())
+        yield
+
+
+def _persist_probe_failure(state_root: Path, exc: Exception) -> dict[str, Any]:
+    previous = _read_json(state_root / "latest.json")
+    result = {
+        "protocol": PROBE_PROTOCOL,
+        "checked_at": _utc_now(),
+        "checked_epoch": time.time(),
+        "status": "action_required",
+        "probe_status": "probe_failed",
+        "transition_ready": False,
+        "issues": [
+            {
+                "severity": "critical",
+                "code": "probe_failed",
+                "message": f"{type(exc).__name__}: {exc}",
+            }
+        ],
+        "error": {"type": type(exc).__name__, "message": str(exc)},
+        "previous_status": None if previous is None else previous.get("status"),
+        "previous_checked_at": (
+            None if previous is None else previous.get("checked_at")
+        ),
+    }
+    if previous is not None:
+        for key in ("logs", "progress", "stagnation"):
+            if key in previous:
+                result[key] = previous[key]
+    _atomic_json(state_root / "latest.json", result)
+    _append_jsonl(state_root / "probes.jsonl", result)
+    _atomic_json(
+        state_root / "action.json",
+        {
+            "protocol": PROBE_PROTOCOL,
+            "checked_at": result["checked_at"],
+            "required": True,
+            "status": result["status"],
+            "probe_status": result["probe_status"],
+            "issues": result["issues"],
+        },
+    )
+    return result
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     default_repo = Path(__file__).resolve().parents[3]
@@ -626,36 +1120,61 @@ def main(argv: list[str] | None = None) -> int:
         else repo_root / "artifacts" / "research_v2" / "runtime" / "hourly_probe"
     )
     interval = max(0.0, float(args.loop_seconds))
-    last_code = 0
-    while True:
-        started = time.monotonic()
-        try:
-            last_code, result = run_once(repo_root, state_root)
-        except Exception as exc:
-            print(
-                json.dumps(
-                    {
-                        "protocol": PROBE_PROTOCOL,
-                        "checked_at": _utc_now(),
-                        "status": "probe_failed",
-                        "error": f"{type(exc).__name__}: {exc}",
-                    },
-                    ensure_ascii=False,
-                    sort_keys=True,
-                ),
-                file=sys.stderr,
-                flush=True,
-            )
-            if interval <= 0.0:
-                return 3
-        else:
-            print(
-                json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2 if args.pretty else None),
-                flush=True,
-            )
-            if interval <= 0.0:
-                return last_code
-        time.sleep(max(1.0, interval - (time.monotonic() - started)))
+    try:
+        with _controller_lock(state_root):
+            while True:
+                started = time.monotonic()
+                try:
+                    last_code, result = run_once(repo_root, state_root)
+                except Exception as exc:
+                    try:
+                        result = _persist_probe_failure(state_root, exc)
+                    except Exception as persistence_exc:
+                        result = {
+                            "protocol": PROBE_PROTOCOL,
+                            "checked_at": _utc_now(),
+                            "status": "probe_failed",
+                            "error": f"{type(exc).__name__}: {exc}",
+                            "persistence_error": (
+                                f"{type(persistence_exc).__name__}: {persistence_exc}"
+                            ),
+                        }
+                    print(
+                        json.dumps(result, ensure_ascii=False, sort_keys=True),
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    if interval <= 0.0:
+                        return 3
+                else:
+                    print(
+                        json.dumps(
+                            result,
+                            ensure_ascii=False,
+                            sort_keys=True,
+                            indent=2 if args.pretty else None,
+                        ),
+                        flush=True,
+                    )
+                    if interval <= 0.0:
+                        return last_code
+                time.sleep(max(1.0, interval - (time.monotonic() - started)))
+    except ProbeControllerBusy as exc:
+        print(
+            json.dumps(
+                {
+                    "protocol": PROBE_PROTOCOL,
+                    "checked_at": _utc_now(),
+                    "status": "controller_busy",
+                    "error": f"{type(exc).__name__}: {exc}",
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+            flush=True,
+        )
+        return 4
 
 
 if __name__ == "__main__":

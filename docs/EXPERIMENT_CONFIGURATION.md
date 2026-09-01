@@ -268,6 +268,17 @@ critical。S2 若 parts 一小时不增长但 retry log 仍更新，只记上游
 parts 同时一个完整探针间隔不增长才记 stalled。磁盘低于200 GiB warning、低于
 50 GiB critical。
 
+探针协议 v3 使用覆盖整个 daemon 生命周期的 `controller.lock`，因此 sleep 期间也
+不允许第二个 loop 或 one-shot 交替写状态。日志首次读取只建立基线；之后通过 inode
+与前一 offset 的内容 checkpoint 同时识别普通 append、inode 轮转和 copytruncate，
+轮转/截断后的全部新日志也会检查。探针自身采样异常会将 `probe_failed` 以
+`action_required` 写入 `latest.json` 和 `action.json`，不会留下过期的 healthy 状态。
+CoCo S2 只有在1300个 JSON record 与1300个 query 逐项通过 paper ID、builder identity、
+record/result hash、top-5 数量、去重，以及 exact title、same-family、S2 ID 和 external
+ID self-match 校验后才会标记 complete，单纯达到1300行不能触发 `transition_ready`。
+Formal 与 CoCo S2 的精确 PID 还必须分别等于其 flock owner PID，只有进程或只有 lock
+均为 critical。
+
 故障恢复顺序固定为：确认精确 PID 为0且 flock 无 owner；保护当前 worktree 并建立
 Git checkpoint；复现根因并添加回归测试；提交修复；记录启动前/恢复后的 commit；
 使用相同 run ID、输入身份与参数追加日志恢复。不得删除不可变 artifact 来“重跑”。
