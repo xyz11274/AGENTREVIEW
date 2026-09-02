@@ -25,8 +25,13 @@ from .coco_scoring_spec import (
     validate_coco_scoring_spec,
 )
 from .coco_service_runtime import (
+    RESTART_BARRIER_PROTOCOL,
     validate_coco_service_runtime,
     validate_coco_service_runtime_proof,
+    validate_judge_restart_barrier,
+    validate_judge_scoring_runtime,
+    validate_sealed_judge_restart_barrier,
+    validate_zero_generation_traffic_proof,
 )
 from .formal_transition import validate_frozen_system_transition
 from .io import (
@@ -37,9 +42,10 @@ from .io import (
     read_jsonl,
     value_sha256,
 )
+from .judge_lease import identity as qwen27b_mode_lease_identity
 
 
-PRE_SCORE_SEAL_PROTOCOL = "research-v2-coco-pre-score-seal-v1"
+PRE_SCORE_SEAL_PROTOCOL = "research-v2-coco-pre-score-seal-v2"
 FINAL_AUDIT_PROTOCOL = "research-v2-coco-final-audit-v1"
 CANDIDATE_INPUT_NAME = "candidate_official_input.jsonl"
 
@@ -68,12 +74,15 @@ _FIREWALL = {
     "candidate_inputs_contain_only_paper_ids_and_final_review_text": True,
     "scoring_outputs_are_isolated_by_arm": True,
     "external_evaluation_is_downstream_of_frozen_reviews": True,
+    "judge_starts_after_all_winner_reviews_are_sealed": True,
+    "judge_never_overlaps_reviewer_or_evolution_clients": True,
 }
 _FINAL_DECLARATIONS = {
     "output_roots_are_disjoint": True,
     "cache_versions_are_disjoint": True,
     "arm_scientific_settings_are_identical": True,
     "evaluation_artifacts_are_complete": True,
+    "shared_27b_judge_obeyed_human_reference_firewall": True,
 }
 
 
@@ -489,6 +498,8 @@ def _build_pre_score_body(
     winner_run_id: str,
     repository_root: Path,
     allow_materialize: bool,
+    sealed_service_runtime: dict[str, Any] | None = None,
+    sealed_restart_barrier: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not frozen_system_path.is_file():
         raise FileNotFoundError(f"Frozen System is missing: {frozen_system_path}")
@@ -504,7 +515,6 @@ def _build_pre_score_body(
     ) != artifact_root:
         raise ValueError("CoCo scoring spec artifact root differs")
     external_identity = _validated_external_identity(system=system, spec=spec)
-    service_runtime = _validated_service_runtime(spec)
     outputs = _validate_output_isolation(artifact_root=artifact_root, spec=spec)
     _validate_cache_isolation(spec)
     manifest = _manifest_binding(system)
@@ -559,12 +569,38 @@ def _build_pre_score_body(
             "cache_versions": dict(spec["arms"][mode]["cache_versions"]),
         }
 
+    restart_inputs = [spec_binding["path"]] + [
+        sealed_arms[mode]["candidate"]["path"] for mode in ARMS
+    ]
+    if (sealed_service_runtime is None) != (sealed_restart_barrier is None):
+        raise ValueError("Historical CoCo service and restart proofs must be paired")
+    if sealed_restart_barrier is None:
+        judge_restart_barrier = validate_judge_restart_barrier(
+            spec,
+            bound_input_paths=restart_inputs,
+        )
+        service_runtime = _validated_service_runtime(spec)
+    else:
+        judge_restart_barrier = validate_sealed_judge_restart_barrier(
+            spec,
+            sealed_barrier=sealed_restart_barrier,
+            bound_input_paths=restart_inputs,
+        )
+        validate_judge_scoring_runtime(
+            spec,
+            sealed_service_runtime=sealed_service_runtime,
+            expected_mode_lease_state=judge_restart_barrier["mode_lease_state"],
+            expected_judge_instance=judge_restart_barrier["judge_instance"],
+        )
+        service_runtime = dict(sealed_service_runtime)
+
     return {
         "protocol": PRE_SCORE_SEAL_PROTOCOL,
         "frozen_system": system_binding,
         "scoring_spec": spec_binding,
         "external_coco": external_identity,
         "service_runtime": service_runtime,
+        "judge_restart_barrier": judge_restart_barrier,
         "source": compact_source,
         "arms": sealed_arms,
         "firewall": dict(_FIREWALL),
@@ -607,6 +643,100 @@ def _verify_pre_score_bindings(body: dict[str, Any]) -> None:
     _require_object(
         body.get("service_runtime"), label="pre-score CoCo service runtime proof"
     )
+    restart_barrier = _require_exact_fields(
+        body.get("judge_restart_barrier"),
+        {
+            "protocol",
+            "mode_lease",
+            "bound_inputs",
+            "minimum_start_delay_seconds",
+            "listener_started_after_inputs",
+            "engine_started_after_inputs",
+            "prefix_cache_cleared_by_process_restart",
+            "reviewer_evolution_processes_absent",
+            "zero_generation_traffic",
+            "mode_lease_state",
+            "judge_instance",
+        },
+        label="pre-score CoCo judge restart barrier",
+    )
+    if (
+        restart_barrier.get("protocol") != RESTART_BARRIER_PROTOCOL
+        or restart_barrier.get("mode_lease") != qwen27b_mode_lease_identity()
+        or restart_barrier.get("minimum_start_delay_seconds") != 2
+        or any(
+            restart_barrier.get(name) is not True
+            for name in (
+                "listener_started_after_inputs",
+                "engine_started_after_inputs",
+                "prefix_cache_cleared_by_process_restart",
+                "reviewer_evolution_processes_absent",
+            )
+        )
+    ):
+        raise ValueError("Pre-score CoCo judge restart barrier differs")
+    validate_zero_generation_traffic_proof(
+        _require_object(read_json(spec_path), label="pre-score scoring spec"),
+        restart_barrier.get("zero_generation_traffic"),
+    )
+    bound_inputs = restart_barrier.get("bound_inputs")
+    if not isinstance(bound_inputs, list) or len(bound_inputs) != 3:
+        raise ValueError("Pre-score CoCo judge restart inputs differ")
+    for index, binding in enumerate(bound_inputs):
+        _validate_file_binding(
+            binding,
+            label=f"pre-score CoCo judge restart input {index}",
+        )
+    lease_state = _require_exact_fields(
+        restart_barrier.get("mode_lease_state"),
+        {
+            "st_dev",
+            "st_ino",
+            "st_uid",
+            "mode",
+            "raw_state_sha256",
+            "reviewer_generation",
+        },
+        label="pre-score CoCo mode lease state",
+    )
+    if (
+        any(type(lease_state.get(name)) is not int for name in ("st_dev", "st_ino", "st_uid"))
+        or lease_state.get("mode") != 0o600
+        or type(lease_state.get("reviewer_generation")) is not int
+        or lease_state["reviewer_generation"] < 0
+        or not isinstance(lease_state.get("raw_state_sha256"), str)
+        or not _SHA256_PATTERN.fullmatch(lease_state["raw_state_sha256"])
+    ):
+        raise ValueError("Pre-score CoCo mode lease state differs")
+    judge_instance = _require_exact_fields(
+        restart_barrier.get("judge_instance"),
+        {
+            "boot_id",
+            "listener_pid",
+            "listener_start_identity",
+            "engine_pid",
+            "engine_start_identity",
+            "instance_id",
+        },
+        label="pre-score CoCo judge instance",
+    )
+    instance_body = {
+        name: judge_instance[name]
+        for name in (
+            "boot_id",
+            "listener_pid",
+            "listener_start_identity",
+            "engine_pid",
+            "engine_start_identity",
+        )
+    }
+    if (
+        not isinstance(judge_instance.get("boot_id"), str)
+        or any(type(judge_instance.get(name)) is not int or judge_instance[name] < 1 for name in ("listener_pid", "engine_pid"))
+        or any(not isinstance(judge_instance.get(name), str) or not judge_instance[name] for name in ("listener_start_identity", "engine_start_identity"))
+        or judge_instance.get("instance_id") != value_sha256(instance_body)
+    ):
+        raise ValueError("Pre-score CoCo judge instance differs")
     arms = _require_exact_fields(body.get("arms"), set(ARMS), label="pre-score arms")
     for mode in ARMS:
         arm = _require_object(arms[mode], label=f"pre-score {mode} arm")
@@ -644,6 +774,7 @@ def _validate_seal_shape(value: Any) -> dict[str, Any]:
             "scoring_spec",
             "external_coco",
             "service_runtime",
+            "judge_restart_barrier",
             "source",
             "arms",
             "firewall",
@@ -752,7 +883,10 @@ def seal_coco_pre_score(
         "repository_root": repository,
     }
     first = _build_pre_score_body(**arguments, allow_materialize=True)
-    second = _build_pre_score_body(**arguments, allow_materialize=False)
+    second = _build_pre_score_body(
+        **arguments,
+        allow_materialize=False,
+    )
     if first != second:
         raise RuntimeError("CoCo pre-score complete rebuilds differ")
     _verify_pre_score_bindings(second)
@@ -803,6 +937,14 @@ def validate_coco_pre_score_seal(
         winner_run_id=scoring_spec.get("winner_run_id"),
         repository_root=Path(repository_root).expanduser().resolve(),
         allow_materialize=False,
+        sealed_service_runtime=_require_object(
+            seal.get("service_runtime"),
+            label="pre-score service runtime",
+        ),
+        sealed_restart_barrier=_require_object(
+            seal.get("judge_restart_barrier"),
+            label="pre-score Judge restart barrier",
+        ),
     )
     expected = {**expected_body, "seal_id": value_sha256(expected_body)}
     if canonical_json_bytes(seal) != canonical_json_bytes(expected):
@@ -828,6 +970,8 @@ def _expected_runner_settings(
     *,
     spec: dict[str, Any],
     mode: str,
+    seal: dict[str, Any],
+    pre_score_seal_path: Path,
 ) -> dict[str, Any]:
     scientific = _require_exact_fields(
         spec.get("scientific_settings"),
@@ -912,12 +1056,16 @@ def _expected_runner_settings(
         raise ValueError("CoCo scoring scientific evaluation model differs")
     services = _require_exact_fields(
         spec.get("services"),
-        {"software", "split", "classify", "evaluation"},
+        {"software", "split", "classify", "judge", "evaluation"},
         label="CoCo scoring services",
     )
     evaluation_runtime = _require_object(
         services.get("evaluation"),
         label="CoCo scoring evaluation Python runtime",
+    )
+    judge_service = _require_object(
+        services.get("judge"),
+        label="CoCo scoring local judge service",
     )
     benchmark = _require_exact_fields(
         spec.get("benchmark"),
@@ -981,7 +1129,36 @@ def _expected_runner_settings(
         "cuda_visible_devices": evaluation.get("cuda_visible_devices"),
         "bert_score_model": bert_score_model,
         "python_runtime": dict(evaluation_runtime),
+        "judge_service": dict(judge_service),
     }
+    restart_barrier = _require_object(
+        seal.get("judge_restart_barrier"),
+        label="pre-score Judge restart barrier",
+    )
+    lease_state = _require_object(
+        restart_barrier.get("mode_lease_state"),
+        label="pre-score mode lease state",
+    )
+    judge_instance = _require_object(
+        restart_barrier.get("judge_instance"),
+        label="pre-score Judge instance",
+    )
+    settings["evaluation"].update(
+        {
+            "reviewer_generation": lease_state.get("reviewer_generation"),
+            "mode_lease_state_sha256": lease_state.get("raw_state_sha256"),
+            "lease_st_dev": lease_state.get("st_dev"),
+            "lease_st_ino": lease_state.get("st_ino"),
+            "lease_st_uid": lease_state.get("st_uid"),
+            "lease_mode": lease_state.get("mode"),
+            "judge_instance_id": judge_instance.get("instance_id"),
+            "pre_score_seal": {
+                "path": str(pre_score_seal_path),
+                "sha256": file_sha256(pre_score_seal_path),
+                "seal_id": seal.get("seal_id"),
+            },
+        }
+    )
     return settings
 
 
@@ -1058,13 +1235,22 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
         "judge_prompt_file",
         "code_files",
         "python_runtime",
+        "judge_service",
+        "reviewer_generation",
+        "mode_lease_state_sha256",
+        "lease_st_dev",
+        "lease_st_ino",
+        "lease_st_uid",
+        "lease_mode",
+        "judge_instance_id",
+        "pre_score_seal",
     }
     if "cache_version" not in evaluation or not required_assets.issubset(evaluation):
         raise ValueError("External CoCo evaluation settings are incomplete")
     benchmark_files = evaluation["benchmark_files"]
     if not isinstance(benchmark_files, list):
         raise TypeError("External CoCo benchmark bindings must be a list")
-    projection["evaluation"] = {
+    evaluation_projection = {
         "enabled": evaluation.get("enabled"),
         "require_complete": evaluation.get("require_complete"),
         "benchmark_files": [
@@ -1093,6 +1279,31 @@ def _scientific_projection(settings: dict[str, Any]) -> dict[str, Any]:
             }
         },
     }
+    preflight = _require_exact_fields(
+        evaluation_projection.get("prompt_preflight"),
+        {
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "enable_thinking",
+            "candidate_count",
+            "judge_request_count",
+            "max_prompt_tokens",
+            "max_total_tokens",
+            "prompt_token_counts_sha256",
+        },
+        label="external CoCo evaluation prompt preflight",
+    )
+    evaluation_projection["prompt_preflight"] = {
+        name: preflight[name]
+        for name in (
+            "algorithm",
+            "max_model_len",
+            "max_completion_tokens",
+            "enable_thinking",
+        )
+    }
+    projection["evaluation"] = evaluation_projection
     return projection
 
 
@@ -1178,6 +1389,18 @@ def _audit_arm(
     scoring_spec_path = _required_file(
         scoring_spec.get("path"), label="pre-score scoring spec"
     )
+    restart_barrier = _require_object(
+        seal.get("judge_restart_barrier"),
+        label="pre-score Judge restart barrier",
+    )
+    mode_lease_state = _require_object(
+        restart_barrier.get("mode_lease_state"),
+        label="pre-score mode lease state",
+    )
+    judge_instance = _require_object(
+        restart_barrier.get("judge_instance"),
+        label="pre-score Judge instance",
+    )
     expected_environment = {
         name: value
         for name, value in coco_module._formal_coco_environment_identity(
@@ -1186,6 +1409,9 @@ def _audit_arm(
             candidate_input=candidate_path,
             output=output,
             scoring_spec_path=scoring_spec_path,
+            pre_score_seal_path=pre_score_seal_path,
+            mode_lease_state=mode_lease_state,
+            judge_instance_id=judge_instance.get("instance_id"),
         ).items()
     }
     if (
@@ -1216,6 +1442,12 @@ def _audit_arm(
         != canonical_json_bytes(expected_environment)
     ):
         raise ValueError(f"Completed CoCo {mode} run report identity differs")
+    current_runtime = _validated_service_runtime(spec)
+    scoring_service_runtime = coco_module._validate_scoring_runtime_pair(
+        report.get("scoring_service_runtime"),
+        spec=spec,
+        current_runtime=current_runtime,
+    )
 
     runner_path = coco_module._fixed_output_path(
         output,
@@ -1265,11 +1497,29 @@ def _audit_arm(
             expected_count=len(expected_ids),
         )
     )
-    expected_settings = _expected_runner_settings(spec=spec, mode=mode)
+    observed_evaluation = _require_object(
+        observed_settings.get("evaluation"),
+        label=f"external CoCo {mode} evaluation settings",
+    )
+    evaluation_prompt_preflight = (
+        coco_module._validated_evaluation_prompt_preflight(
+            observed_evaluation.get("prompt_preflight"),
+            expected_count=len(expected_ids),
+        )
+    )
+    expected_settings = _expected_runner_settings(
+        spec=spec,
+        mode=mode,
+        seal=seal,
+        pre_score_seal_path=pre_score_seal_path,
+    )
     expected_settings["split"]["prompt_preflight"] = split_prompt_preflight
     expected_settings["classify"][
         "prompt_preflight"
     ] = classify_prompt_preflight
+    expected_settings["evaluation"][
+        "prompt_preflight"
+    ] = evaluation_prompt_preflight
     if canonical_json_bytes(settings) != canonical_json_bytes(expected_settings):
         raise ValueError(
             f"External CoCo {mode} runner settings differ from scoring spec"
@@ -1295,6 +1545,7 @@ def _audit_arm(
             "artifacts": artifacts,
             "settings": settings,
             "scoring_spec": runner_spec,
+            "scoring_service_runtime": scoring_service_runtime,
         },
         _scientific_projection(settings),
     )
@@ -1362,6 +1613,7 @@ def _build_final_audit_body(
         },
         "scoring_spec": dict(spec_binding),
         "service_runtime": service_runtime,
+        "judge_restart_barrier": dict(seal["judge_restart_barrier"]),
         "arms": audited_arms,
         "declarations": dict(_FINAL_DECLARATIONS),
     }
@@ -1560,6 +1812,7 @@ def validate_coco_final_audit(
             "pre_score_seal",
             "scoring_spec",
             "service_runtime",
+            "judge_restart_barrier",
             "arms",
             "declarations",
             "audit_id",
@@ -1602,6 +1855,8 @@ def validate_coco_final_audit(
     )
     if spec_binding != seal.get("scoring_spec"):
         raise ValueError("CoCo final audit scoring spec differs from its seal")
+    if audit.get("judge_restart_barrier") != seal.get("judge_restart_barrier"):
+        raise ValueError("CoCo final audit judge restart barrier differs from its seal")
     spec_path = _required_file(
         spec_binding.get("path"), label="CoCo final audit scoring spec"
     )

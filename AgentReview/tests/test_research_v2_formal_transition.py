@@ -204,7 +204,6 @@ class FormalTransitionTest(unittest.TestCase):
             winner_run_id="formal-coco1300-winner-v1",
             output_path=scoring_spec_path,
             evaluation_python=evaluation_prefix / "bin" / "python",
-            evaluation_proxy_url="http://127.0.0.1:7898",
         )
         return coco_root.resolve(), scoring_spec_path.resolve(), scoring_spec
 
@@ -523,7 +522,7 @@ class FormalTransitionTest(unittest.TestCase):
             atomic_write_json(role_root / "run-spec.json", run_spec)
 
             seed_scores = {
-                "vector_search": 4.2,
+                "vector_search": 4.5,
                 "llm_summarizer": 4.0,
                 "experience_learner": 4.0,
             }
@@ -2163,8 +2162,6 @@ class FormalTransitionTest(unittest.TestCase):
                     "formal-coco1300-winner-v1",
                     "--evaluation-python",
                     str(evaluation_python),
-                    "--evaluation-proxy-url",
-                    "http://127.0.0.1:7898",
                     "--output",
                     str(output_path),
                 ]
@@ -2177,7 +2174,6 @@ class FormalTransitionTest(unittest.TestCase):
             winner_run_id="formal-coco1300-winner-v1",
             output_path=str(output_path),
             evaluation_python=str(evaluation_python),
-            evaluation_proxy_url="http://127.0.0.1:7898",
         )
 
     def test_freeze_cli_uses_the_source_revalidating_transition(self):

@@ -17,9 +17,9 @@ from .coco_scoring_spec import (
     FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM,
     FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
     FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
-    FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS,
     FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM,
-    FORMAL_EVALUATION_PROXY_URL,
+    FORMAL_JUDGE_BASE_URL,
+    FORMAL_JUDGE_MODEL_NAME,
     FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS,
     FORMAL_SPLIT_MAX_COMPLETION_TOKENS,
     FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM,
@@ -33,6 +33,12 @@ from .io import (
     value_sha256,
     write_immutable_jsonl,
 )
+from .coco_service_runtime import (
+    validate_coco_service_runtime_proof,
+    validate_judge_reviewer_exclusivity,
+    validate_judge_scoring_runtime,
+)
+from .judge_lease import Qwen27BModeLease, identity as qwen27b_mode_lease_identity
 
 COCO_RUNNER_ARTIFACT = "candidate_official_runner.json"
 COCO_RUNNER_PROTOCOL = "coco-official-candidate-runner-v1"
@@ -74,7 +80,6 @@ TABLE_1_ELIGIBLE_COUNT_COLUMNS = {
     "Average",
 }
 TABLE_1_VERIFY_COLUMN = "Verify."
-COCO_API_KEY_ENV = "COCO_EVALUATION_API_KEY"
 COCO_FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 COCO_RUN_REPORT_FIELDS = frozenset(
     {
@@ -86,6 +91,7 @@ COCO_RUN_REPORT_FIELDS = frozenset(
         "pre_score_seal",
         "scoring_spec",
         "service_runtime",
+        "scoring_service_runtime",
         "candidate_input",
         "candidate_input_sha256",
         "external_coco_identity",
@@ -485,6 +491,52 @@ def _validated_classify_prompt_preflight(
     return dict(value)
 
 
+def _validated_evaluation_prompt_preflight(
+    value: Any,
+    *,
+    expected_count: int,
+) -> dict[str, Any]:
+    fields = {
+        "algorithm",
+        "max_model_len",
+        "max_completion_tokens",
+        "enable_thinking",
+        "candidate_count",
+        "judge_request_count",
+        "max_prompt_tokens",
+        "max_total_tokens",
+        "prompt_token_counts_sha256",
+    }
+    if not isinstance(value, dict) or set(value) != fields:
+        raise RuntimeError("External CoCo evaluation prompt preflight fields differ")
+    max_prompt_tokens = value.get("max_prompt_tokens")
+    max_total_tokens = value.get("max_total_tokens")
+    if (
+        value.get("algorithm") != FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM
+        or type(value.get("max_model_len")) is not int
+        or value["max_model_len"] != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        or type(value.get("max_completion_tokens")) is not int
+        or value["max_completion_tokens"]
+        != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or value.get("enable_thinking") is not False
+        or type(value.get("candidate_count")) is not int
+        or value["candidate_count"] != expected_count
+        or type(value.get("judge_request_count")) is not int
+        or value["judge_request_count"] < expected_count
+        or type(max_prompt_tokens) is not int
+        or max_prompt_tokens < 1
+        or type(max_total_tokens) is not int
+        or max_total_tokens
+        != max_prompt_tokens + FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
+        or max_total_tokens > FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        or not isinstance(value.get("prompt_token_counts_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", value["prompt_token_counts_sha256"])
+        is None
+    ):
+        raise RuntimeError("External CoCo evaluation prompt preflight identity differs")
+    return dict(value)
+
+
 def _validate_coco_artifacts(
     output: Path,
     *,
@@ -582,6 +634,11 @@ def _validate_coco_artifacts(
         expected_count=len(expected_ids),
         expected_opinion_count=opinion_count,
     )
+    if runner["evaluation_enabled"]:
+        _validated_evaluation_prompt_preflight(
+            evaluation_settings.get("prompt_preflight"),
+            expected_count=len(expected_ids),
+        )
     _validate_contract_binding(
         declared_artifacts.get("split"),
         expected_path=split_path,
@@ -821,6 +878,9 @@ def _formal_coco_environment_identity(
     candidate_input: Path,
     output: Path,
     scoring_spec_path: Path,
+    pre_score_seal_path: Path,
+    mode_lease_state: dict[str, Any],
+    judge_instance_id: str,
 ) -> dict[str, str]:
     scientific = spec.get("scientific_settings")
     services = spec.get("services")
@@ -848,11 +908,9 @@ def _formal_coco_environment_identity(
         or set(caches) != {"split", "classify", "evaluation"}
     ):
         raise ValueError("CoCo scoring spec stage settings are invalid")
-    if evaluation_runtime.get("transport") != {
-        "HTTP_PROXY": FORMAL_EVALUATION_PROXY_URL,
-        "HTTPS_PROXY": FORMAL_EVALUATION_PROXY_URL,
-    }:
-        raise ValueError("Formal CoCo evaluation transport identity is invalid")
+    judge_runtime = services.get("judge")
+    if not isinstance(judge_runtime, dict):
+        raise ValueError("Formal CoCo judge service identity is invalid")
     if (
         type(split.get("max_completion_tokens")) is not int
         or split["max_completion_tokens"] != FORMAL_SPLIT_MAX_COMPLETION_TOKENS
@@ -928,7 +986,7 @@ def _formal_coco_environment_identity(
             "algorithm",
             "max_model_len",
             "max_completion_tokens",
-            "chat_overhead_tokens",
+            "enable_thinking",
         }
         or evaluation_preflight.get("algorithm")
         != FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM
@@ -938,16 +996,18 @@ def _formal_coco_environment_identity(
         or type(evaluation_preflight.get("max_completion_tokens")) is not int
         or evaluation_preflight["max_completion_tokens"]
         != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
-        or type(evaluation_preflight.get("chat_overhead_tokens")) is not int
-        or evaluation_preflight["chat_overhead_tokens"]
-        != FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS
+        or evaluation_preflight.get("enable_thinking") is not False
     ):
         raise ValueError("Formal CoCo evaluation prompt preflight identity is invalid")
     benchmark_files = evaluation.get("benchmark_files")
     if (
         evaluation.get("enabled") is not True
         or evaluation.get("require_complete") is not True
-        or evaluation.get("temperature") is not None
+        or evaluation.get("temperature") != 0.0
+        or evaluation.get("base_url") != FORMAL_JUDGE_BASE_URL
+        or evaluation.get("model") != FORMAL_JUDGE_MODEL_NAME
+        or evaluation.get("max_in_flight_client_requests") != 4
+        or evaluation.get("effort") != "none"
         or evaluation.get("cuda_visible_devices") != ""
         or not isinstance(benchmark_files, list)
         or not benchmark_files
@@ -956,7 +1016,24 @@ def _formal_coco_environment_identity(
             for path in benchmark_files
         )
     ):
-        raise ValueError("Formal CoCo scoring requires a registered CPU evaluation")
+        raise ValueError(
+            "Formal CoCo scoring requires a registered local judge and CPU metrics"
+        )
+    if (
+        judge_runtime.get("host") != "127.0.0.1"
+        or judge_runtime.get("port") != 18001
+        or judge_runtime.get("served_model_name") != FORMAL_JUDGE_MODEL_NAME
+        or judge_runtime.get("max_model_len")
+        != FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        or judge_runtime.get("max_num_seqs") != 8
+        or judge_runtime.get("tensor_parallel_size") != 2
+        or judge_runtime.get("default_chat_template_kwargs")
+        != {"enable_thinking": False}
+        or judge_runtime.get("enforce_eager") is not False
+        or judge_runtime.get("disable_custom_all_reduce") is not True
+        or judge_runtime.get("mode_lease") != qwen27b_mode_lease_identity()
+    ):
+        raise ValueError("Formal CoCo judge service identity differs")
     bert_score_model = evaluation.get("bert_score_model")
     if (
         not isinstance(bert_score_model, dict)
@@ -992,10 +1069,34 @@ def _formal_coco_environment_identity(
     ):
         raise ValueError("Formal CoCo BERTScore model root must be canonical")
 
+    if (
+        set(mode_lease_state)
+        != {
+            "st_dev",
+            "st_ino",
+            "st_uid",
+            "mode",
+            "raw_state_sha256",
+            "reviewer_generation",
+        }
+        or any(
+            type(mode_lease_state.get(name)) is not int
+            for name in ("st_dev", "st_ino", "st_uid", "mode", "reviewer_generation")
+        )
+        or mode_lease_state["mode"] != 0o600
+        or mode_lease_state["reviewer_generation"] < 0
+        or not isinstance(mode_lease_state.get("raw_state_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", mode_lease_state["raw_state_sha256"])
+        is None
+        or re.fullmatch(r"[0-9a-f]{64}", judge_instance_id) is None
+    ):
+        raise ValueError("Formal CoCo sealed Judge runtime identity is invalid")
+
     fixed = {
         "COCO_CANDIDATE_INPUT": str(candidate_input),
         "COCO_OUTPUT_ROOT": str(output),
         "COCO_SCORING_SPEC": str(scoring_spec_path),
+        "COCO_PRE_SCORE_SEAL": str(pre_score_seal_path),
         "COCO_SCORING_ARM": final_mode,
         "COCO_REQUIRE_SCORING_SPEC": "1",
         "COCO_REQUIRE_EVALUATION": "1",
@@ -1055,6 +1156,25 @@ def _formal_coco_environment_identity(
         "COCO_EVALUATION_MAX_COMPLETION_TOKENS": str(
             FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
         ),
+        "COCO_EVALUATION_CONTEXT_WINDOW_TOKENS": str(
+            FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS
+        ),
+        "COCO_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM": (
+            FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM
+        ),
+        "COCO_EVALUATION_ENABLE_THINKING": "0",
+        "COCO_EVALUATION_TEMPERATURE": "0.0",
+        "COCO_QWEN27B_REVIEWER_GENERATION": str(
+            mode_lease_state["reviewer_generation"]
+        ),
+        "COCO_QWEN27B_LEASE_STATE_SHA256": mode_lease_state[
+            "raw_state_sha256"
+        ],
+        "COCO_QWEN27B_LEASE_ST_DEV": str(mode_lease_state["st_dev"]),
+        "COCO_QWEN27B_LEASE_ST_INO": str(mode_lease_state["st_ino"]),
+        "COCO_QWEN27B_LEASE_ST_UID": str(mode_lease_state["st_uid"]),
+        "COCO_QWEN27B_LEASE_MODE": str(mode_lease_state["mode"]),
+        "COCO_QWEN27B_JUDGE_INSTANCE_ID": judge_instance_id,
         "COCO_EVALUATION_EFFORT": _required_text(
             evaluation.get("effort"), label="evaluation.effort"
         ),
@@ -1091,14 +1211,20 @@ def _formal_coco_environment(
     candidate_input: Path,
     output: Path,
     scoring_spec_path: Path,
+    pre_score_seal_path: Path,
+    mode_lease_state: dict[str, Any],
+    judge_instance_id: str,
 ) -> dict[str, str]:
-    """Build the launch environment and append the required secret in memory."""
+    """Build the complete proxy-free environment for the local-only runner."""
     environment = _formal_coco_environment_identity(
         spec=spec,
         final_mode=final_mode,
         candidate_input=candidate_input,
         output=output,
         scoring_spec_path=scoring_spec_path,
+        pre_score_seal_path=pre_score_seal_path,
+        mode_lease_state=mode_lease_state,
+        judge_instance_id=judge_instance_id,
     )
     for name, expected in environment.items():
         if (
@@ -1109,12 +1235,6 @@ def _formal_coco_environment(
             raise RuntimeError(
                 f"Ambient {name} differs from the sealed CoCo scoring spec"
             )
-    api_key = os.environ.get(COCO_API_KEY_ENV)
-    if not isinstance(api_key, str) or not api_key.strip():
-        raise RuntimeError(
-            f"Formal CoCo evaluation requires a non-empty {COCO_API_KEY_ENV}"
-        )
-    environment[COCO_API_KEY_ENV] = api_key
     return environment
 
 
@@ -1165,6 +1285,47 @@ def _persist_failed_attempt(output: Path, report: dict[str, Any]) -> Path:
     return path
 
 
+def _runtime_static_identity(proof: dict[str, Any]) -> dict[str, Any]:
+    return {
+        name: proof[name]
+        for name in (
+            "protocol",
+            "scoring_spec_id",
+            "software",
+            "evaluation_runtime",
+            "services",
+        )
+    }
+
+
+def _validate_scoring_runtime_pair(
+    value: Any,
+    *,
+    spec: dict[str, Any],
+    current_runtime: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(value, dict) or set(value) != {"pre", "post"}:
+        raise ValueError("AgentReview CoCo scoring runtime pair differs")
+    spec_id = spec.get("spec_id")
+    if not isinstance(spec_id, str) or not spec_id:
+        raise ValueError("CoCo scoring spec identity is invalid")
+    validated = {
+        phase: validate_coco_service_runtime_proof(
+            value[phase],
+            scoring_spec_id=spec_id,
+            scoring_spec=spec,
+        )
+        for phase in ("pre", "post")
+    }
+    current_static = _runtime_static_identity(current_runtime)
+    if any(
+        _runtime_static_identity(validated[phase]) != current_static
+        for phase in ("pre", "post")
+    ):
+        raise RuntimeError("AgentReview CoCo scoring service identity changed")
+    return validated
+
+
 def _validate_existing_complete_report(
     *,
     path: Path,
@@ -1174,7 +1335,9 @@ def _validate_existing_complete_report(
     source_binding: dict[str, Any],
     pre_score_seal_binding: dict[str, Any],
     scoring_spec_binding: dict[str, Any],
+    spec: dict[str, Any],
     service_runtime: dict[str, Any],
+    scoring_service_runtime: dict[str, Any],
     external_coco_identity: dict[str, Any],
     expected_command: list[str],
     environment_identity: dict[str, str],
@@ -1183,6 +1346,9 @@ def _validate_existing_complete_report(
     output: Path,
 ) -> dict[str, Any]:
     report = read_json(path)
+    report_runtime = (
+        report.get("scoring_service_runtime") if isinstance(report, dict) else None
+    )
     if (
         not isinstance(report, dict)
         or set(report) != COCO_RUN_REPORT_FIELDS
@@ -1213,6 +1379,11 @@ def _validate_existing_complete_report(
         or report.get("runtime_validation_error") != ""
     ):
         raise RuntimeError("Completed AgentReview CoCo report identity differs")
+    _validate_scoring_runtime_pair(
+        report_runtime,
+        spec=spec,
+        current_runtime=scoring_service_runtime,
+    )
     artifacts = _validate_coco_artifacts(
         output,
         expected_ids=expected_ids,
@@ -1355,6 +1526,16 @@ def run_coco_evaluation(
     service_runtime = seal.get("service_runtime")
     if not isinstance(service_runtime, dict):
         raise ValueError("CoCo pre-score service runtime proof is invalid")
+    restart_barrier = seal.get("judge_restart_barrier")
+    if not isinstance(restart_barrier, dict):
+        raise ValueError("CoCo pre-score Judge restart barrier is invalid")
+    mode_lease_state = restart_barrier.get("mode_lease_state")
+    judge_instance = restart_barrier.get("judge_instance")
+    if not isinstance(mode_lease_state, dict) or not isinstance(judge_instance, dict):
+        raise ValueError("CoCo pre-score sealed Judge identity is invalid")
+    judge_instance_id = judge_instance.get("instance_id")
+    if not isinstance(judge_instance_id, str):
+        raise ValueError("CoCo pre-score Judge instance ID is invalid")
     external_coco_identity, normalized_command = _validate_external_coco_runtime(
         system=system,
         root=root,
@@ -1373,22 +1554,31 @@ def run_coco_evaluation(
         candidate_input=candidate_input,
         output=output,
         scoring_spec_path=scoring_spec_path,
+        pre_score_seal_path=seal_path,
+        mode_lease_state=mode_lease_state,
+        judge_instance_id=judge_instance_id,
     )
-    environment_identity = {
-        name: value
-        for name, value in environment.items()
-        if name != COCO_API_KEY_ENV
-    }
+    environment_identity = dict(environment)
     runner_scoring_spec = {
         name: scoring_spec_binding[name]
         for name in ("path", "sha256", "spec_id")
     }
 
-    with _exclusive_evaluation_lock(output):
+    with _exclusive_evaluation_lock(output), Qwen27BModeLease(
+        "judge"
+    ) as mode_lease:
+        mode_lease.assert_state_identity(mode_lease_state)
         confirmed_seal = _validate_pre_score_seal(seal_path)
         if confirmed_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
             raise RuntimeError("CoCo pre-score seal changed before scoring")
         _validated_sealed_candidate(arm=arm, output=output)
+        scoring_service_runtime = validate_judge_scoring_runtime(
+            spec,
+            sealed_service_runtime=service_runtime,
+            expected_mode_lease_state=mode_lease_state,
+            expected_judge_instance=judge_instance,
+        )
+        mode_lease.assert_state_identity(mode_lease_state)
         complete_report_path = _fixed_output_path(
             output,
             "run.json",
@@ -1403,7 +1593,9 @@ def run_coco_evaluation(
                 source_binding=source_binding,
                 pre_score_seal_binding=seal_binding,
                 scoring_spec_binding=scoring_spec_binding,
+                spec=spec,
                 service_runtime=service_runtime,
+                scoring_service_runtime=scoring_service_runtime,
                 external_coco_identity=external_coco_identity,
                 expected_command=normalized_command,
                 environment_identity=environment_identity,
@@ -1414,7 +1606,12 @@ def run_coco_evaluation(
             final_seal = _validate_pre_score_seal(seal_path)
             if final_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
                 raise RuntimeError("CoCo pre-score seal changed during report validation")
+            mode_lease.assert_state_identity(mode_lease_state)
             return report
+        validate_judge_reviewer_exclusivity(
+            judge_port=18001,
+            require_idle_connections=False,
+        )
         launch_error: RuntimeError | None = None
         try:
             completed = subprocess.run(
@@ -1427,6 +1624,7 @@ def run_coco_evaluation(
             completed = subprocess.CompletedProcess(normalized_command, -1)
             launch_error = RuntimeError("External CoCo process launch failed")
         runtime_error: RuntimeError | None = launch_error
+        post_scoring_service_runtime: dict[str, Any] = {}
         artifacts: dict[str, dict[str, str]] = {}
         artifact_error: RuntimeError | None = None
         if completed.returncode == 0:
@@ -1456,6 +1654,20 @@ def run_coco_evaluation(
             if final_seal != seal or file_sha256(seal_path) != seal_binding["sha256"]:
                 raise RuntimeError("CoCo pre-score seal or its upstream changed during scoring")
             _validated_sealed_candidate(arm=arm, output=output)
+            post_scoring_service_runtime = validate_judge_scoring_runtime(
+                spec,
+                sealed_service_runtime=service_runtime,
+                expected_mode_lease_state=mode_lease_state,
+                expected_judge_instance=judge_instance,
+            )
+            if (
+                _runtime_static_identity(post_scoring_service_runtime)
+                != _runtime_static_identity(scoring_service_runtime)
+            ):
+                raise RuntimeError(
+                    "CoCo scoring service identity changed during scoring"
+                )
+            mode_lease.assert_state_identity(mode_lease_state)
         except Exception as exc:
             if runtime_error is None:
                 runtime_error = (
@@ -1472,6 +1684,10 @@ def run_coco_evaluation(
             "pre_score_seal": seal_binding,
             "scoring_spec": scoring_spec_binding,
             "service_runtime": service_runtime,
+            "scoring_service_runtime": {
+                "pre": scoring_service_runtime,
+                "post": post_scoring_service_runtime,
+            },
             "candidate_input": str(candidate_input),
             "candidate_input_sha256": arm["candidate"]["sha256"],
             "external_coco_identity": external_coco_identity,
@@ -1492,11 +1708,13 @@ def run_coco_evaluation(
             "runtime_validation_error": str(runtime_error or ""),
         }
         if report["status"] == "complete":
+            mode_lease.assert_state_identity(mode_lease_state)
             atomic_write_json(
                 complete_report_path,
                 report,
                 reject_symlink=True,
             )
+            mode_lease.assert_state_identity(mode_lease_state)
         else:
             _persist_failed_attempt(output, report)
         if completed.returncode != 0:

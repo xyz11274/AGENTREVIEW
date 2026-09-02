@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from agentreview.research_v2 import bootstrap as bootstrap_module
 from agentreview.research_v2 import cli as cli_module
+from agentreview.research_v2 import llm as llm_module
 from agentreview.research_v2 import review as review_module
 from agentreview.research_v2.bootstrap import (
     DEFAULT_FORMAL_RUN_ID,
@@ -329,9 +330,52 @@ class BootstrapRunnerTest(unittest.TestCase):
         self.assertEqual(exit_code, 2)
 
     def test_openai_client_disables_sdk_retry_layer(self):
-        with patch("openai.OpenAI") as factory:
-            OpenAICompletionClient(ModelConfig())
+        with patch("openai.OpenAI") as factory, patch.object(
+            llm_module,
+            "Qwen27BModeLease",
+        ):
+            client = OpenAICompletionClient(ModelConfig())
+            client.close()
         self.assertEqual(factory.call_args.kwargs["max_retries"], 0)
+
+    def test_openai_client_closes_http_pool_before_releasing_reviewer_lease(self):
+        events = []
+
+        class HttpClient:
+            def close(self):
+                events.append("http")
+
+        class Lease:
+            def close(self):
+                events.append("lease")
+
+        with patch("openai.OpenAI", return_value=HttpClient()), patch.object(
+            llm_module,
+            "Qwen27BModeLease",
+            return_value=Lease(),
+        ):
+            client = OpenAICompletionClient(ModelConfig())
+            client.close()
+        self.assertEqual(events, ["http", "lease"])
+
+    def test_openai_client_constructor_failure_releases_reviewer_lease(self):
+        events = []
+
+        class Lease:
+            def close(self):
+                events.append("lease")
+
+        with (
+            patch("openai.OpenAI", side_effect=RuntimeError("failed")),
+            patch.object(
+                llm_module,
+                "Qwen27BModeLease",
+                return_value=Lease(),
+            ),
+            self.assertRaisesRegex(RuntimeError, "failed"),
+        ):
+            OpenAICompletionClient(ModelConfig())
+        self.assertEqual(events, ["lease"])
 
     def test_immutable_json_create_is_atomic_across_processes(self):
         context = multiprocessing.get_context("fork")

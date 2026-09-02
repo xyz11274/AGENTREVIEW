@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from agentreview.research_v2.io import value_sha256
 from agentreview.research_v2.probe import (
@@ -18,14 +18,11 @@ from agentreview.research_v2.probe import (
     _append_lock_owner_issue,
     ProbeControllerBusy,
     _append_s2_stagnation_issues,
-    _append_proxy_health_issue,
-    _coco_scoring_gate_started,
     _controller_lock,
     _exact_stage_process,
     _log_snapshot,
     _metric,
     _qwen_process,
-    _proxy_tcp_health,
     _s2_progress,
     _stagnant_count,
     main,
@@ -88,72 +85,6 @@ def _write_valid_s2_fixture(artifact_root: Path):
 
 
 class ResearchV2ProbeTest(unittest.TestCase):
-    def test_proxy_tcp_health_closes_connection_and_truncates_failures(self):
-        connection = Mock()
-        with patch(
-            "agentreview.research_v2.probe.socket.create_connection",
-            return_value=connection,
-        ) as create_connection:
-            health = _proxy_tcp_health()
-        create_connection.assert_called_once_with(("127.0.0.1", 7898), timeout=2.0)
-        connection.close.assert_called_once_with()
-        self.assertEqual(
-            health,
-            {
-                "host": "127.0.0.1",
-                "port": 7898,
-                "reachable": True,
-                "error": "",
-            },
-        )
-
-        with patch(
-            "agentreview.research_v2.probe.socket.create_connection",
-            side_effect=OSError("x" * 400),
-        ):
-            failed = _proxy_tcp_health()
-        self.assertFalse(failed["reachable"])
-        self.assertLessEqual(len(failed["error"]), 256)
-
-    def test_proxy_failure_becomes_critical_only_at_coco_scoring_gate(self):
-        health = {
-            "host": "127.0.0.1",
-            "port": 7898,
-            "reachable": False,
-            "error": "ConnectionRefusedError: refused",
-        }
-        for gate_started, severity in ((False, "warning"), (True, "critical")):
-            with self.subTest(gate_started=gate_started):
-                issues = []
-                _append_proxy_health_issue(
-                    issues,
-                    health=health,
-                    scoring_gate_started=gate_started,
-                )
-                self.assertEqual(issues[0]["severity"], severity)
-                self.assertEqual(
-                    issues[0]["code"],
-                    "coco_evaluation_proxy_unreachable",
-                )
-                if not gate_started:
-                    self.assertIn("do not restart", issues[0]["message"])
-
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.assertFalse(
-                _coco_scoring_gate_started(root, transition_ready=False)
-            )
-            scoring_spec = (
-                root
-                / "artifacts/research_v2/frozen/"
-                "formal-coco1300-scoring-spec-v1.json"
-            )
-            scoring_spec.parent.mkdir(parents=True)
-            scoring_spec.write_text("{}\n", encoding="utf-8")
-            self.assertTrue(
-                _coco_scoring_gate_started(root, transition_ready=False)
-            )
-
     def test_metric_sums_labeled_series(self):
         text = "\n".join(
             (

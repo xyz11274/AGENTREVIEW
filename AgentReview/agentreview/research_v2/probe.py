@@ -10,7 +10,6 @@ import os
 import re
 import shlex
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -27,12 +26,7 @@ from .s2 import (
     S2_RECORD_BUILDER_SHA256,
     validate_frozen_s2_pool,
 )
-from .coco_scoring_spec import (
-    FORMAL_EVALUATION_PROXY_HOST,
-    FORMAL_EVALUATION_PROXY_PORT,
-)
-
-PROBE_PROTOCOL = "research-v2-hourly-probe-v3"
+PROBE_PROTOCOL = "research-v2-hourly-probe-v4"
 FORMAL_RUN_ID = "formal-evolution-v1"
 COCO_S2_TOTAL = 1300
 ROLES = ("QUAL", "CLAR", "ORIG", "SIGN", "POL")
@@ -656,29 +650,6 @@ def _issue(issues: list[dict[str, str]], severity: str, code: str, message: str)
     issues.append({"severity": severity, "code": code, "message": message})
 
 
-def _proxy_tcp_health(
-    *,
-    host: str = FORMAL_EVALUATION_PROXY_HOST,
-    port: int = FORMAL_EVALUATION_PROXY_PORT,
-    timeout: float = 2.0,
-) -> dict[str, Any]:
-    error = ""
-    connection = None
-    try:
-        connection = socket.create_connection((host, port), timeout=timeout)
-    except OSError as exc:
-        error = f"{type(exc).__name__}: {exc}"[:256]
-    finally:
-        if connection is not None:
-            connection.close()
-    return {
-        "host": host,
-        "port": port,
-        "reachable": connection is not None,
-        "error": error,
-    }
-
-
 def _coco_scoring_gate_started(
     repo_root: Path,
     *,
@@ -690,29 +661,6 @@ def _coco_scoring_gate_started(
             COCO_SCORING_SPEC_RELATIVE,
             COCO_PRE_SCORE_SEAL_RELATIVE,
         )
-    )
-
-
-def _append_proxy_health_issue(
-    issues: list[dict[str, str]],
-    *,
-    health: dict[str, Any],
-    scoring_gate_started: bool,
-) -> None:
-    if health.get("reachable") is True:
-        return
-    severity = "critical" if scoring_gate_started else "warning"
-    phase = (
-        "Formal CoCo scoring is gated"
-        if scoring_gate_started
-        else "Formal/S2 remains in progress; do not restart services"
-    )
-    _issue(
-        issues,
-        severity,
-        "coco_evaluation_proxy_unreachable",
-        f"Fixed Evaluation proxy {health.get('host')}:{health.get('port')} is "
-        f"unreachable. {phase}.",
     )
 
 
@@ -855,14 +803,9 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
     transition_ready = (
         formal_progress["summary_status"] == "complete" and s2_progress["complete"]
     )
-    proxy_health = _proxy_tcp_health()
-    _append_proxy_health_issue(
-        issues,
-        health=proxy_health,
-        scoring_gate_started=_coco_scoring_gate_started(
-            repo_root,
-            transition_ready=transition_ready,
-        ),
+    scoring_gate_started = _coco_scoring_gate_started(
+        repo_root,
+        transition_ready=transition_ready,
     )
 
     if formal_progress["summary_status"] == "interrupted":
@@ -931,10 +874,15 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         _issue(issues, "warning", "formal_traceback", "Formal log contains a new traceback; process and summary require diagnosis")
 
     qwen = endpoints["qwen_27b"]
-    if formal_active and len(qwen_processes) != 1:
+    if (formal_active or scoring_gate_started) and len(qwen_processes) != 1:
         _issue(issues, "critical", "qwen_process_count", f"Expected one frozen 27B service, found {len(qwen_processes)}")
     if not qwen["healthy"]:
-        _issue(issues, "warning", "qwen_endpoint", "Frozen 27B endpoint identity or health check failed")
+        _issue(
+            issues,
+            "critical" if scoring_gate_started else "warning",
+            "qwen_endpoint",
+            "Shared frozen 27B Reviewer/Judge endpoint identity or health check failed",
+        )
     running = dict(qwen.get("metrics") or {}).get("running")
     if running is not None and running > 8:
         _issue(issues, "critical", "qwen_concurrency", f"27B reports {running:g} running requests; frozen maximum is 8")
@@ -977,7 +925,6 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
         },
         "locks": lock_owners,
         "endpoints": endpoints,
-        "evaluation_proxy": proxy_health,
         "gpus": _gpu_snapshot(),
         "disk": disk,
         "git": _git_snapshot(repo_root),

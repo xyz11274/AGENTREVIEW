@@ -10,6 +10,7 @@ import urllib.request
 from typing import Any, Protocol
 
 from .config import ModelConfig
+from .judge_lease import Qwen27BModeLease
 
 
 class EmptyCompletionOutput(RuntimeError):
@@ -59,12 +60,44 @@ class OpenAICompletionClient:
         from openai import OpenAI
 
         self.config = config
+        self._mode_lease: Qwen27BModeLease | None = None
+        if (
+            config.base_url.rstrip("/") == "http://127.0.0.1:18001/v1"
+            and config.model == "qwen3.8-27b"
+        ):
+            self._mode_lease = Qwen27BModeLease("reviewer")
         api_key = os.environ.get(config.api_key_env) or "local-not-required"
-        self.client = OpenAI(
-            base_url=config.base_url,
-            api_key=api_key,
-            max_retries=0,
-        )
+        try:
+            self.client = OpenAI(
+                base_url=config.base_url,
+                api_key=api_key,
+                max_retries=0,
+            )
+        except BaseException:
+            lease = self._mode_lease
+            self._mode_lease = None
+            if lease is not None:
+                lease.close()
+            raise
+
+    def close(self) -> None:
+        lease = self._mode_lease
+        self._mode_lease = None
+        try:
+            client = getattr(self, "client", None)
+            self.client = None
+            close = getattr(client, "close", None)
+            if callable(close):
+                close()
+        finally:
+            if lease is not None:
+                lease.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def count_chat_tokens(
         self, messages: list[dict[str, str]]

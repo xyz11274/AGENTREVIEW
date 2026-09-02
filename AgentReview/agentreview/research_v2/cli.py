@@ -189,7 +189,6 @@ def _base_parser() -> argparse.ArgumentParser:
     materialize_scoring = stages.add_parser("materialize-coco-scoring-spec")
     materialize_scoring.add_argument("--winner-run-id", required=True)
     materialize_scoring.add_argument("--evaluation-python", required=True)
-    materialize_scoring.add_argument("--evaluation-proxy-url", required=True)
     materialize_scoring.add_argument("--output", required=True)
 
     coco_reviews = stages.add_parser("generate-coco-reviews")
@@ -744,7 +743,6 @@ def main(argv: list[str] | None = None) -> int:
             winner_run_id=args.winner_run_id,
             output_path=args.output,
             evaluation_python=args.evaluation_python,
-            evaluation_proxy_url=args.evaluation_proxy_url,
         )
     elif args.stage == "freeze-system":
         result = freeze_formal_system(

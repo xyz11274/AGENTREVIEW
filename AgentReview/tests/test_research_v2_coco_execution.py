@@ -17,7 +17,37 @@ from agentreview.research_v2.io import (
     write_immutable_jsonl,
 )
 
-FORMAL_KEY_ENV = {coco_module.COCO_API_KEY_ENV: "test-key"}
+FORMAL_KEY_ENV: dict[str, str] = {}
+
+
+class _FakeModeLease:
+    def __init__(self, _mode: str):
+        self.state_identity: dict[str, object] = {}
+        self.generation = 0
+
+    def assert_state_identity(self, expected=None):
+        if expected is not None:
+            self.state_identity = dict(expected)
+            self.generation = int(expected["reviewer_generation"])
+        return dict(self.state_identity)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return None
+
+
+def _fake_scoring_runtime(spec, **_kwargs):
+    return {
+        "protocol": "research-v2-coco-service-runtime-v2",
+        "scoring_spec_id": spec["spec_id"],
+        "software": {},
+        "evaluation_runtime": {},
+        "services": {},
+        "judge_exclusivity": {},
+        "proof_id": "8" * 64,
+    }
 
 
 def _binding(path: Path) -> dict[str, str]:
@@ -123,18 +153,18 @@ class _ExecutionFixture:
                     "benchmark_files": [str(benchmark)],
                     "complete_human_classify_file": str(complete_human),
                     "reviewer_selection_file": str(reviewer_selection),
-                    "base_url": "https://api.openai.com/v1",
-                    "model": "gpt-5-mini",
-                    "max_in_flight_client_requests": 128,
-                    "effort": "medium",
-                    "temperature": None,
-                    "max_completion_tokens": 32768,
-                    "context_window_tokens": 400000,
+                    "base_url": "http://127.0.0.1:18001/v1",
+                    "model": "qwen3.8-27b",
+                    "max_in_flight_client_requests": 4,
+                    "effort": "none",
+                    "temperature": 0.0,
+                    "max_completion_tokens": 8192,
+                    "context_window_tokens": 65536,
                     "prompt_preflight": {
-                        "algorithm": "utf8-byte-upper-bound-v1",
-                        "max_model_len": 400000,
-                        "max_completion_tokens": 32768,
-                        "chat_overhead_tokens": 1024,
+                        "algorithm": "vllm-chat-tokenize-v1",
+                        "max_model_len": 65536,
+                        "max_completion_tokens": 8192,
+                        "enable_thinking": False,
                     },
                     "cuda_visible_devices": "",
                     "bert_score_model": {
@@ -148,14 +178,23 @@ class _ExecutionFixture:
                 },
             },
             "services": {
+                "software": {},
                 "split": {"python_executable": "/gpu/split/bin/python"},
                 "classify": {"python_executable": "/gpu/classify/bin/python"},
+                "judge": {
+                    "host": "127.0.0.1",
+                    "port": 18001,
+                    "served_model_name": "qwen3.8-27b",
+                    "max_model_len": 65536,
+                    "max_num_seqs": 8,
+                    "tensor_parallel_size": 2,
+                    "default_chat_template_kwargs": {"enable_thinking": False},
+                    "enforce_eager": False,
+                    "disable_custom_all_reduce": True,
+                    "mode_lease": coco_module.qwen27b_mode_lease_identity(),
+                },
                 "evaluation": {
                     "python_executable": sys.executable,
-                    "transport": {
-                        "HTTP_PROXY": "http://127.0.0.1:7898",
-                        "HTTPS_PROXY": "http://127.0.0.1:7898",
-                    },
                 },
             },
             "arms": {
@@ -213,8 +252,19 @@ class _ExecutionFixture:
             "scoring_spec": self.spec_binding,
             "external_coco": self.identity,
             "service_runtime": {
-                "protocol": "research-v2-coco-service-runtime-v1",
+                "protocol": "research-v2-coco-service-runtime-v2",
                 "proof_id": "4" * 64,
+            },
+            "judge_restart_barrier": {
+                "mode_lease_state": {
+                    "st_dev": 1,
+                    "st_ino": 2,
+                    "st_uid": os.getuid(),
+                    "mode": 0o600,
+                    "raw_state_sha256": "6" * 64,
+                    "reviewer_generation": 3,
+                },
+                "judge_instance": {"instance_id": "7" * 64},
             },
             "source": {
                 "coco_manifest": {
@@ -351,6 +401,17 @@ class _ExecutionFixture:
             "evaluation": {
                 "enabled": evaluation_enabled,
                 "require_complete": True,
+                "prompt_preflight": {
+                    "algorithm": "vllm-chat-tokenize-v1",
+                    "max_model_len": 65536,
+                    "max_completion_tokens": 8192,
+                    "enable_thinking": False,
+                    "candidate_count": 1,
+                    "judge_request_count": 1,
+                    "max_prompt_tokens": 100,
+                    "max_total_tokens": 8292,
+                    "prompt_token_counts_sha256": "8" * 64,
+                },
             },
         }
         artifact_paths = {"split": split, "classify": classify}
@@ -430,6 +491,32 @@ class _ExecutionFixture:
 
 
 class CocoSealedExecutionTest(unittest.TestCase):
+    def setUp(self):
+        self._patchers = (
+            patch.object(coco_module, "Qwen27BModeLease", _FakeModeLease),
+            patch.object(
+                coco_module,
+                "validate_judge_scoring_runtime",
+                side_effect=_fake_scoring_runtime,
+            ),
+            patch.object(
+                coco_module,
+                "validate_judge_reviewer_exclusivity",
+                return_value={},
+            ),
+            patch.object(
+                coco_module,
+                "_validate_scoring_runtime_pair",
+                side_effect=lambda value, **_kwargs: value,
+            ),
+        )
+        for patcher in self._patchers:
+            patcher.start()
+
+    def tearDown(self):
+        for patcher in reversed(self._patchers):
+            patcher.stop()
+
     def test_split_prompt_preflight_summary_is_exact_and_within_context(self):
         summary = {
             "algorithm": "qwen-chat-template-v1",
@@ -692,7 +779,12 @@ class CocoSealedExecutionTest(unittest.TestCase):
             )
             self.assertEqual(
                 observed_environment["COCO_EVALUATION_MAX_COMPLETION_TOKENS"],
-                "32768",
+                "8192",
+            )
+            self.assertEqual(observed_environment["COCO_EVALUATION_MAX_WORKERS"], "4")
+            self.assertEqual(
+                observed_environment["COCO_EVALUATION_CONTEXT_WINDOW_TOKENS"],
+                "65536",
             )
             self.assertEqual(observed_environment["PYTHONNOUSERSITE"], "1")
             self.assertEqual(observed_environment["PYTHONDONTWRITEBYTECODE"], "1")
@@ -704,9 +796,7 @@ class CocoSealedExecutionTest(unittest.TestCase):
                 str(fixture.bert_score_model_root),
             )
             self.assertEqual(observed_environment["COCO_BERT_SCORE_NUM_LAYERS"], "17")
-            self.assertEqual(
-                observed_environment["COCO_EVALUATION_API_KEY"], reported_secret
-            )
+            self.assertNotIn("COCO_EVALUATION_API_KEY", observed_environment)
             self.assertNotIn("OPENAI_API_KEY", observed_environment)
             self.assertNotIn("HTTP_PROXY", observed_environment)
             self.assertNotIn("HTTPS_PROXY", observed_environment)
@@ -778,7 +868,7 @@ class CocoSealedExecutionTest(unittest.TestCase):
                     self.subTest(command=command),
                     patch.dict(
                         os.environ,
-                        {coco_module.COCO_API_KEY_ENV: "test-key"},
+                        {},
                         clear=True,
                     ),
                     patch.object(
@@ -888,12 +978,6 @@ class CocoSealedExecutionTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             fixture = _ExecutionFixture(directory)
             for environment, command, message in (
-                ({}, fixture.command, "requires a non-empty"),
-                (
-                    {coco_module.COCO_API_KEY_ENV: "   "},
-                    fixture.command,
-                    "requires a non-empty",
-                ),
                 (
                     {**FORMAL_KEY_ENV, "COCO_SPLIT_MODEL": "other"},
                     fixture.command,
@@ -1125,7 +1209,7 @@ class CocoSealedExecutionTest(unittest.TestCase):
                 "count", True
             ),
             "extra stdout": lambda report: report.__setitem__(
-                "stdout", FORMAL_KEY_ENV[coco_module.COCO_API_KEY_ENV]
+                "stdout", "forbidden-secret"
             ),
         }
         for label, mutate in mutations.items():
@@ -1187,8 +1271,8 @@ class CocoSealedExecutionTest(unittest.TestCase):
                     return_value=subprocess.CompletedProcess(
                         fixture.command,
                         7,
-                        FORMAL_KEY_ENV[coco_module.COCO_API_KEY_ENV],
-                        FORMAL_KEY_ENV[coco_module.COCO_API_KEY_ENV],
+                        "forbidden-secret",
+                        "forbidden-secret",
                     ),
                 ),
                 self.assertRaisesRegex(RuntimeError, "failed: 7"),
@@ -1209,7 +1293,7 @@ class CocoSealedExecutionTest(unittest.TestCase):
             self.assertNotIn("stdout", attempt)
             self.assertNotIn("stderr", attempt)
             self.assertNotIn(
-                FORMAL_KEY_ENV[coco_module.COCO_API_KEY_ENV],
+                "forbidden-secret",
                 attempts[0].read_text(encoding="utf-8"),
             )
 

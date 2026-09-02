@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import hashlib
 import json
 import sys
 import tempfile
@@ -34,6 +35,45 @@ def _write(path: Path, value) -> None:
 
 def _binding(path: Path) -> dict[str, str]:
     return {"path": str(path.resolve()), "sha256": file_sha256(path)}
+
+
+def _zero_traffic_proof() -> dict:
+    model = "qwen3.8-27b"
+    metric_names = (
+        "num_requests_running",
+        "num_requests_waiting",
+        "prompt_tokens_total",
+        "generation_tokens_total",
+        "request_success_total",
+        "prefix_cache_queries_total",
+        "request_prompt_tokens_count",
+        "request_generation_tokens_count",
+        "e2e_request_latency_seconds_count",
+    )
+    metrics = {}
+    raw = []
+    for name in metric_names:
+        labels = {"engine": "0", "model_name": model}
+        if name == "request_success_total":
+            labels["finished_reason"] = "stop"
+        labels = {key: labels[key] for key in sorted(labels)}
+        metrics[name] = [{"labels": labels, "value": 0.0}]
+        rendered_labels = ",".join(
+            f'{key}="{value}"' for key, value in labels.items()
+        )
+        raw.append(f"vllm:{name}{{{rendered_labels}}} 0.0")
+    raw.sort()
+    return {
+        "endpoint": "http://127.0.0.1:18001/metrics",
+        "model": model,
+        "metrics": metrics,
+        "raw_selected_samples": raw,
+        "raw_selected_sha256": hashlib.sha256(
+            ("\n".join(raw) + "\n").encode("utf-8")
+        ).hexdigest(),
+        "normalized_sha256": value_sha256(metrics),
+        "all_generation_traffic_zero": True,
+    }
 
 
 class _Fixture:
@@ -150,18 +190,18 @@ class _Fixture:
                 "benchmark_files": [benchmark_file.resolve().as_posix()],
                 "complete_human_classify_file": str(complete_file.resolve()),
                 "reviewer_selection_file": str(selection_file.resolve()),
-                "base_url": "https://evaluation/v1",
-                "model": "judge-model",
+                "base_url": "http://127.0.0.1:18001/v1",
+                "model": "qwen3.8-27b",
                 "max_in_flight_client_requests": 4,
-                "effort": "medium",
-                "temperature": None,
-                "max_completion_tokens": 32768,
-                "context_window_tokens": 400000,
+                "effort": "none",
+                "temperature": 0.0,
+                "max_completion_tokens": 8192,
+                "context_window_tokens": 65536,
                 "prompt_preflight": {
-                    "algorithm": "utf8-byte-upper-bound-v1",
-                    "max_model_len": 400000,
-                    "max_completion_tokens": 32768,
-                    "chat_overhead_tokens": 1024,
+                    "algorithm": "vllm-chat-tokenize-v1",
+                    "max_model_len": 65536,
+                    "max_completion_tokens": 8192,
+                    "enable_thinking": False,
                 },
                 "cuda_visible_devices": "",
                 "bert_score_model": bert_score_model,
@@ -237,13 +277,43 @@ class _Fixture:
                 "pyc_file_count": 2,
                 "tree_sha256": "7" * 64,
             },
-            "transport": {
-                "HTTP_PROXY": "http://127.0.0.1:7898",
-                "HTTPS_PROXY": "http://127.0.0.1:7898",
-            },
         }
+        services["judge"] = {
+            "cuda_visible_devices": "3,6",
+            "python_executable": str(Path(sys.executable).resolve()),
+            "vllm_attention_backend": "",
+            "host": "127.0.0.1",
+            "port": 18001,
+            "served_model_name": "qwen3.8-27b",
+            "model_root": str((self.coco_root / "model/judge").resolve()),
+            "max_model_len": 65536,
+            "max_num_seqs": 8,
+            "tensor_parallel_size": 2,
+            "gpu_memory_utilization": 0.9,
+            "dtype": "bfloat16",
+            "language_model_only": True,
+            "reasoning_parser": "qwen3",
+            "enable_prefix_caching": True,
+            "enforce_eager": False,
+            "disable_custom_all_reduce": True,
+            "default_chat_template_kwargs": {"enable_thinking": False},
+            "working_directory": str(self.repository_root),
+            "source_model": "Qwen/Qwen3.8-27B",
+            "revision": "1" * 40,
+            "tokenizer_sha256": "1" * 64,
+            "chat_template_sha256": "2" * 64,
+            "config_sha256": "3" * 64,
+            "tokenizer_config_sha256": "4" * 64,
+            "generation_config_sha256": "5" * 64,
+            "model_index_sha256": "6" * 64,
+            "weight_file_count": 18,
+            "weight_total_bytes": 1000,
+            "weights_tree_sha256": "8" * 64,
+            "mode_lease": audit_module.qwen27b_mode_lease_identity(),
+        }
+        Path(services["judge"]["model_root"]).mkdir(parents=True)
         spec_body = {
-            "protocol": "research-v2-coco-scoring-spec-v1",
+            "protocol": "research-v2-coco-scoring-spec-v2",
             "winner_run_id": self.winner_run_id,
             "artifact_root": str(self.artifact_root.resolve()),
             "repository": {
@@ -457,6 +527,41 @@ class _Fixture:
             }
             return {name: _binding(paths[name]) for name in names}
 
+        def validate_restart(_spec, *, bound_input_paths, **_kwargs):
+            instance_body = {
+                "boot_id": "11111111-1111-1111-1111-111111111111",
+                "listener_pid": 101,
+                "listener_start_identity": "listener-start",
+                "engine_pid": 102,
+                "engine_start_identity": "engine-start",
+            }
+            return {
+                "protocol": audit_module.RESTART_BARRIER_PROTOCOL,
+                "mode_lease": audit_module.qwen27b_mode_lease_identity(),
+                "bound_inputs": sorted(
+                    (_binding(Path(path)) for path in bound_input_paths),
+                    key=lambda item: item["path"],
+                ),
+                "minimum_start_delay_seconds": 2,
+                "listener_started_after_inputs": True,
+                "engine_started_after_inputs": True,
+                "prefix_cache_cleared_by_process_restart": True,
+                "reviewer_evolution_processes_absent": True,
+                "zero_generation_traffic": _zero_traffic_proof(),
+                "mode_lease_state": {
+                    "st_dev": 1,
+                    "st_ino": 2,
+                    "st_uid": 3,
+                    "mode": 0o600,
+                    "raw_state_sha256": "9" * 64,
+                    "reviewer_generation": 4,
+                },
+                "judge_instance": {
+                    **instance_body,
+                    "instance_id": value_sha256(instance_body),
+                },
+            }
+
         with (
             patch.object(
                 audit_module,
@@ -479,6 +584,35 @@ class _Fixture:
                 side_effect=lambda *_args, **_kwargs: copy.deepcopy(
                     self.runtime_proof
                 ),
+            ),
+            patch.object(
+                audit_module,
+                "validate_coco_service_runtime_proof",
+                side_effect=lambda value, **_kwargs: value,
+            ),
+            patch.object(
+                audit_module,
+                "validate_judge_restart_barrier",
+                side_effect=validate_restart,
+            ),
+            patch.object(
+                audit_module,
+                "validate_sealed_judge_restart_barrier",
+                side_effect=lambda _spec, *, sealed_barrier, **_kwargs: copy.deepcopy(
+                    sealed_barrier
+                ),
+            ),
+            patch.object(
+                audit_module,
+                "validate_judge_scoring_runtime",
+                side_effect=lambda *_args, **_kwargs: copy.deepcopy(
+                    self.runtime_proof
+                ),
+            ),
+            patch.object(
+                audit_module.coco_module,
+                "_validate_scoring_runtime_pair",
+                side_effect=lambda value, **_kwargs: value,
             ),
             patch.object(
                 audit_module.coco_module,
@@ -515,6 +649,8 @@ class _Fixture:
             settings = audit_module._expected_runner_settings(
                 spec=self.spec,
                 mode=mode,
+                seal=seal,
+                pre_score_seal_path=self.seal_path,
             )
             settings["split"]["prompt_preflight"] = {
                 "algorithm": "qwen-chat-template-v1",
@@ -536,6 +672,17 @@ class _Fixture:
                 "max_prompt_tokens": 100,
                 "max_total_tokens": 4196,
                 "prompt_token_counts_sha256": "7" * 64,
+            }
+            settings["evaluation"]["prompt_preflight"] = {
+                "algorithm": "vllm-chat-tokenize-v1",
+                "max_model_len": 65536,
+                "max_completion_tokens": 8192,
+                "enable_thinking": False,
+                "candidate_count": 2,
+                "judge_request_count": 2,
+                "max_prompt_tokens": 100,
+                "max_total_tokens": 8292,
+                "prompt_token_counts_sha256": "8" * 64,
             }
             runner = {
                 "protocol": audit_module.coco_module.COCO_RUNNER_PROTOCOL,
@@ -579,6 +726,10 @@ class _Fixture:
                 },
                 "scoring_spec": seal["scoring_spec"],
                 "service_runtime": seal["service_runtime"],
+                "scoring_service_runtime": {
+                    "pre": seal["service_runtime"],
+                    "post": seal["service_runtime"],
+                },
                 "candidate_input": seal["arms"][mode]["candidate"]["path"],
                 "candidate_input_sha256": seal["arms"][mode]["candidate"]["sha256"],
                 "external_coco_identity": seal["external_coco"],
@@ -598,6 +749,13 @@ class _Fixture:
                         ),
                         output=output,
                         scoring_spec_path=self.spec_path,
+                        pre_score_seal_path=self.seal_path,
+                        mode_lease_state=seal["judge_restart_barrier"][
+                            "mode_lease_state"
+                        ],
+                        judge_instance_id=seal["judge_restart_barrier"][
+                            "judge_instance"
+                        ]["instance_id"],
                     ).items()
                 },
                 "artifacts": {
@@ -608,6 +766,32 @@ class _Fixture:
 
 
 class CocoFinalAuditTest(unittest.TestCase):
+    def test_seal_rejects_nonzero_traffic_on_second_live_capture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = _Fixture(directory)
+            with fixture.patched():
+                validator = audit_module.validate_judge_restart_barrier
+                live_validator = validator.side_effect
+                capture_count = 0
+
+                def capture(*args, **kwargs):
+                    nonlocal capture_count
+                    capture_count += 1
+                    if capture_count == 2:
+                        raise RuntimeError(
+                            "CoCo judge fresh-process metric is not zero"
+                        )
+                    return live_validator(*args, **kwargs)
+
+                validator.side_effect = capture
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "fresh-process metric is not zero",
+                ):
+                    fixture.seal()
+            self.assertEqual(capture_count, 2)
+            self.assertFalse(fixture.seal_path.exists())
+
     def test_happy_seal_rebuild_is_idempotent_and_detects_upstream_drift(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = _Fixture(directory)
@@ -689,7 +873,7 @@ class CocoFinalAuditTest(unittest.TestCase):
                 candidate.unlink()
                 with self.assertRaisesRegex(
                     FileNotFoundError,
-                    "candidate is missing",
+                    "candidate|restart input",
                 ):
                     validate_coco_pre_score_seal(
                         fixture.seal_path,
@@ -698,7 +882,7 @@ class CocoFinalAuditTest(unittest.TestCase):
                 self.assertFalse(candidate.exists())
                 with self.assertRaisesRegex(
                     FileNotFoundError,
-                    "candidate is missing",
+                    "candidate|restart input",
                 ):
                     fixture.seal()
                 self.assertFalse(candidate.exists())
@@ -866,17 +1050,20 @@ class CocoFinalAuditTest(unittest.TestCase):
                         fixture.spec["services"]["evaluation"],
                     )
                     self.assertIs(evaluation_settings["require_complete"], True)
-                    self.assertIsNone(evaluation_settings["temperature"])
+                    self.assertEqual(evaluation_settings["temperature"], 0.0)
                     self.assertEqual(
                         evaluation_settings["max_completion_tokens"],
-                        32768,
+                        8192,
                     )
-                    self.assertEqual(
-                        evaluation_settings["prompt_preflight"],
-                        fixture.spec["scientific_settings"]["evaluation"][
-                            "prompt_preflight"
-                        ],
-                    )
+                    evaluation_preflight = evaluation_settings[
+                        "prompt_preflight"
+                    ]
+                    for name, value in fixture.spec["scientific_settings"][
+                        "evaluation"
+                    ]["prompt_preflight"].items():
+                        self.assertEqual(evaluation_preflight[name], value)
+                    self.assertEqual(evaluation_preflight["candidate_count"], 2)
+                    self.assertEqual(evaluation_preflight["judge_request_count"], 2)
                     self.assertEqual(
                         evaluation_settings["code_files"]["table_1_contract"],
                         next(
@@ -1048,6 +1235,7 @@ class CocoFinalAuditTest(unittest.TestCase):
                         "_validated_service_runtime",
                         side_effect=[
                             copy.deepcopy(seal["service_runtime"]),
+                            copy.deepcopy(seal["service_runtime"]),
                             runtime,
                         ],
                     ),
@@ -1112,11 +1300,11 @@ class CocoFinalAuditTest(unittest.TestCase):
             ].__setitem__("max_completion_tokens", 65536),
             "evaluation preflight": lambda settings: settings["evaluation"][
                 "prompt_preflight"
-            ].__setitem__("chat_overhead_tokens", 0),
-            "transport": lambda settings: settings["evaluation"][
+            ].__setitem__("enable_thinking", True),
+            "proxy runtime": lambda settings: settings["evaluation"][
                 "python_runtime"
-            ]["transport"].__setitem__(
-                "HTTPS_PROXY", "http://127.0.0.1:7899"
+            ].__setitem__(
+                "transport", {"HTTPS_PROXY": "http://127.0.0.1:7899"}
             ),
             "llm client code": lambda settings: settings["evaluation"][
                 "code_files"
@@ -1145,7 +1333,10 @@ class CocoFinalAuditTest(unittest.TestCase):
                     report = read_json(report_path)
                     report["artifacts"]["runner"] = _binding(runner_path)
                     _write(report_path, report)
-                    with self.assertRaisesRegex(ValueError, "settings differ"):
+                    with self.assertRaisesRegex(
+                        (ValueError, RuntimeError),
+                        "settings differ|preflight.*differ",
+                    ):
                         audit_coco_final(
                             pre_score_seal_path=fixture.seal_path,
                             repository_root=fixture.repository_root,

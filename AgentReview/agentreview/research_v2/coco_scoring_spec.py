@@ -14,14 +14,16 @@ import re
 import stat
 import subprocess
 import tempfile
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 from .io import atomic_write_json, file_sha256, value_sha256
+from .judge_lease import identity as qwen27b_mode_lease_identity
 
 
-PROTOCOL = "research-v2-coco-scoring-spec-v1"
+PROTOCOL = "research-v2-coco-scoring-spec-v2"
 ARMS = ("meta", "concat")
 CACHE_STAGES = ("split", "classify", "evaluation")
 BENCHMARK_GLOB = "benchmark_*_20*.jsonl"
@@ -45,20 +47,30 @@ MODEL_RELATIVE_ROOTS = {
 }
 EVALUATION_MODEL_TYPE = "roberta-large"
 EVALUATION_MODEL_NUM_LAYERS = 17
-FORMAL_EVALUATION_MAX_COMPLETION_TOKENS = 32768
-FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS = 400000
-FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM = "utf8-byte-upper-bound-v1"
-FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS = 1024
+FORMAL_EVALUATION_MAX_COMPLETION_TOKENS = 8192
+FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS = 65536
+FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM = "vllm-chat-tokenize-v1"
 FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS = 4096
 FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS = 32768
 FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM = "qwen-classify-chat-template-v1"
 FORMAL_SPLIT_MAX_COMPLETION_TOKENS = 8192
 FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS = 40960
 FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM = "qwen-chat-template-v1"
-FORMAL_EVALUATION_PROXY_HOST = "127.0.0.1"
-FORMAL_EVALUATION_PROXY_PORT = 7898
-FORMAL_EVALUATION_PROXY_URL = (
-    f"http://{FORMAL_EVALUATION_PROXY_HOST}:{FORMAL_EVALUATION_PROXY_PORT}"
+FORMAL_JUDGE_HOST = "127.0.0.1"
+FORMAL_JUDGE_PORT = 18001
+FORMAL_JUDGE_BASE_URL = f"http://{FORMAL_JUDGE_HOST}:{FORMAL_JUDGE_PORT}/v1"
+FORMAL_JUDGE_MODEL_NAME = "qwen3.8-27b"
+FORMAL_JUDGE_MODEL_ROOT = "/data0/xyj/models/Qwen3.8-27B"
+FORMAL_JUDGE_SOURCE_MODEL = "Qwen/Qwen3.8-27B"
+FORMAL_JUDGE_REVISION = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+FORMAL_JUDGE_TOKENIZER_SHA256 = (
+    "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3"
+)
+FORMAL_JUDGE_CHAT_TEMPLATE_SHA256 = (
+    "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
+)
+FORMAL_JUDGE_WORKING_DIRECTORY = (
+    "/data0/xyj/shengao/AgentReview_0831/AgentReview"
 )
 EVALUATION_REQUIRED_PACKAGES = {
     "bert-score": "bert_score",
@@ -98,33 +110,10 @@ _TOP_LEVEL_FIELDS = {
 }
 _SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 _GIT_COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
-
-
-def _evaluation_transport(proxy_url: Any) -> dict[str, str]:
-    if not isinstance(proxy_url, str) or not proxy_url or proxy_url != proxy_url.strip():
-        raise ValueError("CoCo evaluation proxy URL must be canonical")
-    try:
-        parsed = urlsplit(proxy_url)
-        port = parsed.port
-    except ValueError as exc:
-        raise ValueError("CoCo evaluation proxy URL must have a valid port") from exc
-    if (
-        parsed.scheme != "http"
-        or parsed.hostname != FORMAL_EVALUATION_PROXY_HOST
-        or parsed.username is not None
-        or parsed.password is not None
-        or port != FORMAL_EVALUATION_PROXY_PORT
-        or parsed.query
-        or parsed.fragment
-        or parsed.path not in {"", "/"}
-        or parsed.netloc
-        != f"{FORMAL_EVALUATION_PROXY_HOST}:{FORMAL_EVALUATION_PROXY_PORT}"
-    ):
-        raise ValueError(
-            "CoCo evaluation proxy URL must be an explicit localhost HTTP endpoint"
-        )
-    canonical = FORMAL_EVALUATION_PROXY_URL
-    return {"HTTP_PROXY": canonical, "HTTPS_PROXY": canonical}
+_JUDGE_WEIGHT_IDENTITY_CACHE: dict[
+    str, tuple[dict[str, Any], dict[str, tuple[int, ...]]]
+] = {}
+_JUDGE_WEIGHT_IDENTITY_LOCK = threading.Lock()
 
 
 def _run_git(root: Path, *arguments: str) -> str:
@@ -354,6 +343,122 @@ def _verify_observations(observations: dict[str, tuple[int, ...]]) -> None:
         )
         if identity != expected:
             raise RuntimeError(f"CoCo input changed during inventory: {path}")
+
+
+def judge_weight_identity() -> dict[str, Any]:
+    """Hash and compactly bind the exact local 27B shard closure."""
+    root = Path(FORMAL_JUDGE_MODEL_ROOT)
+    if (
+        not root.is_absolute()
+        or root.is_symlink()
+        or root.resolve() != root
+        or not root.is_dir()
+    ):
+        raise ValueError("CoCo judge model root is not a canonical directory")
+    key = str(root)
+    with _JUDGE_WEIGHT_IDENTITY_LOCK:
+        cached = _JUDGE_WEIGHT_IDENTITY_CACHE.get(key)
+        if cached is not None:
+            value, observations = cached
+            try:
+                _verify_observations(observations)
+            except RuntimeError:
+                pass
+            else:
+                return dict(value)
+
+        semantic_paths = {
+            "config_sha256": root / "config.json",
+            "tokenizer_config_sha256": root / "tokenizer_config.json",
+            "generation_config_sha256": root / "generation_config.json",
+            "model_index_sha256": root / "model.safetensors.index.json",
+        }
+        index_path = semantic_paths["model_index_sha256"]
+        metadata_path = root / ".hfd" / "repo_metadata.json"
+        for path, label in (
+            *((path, name) for name, path in semantic_paths.items()),
+            (metadata_path, "source metadata"),
+        ):
+            if path.is_symlink() or not path.is_file():
+                raise ValueError(f"CoCo judge {label} file identity is invalid")
+        semantic_fingerprints = {
+            name: _stable_file_fingerprint(path)
+            for name, path in semantic_paths.items()
+        }
+        _, _, metadata_observation = _stable_file_fingerprint(metadata_path)
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError("CoCo judge weight metadata is unreadable") from exc
+        weight_map = index.get("weight_map") if isinstance(index, dict) else None
+        siblings = metadata.get("siblings") if isinstance(metadata, dict) else None
+        if not isinstance(weight_map, dict) or not weight_map:
+            raise ValueError("CoCo judge weight index is invalid")
+        if not isinstance(siblings, list):
+            raise ValueError("CoCo judge source metadata has no file inventory")
+        names = sorted(set(weight_map.values()))
+        if (
+            any(
+                not isinstance(name, str)
+                or not name.endswith(".safetensors")
+                or Path(name).name != name
+                for name in names
+            )
+            or len(names) != 18
+        ):
+            raise ValueError("CoCo judge weight shard closure is invalid")
+        actual_names = sorted(path.name for path in root.glob("*.safetensors"))
+        if actual_names != names:
+            raise ValueError("CoCo judge weight shard directory differs from its index")
+        source_files = {
+            item.get("rfilename"): item
+            for item in siblings
+            if isinstance(item, dict) and isinstance(item.get("rfilename"), str)
+        }
+        if any(
+            name not in source_files
+            or not isinstance(source_files[name].get("lfs"), dict)
+            for name in names
+        ):
+            raise ValueError("CoCo judge source metadata omits a weight shard")
+
+        def fingerprint(name: str) -> tuple[str, int, tuple[int, ...]]:
+            path = root / name
+            if path.is_symlink():
+                raise ValueError("CoCo judge weight shard must not be a symlink")
+            return _stable_file_fingerprint(path)
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            fingerprints = list(executor.map(fingerprint, names))
+        entries: list[dict[str, Any]] = []
+        observations = {str(metadata_path): metadata_observation}
+        observations.update(
+            {
+                str(semantic_paths[name]): fingerprint[2]
+                for name, fingerprint in semantic_fingerprints.items()
+            }
+        )
+        for name, (digest, size, observation) in zip(names, fingerprints, strict=True):
+            lfs = source_files[name]["lfs"]
+            if lfs.get("sha256") != digest or lfs.get("size") != size:
+                raise ValueError(
+                    f"CoCo judge weight shard differs from source metadata: {name}"
+                )
+            entries.append({"path": name, "size_bytes": size, "sha256": digest})
+            observations[str(root / name)] = observation
+        _verify_observations(observations)
+        value = {
+            **{
+                name: semantic_fingerprints[name][0]
+                for name in semantic_paths
+            },
+            "weight_file_count": len(entries),
+            "weight_total_bytes": sum(item["size_bytes"] for item in entries),
+            "weights_tree_sha256": value_sha256(entries),
+        }
+        _JUDGE_WEIGHT_IDENTITY_CACHE[key] = (dict(value), observations)
+        return value
 
 
 def _evaluation_model_identity(model: dict[str, Any]) -> dict[str, Any]:
@@ -648,18 +753,18 @@ def _scientific_settings(
                 "path"
             ],
             "reviewer_selection_file": benchmark["reviewer_selection"]["path"],
-            "base_url": "https://api.openai.com/v1",
-            "model": "gpt-5-mini",
-            "max_in_flight_client_requests": 128,
-            "effort": "medium",
-            "temperature": None,
+            "base_url": FORMAL_JUDGE_BASE_URL,
+            "model": FORMAL_JUDGE_MODEL_NAME,
+            "max_in_flight_client_requests": 4,
+            "effort": "none",
+            "temperature": 0.0,
             "max_completion_tokens": FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
             "context_window_tokens": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
             "prompt_preflight": {
                 "algorithm": FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM,
                 "max_model_len": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
                 "max_completion_tokens": FORMAL_EVALUATION_MAX_COMPLETION_TOKENS,
-                "chat_overhead_tokens": FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS,
+                "enable_thinking": False,
             },
             "cuda_visible_devices": "",
             "bert_score_model": _evaluation_model_identity(models["evaluation"]),
@@ -667,12 +772,50 @@ def _scientific_settings(
     }
 
 
+def _verify_judge_model_identity() -> None:
+    root = Path(FORMAL_JUDGE_MODEL_ROOT)
+    if (
+        not root.is_absolute()
+        or root.is_symlink()
+        or root.resolve() != root
+        or not root.is_dir()
+    ):
+        raise ValueError("CoCo judge model root is not a canonical directory")
+    metadata_path = root / ".hfd" / "repo_metadata.json"
+    tokenizer_path = root / "tokenizer.json"
+    chat_template_path = root / "chat_template.jinja"
+    for path, label in (
+        (metadata_path, "source metadata"),
+        (tokenizer_path, "tokenizer"),
+        (chat_template_path, "chat template"),
+    ):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"CoCo judge {label} file identity is invalid")
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("CoCo judge source metadata is unreadable") from exc
+    observed = {
+        "source_model": metadata.get("id") if isinstance(metadata, dict) else None,
+        "revision": metadata.get("sha") if isinstance(metadata, dict) else None,
+        "tokenizer_sha256": file_sha256(tokenizer_path),
+        "chat_template_sha256": file_sha256(chat_template_path),
+    }
+    if observed != {
+        "source_model": FORMAL_JUDGE_SOURCE_MODEL,
+        "revision": FORMAL_JUDGE_REVISION,
+        "tokenizer_sha256": FORMAL_JUDGE_TOKENIZER_SHA256,
+        "chat_template_sha256": FORMAL_JUDGE_CHAT_TEMPLATE_SHA256,
+    }:
+        raise ValueError("CoCo judge model source identity differs")
+
+
 def _service_identities(
     models: dict[str, Any],
     *,
     evaluation_python: str | Path,
-    evaluation_proxy_url: str,
 ) -> dict[str, Any]:
+    _verify_judge_model_identity()
     services = {
         "software": {"vllm": "0.20.1", "transformers": "5.8.1"},
         "split": {
@@ -711,10 +854,36 @@ def _service_identities(
             "enable_prefix_caching": True,
             "enforce_eager": True,
         },
+        "judge": {
+            "cuda_visible_devices": "3,6",
+            "python_executable": "/data0/xyj/miniconda3/envs/qwen38serve/bin/python",
+            "vllm_attention_backend": "",
+            "host": FORMAL_JUDGE_HOST,
+            "port": FORMAL_JUDGE_PORT,
+            "served_model_name": FORMAL_JUDGE_MODEL_NAME,
+            "model_root": FORMAL_JUDGE_MODEL_ROOT,
+            "source_model": FORMAL_JUDGE_SOURCE_MODEL,
+            "revision": FORMAL_JUDGE_REVISION,
+            "tokenizer_sha256": FORMAL_JUDGE_TOKENIZER_SHA256,
+            "chat_template_sha256": FORMAL_JUDGE_CHAT_TEMPLATE_SHA256,
+            "max_model_len": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
+            "max_num_seqs": 8,
+            "tensor_parallel_size": 2,
+            "gpu_memory_utilization": 0.90,
+            "dtype": "bfloat16",
+            "language_model_only": True,
+            "reasoning_parser": "qwen3",
+            "enable_prefix_caching": True,
+            "enforce_eager": False,
+            "disable_custom_all_reduce": True,
+            "default_chat_template_kwargs": {"enable_thinking": False},
+            "working_directory": FORMAL_JUDGE_WORKING_DIRECTORY,
+            "mode_lease": qwen27b_mode_lease_identity(),
+            **judge_weight_identity(),
+        },
     }
     services["evaluation"] = {
         **_evaluation_runtime_identity(evaluation_python),
-        "transport": _evaluation_transport(evaluation_proxy_url),
     }
     return services
 
@@ -765,7 +934,6 @@ def _build_body(
     artifact_root: Path,
     winner_run_id: str,
     evaluation_python: str | Path,
-    evaluation_proxy_url: str,
 ) -> dict[str, Any]:
     repository = _clean_git_identity(coco_root)
     critical_files = _critical_file_bindings(coco_root)
@@ -807,7 +975,6 @@ def _build_body(
         "services": _service_identities(
             models,
             evaluation_python=evaluation_python,
-            evaluation_proxy_url=evaluation_proxy_url,
         ),
         "arms": _arm_bindings(
             artifact_root=artifact_root,
@@ -1085,10 +1252,30 @@ def _validate_shape(value: dict[str, Any]) -> None:
         evaluation_settings["max_in_flight_client_requests"],
         label="scientific_settings.evaluation.max_in_flight_client_requests",
     )
-    if evaluation_settings["temperature"] is not None:
+    if evaluation_settings["base_url"] != FORMAL_JUDGE_BASE_URL:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.base_url differs"
+        )
+    if evaluation_settings["model"] != FORMAL_JUDGE_MODEL_NAME:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation.model differs"
+        )
+    if evaluation_settings["max_in_flight_client_requests"] != 4:
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation client limit differs"
+        )
+    if evaluation_settings["effort"] != "none":
+        raise ValueError(
+            "CoCo scoring spec scientific_settings.evaluation effort differs"
+        )
+    if (
+        isinstance(evaluation_settings["temperature"], bool)
+        or not isinstance(evaluation_settings["temperature"], (int, float))
+        or float(evaluation_settings["temperature"]) != 0.0
+    ):
         raise ValueError(
             "CoCo scoring spec scientific_settings.evaluation.temperature "
-            "must be null"
+            "must be zero"
         )
     if (
         type(evaluation_settings["max_completion_tokens"]) is not int
@@ -1107,7 +1294,7 @@ def _validate_shape(value: dict[str, Any]) -> None:
             "algorithm",
             "max_model_len",
             "max_completion_tokens",
-            "chat_overhead_tokens",
+            "enable_thinking",
         },
         label="scientific_settings.evaluation.prompt_preflight",
     )
@@ -1120,9 +1307,7 @@ def _validate_shape(value: dict[str, Any]) -> None:
         or type(evaluation_preflight["max_completion_tokens"]) is not int
         or evaluation_preflight["max_completion_tokens"]
         != FORMAL_EVALUATION_MAX_COMPLETION_TOKENS
-        or type(evaluation_preflight["chat_overhead_tokens"]) is not int
-        or evaluation_preflight["chat_overhead_tokens"]
-        != FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS
+        or evaluation_preflight["enable_thinking"] is not False
     ):
         raise ValueError(
             "CoCo scoring spec scientific_settings.evaluation prompt preflight "
@@ -1168,7 +1353,7 @@ def _validate_shape(value: dict[str, Any]) -> None:
 
     services = _require_fields(
         value.get("services"),
-        {"software", "split", "classify", "evaluation"},
+        {"software", "split", "classify", "judge", "evaluation"},
         label="services",
     )
     software = _require_fields(
@@ -1240,6 +1425,81 @@ def _validate_shape(value: dict[str, Any]) -> None:
                     f"CoCo scoring spec services.{role}.{name} must be true"
                 )
 
+    judge = _require_fields(
+        services["judge"],
+        service_fields
+        | {
+            "disable_custom_all_reduce",
+            "default_chat_template_kwargs",
+            "working_directory",
+            "source_model",
+            "revision",
+            "tokenizer_sha256",
+            "chat_template_sha256",
+            "config_sha256",
+            "tokenizer_config_sha256",
+            "generation_config_sha256",
+            "model_index_sha256",
+            "weight_file_count",
+            "weight_total_bytes",
+            "weights_tree_sha256",
+            "mode_lease",
+        },
+        label="services.judge",
+    )
+    for name in (
+        "cuda_visible_devices",
+        "python_executable",
+        "host",
+        "served_model_name",
+        "model_root",
+        "dtype",
+        "reasoning_parser",
+        "working_directory",
+        "source_model",
+        "revision",
+    ):
+        _require_non_empty_text(judge[name], label=f"services.judge.{name}")
+    if judge["vllm_attention_backend"] != "":
+        raise ValueError(
+            "CoCo scoring spec services.judge.vllm_attention_backend must be empty"
+        )
+    for name in ("port", "max_model_len", "max_num_seqs", "tensor_parallel_size"):
+        _require_positive_integer(judge[name], label=f"services.judge.{name}")
+    _require_gpu_utilization(
+        judge["gpu_memory_utilization"],
+        label="services.judge.gpu_memory_utilization",
+    )
+    expected_judge = {
+        "cuda_visible_devices": "3,6",
+        "python_executable": "/data0/xyj/miniconda3/envs/qwen38serve/bin/python",
+        "vllm_attention_backend": "",
+        "host": FORMAL_JUDGE_HOST,
+        "port": FORMAL_JUDGE_PORT,
+        "served_model_name": FORMAL_JUDGE_MODEL_NAME,
+        "model_root": FORMAL_JUDGE_MODEL_ROOT,
+        "source_model": FORMAL_JUDGE_SOURCE_MODEL,
+        "revision": FORMAL_JUDGE_REVISION,
+        "tokenizer_sha256": FORMAL_JUDGE_TOKENIZER_SHA256,
+        "chat_template_sha256": FORMAL_JUDGE_CHAT_TEMPLATE_SHA256,
+        "max_model_len": FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS,
+        "max_num_seqs": 8,
+        "tensor_parallel_size": 2,
+        "gpu_memory_utilization": 0.90,
+        "dtype": "bfloat16",
+        "language_model_only": True,
+        "reasoning_parser": "qwen3",
+        "enable_prefix_caching": True,
+        "enforce_eager": False,
+        "disable_custom_all_reduce": True,
+        "default_chat_template_kwargs": {"enable_thinking": False},
+        "working_directory": FORMAL_JUDGE_WORKING_DIRECTORY,
+        "mode_lease": qwen27b_mode_lease_identity(),
+        **judge_weight_identity(),
+    }
+    if judge != expected_judge:
+        raise ValueError("CoCo scoring spec services.judge identity differs")
+
     evaluation_runtime = _require_fields(
         services["evaluation"],
         {
@@ -1253,7 +1513,6 @@ def _validate_shape(value: dict[str, Any]) -> None:
             "ignore_environment",
             "packages",
             "prefix_tree",
-            "transport",
         },
         label="services.evaluation",
     )
@@ -1282,14 +1541,6 @@ def _validate_shape(value: dict[str, Any]) -> None:
             version,
             label=f"services.evaluation.packages.{name}",
         )
-    transport = _require_fields(
-        evaluation_runtime["transport"],
-        {"HTTP_PROXY", "HTTPS_PROXY"},
-        label="services.evaluation.transport",
-    )
-    expected_transport = _evaluation_transport(transport["HTTP_PROXY"])
-    if transport != expected_transport:
-        raise ValueError("CoCo scoring spec evaluation transport differs")
     prefix_tree = _require_fields(
         evaluation_runtime["prefix_tree"],
         {
@@ -1374,7 +1625,6 @@ def materialize_coco_scoring_spec(
     winner_run_id: str,
     output_path: str | Path,
     evaluation_python: str | Path,
-    evaluation_proxy_url: str,
 ) -> dict[str, Any]:
     """Materialize one deterministic, immutable, self-hashed scoring spec."""
     root = Path(coco_root).expanduser().resolve()
@@ -1387,14 +1637,12 @@ def materialize_coco_scoring_spec(
         artifact_root=artifacts,
         winner_run_id=winner,
         evaluation_python=evaluation_python,
-        evaluation_proxy_url=evaluation_proxy_url,
     )
     confirmed_body = _build_body(
         coco_root=root,
         artifact_root=artifacts,
         winner_run_id=winner,
         evaluation_python=evaluation_python,
-        evaluation_proxy_url=evaluation_proxy_url,
     )
     if confirmed_body != body:
         raise RuntimeError(
@@ -1458,9 +1706,6 @@ def validate_coco_scoring_spec(
         artifact_root=artifact_root,
         winner_run_id=value["winner_run_id"],
         evaluation_python=value["services"]["evaluation"]["python_executable"],
-        evaluation_proxy_url=value["services"]["evaluation"]["transport"][
-            "HTTP_PROXY"
-        ],
     )
     if body != expected:
         raise ValueError(
@@ -1477,17 +1722,24 @@ __all__ = [
     "FORMAL_CLASSIFY_CONTEXT_WINDOW_TOKENS",
     "FORMAL_CLASSIFY_MAX_COMPLETION_TOKENS",
     "FORMAL_CLASSIFY_PROMPT_PREFLIGHT_ALGORITHM",
-    "FORMAL_EVALUATION_PROXY_HOST",
-    "FORMAL_EVALUATION_PROXY_PORT",
-    "FORMAL_EVALUATION_PROXY_URL",
     "FORMAL_EVALUATION_CONTEXT_WINDOW_TOKENS",
     "FORMAL_EVALUATION_MAX_COMPLETION_TOKENS",
-    "FORMAL_EVALUATION_PROMPT_OVERHEAD_TOKENS",
     "FORMAL_EVALUATION_PROMPT_PREFLIGHT_ALGORITHM",
+    "FORMAL_JUDGE_BASE_URL",
+    "FORMAL_JUDGE_HOST",
+    "FORMAL_JUDGE_MODEL_NAME",
+    "FORMAL_JUDGE_MODEL_ROOT",
+    "FORMAL_JUDGE_SOURCE_MODEL",
+    "FORMAL_JUDGE_REVISION",
+    "FORMAL_JUDGE_TOKENIZER_SHA256",
+    "FORMAL_JUDGE_CHAT_TEMPLATE_SHA256",
+    "FORMAL_JUDGE_PORT",
+    "FORMAL_JUDGE_WORKING_DIRECTORY",
     "FORMAL_SPLIT_CONTEXT_WINDOW_TOKENS",
     "FORMAL_SPLIT_MAX_COMPLETION_TOKENS",
     "FORMAL_SPLIT_PROMPT_PREFLIGHT_ALGORITHM",
     "PROTOCOL",
+    "judge_weight_identity",
     "materialize_coco_scoring_spec",
     "validate_coco_scoring_spec",
 ]

@@ -9,7 +9,7 @@ Frozen Paper
   → save five complete Reviews
   → stateless Meta synthesis or deterministic concatenation
   → save Final Review
-  → external CoCo process
+  → sealed CoCo process with local Split / Classify / Judge models
 ```
 
 Review Run 不执行 Internal Evaluation、Reflection、Evolution 或 Memory writeback。Evolution 只读取已保存的完整 Review 与后置 Internal Evaluation：
@@ -42,10 +42,14 @@ Meta 不属于 Reviewer Role，不拥有 Memory 或 Program，不参与 Evolutio
 ```bash
 python -m pip install -r AgentReview/requirements.txt
 export PYTHONPATH=AgentReview
-export OPENAI_API_KEY=dummy
 ```
 
-正式生成模型是物理 GPU 3、6 上的独立 vLLM 服务。当前冻结配置连接 `http://127.0.0.1:18001/v1`，served model name 为 `qwen3.8-27b`，TP=2、BF16、64k context、`max_num_seqs=8`、temperature 0、`enable_thinking=false`。Qwen3-Embedding-8B 在本地进程中只服务确定性 embedding retrieval。
+正式生成与 CoCo Judge 共用物理 GPU 3、6 上的独立 vLLM 服务。冻结配置连接
+`http://127.0.0.1:18001/v1`，served model name 为 `qwen3.8-27b`，TP=2、BF16、
+64K context、`max_num_seqs=8`、Judge 输出预算 8,192、temperature 0、
+`enable_thinking=false`。本地 Judge 不读取 API key，不使用 proxy；客户端只连接
+loopback endpoint。Qwen3-Embedding-8B 在本地进程中只服务确定性 embedding
+retrieval。
 
 ## Stage CLI
 
@@ -115,7 +119,6 @@ python -m agentreview.research_v2 \
   materialize-coco-scoring-spec \
   --winner-run-id formal-coco1300-winner-v1 \
   --evaluation-python artifacts/research_v2/runtime/coco_eval_env_v1/bin/python \
-  --evaluation-proxy-url http://127.0.0.1:7898 \
   --output artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json
 
 python -m agentreview.research_v2 \
@@ -148,16 +151,30 @@ Specialist 与 Meta 共用同一个最多8路的27B队列，每篇五份 Special
 Meta；concat 不调用 LLM。相同 run ID 仅在正文、raw output、请求与完整 frozen identity
 均一致时恢复。
 
-冻结系统和两组各 1300 份 Final Review 齐备后，用 `seal-coco-pre-score` 固化候选与
-运行态证明。`coco-eval`
-只能按 seal 调用 CoCoReviewBench 的 `scripts/run_official_candidate.py`；该 runner
-只连接已经常驻并完成 GPU pin 的 split/classify endpoint。正式 evaluation 为必需
-阶段，凭据仅从 `COCO_EVALUATION_API_KEY` 注入子进程且不进入 artifact。两臂完成后
-必须运行 `audit-coco-final`，并可用 `validate-coco-final` 离线复核完整闭包。CoCo
-整臂与另一实验臂的 Review 可由两个独立进程并行启动；单个 sealed arm 保持整臂
-执行。三阶段输出预算/上下文上限固定为 Split 8,192/40,960、Classify
-4,096/32,768、Evaluation 32,768/400,000；runner 必须在对应 API 请求前执行封印的
-离线 prompt preflight，超限即失败且不得截断。
+冻结系统和两组各 1,300 份 Final Review 齐备后，先物化并校验 meta/concat
+两份 candidate input。候选与 scoring spec 落盘后至少等待2秒，所有
+Reviewer/Evolution 客户端必须退出，再定向重启 GPU 3、6 的27B服务以清除
+KV/prefix cache，然后用 `seal-coco-pre-score` 固化新 Judge 进程和两份
+candidate。第一次 seal 调用若只完成 candidate 物化而因旧 Judge 进程失败，
+按上述顺序重启后用同一命令恢复，不删除 candidate。
+
+27B 模式 lease 保证 Reviewer 使用排他锁、Judge 使用共享锁；因此 Review/
+Evolution 与 CoCo Judge 不能重叠，但 meta/concat 两个 sealed arm 可同时持有
+Judge lease。每臂 Judge 固定4个 client request，两臂合计8个，不超过
+`max_num_seqs=8`。`coco-eval` 只能按 seal 调用 CoCoReviewBench 的
+`scripts/run_official_candidate.py`，并只连接已完成 GPU pin 的三个本地
+Split/Classify/Judge endpoint；不需要任何 API key 或 proxy。
+
+三阶段输出预算/上下文上限固定为 Split 8,192/40,960、Classify
+4,096/32,768、Judge 8,192/65,536。runner 必须在对应 API 请求前执行封印
+prompt preflight；Judge 用同一 vLLM chat template 和 `/tokenize` 精确计数，全臂
+preflight 成功前不发送任何 Judge completion。任一超限立即失败，不得截断。
+两臂完成后必须运行 `audit-coco-final`，并可用 `validate-coco-final`
+离线复核完整闭包。
+
+CoCo Judge 与 Reviewer 使用同一 Qwen3.8-27B 模型族，因此这是封印条件下的
+self-judge。meta/concat 的相对对比必须共用同一 Judge 身份；其分数不能与
+历史 GPT-judged 结果直接做数值横比。
 
 其余 stage 的必需参数以各自 `--help` 为准。每一步读取上一阶段已经保存的 artifact；`run-evolution` 只是显式 spec 的薄协调器，不把 Review 与 Evaluation 合并成在线调用。
 

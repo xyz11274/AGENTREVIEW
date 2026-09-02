@@ -1,6 +1,6 @@
 # 正式实验配置与常见问题
 
-本文集中记录 Research Core v2 正式实验的运行配置、已验证容量和容易重复出现的环境问题。命令默认从 `/data0/xyj/shengao/AgentReview_0831` 执行；密钥只从环境变量读取，不写入配置或日志。
+本文集中记录 Research Core v2 正式实验的运行配置、已验证容量和容易重复出现的环境问题。命令默认从 `/data0/xyj/shengao/AgentReview_0831` 执行。Semantic Scholar 密钥只从环境变量读取，不写入配置或日志；本地 CoCo Judge 不需要 API key。
 
 ## Python 与仓库路径
 
@@ -21,14 +21,19 @@ $PYTHON -m agentreview.research_v2 \
 
 若出现 `ModuleNotFoundError: No module named 'agentreview'`，先确认当前目录是外层仓库根目录，并设置上述 `PYTHONPATH`。这不是测试或模块实现失败。
 
-部分 Python HTTP client 会继承 `HTTP_PROXY/HTTPS_PROXY`，即使目标是 `127.0.0.1` 也可能错误地返回代理侧 `502 Bad Gateway`。本地 endpoint 应设置：
+正式 Split、Classify 和 Judge 客户端都使用不继承 shell 环境的直连 HTTP
+transport，封印的 CoCo 子进程也不注入任何 proxy 变量。不要为正式 Judge
+配置本地或外部 proxy。只在手工调试会继承 shell 环境的普通 Python HTTP
+client 时，可设置：
 
 ```bash
 export NO_PROXY=127.0.0.1,localhost
 export no_proxy=127.0.0.1,localhost
 ```
 
-如果 Python 探活报 502 而同一地址的 `curl --noproxy '*'` 成功，优先检查 proxy bypass，不要重启正常的 vLLM 服务。
+如果手工 Python 探活报 502 而同一地址的 `curl --noproxy '*'` 成功，
+说明错误在手工 client 的 proxy 继承，不是 vLLM 服务；正式 runner 不应通过
+增加 proxy bypass 变量修改封印运行环境。
 
 ## 专用 Qwen3.8-27B 服务
 
@@ -46,6 +51,12 @@ export no_proxy=127.0.0.1,localhost
 | GPU memory utilization | `0.90` |
 | thinking | `false` |
 
+同一服务有两种互斥用途：Reviewer/Evolution/winner Review 生成，以及
+CoCo Table-1 Judge。Judge 的正式请求配置是 `max_completion_tokens=8192`、
+temperature 0、effort `none`、`enable_thinking=false`；每个 meta/concat arm
+最多4个 client request，两臂同时运行时合计8个，与服务端
+`max_num_seqs=8` 一致。这里的8是两臂共享的物理上限，不是每臂8路。
+
 服务状态：
 
 ```bash
@@ -61,7 +72,38 @@ tmux capture-pane -pt ar0831_qwen_gpu36_tp2c8_64k:0 -S -80
 
 32k 不足以容纳已测最大 Specialist 输入与输出预算，因此正式配置使用 64k。当前不建议直接升到 96k：它会减少 KV 并发，而且现有实际请求不需要。
 
-本地 vLLM 不要求真实 OpenAI key；客户端会使用本地占位值。`OPENAI_API_KEY` 不应指向外部付费服务，以免端口配置错误时产生误调用。
+本地 vLLM Judge 不读取任何外部 API key 环境变量。客户端在
+进程内使用固定的非秘密本地占位值，且 base URL 必须精确为
+`http://127.0.0.1:18001/v1`；环境中的外部 key 和端口都不能改变正式
+Judge identity。
+
+### 27B Reviewer/Judge 常见配置问题
+
+- `/v1/models` 正常但 seal 报 restart barrier：活跃的 listener/engine 是生成
+  Review 时启动的旧实例。先固定 scoring spec 和两份 candidate input，在它们
+  最新 mtime 之后至少等待2秒，再定向重启27B；仅在旧服务上等待2秒
+  无效。
+- Judge lease 冲突：仍有 Reviewer/Evolution/winner Review 客户端持有排他 lease。
+  查明并让该进程正常退出，然后排队重试；不要删除或替换
+  `qwen38_27b_mode.lock`，也不要绕过 lock 直接请求 endpoint。
+- Judge 运行中 service instance/lease generation 漂移：当前 arm 会 fail closed，已有的
+  旧实例 cache 不会被当作新实例结果。保留失败 staging 供审计，按新实例
+  的 seal/spec 恢复流程；不要改写 complete artifact。
+- seal 前 metrics 不为零：新 Judge 实例在共享 lease 下应保持 idle，且自本次
+  listener/engine 启动以来的 running/waiting、generation request/token 与
+  prefix-cache 流量指标必须全为零。非零说明重启后又有 Reviewer 或其他请求
+  污染了实例，不能建立 seal。一旦 `coco-eval` 开始，这些累计指标非零属于
+  正常 Judge 流量，运行中和最终审计不再要求它们为零。
+- 人工 client 报 502：先用 `curl --noproxy '*'` 对比。若 curl 成功，是手工
+  client 继承了 proxy；正式 runner 应保持无 proxy，不需重启 vLLM。
+- `/tokenize` 超限：Judge 要求 `prompt_tokens + 8192 <= 65536`。查看预检
+  中的请求类型、paper ID 和 token-count hash；禁止截断、动态降低输出预算或
+  临时扩大 context。
+- KV usage 只有约37% 不表示可以改为16并发。正式物理上限仍是8，Judge 两臂
+  固定4+4；KV 比例只是当前时刻已分配 cache，不包含后续长 prompt 的最坏情况。
+- 模型名不匹配：模型目录是 `Qwen3.8-27B`，正式 served model name 必须是
+  小写 `qwen3.8-27b`。修改大小写、端口、GPU、TP、context 或 chat template
+  都是服务 identity 变更，不能在封印后热切换。
 
 ## Semantic Scholar：严格单路串行
 
@@ -143,21 +185,32 @@ Review provenance v2 必须同时保存 Memory `logs/context`，以及 S2 的 ca
 
 Memory 与 S2 policy 的效果归因使用冻结 development set 的四格诊断：baseline/evolved Memory × baseline/evolved autonomous S2 policy。四格都让各自 policy 自主决策，不用 forced on/off 代替；报告 Memory/S2 主效应与 interaction，但不参与 winner 选择。若计划在 CoCo 上报告四格，必须在打开 sealed set 前预注册，结果不得返回 Evolution。
 
-## CoCo 两个服务与 Review 并行
+## CoCo 三个本地服务与并行边界
 
-CoCo Split 和 Classify 是两个独立的单 GPU、TP=1 vLLM endpoint。当前服务端已显式冻结 `max_num_seqs`：Split 为8、Classify 为16；这是服务端最大活跃序列数，实际并行仍受 KV 容量约束。客户端 semaphore 只是 HTTP 在途/排队上限，不等于 GPU 真并行数。
+CoCo 正式评分连接三个本地 endpoint：GPU 0 的 Split、GPU 1 的
+Classify，以及 GPU 3、6 TP=2 的 Qwen3.8-27B Judge。Split 和 Classify
+服务端冻结的 `max_num_seqs` 分别为8和16；Judge 为8。这是服务端
+最大活跃序列数，实际并行仍受 KV 容量约束。客户端 semaphore 只是
+HTTP 在途/排队上限，不等于 GPU 真并行数。
 
 旧本地配置中的 Split 512、Classify 1024 是 HTTP 在途上限。安全的 official candidate runner 默认收紧为 Split 64、Classify 128，并允许显式覆盖；它们仍只是排队上限，不是“64/128 路 GPU 同时推理”。正式 Split 切换到40K配置时必须再次显式冻结 `--max-num-seqs`，并用 metrics 与真实 prompt smoke 确认运行/等待数。
 
-一条实验臂 A 的完整 1,300 篇 CoCo scoring 可以与另一条实验臂 B 的 Review 同时排队和运行，条件是：
+27B 的 Reviewer 和 Judge 模式由
+`artifacts/research_v2/runtime/qwen38_27b_mode.lock` 隔离。Reviewer/Evolution/
+winner Review 客户端持有排他 lease，CoCo Judge 进程持有共享 lease。因此：
 
-- CoCo 与 27B 使用不同物理 GPU；
-- CoCo 只连接预先启动的 Split/Classify endpoint；
-- 不运行会执行全局 `pkill -f vllm...` 的旧生命周期脚本；
-- 每条 CoCo 臂仍先满足严格 1,300 ID exact-set barrier；
-- CoCo 输出不进入 Review、Internal Evaluation 或 Evolution。
+- Review、Evolution 或 winner Review 生成不能与任何 CoCo Judge 请求重叠；
+- meta 和 concat 两个 Judge arm 可以同时持有共享 lease；
+- 每臂固定4路 Judge client 并发，两臂合计8路，不允许再叠加第三条
+  Judge 队列；
+- lease 冲突时当前进程 fail closed，控制器可在冲突消失后用同一封印
+  identity 排队重试，不得绕过 lease；
+- 每条 CoCo 臂必须先满足严格 1,300 ID exact-set barrier，且 CoCo 输出不进入
+  Review、Internal Evaluation 或 Evolution。
 
-`scripts/run_official_candidate.py` 不负责启动、停止或清理任何 vLLM 服务，因此不会让专用 27B 在 CoCo 期间休息，也不会误杀其他实验服务。
+`scripts/run_official_candidate.py` 不负责启动、停止或清理任何 vLLM
+服务。服务切换由实验控制器在 barrier 外定向执行；不得运行包含全局
+`pkill -f vllm...` 的旧生命周期脚本。
 
 ### GPU 0/1 预留服务（2026-09-01）
 
@@ -166,14 +219,15 @@ endpoint，而不是无业务意义的显存占位进程：
 
 | GPU | tmux | endpoint | 模型 | 当前参数 | 用途 |
 |---|---|---|---|---|---|
-| 0 | `ar0831_coco_split_gpu0` | `127.0.0.1:13099/v1` | `Qwen3-8B-Split` | 8K、`max_num_seqs=8`、`gpu_memory_utilization=0.40` | 预留兼容模式，为 Evolution 的 Qwen3-Embedding-8B 保留显存 |
-| 1 | `ar0831_coco_classify_gpu1` | `127.0.0.1:13098/v1` | `Qwen3-8B-Classify` | 32K、`max_num_seqs=16`、`gpu_memory_utilization=0.90` | 正式 Classify 常驻服务 |
+| 0 | `ar0831_coco_split_gpu0` | `127.0.0.1:13099/v1` | `Qwen3-8B-Split` | `max_model_len=8192`、`max_num_seqs=8`、`gpu_memory_utilization=0.40` | 预留兼容模式，为 Evolution 的 Qwen3-Embedding-8B 保留显存 |
+| 1 | `ar0831_coco_classify_gpu1` | `127.0.0.1:13098/v1` | `Qwen3-8B-Classify` | `max_model_len=32768`、`max_num_seqs=16`、`gpu_memory_utilization=0.90` | 正式 Classify 常驻服务 |
 
 GPU 0 在 Split 占用约19.7 GiB 时，已实际加载正式
 `Qwen/Qwen3-Embedding-8B` 并成功生成4096维向量；两者可共存。预检日志是
 `artifacts/research_v2/runtime/coco_split_gpu0_reserve/embedding_coexist_preflight.log`。
 
-当前 GPU 0 Split 的 8K 是预留兼容参数，不是最终 CoCo scoring 参数。Formal
+当前 GPU 0 Split 的 `max_model_len=8192` 是预留兼容参数，不是最终 CoCo
+scoring 参数。Formal
 Evolution 完成后也不能立即切换40K：winner batch 仍会在 GPU 0 加载
 Qwen3-Embedding-8B。必须保持8K/0.40预留服务直到 winner batch 完整退出、
 Specialist/Meta/concat 各自通过1,300 exact-set barrier并释放 embedding，随后才定向停止
@@ -227,7 +281,7 @@ canonical run: complete（历史 session ar0831_formal_canonical_c8 已退出）
 internal eval: complete（历史 session 已退出）
 Formal Evolution: ar0831_formal_evolution_v1
 S2 build:     complete（历史 session ar0831_s2_coco1300 已退出）
-hourly probe: ar0831_hourly_probe
+hourly probe: stopped（历史 session ar0831_hourly_probe；未收到新指令时不重启）
 service log:  artifacts/research_v2/runtime/qwen_tp2_gpu36_64k/qwen.log
 development S2 log: artifacts/research_v2/runtime/s2_development/build.log
 CoCo S2 log:  artifacts/research_v2/runtime/s2_coco1300/build.log
@@ -258,10 +312,11 @@ tail -f artifacts/research_v2/runtime/formal_evolution_v1/stderr.log
 
 生成资产位于 `artifacts/research_v2/` 且被 Git ignore；源码配置、commit、manifest SHA256 和运行日志共同构成归档身份。
 
-## 每小时实验探针与故障恢复
+## 可选的每小时实验探针与故障恢复
 
-正式实验使用独立 tmux `ar0831_hourly_probe`，每3600秒从上一次探针开始时间
-执行一次只读检查：
+小时 probe daemon 当前已按控制指令停止，不得自动重启。若后续明确要求启用，
+使用独立 tmux `ar0831_hourly_probe`，每3600秒从上一次探针开始时间执行
+一次只读检查：
 
 ```bash
 PYTHONPATH=AgentReview \
@@ -302,15 +357,19 @@ Formal 与 CoCo S2 的精确 PID 还必须分别等于其 flock owner PID，只�
 
 ## Formal 完成后的确定性过渡
 
-只有小时探针给出 `transition_ready=true`，且两个 Git worktree 的变更都已提交并保持
-干净时，才从五角色 winner 进入 sealed CoCo 阶段。顺序固定为：Formal 完整结束 →
-在 clean `CoCoReviewBench` 上物化 CoCo scoring spec → 物化并冻结 Formal system →
-以唯一 run ID 生成 winner batch → 将 GPU 0 Split 从预留服务切换到正式服务 → 建立
-pre-score seal → 并行或排队执行 meta/concat 两臂 → final audit。任何一步失败都停在该步
-恢复，不能越过 barrier 启动下游。
+只有 transition-readiness 门禁确认 Formal 与 CoCo S2 完整，且两个 Git
+worktree 的变更都已提交并保持干净时，才从五角色 winner 进入 sealed
+CoCo 阶段。该门禁可由 one-shot probe 或控制器的等价完整检查给出，不要为了
+过渡而重启已停止的小时 daemon。顺序固定为：Formal 完整结束 → 在 clean
+`CoCoReviewBench` 上物化 CoCo scoring spec → 物化并冻结 Formal system →
+以唯一 run ID 生成 winner batch 和 meta/concat 两份 candidate input → 将 GPU 0
+Split 从预留服务切换到正式服务 → 退出全部 Reviewer 客户端并定向重启27B
+为 Judge 模式 → 通过2秒 restart barrier 并建立 pre-score seal → 并行或排队执行
+meta/concat 两臂 → final audit。任何一步失败都停在该步恢复，不能越过
+barrier 启动下游。
 
 首先确认外部仓库状态为空，然后物化唯一的评分环境身份。该步骤绑定外部 commit、runner、
-benchmark/evaluation closure、Split/Classify 模型文件、独立 Evaluation Python 的完整
+benchmark/evaluation closure、Split/Classify/Judge 模型文件、独立 Evaluation Python 的完整
 prefix tree、固定 BERTScore 模型 tree、正式 endpoint 参数，以及两臂不同的 output root
 和三阶段 cache namespace；此时 GPU 0 仍可保持8K预留服务：
 
@@ -324,25 +383,25 @@ PYTHONPATH=AgentReview \
   materialize-coco-scoring-spec \
   --winner-run-id formal-coco1300-winner-v1 \
   --evaluation-python /data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runtime/coco_eval_env_v1/bin/python \
-  --evaluation-proxy-url http://127.0.0.1:7898 \
   --output artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json
 ```
 
 命令必须看到空的 CoCo worktree；不能临时忽略 untracked benchmark 或 runner 文件。
-正式 Evaluation 只能使用上面固定的 `coco_eval_env_v1`，不能复用仅服务
-Split/Classify GPU endpoint 的 `qwen38serve` Python。其运行方式固定为 CPU、offline、
+正式 Evaluation 的 CPU metrics/runner 只能使用上面固定的
+`coco_eval_env_v1`，不能复用服务 GPU endpoint 的 `qwen38serve` Python。其运行
+方式固定为 CPU、offline（仅模型/数据下载离线，Judge 仍直连 loopback vLLM）、
 `python -s -B`：禁用 user site，禁止写入新 bytecode，并设置 `HF_HUB_OFFLINE=1` 与
 `TRANSFORMERS_OFFLINE=1`。scoring spec 会在清空环境的 probe 中验证 Python flags 和
 openai、requests、tqdm、numpy、torch、nltk、rouge-score、bert-score、transformers
 版本，再由父进程绑定整个 `sys.prefix` 的 ordinary file bytes、已有 `.pyc` 与 symlink
 target；运行时与 runner checkpoint 必须复用同一身份。
 
-正式 judge 的网络 transport 也由 spec 固定为
-`HTTP_PROXY=HTTPS_PROXY=http://127.0.0.1:7898`。outer runner 会清除 ambient proxy，
-Split/Classify child 完全不接收 proxy，只有 Evaluation child 注入这两个已登记且非秘密的
-值；`ALL_PROXY`、`NO_PROXY` 和额外 transport 字段均不允许。Evaluation 同时固定
-`require_complete=true`，任一 judge 提交、解析或重试最终失败都会使阶段非零退出；
-`temperature=null` 表示调用 GPT-5 judge 时完全省略 temperature 参数。
+正式 Judge 的网络 transport 由 spec 固定为直连
+`http://127.0.0.1:18001/v1`。outer runner 使用完整白名单环境，三个本地
+endpoint client 均不继承 ambient proxy、不注入 proxy 变量，也不读取 API key。
+Evaluation 固定 `require_complete=true`、temperature 0、effort `none`、
+`enable_thinking=false`；任一 Judge 提交、解析或重试最终失败都会使阶段
+非零退出。
 
 Split 的输出预算固定为 `max_completion_tokens=8192`，上下文上限固定为 40,960。
 runner 在发出任何 Split API 请求前，必须用封印的 Split tokenizer、正式 system prompt
@@ -364,12 +423,14 @@ Classify tokenizer 与 `enable_thinking=true` chat template 做同样的 exact p
 完整 token-count 列表 hash；任何 `prompt_tokens + 4096 > 32768` 的 opinion 都必须列出
 paper ID/opinion index 后失败，禁止截断或部分请求。
 
-Evaluation judge 的输出预算固定为 `max_completion_tokens=32768`，上下文上限固定为
-400,000。`_4_evaluation.py` 的统一 judge 提交入口必须在每次请求前，以 exact system 与
-user prompt 的 UTF-8 byte 数作为 token 数保守上界，再加固定1,024 chat overhead 与
-32,768输出预算；总和大于400,000时在进入 `LLMClient.submit_task` 前直接失败。该
-`utf8-byte-upper-bound-v1` 算法和三个常量进入 scoring spec、runner settings 与 final
-audit；不能依赖远端服务截断，也不能在正式命令中扩大预算。
+Evaluation Judge 的输出预算固定为 `max_completion_tokens=8192`，上下文上限固定为
+65,536。`_4_evaluation.py` 会先按固定顺序构造该臂所有实际 Judge prompt，
+然后用同一服务的 `/tokenize`、同一 messages/chat template、
+`add_generation_prompt=true` 和 `enable_thinking=false` 精确计数。只有每个
+`prompt_tokens + 8192 <= 65536` 都成立时才发送第一个 completion；后面才
+发现的超限也不能留下部分 Judge 结果。该 `vllm-chat-tokenize-v1` 算法、
+全臂 token-count/hash 摘要、预算与上下文进入 scoring spec、runner checkpoint 和
+final audit；禁止截断或在正式命令中扩大预算。
 
 BERTScore 只能读取
 `/data0/xyj/shengao/CoCoReviewBench/model/bertscore_roberta_large`，固定
@@ -470,8 +531,29 @@ winner batch 的进程完整退出并释放 GPU 0 embedding 后，定向停止
 `ar0831_coco_split_gpu0` 的8K/0.40预留服务，将其重启为 scoring spec 冻结的正式身份：
 GPU 0、`Qwen3-8B-Split`、端口13099、`max_model_len=40960`、
 `max_num_seqs=8`、`gpu_memory_utilization=0.90`。GPU 1 Classify 继续保持端口13098、
-32K、16 sequences、0.90；禁止全局 `pkill` 或重启 Classify。随后建立唯一 pre-score
-seal：
+`max_model_len=32768`、`max_num_seqs=16`、`gpu_memory_utilization=0.90`；禁止
+全局 `pkill` 或无故重启 Classify。
+
+然后使用下面的唯一 seal 命令物化两份 candidate input。如果当前27B还是生成
+Review 时启动的旧进程，命令会在 candidate 完整落盘后因 restart barrier
+fail closed，不会提交 pre-score seal。这是预期的两步过渡：
+
+1. 确认 Formal Evolution、winner Review 及所有27B Reviewer client 均已退出，排他
+   Reviewer lease 已释放；
+2. 确认 scoring spec 和 meta/concat 两份 candidate input 已固定，并在其中最新
+   mtime 之后至少等待2秒；
+3. 定向停止 GPU 3、6 的旧27B listener/engine，用同一封印参数重启为
+   Judge 实例；进程重启是清空 KV/prefix cache 的强制边界；
+4. 用同一命令恢复，不删除已物化的 candidate，不更改 run ID。
+
+新 Judge listener 和 engine 的启动时间必须都晚于三份绑定输入（scoring spec
+和两份 candidate）的最新 mtime 至少2秒。只在服务启动后等待2秒不能弥补
+“服务启动得太早”的身份错误；应先固定输入、等待间隔，再启动新进程。
+在 pre-score seal 提交之前，控制器还会在新 Judge 实例持有共享 lease 且
+idle 时检查 `/metrics`：自该实例启动以来的 running/waiting、generation
+request/token 和 prefix-cache 流量必须全为零，以证明重启后没有再被 Reviewer
+请求污染。该零流量门禁只用于 seal creation；两臂评分启动后 metrics 非零
+是正常现象，运行中连续性检查不应再要求它们为零。
 
 ```bash
 PYTHONPATH=AgentReview \
@@ -484,23 +566,33 @@ PYTHONPATH=AgentReview \
   --output artifacts/research_v2/frozen/formal-coco1300-pre-score-seal-v1.json
 ```
 
-seal 会 fail closed 地验证 Split 与 Classify 两个运行中服务的完整冻结身份，而不只检查
-`/v1/models`；任一 GPU、进程参数、模型树、软件版本、endpoint 或容量参数不一致时都不
-生成 seal。它还会从 frozen system 和 winner batch 完整重建 meta/concat 两份1,300条
-candidate input，并验证 exact-set、内容链、独立 output roots 与六个互异 cache
-namespaces。8K预留 Split 不能通过该步骤。
+seal 会 fail closed 地验证 Split、Classify 与 Judge 三个运行中服务的完整冻结
+身份，而不只检查 `/v1/models`；任一 GPU、进程参数、模型树、软件版本、
+endpoint 或容量参数不一致时都不生成 seal。它还会从 frozen system 和
+winner batch 完整重建 meta/concat 两份1,300条 candidate input，并验证
+exact-set、内容链、独立 output roots 与六个互异 cache namespaces。8K预留 Split、
+旧27B进程、未释放的 Reviewer lease 或未满足2秒的 restart barrier 都不能通过该步骤。
 
 seal 成功后，meta 与 concat 两个 `coco-eval` 可在独立 tmux 中同时启动，也可排队执行。
 两臂必须使用 scoring spec/seal 分配的不同 output root 和 Split/Classify/Evaluation cache
-identity；两者可以共享 GPU 0/1 endpoint，让 vLLM scheduler 排队，但不能共享 staging、
-缓存或结果文件。此时 Formal 与 winner Review 均已冻结，27B 不再有下游 Review 工作，
-可以空闲；CoCo 评分不会读取27B或S2。`coco-eval` 的执行参数必须全部从 seal 与 scoring
-spec 注入，不得用 shell 环境临时覆盖 model、worker、effort、benchmark 或 cache version。
+identity；两者可以共享三个 endpoint，让 vLLM scheduler 排队，但不能共享
+staging、缓存或结果文件。此时 Formal 与 winner Review 均已冻结，27B 不再执行
+Review，而是作为 CoCo Judge 工作。两臂分别固定4个 Judge client request，同时
+运行时总计8个；如果只运行一臂，不得临时将它扩到8路。`coco-eval` 的执行参数
+必须全部从 seal 与 scoring spec 注入，不得用 shell 环境临时覆盖 model、worker、
+effort、benchmark 或 cache version。
 
-正式 Evaluation 的凭据只从调用控制器进程的 `COCO_EVALUATION_API_KEY` 读取，并只传给
-外部 runner；普通的 `OPENAI_API_KEY` 不会被透传。启动两臂前只检查该变量是否非空，
-不要把值写入 scoring spec、seal、命令行或日志。如果 API 并发额度不足，顺序执行两臂；
-Split/Classify 的 GPU 服务仍可保持在线，已完成 stage 会按冻结 checkpoint 恢复。
+正式 Evaluation 不需要任何 API 凭据或 proxy。控制器为外部 runner 构造完整的
+proxy-free 白名单环境，ambient API key 或 proxy 变量都不是正式身份的一部分。
+已完成 stage 会按冻结 checkpoint 恢复；
+任一服务进程、lease generation 或 Judge instance 变化都会使旧 cache 身份失配并
+fail closed。
+
+科学解释上，CoCo Judge 与 Reviewer 属于同一 Qwen3.8-27B 模型族，这是预注册、
+封印且对两臂完全相同的 self-judge。它可用于当前 meta/concat 在同一 Judge
+条件下的相对对比，但得分不能与历史 GPT-judged Table-1 数值直接横比或
+合并成同一序列。报告时必须显式标注 Judge 模型、revision、temperature、上下文和
+thinking 设置。
 
 ```bash
 # meta arm（可与下一条放入两个独立 tmux）

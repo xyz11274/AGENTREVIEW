@@ -98,7 +98,7 @@ class CocoAuditCliTest(unittest.TestCase):
             patch.object(
                 cli_module,
                 "seal_coco_pre_score",
-                return_value={"protocol": "research-v2-coco-pre-score-seal-v1"},
+                return_value={"protocol": "research-v2-coco-pre-score-seal-v2"},
             ) as seal,
             redirect_stdout(rendered),
         ):

@@ -12,9 +12,6 @@ from agentreview.research_v2.coco_scoring_spec import (
 from agentreview.research_v2.io import value_sha256
 
 
-EVALUATION_PROXY_URL = "http://127.0.0.1:7898"
-
-
 def _git(root: Path, *arguments: str) -> str:
     result = subprocess.run(
         ["git", *arguments],
@@ -140,7 +137,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
             first_bytes = paths["output"].read_bytes()
             second = materialize_coco_scoring_spec(
@@ -149,7 +145,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
             validated = validate_coco_scoring_spec(
                 paths["output"],
@@ -200,17 +195,25 @@ class CocoScoringSpecTest(unittest.TestCase):
                     "enable_thinking": True,
                 },
             )
-            self.assertIsNone(first["scientific_settings"]["evaluation"]["temperature"])
+            self.assertEqual(
+                first["scientific_settings"]["evaluation"]["temperature"], 0.0
+            )
             evaluation_settings = first["scientific_settings"]["evaluation"]
-            self.assertEqual(evaluation_settings["max_completion_tokens"], 32768)
-            self.assertEqual(evaluation_settings["context_window_tokens"], 400000)
+            self.assertEqual(
+                evaluation_settings["base_url"], "http://127.0.0.1:18001/v1"
+            )
+            self.assertEqual(evaluation_settings["model"], "qwen3.8-27b")
+            self.assertEqual(evaluation_settings["max_in_flight_client_requests"], 4)
+            self.assertEqual(evaluation_settings["effort"], "none")
+            self.assertEqual(evaluation_settings["max_completion_tokens"], 8192)
+            self.assertEqual(evaluation_settings["context_window_tokens"], 65536)
             self.assertEqual(
                 evaluation_settings["prompt_preflight"],
                 {
-                    "algorithm": "utf8-byte-upper-bound-v1",
-                    "max_model_len": 400000,
-                    "max_completion_tokens": 32768,
-                    "chat_overhead_tokens": 1024,
+                    "algorithm": "vllm-chat-tokenize-v1",
+                    "max_model_len": 65536,
+                    "max_completion_tokens": 8192,
+                    "enable_thinking": False,
                 },
             )
 
@@ -224,13 +227,7 @@ class CocoScoringSpecTest(unittest.TestCase):
             self.assertIs(evaluation_runtime["no_user_site"], True)
             self.assertIs(evaluation_runtime["dont_write_bytecode"], True)
             self.assertIs(evaluation_runtime["ignore_environment"], False)
-            self.assertEqual(
-                evaluation_runtime["transport"],
-                {
-                    "HTTP_PROXY": EVALUATION_PROXY_URL,
-                    "HTTPS_PROXY": EVALUATION_PROXY_URL,
-                },
-            )
+            self.assertNotIn("transport", evaluation_runtime)
             self.assertEqual(evaluation_runtime["prefix_tree"]["pyc_file_count"], 1)
             self.assertGreater(evaluation_runtime["prefix_tree"]["file_count"], 0)
             self.assertRegex(
@@ -250,6 +247,26 @@ class CocoScoringSpecTest(unittest.TestCase):
             self.assertEqual(services["classify"]["port"], 13098)
             self.assertEqual(services["classify"]["max_model_len"], 32768)
             self.assertEqual(services["classify"]["max_num_seqs"], 16)
+            judge = services["judge"]
+            self.assertEqual(judge["cuda_visible_devices"], "3,6")
+            self.assertEqual(judge["port"], 18001)
+            self.assertEqual(judge["served_model_name"], "qwen3.8-27b")
+            self.assertEqual(judge["max_model_len"], 65536)
+            self.assertEqual(judge["max_num_seqs"], 8)
+            self.assertEqual(judge["tensor_parallel_size"], 2)
+            self.assertEqual(judge["source_model"], "Qwen/Qwen3.8-27B")
+            self.assertEqual(
+                judge["revision"],
+                "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+            )
+            self.assertEqual(
+                judge["tokenizer_sha256"],
+                "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+            )
+            self.assertEqual(
+                judge["chat_template_sha256"],
+                "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+            )
 
             expected_scoring_root = paths["artifacts"] / "coco_scoring"
             self.assertEqual(
@@ -283,7 +300,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
             self.assertTrue(paths["output"].is_symlink())
             self.assertFalse(outside.exists())
@@ -296,7 +312,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
             alias = paths["base"] / "scoring-spec-alias.json"
             alias.symlink_to(paths["output"])
@@ -312,7 +327,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
             mutations = {
                 "evaluation enabled integer": (
@@ -327,11 +341,11 @@ class CocoScoringSpecTest(unittest.TestCase):
                     ].__setitem__("require_complete", 1),
                     "require_complete must be true",
                 ),
-                "evaluation temperature numeric": (
+                "evaluation temperature boolean": (
                     lambda value: value["scientific_settings"][
                         "evaluation"
-                    ].__setitem__("temperature", 0),
-                    "temperature must be null",
+                    ].__setitem__("temperature", True),
+                    "temperature must be zero",
                 ),
                 "evaluation completion budget boolean": (
                     lambda value: value["scientific_settings"][
@@ -339,10 +353,10 @@ class CocoScoringSpecTest(unittest.TestCase):
                     ].__setitem__("max_completion_tokens", True),
                     "token budgets differ",
                 ),
-                "evaluation preflight overhead boolean": (
+                "evaluation preflight thinking enabled": (
                     lambda value: value["scientific_settings"]["evaluation"][
                         "prompt_preflight"
-                    ].__setitem__("chat_overhead_tokens", True),
+                    ].__setitem__("enable_thinking", True),
                     "prompt preflight identity differs",
                 ),
                 "tensor parallel boolean": (
@@ -429,17 +443,17 @@ class CocoScoringSpecTest(unittest.TestCase):
                     ].__setitem__("file_count", True),
                     "file_count must be a non-negative integer",
                 ),
-                "evaluation transport extra field": (
-                    lambda value: value["services"]["evaluation"][
-                        "transport"
-                    ].__setitem__("ALL_PROXY", EVALUATION_PROXY_URL),
-                    "transport fields differ",
+                "evaluation runtime proxy field": (
+                    lambda value: value["services"]["evaluation"].__setitem__(
+                        "transport", {"HTTP_PROXY": "http://127.0.0.1:7898"}
+                    ),
+                    "services.evaluation fields differ",
                 ),
-                "evaluation transport mismatch": (
-                    lambda value: value["services"]["evaluation"][
-                        "transport"
-                    ].__setitem__("HTTPS_PROXY", "http://127.0.0.1:7899"),
-                    "evaluation transport differs",
+                "judge revision mismatch": (
+                    lambda value: value["services"]["judge"].__setitem__(
+                        "revision", "0" * 40
+                    ),
+                    "services.judge identity differs",
                 ),
             }
             for label, (mutate, message) in mutations.items():
@@ -464,7 +478,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
                 (paths["evaluation_python"].parents[1] / relative).write_bytes(
                     replacement
@@ -482,7 +495,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
             alias = paths["evaluation_python"].parent / "python"
             alias.unlink()
@@ -515,10 +527,9 @@ class CocoScoringSpecTest(unittest.TestCase):
                         winner_run_id="winner-v1",
                         output_path=paths["output"],
                         evaluation_python=paths["evaluation_python"],
-                        evaluation_proxy_url=EVALUATION_PROXY_URL,
                     )
 
-    def test_materialization_normalizes_and_rejects_evaluation_proxy_url(self):
+    def test_materialization_is_strictly_local_and_proxy_free(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = _fixture(directory)
             spec = materialize_coco_scoring_spec(
@@ -527,38 +538,21 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL + "/",
             )
+            self.assertNotIn("transport", spec["services"]["evaluation"])
             self.assertEqual(
-                spec["services"]["evaluation"]["transport"],
-                {
-                    "HTTP_PROXY": EVALUATION_PROXY_URL,
-                    "HTTPS_PROXY": EVALUATION_PROXY_URL,
-                },
+                spec["scientific_settings"]["evaluation"]["base_url"],
+                "http://127.0.0.1:18001/v1",
             )
-
-        for proxy_url in (
-            "https://127.0.0.1:7898",
-            "http://localhost:7898",
-            "http://user@127.0.0.1:7898",
-            "http://127.0.0.1",
-            "http://127.0.0.1:7899",
-            "http://127.0.0.1:7898?query=1",
-        ):
-            with (
-                self.subTest(proxy_url=proxy_url),
-                tempfile.TemporaryDirectory() as directory,
-            ):
-                paths = _fixture(directory)
-                with self.assertRaisesRegex(ValueError, "proxy URL"):
-                    materialize_coco_scoring_spec(
-                        coco_root=paths["coco"],
-                        artifact_root=paths["artifacts"],
-                        winner_run_id="winner-v1",
-                        output_path=paths["output"],
-                        evaluation_python=paths["evaluation_python"],
-                        evaluation_proxy_url=proxy_url,
-                    )
+            with self.assertRaisesRegex(TypeError, "evaluation_proxy_url"):
+                materialize_coco_scoring_spec(
+                    coco_root=paths["coco"],
+                    artifact_root=paths["artifacts"],
+                    winner_run_id="winner-v1",
+                    output_path=paths["base"] / "unexpected.json",
+                    evaluation_python=paths["evaluation_python"],
+                    evaluation_proxy_url="http://127.0.0.1:7898",  # type: ignore[call-arg]
+                )
 
     def test_arm_outputs_reject_parent_and_final_symlink_escape(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -574,7 +568,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
             self.assertEqual(list(outside.iterdir()), [])
             self.assertFalse(paths["output"].exists())
@@ -594,7 +587,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
             self.assertEqual(list(outside.iterdir()), [])
             self.assertFalse(paths["output"].exists())
@@ -608,7 +600,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
 
             dirty = paths["coco"] / "untracked.txt"
@@ -635,7 +626,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
 
     def test_validation_rejects_arm_output_and_cache_namespace_conflicts(self):
@@ -647,7 +637,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                 winner_run_id="winner-v1",
                 output_path=paths["output"],
                 evaluation_python=paths["evaluation_python"],
-                evaluation_proxy_url=EVALUATION_PROXY_URL,
             )
 
             output_conflict = json.loads(json.dumps(pristine))
@@ -680,7 +669,6 @@ class CocoScoringSpecTest(unittest.TestCase):
                     winner_run_id="winner-v1",
                     output_path=paths["output"],
                     evaluation_python=paths["evaluation_python"],
-                    evaluation_proxy_url=EVALUATION_PROXY_URL,
                 )
 
 
