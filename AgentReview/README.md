@@ -140,8 +140,10 @@ python -m agentreview.research_v2 \
 
 `materialize-freeze-spec` 要求五角色 all-role summary、pool、coordinator、winner、
 run-spec 与当前配置完全一致，并对语义和源哈希执行两遍一致性检查；它还分别记录
-Evolution 多提交恢复审计与 clean transition Git HEAD，不会把旧 Evolution 执行误写成
-新 transition commit，也不会人工改变 winner 的 S2 策略。`generate-coco-reviews` 的
+Evolution 的完整有序恢复审计链与 clean transition Git HEAD。审计链绑定同一 run 的
+全部非 symlink audit、事件时间、前序 audit SHA、typed checkpoint schema，以及
+AgentReview/外部 CoCo 仓中解析后的完整 commit 和线性祖先关系；不会把旧 Evolution
+执行误写成新 transition commit，也不会人工改变 winner 的 S2 策略。`generate-coco-reviews` 的
 Specialist 与 Meta 共用同一个最多8路的27B队列，每篇五份 Specialist 完成后即可排队
 Meta；concat 不调用 LLM。相同 run ID 仅在正文、raw output、请求与完整 frozen identity
 均一致时恢复。

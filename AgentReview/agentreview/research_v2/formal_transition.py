@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,7 @@ from .formal_evolution import (
 )
 from .freeze import (
     FORMAL_COCO_WINNER_RUN_ID,
+    _cross_check_external_coco_scoring_identity,
     _validate_completed_evolution,
     freeze_system,
 )
@@ -72,6 +74,37 @@ FORMAL_EVOLUTION_CODE_PROVENANCE_PROTOCOL = (
     "research-v2-evolution-code-provenance-v1"
 )
 FORMAL_RESUME_AUDIT_PROTOCOL = "research-v2-formal-resume-audit-v1"
+FORMAL_RESUME_AUDIT_MODE = "audited_multi_event_resume_chain"
+FORMAL_RESUME_AUDIT_SCHEMAS = {
+    "original_process_context_fix_probe": {
+        "checkpoints": (
+            ("original_process_commit", "agentreview"),
+            ("pre_fix_checkpoint", "agentreview"),
+            ("context_fix_commit", "agentreview"),
+            ("probe_commit", "agentreview"),
+        ),
+        "resume_checkpoint": "probe_commit",
+    },
+    "structured_output_external_coco": {
+        "checkpoints": (
+            ("pre_fix_checkpoint", "agentreview"),
+            ("structured_output_fix_commit", "agentreview"),
+            ("external_coco_checkpoint", "external_coco"),
+        ),
+        "resume_checkpoint": "structured_output_fix_commit",
+    },
+    "legacy_identity_compatibility": {
+        "checkpoints": (
+            ("structured_output_fix_commit", "agentreview"),
+            ("legacy_identity_compatibility_commit", "agentreview"),
+        ),
+        "resume_checkpoint": "legacy_identity_compatibility_commit",
+    },
+}
+FORMAL_RESUME_AUDIT_SCHEMA_ORDER = tuple(FORMAL_RESUME_AUDIT_SCHEMAS)
+FORMAL_RESUME_AUDIT_FILENAME = re.compile(
+    r"resume_(?P<timestamp>\d{8}T\d{6}[+-]\d{4})\.json"
+)
 DEVELOPMENT_MANIFEST_PROTOCOL = "research-v2-development-split-v1"
 DEVELOPMENT_S2_VERSION = "frozen_s2_external_development_v1"
 COCO_S2_VERSION = "frozen_s2_coco1300_v1"
@@ -1134,20 +1167,350 @@ def _formal_resume_audit_paths(
     formal_run_id: str,
 ) -> list[Path]:
     runtime_root = artifact_root / "runtime"
-    paths = []
-    for path in sorted(runtime_root.glob("*/resume_*.json")):
-        value = read_json(path)
-        if (
-            isinstance(value, dict)
-            and value.get("protocol") == FORMAL_RESUME_AUDIT_PROTOCOL
-            and value.get("run_id") == formal_run_id
-        ):
-            paths.append(path.resolve())
-    if len(paths) != 1:
+    expected_parent = runtime_root / formal_run_id.replace("-", "_")
+    if runtime_root.exists() and (
+        not runtime_root.is_dir()
+        or runtime_root.is_symlink()
+        or runtime_root.resolve() != runtime_root
+    ):
         raise ValueError(
-            "Formal freeze requires exactly one resume audit for this resumed run"
+            "Formal resume audits require one canonical non-symlink runtime root"
         )
-    return paths
+    audits: list[tuple[datetime, Path]] = []
+    parents: set[Path] = set()
+    for path in sorted(runtime_root.glob("*/resume_*.json")):
+        if (
+            path.is_symlink()
+            or path.parent.is_symlink()
+            or path.parent.resolve() != path.parent
+            or not path.is_file()
+        ):
+            raise ValueError(
+                f"Formal resume audit must be a regular non-symlink file: {path}"
+            )
+        filename_match = FORMAL_RESUME_AUDIT_FILENAME.fullmatch(path.name)
+        if filename_match is None:
+            raise ValueError(
+                f"Formal resume audit filename timestamp is invalid: {path}"
+            )
+        try:
+            value = read_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            raise ValueError(
+                f"Formal resume audit must contain readable JSON: {path}"
+            ) from exc
+        if not isinstance(value, dict):
+            raise ValueError(f"Formal resume audit JSON must be an object: {path}")
+        run_id = value.get("run_id")
+        protocol = value.get("protocol")
+        if path.parent == expected_parent and (
+            protocol != FORMAL_RESUME_AUDIT_PROTOCOL or run_id != formal_run_id
+        ):
+            raise ValueError(
+                "Formal resume audit canonical parent requires exact protocol "
+                f"and run_id: {path}"
+            )
+        if run_id == formal_run_id and protocol != FORMAL_RESUME_AUDIT_PROTOCOL:
+            raise ValueError(
+                f"Formal resume audit protocol differs for run {formal_run_id}: {path}"
+            )
+        if protocol != FORMAL_RESUME_AUDIT_PROTOCOL or run_id != formal_run_id:
+            continue
+        recorded_at = value.get("recorded_at")
+        if not isinstance(recorded_at, str) or not recorded_at.strip():
+            raise ValueError(f"Formal resume audit recorded_at is missing: {path}")
+        try:
+            recorded_time = datetime.fromisoformat(recorded_at)
+        except ValueError as exc:
+            raise ValueError(
+                f"Formal resume audit recorded_at is invalid: {path}"
+            ) from exc
+        if recorded_time.utcoffset() is None:
+            raise ValueError(
+                f"Formal resume audit recorded_at must be timezone-aware: {path}"
+            )
+        expected_filename_time = recorded_time.strftime("%Y%m%dT%H%M%S%z")
+        if (
+            recorded_time.microsecond != 0
+            or filename_match.group("timestamp") != expected_filename_time
+        ):
+            raise ValueError(
+                f"Formal resume audit filename timestamp differs from recorded_at: {path}"
+            )
+        resolved_parent = path.parent.resolve()
+        parents.add(resolved_parent)
+        audits.append((recorded_time.astimezone(timezone.utc), path.resolve()))
+    if not audits:
+        raise ValueError(
+            "Formal freeze requires at least one resume audit for this resumed run"
+        )
+    if parents != {expected_parent}:
+        raise ValueError(
+            "Formal resume audits for one run must use its one canonical parent"
+        )
+    audits.sort(key=lambda item: item[0])
+    for previous, current in zip(audits, audits[1:]):
+        if current[0] <= previous[0]:
+            raise ValueError(
+                "Formal resume audit recorded_at timestamps must be strictly increasing"
+            )
+    return [path for _, path in audits]
+
+
+def _git_repository_root(path: Path) -> Path | None:
+    if not path.is_dir():
+        return None
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        return None
+    root = Path(result.stdout.strip()).expanduser().resolve()
+    if not root.is_dir():
+        raise ValueError(f"Git returned an invalid repository root for {path}")
+    return root
+
+
+def _resolve_resume_commit(
+    *,
+    commit: Any,
+    repository_role: str,
+    repository_root: Path | None,
+) -> str:
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{7,40}", commit):
+        raise ValueError(
+            f"Formal resume audit {repository_role} checkpoint must be 7-40 hex"
+        )
+    if repository_root is None:
+        if len(commit) != 40:
+            raise ValueError(
+                "Formal resume audit requires a full Git SHA test double "
+                f"for non-Git repository role {repository_role}"
+            )
+        return commit
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", f"{commit}^{{commit}}"],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    resolved = result.stdout.strip()
+    if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", resolved):
+        raise ValueError(
+            "Formal resume audit could not resolve Git checkpoint "
+            f"{commit} in repository role {repository_role}"
+        )
+    return resolved
+
+
+def _require_git_ancestor(
+    *,
+    repository_root: Path,
+    ancestor: str,
+    descendant: str,
+    repository_role: str,
+    label: str,
+) -> None:
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode == 1:
+        raise ValueError(
+            f"Formal resume audit {repository_role} {label} is not a linear "
+            "ancestor chain"
+        )
+    if result.returncode != 0:
+        raise ValueError(
+            f"Formal resume audit could not verify {repository_role} {label}"
+        )
+
+
+def _resume_repository_bindings(
+    *,
+    artifact_root: Path,
+    arguments: dict[str, Any],
+) -> tuple[dict[str, Path | None], dict[str, str]]:
+    external_identity = arguments.get("external_coco_identity")
+    if not isinstance(external_identity, dict):
+        raise ValueError("Formal resume audit requires external CoCo identity")
+    external_root_value = external_identity.get("repository_root")
+    if not isinstance(external_root_value, str) or not external_root_value.strip():
+        raise ValueError("Formal resume audit requires external CoCo repository root")
+    external_root = Path(external_root_value).expanduser().resolve()
+    if not external_root.is_dir():
+        raise ValueError("Formal resume audit external CoCo repository is unavailable")
+    repositories = {
+        "agentreview": _git_repository_root(artifact_root),
+        "external_coco": _git_repository_root(external_root),
+    }
+    if (
+        repositories["external_coco"] is not None
+        and repositories["external_coco"] != external_root
+    ):
+        raise ValueError(
+            "Formal resume audit external CoCo role must bind the repository root"
+        )
+    raw_heads = {
+        "agentreview": arguments.get("code_commit"),
+        "external_coco": external_identity.get("git_commit"),
+    }
+    heads: dict[str, str] = {}
+    for role, raw_head in raw_heads.items():
+        if not isinstance(raw_head, str) or not re.fullmatch(
+            r"[0-9a-f]{40}", raw_head
+        ):
+            raise ValueError(
+                f"Formal resume audit {role} bound HEAD must be one full Git SHA"
+            )
+        heads[role] = _resolve_resume_commit(
+            commit=raw_head,
+            repository_role=role,
+            repository_root=repositories[role],
+        )
+    return repositories, heads
+
+
+def _resume_audit_schema(checkpoints: Any) -> tuple[str, dict[str, Any]]:
+    if not isinstance(checkpoints, dict):
+        raise ValueError("Formal resume audit source_checkpoints must be an object")
+    checkpoint_names = set(checkpoints)
+    for name, schema in FORMAL_RESUME_AUDIT_SCHEMAS.items():
+        if checkpoint_names == {key for key, _ in schema["checkpoints"]}:
+            return name, schema
+    raise ValueError("Formal resume audit checkpoint schema is not whitelisted")
+
+
+def _validate_typed_resume_chain(
+    *,
+    audit_values: list[dict[str, Any]],
+    audit_entries: list[dict[str, Any]],
+    repositories: dict[str, Path | None],
+    repository_heads: dict[str, str],
+) -> None:
+    schemas = [entry["schema"] for entry in audit_entries]
+    if schemas != list(FORMAL_RESUME_AUDIT_SCHEMA_ORDER[: len(schemas)]):
+        raise ValueError(
+            "Formal resume audit checkpoint schemas must form the ordered typed chain"
+        )
+    entries_by_schema = {
+        entry["schema"]: (value, entry)
+        for value, entry in zip(audit_values, audit_entries, strict=True)
+    }
+    structured = entries_by_schema.get("structured_output_external_coco")
+    legacy = entries_by_schema.get("legacy_identity_compatibility")
+    original = entries_by_schema.get("original_process_context_fix_probe")
+    if structured is not None:
+        structured_value, _ = structured
+        progress = structured_value.get("preserved_progress")
+        if (
+            not isinstance(progress, dict)
+            or progress.get("next_clar_experience_item_ordinal") != 26
+        ):
+            raise ValueError(
+                "Formal structured-output resume audit must preserve CLAR ordinal 26"
+            )
+    if legacy is None:
+        return
+    legacy_value, legacy_entry = legacy
+    failure = legacy_value.get("failure")
+    resumed = legacy_value.get("resumed_process")
+    if not isinstance(failure, dict) or not isinstance(resumed, dict):
+        raise ValueError("Formal legacy resume audit typed evidence is incomplete")
+    if structured is None or original is None:
+        raise ValueError("Formal legacy resume audit requires the complete prior chain")
+    structured_value, structured_entry = structured
+    original_value, original_entry = original
+    if (
+        structured_value["source_checkpoints"]["structured_output_fix_commit"]
+        != legacy_value["source_checkpoints"]["structured_output_fix_commit"]
+        or structured_entry["resolved_source_checkpoints"][
+            "structured_output_fix_commit"
+        ]
+        != legacy_entry["resolved_source_checkpoints"][
+            "structured_output_fix_commit"
+        ]
+    ):
+        raise ValueError(
+            "Formal resume audit structured-output checkpoint continuity differs"
+        )
+    next_ordinal = structured_value["preserved_progress"][
+        "next_clar_experience_item_ordinal"
+    ]
+    before = resumed.get("clar_experience_checkpoint_before")
+    after = resumed.get("clar_experience_checkpoint_after")
+    if next_ordinal != before or before != 26:
+        raise ValueError("Formal resume audit CLAR progress continuity differs")
+    if after != 27 or after != before + 1:
+        raise ValueError("Formal resume audit CLAR resumed progress must advance once")
+    if failure.get("historical_process_started_at") != original_value.get(
+        "recorded_at"
+    ):
+        raise ValueError("Formal resume audit historical process start differs")
+    identity_commit = failure.get("identity_hardening_commit")
+    resolved_identity = _resolve_resume_commit(
+        commit=identity_commit,
+        repository_role="agentreview",
+        repository_root=repositories["agentreview"],
+    )
+    if resolved_identity in {
+        original_entry["resume_commit"],
+        structured_entry["resolved_source_checkpoints"]["pre_fix_checkpoint"],
+        legacy_entry["resume_commit"],
+    }:
+        raise ValueError(
+            "Formal resume audit identity-hardening checkpoint must be distinct"
+        )
+    legacy_entry["related_commits"] = {
+        "failure.identity_hardening_commit": {
+            "original": identity_commit,
+            "resolved": resolved_identity,
+            "repository_role": "agentreview",
+        }
+    }
+    repository_root = repositories["agentreview"]
+    if repository_root is not None:
+        _require_git_ancestor(
+            repository_root=repository_root,
+            ancestor=original_entry["resume_commit"],
+            descendant=resolved_identity,
+            repository_role="agentreview",
+            label="identity-hardening predecessor",
+        )
+        _require_git_ancestor(
+            repository_root=repository_root,
+            ancestor=resolved_identity,
+            descendant=structured_entry["resolved_source_checkpoints"][
+                "pre_fix_checkpoint"
+            ],
+            repository_role="agentreview",
+            label="identity-hardening -> structured pre-fix",
+        )
+        _require_git_ancestor(
+            repository_root=repository_root,
+            ancestor=resolved_identity,
+            descendant=legacy_entry["resume_commit"],
+            repository_role="agentreview",
+            label="identity-hardening successor",
+        )
+        _require_git_ancestor(
+            repository_root=repository_root,
+            ancestor=resolved_identity,
+            descendant=repository_heads["agentreview"],
+            repository_role="agentreview",
+            label="identity-hardening HEAD binding",
+        )
 
 
 def _evolution_code_provenance(
@@ -1159,46 +1522,116 @@ def _evolution_code_provenance(
         formal_run_id=formal_run_id,
         arguments=arguments,
     )
-    audits = []
+    repositories, repository_heads = _resume_repository_bindings(
+        artifact_root=artifact_root,
+        arguments=arguments,
+    )
+    audits: list[dict[str, Any]] = []
+    audit_values: list[dict[str, Any]] = []
+    repository_chains: dict[str, list[tuple[str, str]]] = {
+        "agentreview": [],
+        "external_coco": [],
+    }
+    previous_audit_sha256: str | None = None
     for path in _formal_resume_audit_paths(
         artifact_root=artifact_root,
         formal_run_id=formal_run_id,
     ):
         value = read_json(path)
         checkpoints = value.get("source_checkpoints") if isinstance(value, dict) else None
-        required_checkpoints = {
-            "original_process_commit",
-            "pre_fix_checkpoint",
-            "context_fix_commit",
-            "probe_commit",
-        }
         if (
             not isinstance(value, dict)
             or value.get("protocol") != FORMAL_RESUME_AUDIT_PROTOCOL
             or value.get("run_id") != formal_run_id
             or not isinstance(value.get("recorded_at"), str)
             or not value["recorded_at"].strip()
-            or not isinstance(checkpoints, dict)
-            or set(checkpoints) != required_checkpoints
-            or any(
-                not isinstance(commit, str)
-                or not re.fullmatch(r"[0-9a-f]{40}", commit)
-                for commit in checkpoints.values()
-            )
         ):
             raise ValueError("Formal resume audit identity is incomplete")
+        schema_name, schema = _resume_audit_schema(checkpoints)
+        ordered_checkpoints = {
+            checkpoint: checkpoints[checkpoint]
+            for checkpoint, _ in schema["checkpoints"]
+        }
+        checkpoint_roles = {
+            checkpoint: repository_role
+            for checkpoint, repository_role in schema["checkpoints"]
+        }
+        resolved_checkpoints = {
+            checkpoint: _resolve_resume_commit(
+                commit=ordered_checkpoints[checkpoint],
+                repository_role=repository_role,
+                repository_root=repositories[repository_role],
+            )
+            for checkpoint, repository_role in schema["checkpoints"]
+        }
+        for checkpoint, repository_role in schema["checkpoints"]:
+            repository_chains[repository_role].append(
+                (checkpoint, resolved_checkpoints[checkpoint])
+            )
+        audit_sha256 = file_sha256(path)
         audits.append(
             {
                 "path": str(path),
-                "sha256": file_sha256(path),
-                "recorded_at": value.get("recorded_at"),
-                "source_checkpoints": checkpoints,
+                "sha256": audit_sha256,
+                "previous_audit_sha256": previous_audit_sha256,
+                "recorded_at": value["recorded_at"],
+                "schema": schema_name,
+                "source_checkpoints": ordered_checkpoints,
+                "resolved_source_checkpoints": resolved_checkpoints,
+                "checkpoint_repository_roles": checkpoint_roles,
+                "resume_commit": resolved_checkpoints[schema["resume_checkpoint"]],
+                "related_commits": {},
             }
         )
-    return {
+        audit_values.append(value)
+        previous_audit_sha256 = audit_sha256
+    _validate_typed_resume_chain(
+        audit_values=audit_values,
+        audit_entries=audits,
+        repositories=repositories,
+        repository_heads=repository_heads,
+    )
+    for repository_role, commits in repository_chains.items():
+        repository_root = repositories[repository_role]
+        if not commits:
+            continue
+        for previous, current in zip(commits, commits[1:]):
+            allowed_shared_boundary = (
+                previous[0] == "structured_output_fix_commit"
+                and current[0] == "structured_output_fix_commit"
+            )
+            if previous[1] == current[1] and not allowed_shared_boundary:
+                raise ValueError(
+                    "Formal resume audit contains a duplicate checkpoint outside "
+                    "the structured-output continuity boundary"
+                )
+            if repository_root is None:
+                continue
+            _require_git_ancestor(
+                repository_root=repository_root,
+                ancestor=previous[1],
+                descendant=current[1],
+                repository_role=repository_role,
+                label=f"checkpoint {previous[0]} -> {current[0]}",
+            )
+        if repository_root is None:
+            continue
+        _require_git_ancestor(
+            repository_root=repository_root,
+            ancestor=commits[-1][1],
+            descendant=repository_heads[repository_role],
+            repository_role=repository_role,
+            label="final checkpoint -> bound HEAD",
+        )
+    body = {
         "protocol": FORMAL_EVOLUTION_CODE_PROVENANCE_PROTOCOL,
-        "mode": "audited_multi_commit_resume",
+        "mode": FORMAL_RESUME_AUDIT_MODE,
         "resume_audits": audits,
+    }
+    return {
+        **body,
+        "repository_heads": repository_heads,
+        "chain_id": value_sha256(body),
     }
 
 
@@ -1792,6 +2225,17 @@ def validate_formal_freeze_spec(path: str | Path) -> dict[str, Any]:
         role: formal_run_id for role in ROLES
     }:
         raise ValueError("Formal freeze spec requires five role-local run IDs")
+    external_coco_identity = arguments.get("external_coco_identity")
+    if not isinstance(external_coco_identity, dict):
+        raise ValueError("Formal freeze spec external CoCo identity differs")
+    scoring_spec_value = validate_coco_scoring_spec(
+        coco_scoring_spec["path"],
+        coco_root=external_coco_identity.get("repository_root"),
+    )
+    _cross_check_external_coco_scoring_identity(
+        external_coco_identity=external_coco_identity,
+        scoring_spec=scoring_spec_value,
+    )
     _validate_source_bindings(
         formal_run_id=formal_run_id,
         arguments=arguments,

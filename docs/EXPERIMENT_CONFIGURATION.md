@@ -410,9 +410,14 @@ pool 顺序和确定性 parent，拒绝未完成 attempt、游离 candidate 与�
 同时验证 run-spec 引用的 canonical summary/三份 split/seed Program、模型和 embedding identity、
 autonomous S2 intervention、development S2 SHA/版本/275计数。语义验证与源哈希绑定必须
 连续两遍完全一致，随后 freeze spec 才绑定两套 S2、development/CoCo manifest 与当前
-clean transition Git HEAD。`resume_20260901T230625+0800.json` 及其 SHA 单独绑定
-Evolution 的 original/context-fix/resume commits；`code_commit` 不得把这段多提交执行史
-误归因成 transition commit。`primary_meta_enabled` 固定为 true，指的是最终系统包含
+clean transition Git HEAD。同一 Formal run 的全部 `resume_*.json` 构成按 timezone-aware
+`recorded_at` 严格递增的完整恢复审计链；每项绑定文件 SHA、前序 audit SHA、typed
+checkpoint schema、原始/解析后 commit、仓库角色和 resume commit，整链再生成
+`chain_id`。主仓 checkpoint（包括 legacy audit 内嵌的 identity-hardening commit）必须形成
+线性祖先链并最终祖先于 `code_commit`，外部 CoCo checkpoint 必须最终祖先于冻结的外仓
+HEAD；跨事件还复核 structured-output checkpoint、CLAR 26→27 进度和历史进程起点连续性。
+因此 `code_commit` 不得把这段多次恢复的执行史误归因成 transition commit。
+`primary_meta_enabled` 固定为 true，指的是最终系统包含
 独立 Meta synthesizer，并不改变 evolved Program 是否调用 S2 的自主权。
 
 过渡还会绑定完整 CoCo scoring spec，并据此复核独立 `CoCoReviewBench` 仓库的 clean

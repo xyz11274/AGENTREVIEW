@@ -63,7 +63,11 @@ class FormalTransitionTest(unittest.TestCase):
         self.temporary.cleanup()
 
     @staticmethod
-    def _formal_clean_head(config: ResearchConfig, paths: dict[str, Path]):
+    def _formal_clean_head(
+        config: ResearchConfig,
+        paths: dict[str, Path],
+        transition_commit: str = "a" * 40,
+    ):
         coco_root = Path(config.coco_root).expanduser().resolve()
         coco_commit = read_json(paths["coco_scoring_spec"])["repository"][
             "git_commit"
@@ -72,7 +76,7 @@ class FormalTransitionTest(unittest.TestCase):
         def clean_head(root: str | Path) -> str:
             if Path(root).expanduser().resolve() == coco_root:
                 return coco_commit
-            return "a" * 40
+            return transition_commit
 
         return clean_head
 
@@ -359,7 +363,12 @@ class FormalTransitionTest(unittest.TestCase):
         self._write_jsonl(coco_query_path, coco_targets)
 
         run_id = "formal-evolution-v1"
-        resume_audit = root / "runtime" / "formal_evolution_v1" / "resume_test.json"
+        resume_audit = (
+            root
+            / "runtime"
+            / "formal_evolution_v1"
+            / "resume_20260901T230625+0800.json"
+        )
         atomic_write_json(
             resume_audit,
             {
@@ -858,6 +867,592 @@ class FormalTransitionTest(unittest.TestCase):
             ),
         }
 
+    @staticmethod
+    def _resume_provenance_arguments(
+        root: Path,
+        *,
+        agentreview_head: str = "a" * 40,
+        external_coco_head: str = "b" * 40,
+        external_coco_root: Path | None = None,
+    ) -> dict:
+        run_id = "formal-evolution-v1"
+        coco_root = external_coco_root or (root / "external-coco")
+        coco_root.mkdir(parents=True, exist_ok=True)
+        return {
+            "code_commit": agentreview_head,
+            "evolution_pools": {
+                role: str(
+                    (root / "evolution" / role / run_id / "pool.json").resolve()
+                )
+                for role in ROLES
+            },
+            "external_coco_identity": {
+                "repository_root": str(coco_root.resolve()),
+                "git_commit": external_coco_head,
+            },
+        }
+
+    @staticmethod
+    def _resume_audit_values() -> list[tuple[str, dict]]:
+        run_id = "formal-evolution-v1"
+        first_recorded_at = "2026-09-01T23:06:25+08:00"
+        return [
+            (
+                "resume_20260901T230625+0800.json",
+                {
+                    "protocol": "research-v2-formal-resume-audit-v1",
+                    "recorded_at": first_recorded_at,
+                    "run_id": run_id,
+                    "source_checkpoints": {
+                        "original_process_commit": "1" * 40,
+                        "pre_fix_checkpoint": "2" * 40,
+                        "context_fix_commit": "3" * 40,
+                        "probe_commit": "4" * 40,
+                    },
+                },
+            ),
+            (
+                "resume_20260902T043355+0800.json",
+                {
+                    "protocol": "research-v2-formal-resume-audit-v1",
+                    "recorded_at": "2026-09-02T04:33:55+08:00",
+                    "run_id": run_id,
+                    "source_checkpoints": {
+                        "pre_fix_checkpoint": "5" * 40,
+                        "structured_output_fix_commit": "6" * 40,
+                        "external_coco_checkpoint": "7" * 40,
+                    },
+                    "preserved_progress": {
+                        "next_clar_experience_item_ordinal": 26,
+                    },
+                },
+            ),
+            (
+                "resume_20260902T044424+0800.json",
+                {
+                    "protocol": "research-v2-formal-resume-audit-v1",
+                    "recorded_at": "2026-09-02T04:44:24+08:00",
+                    "run_id": run_id,
+                    "failure": {
+                        "historical_process_started_at": first_recorded_at,
+                        "identity_hardening_commit": "8" * 40,
+                    },
+                    "source_checkpoints": {
+                        "structured_output_fix_commit": "6" * 40,
+                        "legacy_identity_compatibility_commit": "9" * 40,
+                    },
+                    "resumed_process": {
+                        "clar_experience_checkpoint_before": 26,
+                        "clar_experience_checkpoint_after": 27,
+                    },
+                },
+            ),
+        ]
+
+    def _write_resume_audit_chain(
+        self,
+        root: Path,
+        *,
+        parent: str = "formal_evolution_v1",
+    ) -> list[Path]:
+        paths = []
+        for filename, value in self._resume_audit_values():
+            path = root / "runtime" / parent / filename
+            atomic_write_json(path, value)
+            paths.append(path.resolve())
+        return paths
+
+    @staticmethod
+    def _git_commit(repository: Path, message: str) -> str:
+        marker = repository / "history.txt"
+        marker.write_text(
+            marker.read_text(encoding="utf-8") + f"{message}\n"
+            if marker.exists()
+            else f"{message}\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "add", "history.txt"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", message],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    @staticmethod
+    def _init_git_repository(repository: Path) -> None:
+        repository.mkdir(parents=True, exist_ok=True)
+        for arguments in (
+            ("init",),
+            ("config", "user.email", "formal@example.invalid"),
+            ("config", "user.name", "Formal Transition Test"),
+        ):
+            subprocess.run(
+                ["git", *arguments],
+                cwd=repository,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+    def test_multiple_resume_audits_form_one_ordered_provenance_chain(self):
+        paths = self._write_resume_audit_chain(self.root)
+        arguments = self._resume_provenance_arguments(self.root)
+
+        provenance = transition_module._evolution_code_provenance(
+            formal_run_id="formal-evolution-v1",
+            arguments=arguments,
+        )
+
+        self.assertEqual(provenance["mode"], "audited_multi_event_resume_chain")
+        self.assertEqual(
+            [audit["path"] for audit in provenance["resume_audits"]],
+            [str(path) for path in paths],
+        )
+        self.assertEqual(
+            [audit["schema"] for audit in provenance["resume_audits"]],
+            [
+                "original_process_context_fix_probe",
+                "structured_output_external_coco",
+                "legacy_identity_compatibility",
+            ],
+        )
+        self.assertIsNone(
+            provenance["resume_audits"][0]["previous_audit_sha256"]
+        )
+        self.assertEqual(
+            provenance["resume_audits"][1]["previous_audit_sha256"],
+            provenance["resume_audits"][0]["sha256"],
+        )
+        self.assertEqual(
+            provenance["resume_audits"][2]["previous_audit_sha256"],
+            provenance["resume_audits"][1]["sha256"],
+        )
+        self.assertEqual(
+            [audit["resume_commit"] for audit in provenance["resume_audits"]],
+            ["4" * 40, "6" * 40, "9" * 40],
+        )
+        self.assertEqual(
+            provenance["resume_audits"][1]["checkpoint_repository_roles"],
+            {
+                "pre_fix_checkpoint": "agentreview",
+                "structured_output_fix_commit": "agentreview",
+                "external_coco_checkpoint": "external_coco",
+            },
+        )
+        body = {
+            "protocol": provenance["protocol"],
+            "mode": provenance["mode"],
+            "resume_audits": provenance["resume_audits"],
+        }
+        self.assertEqual(provenance["chain_id"], value_sha256(body))
+
+    def test_resume_audit_chain_requires_at_least_one_audit(self):
+        arguments = self._resume_provenance_arguments(self.root)
+
+        with self.assertRaisesRegex(ValueError, "at least one resume audit"):
+            transition_module._evolution_code_provenance(
+                formal_run_id="formal-evolution-v1",
+                arguments=arguments,
+            )
+
+    def test_resume_audit_chain_rejects_unknown_schema_and_short_test_double(self):
+        for case in ("unknown_schema", "short_test_double"):
+            with self.subTest(case=case):
+                case_root = self.root / case
+                filename, audit = self._resume_audit_values()[0]
+                audit = json.loads(json.dumps(audit))
+                if case == "unknown_schema":
+                    audit["source_checkpoints"] = {"unknown_commit": "1" * 40}
+                    expected = "checkpoint schema"
+                else:
+                    audit["source_checkpoints"]["probe_commit"] = "deadbee"
+                    expected = "full Git SHA test double"
+                atomic_write_json(
+                    case_root / "runtime" / "formal_evolution_v1" / filename,
+                    audit,
+                )
+                arguments = self._resume_provenance_arguments(case_root)
+
+                with self.assertRaisesRegex(ValueError, expected):
+                    transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+
+    def test_resume_audit_paths_reject_symlink_mixed_parent_and_duplicate_time(self):
+        for case in (
+            "symlink",
+            "mixed_parent",
+            "wrong_single_parent",
+            "duplicate_time",
+        ):
+            with self.subTest(case=case):
+                case_root = self.root / case
+                values = self._resume_audit_values()
+                first_name, first = values[0]
+                first_path = (
+                    case_root
+                    / "runtime"
+                    / "formal_evolution_v1"
+                    / first_name
+                )
+                if case == "symlink":
+                    outside = case_root / "outside" / first_name
+                    atomic_write_json(outside, first)
+                    first_path.parent.mkdir(parents=True, exist_ok=True)
+                    first_path.symlink_to(outside)
+                    expected = "symlink"
+                else:
+                    atomic_write_json(first_path, first)
+                    second_name, second = values[1]
+                    second = json.loads(json.dumps(second))
+                    if case in {"mixed_parent", "wrong_single_parent"}:
+                        second_parent = "other_parent"
+                        expected = "one canonical parent"
+                        if case == "wrong_single_parent":
+                            first_path.unlink()
+                            atomic_write_json(
+                                case_root
+                                / "runtime"
+                                / second_parent
+                                / first_name,
+                                first,
+                            )
+                    else:
+                        second_parent = "formal_evolution_v1"
+                        second["recorded_at"] = "2026-09-01T15:06:25+00:00"
+                        second_name = "resume_20260901T150625+0000.json"
+                        expected = "strictly increasing"
+                    atomic_write_json(
+                        case_root / "runtime" / second_parent / second_name,
+                        second,
+                    )
+                arguments = self._resume_provenance_arguments(case_root)
+
+                with self.assertRaisesRegex(ValueError, expected):
+                    transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+
+    def test_canonical_resume_parent_rejects_protocol_or_run_id_mixing(self):
+        for field, replacement in (
+            ("run_id", "different-run"),
+            ("protocol", "different-resume-protocol"),
+        ):
+            with self.subTest(field=field):
+                case_root = self.root / f"canonical-{field}-mixing"
+                values = self._resume_audit_values()
+                for index, (filename, audit) in enumerate(values[:2]):
+                    audit = json.loads(json.dumps(audit))
+                    if index == 1:
+                        audit[field] = replacement
+                    atomic_write_json(
+                        case_root
+                        / "runtime"
+                        / "formal_evolution_v1"
+                        / filename,
+                        audit,
+                    )
+                arguments = self._resume_provenance_arguments(case_root)
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "canonical parent requires exact protocol and run_id",
+                ):
+                    transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+
+    def test_other_run_resume_audit_outside_canonical_parent_is_ignored(self):
+        values = self._resume_audit_values()
+        first_filename, first_audit = values[0]
+        atomic_write_json(
+            self.root
+            / "runtime"
+            / "formal_evolution_v1"
+            / first_filename,
+            first_audit,
+        )
+        second_filename, second_audit = values[1]
+        second_audit = json.loads(json.dumps(second_audit))
+        second_audit["run_id"] = "different-run"
+        atomic_write_json(
+            self.root / "runtime" / "different_run" / second_filename,
+            second_audit,
+        )
+        arguments = self._resume_provenance_arguments(self.root)
+
+        provenance = transition_module._evolution_code_provenance(
+            formal_run_id="formal-evolution-v1",
+            arguments=arguments,
+        )
+
+        self.assertEqual(len(provenance["resume_audits"]), 1)
+        self.assertEqual(
+            provenance["resume_audits"][0]["path"],
+            str(
+                (
+                    self.root
+                    / "runtime"
+                    / "formal_evolution_v1"
+                    / first_filename
+                ).resolve()
+            ),
+        )
+
+    def test_resume_audit_rejects_unparseable_candidate_and_naive_recorded_at(self):
+        for case in ("bad_filename", "malformed_json", "naive_time"):
+            with self.subTest(case=case):
+                case_root = self.root / case
+                filename, audit = self._resume_audit_values()[0]
+                if case == "bad_filename":
+                    filename = "resume_unknown.json"
+                    expected = "filename timestamp"
+                    atomic_write_json(
+                        case_root / "runtime" / "formal_evolution_v1" / filename,
+                        audit,
+                    )
+                elif case == "malformed_json":
+                    expected = "JSON"
+                    path = case_root / "runtime" / "unknown" / filename
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("{", encoding="utf-8")
+                else:
+                    expected = "timezone-aware"
+                    audit = json.loads(json.dumps(audit))
+                    audit["recorded_at"] = "2026-09-01T23:06:25"
+                    atomic_write_json(
+                        case_root / "runtime" / "formal_evolution_v1" / filename,
+                        audit,
+                    )
+                arguments = self._resume_provenance_arguments(case_root)
+
+                with self.assertRaisesRegex((ValueError, json.JSONDecodeError), expected):
+                    transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+
+    def test_git_resume_checkpoints_resolve_short_shas_and_reject_forks(self):
+        for case in ("linear", "unresolvable", "fork"):
+            with self.subTest(case=case):
+                repository = self.root / f"git-{case}"
+                self._init_git_repository(repository)
+                first = self._git_commit(repository, "first")
+                second = self._git_commit(repository, "second")
+                third = self._git_commit(repository, "third")
+                fourth = self._git_commit(repository, "fourth")
+                if case == "fork":
+                    subprocess.run(
+                        ["git", "checkout", "-b", "fork", first],
+                        cwd=repository,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    fork = self._git_commit(repository, "fork")
+                    checkpoints = [first, second, fork, fork]
+                    head = fork
+                    expected = "linear ancestor chain"
+                else:
+                    checkpoints = [first, second, third, fourth]
+                    head = fourth
+                    expected = "resolve Git checkpoint"
+                    if case == "unresolvable":
+                        checkpoints[2] = "deadbee"
+                    else:
+                        checkpoints = [commit[:7] for commit in checkpoints]
+                filename, audit = self._resume_audit_values()[0]
+                audit = json.loads(json.dumps(audit))
+                audit["source_checkpoints"] = dict(
+                    zip(audit["source_checkpoints"], checkpoints, strict=True)
+                )
+                atomic_write_json(
+                    repository / "runtime" / "formal_evolution_v1" / filename,
+                    audit,
+                )
+                arguments = self._resume_provenance_arguments(
+                    repository,
+                    agentreview_head=head,
+                    external_coco_root=self.root / f"external-{case}",
+                )
+
+                if case == "linear":
+                    provenance = transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+                    self.assertEqual(
+                        provenance["resume_audits"][0][
+                            "resolved_source_checkpoints"
+                        ],
+                        dict(
+                            zip(
+                                audit["source_checkpoints"],
+                                (first, second, third, fourth),
+                                strict=True,
+                            )
+                        ),
+                    )
+                else:
+                    with self.assertRaisesRegex(ValueError, expected):
+                        transition_module._evolution_code_provenance(
+                            formal_run_id="formal-evolution-v1",
+                            arguments=arguments,
+                        )
+
+    def test_typed_resume_chain_rejects_broken_cross_event_continuity(self):
+        cases = (
+            "structured_commit",
+            "progress_before",
+            "progress_after",
+            "historical_start",
+        )
+        for case in cases:
+            with self.subTest(case=case):
+                case_root = self.root / case
+                values = self._resume_audit_values()
+                if case == "structured_commit":
+                    values[2][1]["source_checkpoints"][
+                        "structured_output_fix_commit"
+                    ] = "0" * 40
+                    expected = "structured-output checkpoint continuity"
+                elif case == "progress_before":
+                    values[2][1]["resumed_process"][
+                        "clar_experience_checkpoint_before"
+                    ] = 25
+                    expected = "CLAR progress continuity"
+                elif case == "progress_after":
+                    values[2][1]["resumed_process"][
+                        "clar_experience_checkpoint_after"
+                    ] = 26
+                    expected = "CLAR resumed progress"
+                else:
+                    values[2][1]["failure"]["historical_process_started_at"] = (
+                        "2026-09-01T23:06:26+08:00"
+                    )
+                    expected = "historical process start"
+                for filename, audit in values:
+                    atomic_write_json(
+                        case_root / "runtime" / "formal_evolution_v1" / filename,
+                        audit,
+                    )
+                arguments = self._resume_provenance_arguments(case_root)
+
+                with self.assertRaisesRegex(ValueError, expected):
+                    transition_module._evolution_code_provenance(
+                        formal_run_id="formal-evolution-v1",
+                        arguments=arguments,
+                    )
+
+    def test_identity_hardening_commit_must_precede_structured_pre_fix(self):
+        repository = self.root / "identity-side-branch"
+        self._init_git_repository(repository)
+        original = self._git_commit(repository, "original")
+        pre_fix = self._git_commit(repository, "pre-fix")
+        context_fix = self._git_commit(repository, "context-fix")
+        probe = self._git_commit(repository, "probe")
+        subprocess.run(
+            ["git", "checkout", "-b", "identity-side-branch", probe],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "identity-hardening"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        identity_hardening = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        subprocess.run(
+            ["git", "checkout", "-b", "structured-fix", probe],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        structured_pre_fix = self._git_commit(repository, "structured-pre-fix")
+        structured_fix = self._git_commit(repository, "structured-fix")
+        subprocess.run(
+            [
+                "git",
+                "merge",
+                "--no-ff",
+                "identity-side-branch",
+                "-m",
+                "merge identity",
+            ],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        legacy_fix = self._git_commit(repository, "legacy-fix")
+        values = self._resume_audit_values()
+        values[0][1]["source_checkpoints"] = {
+            "original_process_commit": original,
+            "pre_fix_checkpoint": pre_fix,
+            "context_fix_commit": context_fix,
+            "probe_commit": probe,
+        }
+        values[1][1]["source_checkpoints"] = {
+            "pre_fix_checkpoint": structured_pre_fix,
+            "structured_output_fix_commit": structured_fix,
+            "external_coco_checkpoint": "7" * 40,
+        }
+        values[2][1]["source_checkpoints"] = {
+            "structured_output_fix_commit": structured_fix,
+            "legacy_identity_compatibility_commit": legacy_fix,
+        }
+        values[2][1]["failure"][
+            "identity_hardening_commit"
+        ] = identity_hardening
+        for filename, audit in values:
+            atomic_write_json(
+                repository / "runtime" / "formal_evolution_v1" / filename,
+                audit,
+            )
+        arguments = self._resume_provenance_arguments(
+            repository,
+            agentreview_head=legacy_fix,
+            external_coco_root=self.root / "identity-external-coco",
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "identity-hardening -> structured pre-fix.*linear ancestor chain",
+        ):
+            transition_module._evolution_code_provenance(
+                formal_run_id="formal-evolution-v1",
+                arguments=arguments,
+            )
+
     def test_materialized_spec_round_trips_into_a_frozen_system(self):
         config, paths = self._formal_fixture(self.root)
         spec_path = self.root / "formal-freeze-spec.json"
@@ -895,7 +1490,7 @@ class FormalTransitionTest(unittest.TestCase):
         self.assertTrue(arguments["require_bubblewrap"])
         self.assertEqual(
             spec["evolution_code_provenance"]["mode"],
-            "audited_multi_commit_resume",
+            "audited_multi_event_resume_chain",
         )
         self.assertEqual(
             arguments["model_identity"],
@@ -981,7 +1576,7 @@ class FormalTransitionTest(unittest.TestCase):
         )
 
     def test_missing_rotating_evidence_prevents_materialization(self):
-        config, _ = self._formal_fixture(self.root)
+        config, paths = self._formal_fixture(self.root)
         missing = (
             self.root
             / "evaluations"
@@ -995,7 +1590,7 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="a" * 40,
+                side_effect=self._formal_clean_head(config, paths),
             ),
             self.assertRaisesRegex(ValueError, "primary evidence count"),
         ):
@@ -1137,7 +1732,7 @@ class FormalTransitionTest(unittest.TestCase):
                 with (
                     patch(
                         "agentreview.research_v2.formal_transition.clean_git_head",
-                        return_value="a" * 40,
+                        side_effect=self._formal_clean_head(config, paths),
                     ),
                     self.assertRaises(ValueError),
                 ):
@@ -1171,7 +1766,7 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="a" * 40,
+                side_effect=self._formal_clean_head(config, paths),
             ),
             self.assertRaisesRegex(
                 ValueError,
@@ -1188,11 +1783,11 @@ class FormalTransitionTest(unittest.TestCase):
         self.assertFalse(output_path.exists())
 
     def test_tampered_formal_spec_never_reaches_freeze_system(self):
-        config, _ = self._formal_fixture(self.root)
+        config, paths = self._formal_fixture(self.root)
         spec_path = self.root / "formal-freeze-spec.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             spec = materialize_formal_freeze_spec(
                 config=config,
@@ -1211,7 +1806,7 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="a" * 40,
+                side_effect=self._formal_clean_head(config, paths),
             ),
             self.assertRaisesRegex(ValueError, "primary Meta"),
         ):
@@ -1245,7 +1840,7 @@ class FormalTransitionTest(unittest.TestCase):
         output_path = self.root / "system-must-not-exist.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             materialize_formal_freeze_spec(
                 config=config,
@@ -1272,7 +1867,7 @@ class FormalTransitionTest(unittest.TestCase):
         output_path = self.root / "system-must-not-exist.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             materialize_formal_freeze_spec(
                 config=config,
@@ -1319,7 +1914,7 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="a" * 40,
+                side_effect=self._formal_clean_head(config, paths),
             ),
             self.assertRaisesRegex(ValueError, "scoring spec paths, hashes"),
         ):
@@ -1396,7 +1991,7 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="a" * 40,
+                side_effect=self._formal_clean_head(config, paths),
             ),
             patch.object(
                 transition_module,
@@ -1451,14 +2046,18 @@ class FormalTransitionTest(unittest.TestCase):
                 )
 
     def test_git_head_change_rejects_materialize_and_load(self):
-        config, _ = self._formal_fixture(self.root)
+        config, paths = self._formal_fixture(self.root)
         changed_spec = self.root / "changed-head-spec.json"
         transition_head_calls = 0
+        coco_root = Path(config.coco_root).expanduser().resolve()
+        coco_commit = read_json(paths["coco_scoring_spec"])["repository"][
+            "git_commit"
+        ]
 
         def moving_transition_head(repository_root):
             nonlocal transition_head_calls
-            if Path(repository_root).expanduser().resolve() != self.root.resolve():
-                return "c" * 40
+            if Path(repository_root).expanduser().resolve() == coco_root:
+                return coco_commit
             transition_head_calls += 1
             return ("a" if transition_head_calls == 1 else "b") * 40
 
@@ -1480,7 +2079,7 @@ class FormalTransitionTest(unittest.TestCase):
         stable_spec = self.root / "stable-spec.json"
         with patch(
             "agentreview.research_v2.formal_transition.clean_git_head",
-            return_value="a" * 40,
+            side_effect=self._formal_clean_head(config, paths),
         ):
             materialize_formal_freeze_spec(
                 config=config,
@@ -1491,7 +2090,11 @@ class FormalTransitionTest(unittest.TestCase):
         with (
             patch(
                 "agentreview.research_v2.formal_transition.clean_git_head",
-                return_value="b" * 40,
+                side_effect=self._formal_clean_head(
+                    config,
+                    paths,
+                    transition_commit="b" * 40,
+                ),
             ),
             self.assertRaisesRegex(ValueError, "code commit differs"),
         ):
