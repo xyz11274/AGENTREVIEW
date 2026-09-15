@@ -74,7 +74,16 @@ class _Completion:
         if component.startswith("specialist_review:"):
             return f"Complete {component} output."
         if component == "meta_synthesis":
-            return "Synthesis across all five roles.\n\nFinal recommendation: Accept"
+            return json.dumps({
+                "sections": [
+                    {"role": role, "opinions": [
+                        {"statement": f"The {role} review supports the paper's contribution.",
+                         "source_roles": [role], "evidence_anchors": [], "suggestions": []}
+                    ]}
+                    for role in ROLES
+                ],
+                "recommendation": "Accept",
+            })
         raise AssertionError(component)
 
 

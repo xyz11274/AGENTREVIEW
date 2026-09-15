@@ -11,12 +11,13 @@ from agentreview.research_v2.cli import (
     _run_evolution_spec,
     _spec_s2_intervention,
 )
-from agentreview.research_v2.constants import ROLES
+from agentreview.research_v2.constants import ROLES, SCHEMA_VERSION
 from agentreview.research_v2.evolution import (
     EvolutionPool,
     PoolEntry,
     _reflector_feedback_view,
     _reflector_prompt,
+    build_evaluation_receipt,
     feedback_packet,
     initialize_pool,
 )
@@ -353,6 +354,28 @@ class EvolvableWinnerTests(unittest.TestCase):
                 f"snapshots/{role}.json", snapshot_payload
             )
             snapshots[role] = str(snapshot_path)
+            review_path = self._json(f"scores/{role}-review.json", {
+                "schema_version": SCHEMA_VERSION,
+                "review_id": f"review-{role}", "paper_id": "paper-1", "role": role,
+                "program_version": snapshot_payload["program_version"],
+                "memory_snapshot_id": snapshot_payload["snapshot_id"],
+                "review_text": "Complete review.", "raw_model_output": "Complete review.",
+                "reviewer_identity": {"role": role}, "model_identity": {"model": "reviewer"},
+                "generation_config": {}, "retrieval_provenance": {}, "run_id": "static-review",
+                "created_at": "2026-09-15T00:00:00Z",
+            })
+            evaluation_path = self._json(f"scores/{role}-evaluation.json", {
+                "schema_version": SCHEMA_VERSION,
+                "evaluation_id": f"evaluation-{role}", "review_id": f"review-{role}",
+                "paper_id": "paper-1", "role": role, "review_quality": 4.0,
+                "major_missing_points": [], "factual_evidence_issues": [], "improvement_suggestions": [],
+                "raw_model_output": "Complete evaluation.", "evaluator_identity": {"model": "reviewer"},
+                "prompt_version": "test-v1", "run_id": "static-evaluation", "created_at": "2026-09-15T00:00:00Z",
+            })
+            receipt = build_evaluation_receipt(
+                role=role, snapshot_path=snapshot_path,
+                review_paths=[review_path], evaluation_paths=[evaluation_path],
+            )
             pool = EvolutionPool(
                 role,
                 [
@@ -368,6 +391,7 @@ class EvolvableWinnerTests(unittest.TestCase):
                         memory_snapshot_sha256=file_sha256(snapshot_path),
                         memory_snapshot_id=snapshot_payload["snapshot_id"],
                         capability_manifest=program_capability_manifest(path=program),
+                        evaluation_receipt=receipt,
                     )
                 ],
             )
@@ -399,6 +423,12 @@ class EvolvableWinnerTests(unittest.TestCase):
                     "run_id": evolution_run_id,
                     "status": "complete",
                     "winner_id": winner_payload["winner_id"],
+                    "failure_policy": {
+                        "protocol": "research-v2-failure-policy-v1", "status": "running",
+                        "evaluation_epoch": 0, "pending_candidates": [],
+                        "repair_budget": {"limit": 3, "used": 0},
+                        "candidate_failure_budget": {"limit": 3, "used": 0},
+                    },
                     "attempts": {
                         f"{attempt:03d}": {"status": "failed"}
                         for attempt in range(1, 21)

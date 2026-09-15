@@ -69,9 +69,14 @@ def format_source_anchors(anchors: list[dict]) -> str:
     if not anchors:
         return "No structured source anchors available."
 
-    lines = ["Structured source anchors from the original paper extraction:"]
+    lines = ["Source anchors with extracted pages or character intervals in the complete paper:"]
     for anchor in anchors:
+        location = (
+            f"chars=[{anchor['char_start']},{anchor['char_end']})"
+            if "char_start" in anchor and "char_end" in anchor
+            else f"page={anchor.get('page_idx') if anchor.get('page_idx') is not None else 'unknown'}"
+        )
         lines.append(
-            f"{anchor['source_id']} | page={anchor.get('page_idx')} | type={anchor.get('type')} | text={anchor.get('text')}"
+            f"{anchor['source_id']} | {location} | type={anchor.get('type')} | text={anchor.get('text')}"
         )
     return "\n".join(lines)

@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,8 +13,17 @@ from agentreview.research_v2.models import Paper
 
 
 class _Completion:
-    def __init__(self, response="Final recommendation: Accept", error=None):
-        self.response = response
+    def __init__(self, response=None, error=None):
+        self.response = response if response is not None else json.dumps({
+            "sections": [
+                {"role": role, "opinions": [
+                    {"statement": f"The {role} review provides a supported assessment.",
+                     "source_roles": [role], "evidence_anchors": [], "suggestions": []}
+                ]}
+                for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
+            ],
+            "recommendation": "Accept",
+        })
         self.error = error
         self.calls = 0
 

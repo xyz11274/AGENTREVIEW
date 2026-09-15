@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any
 
-from agentreview.paper_context import format_canonical_paper_context
+from agentreview.paper_context import format_canonical_paper_context, text_source_anchors
 from agentreview.reviewer_identity import SPECIALIST_REQUEST_TEMPLATE, load_reviewer_suite
 
 from .io import value_sha256
@@ -52,36 +53,23 @@ class PreparedReviewInvocation:
     review_plan: dict[str, Any]
 
 
-def _fallback_anchors(text: str, maximum: int = 40) -> list[dict[str, Any]]:
-    anchors = []
-    for start in range(0, min(len(text), 40000), 1000):
-        excerpt = text[start : start + 500].replace("\n", " ").strip()
-        if excerpt:
-            anchors.append(
-                {
-                    "source_id": f"SRC-{len(anchors) + 1:03d}",
-                    "page_idx": 0,
-                    "type": "text",
-                    "text": excerpt,
-                }
-            )
-        if len(anchors) >= maximum:
-            break
-    return anchors
-
-
-def frozen_paper_context(paper: Paper, role: str) -> str:
+def frozen_paper_context(paper: Paper, role: str, *, max_chars: int | None = None) -> str:
     """Build the immutable paper-local context shared by Review and evaluation."""
+    venue_year = str(paper.source.get("venue_year") or "")
+    match = re.fullmatch(r"\s*(.*?)\s*[_ /-]?((?:19|20)\d{2})\s*", venue_year)
+    venue = str(paper.source.get("venue") or paper.source.get("conference") or (match.group(1).rstrip("_ /-") if match else ""))
+    year = str(paper.source.get("year") or (match.group(2) if match else ""))
     return format_canonical_paper_context(
         paper.text,
         {
             "paper_id": paper.paper_id,
             "title": paper.title,
-            "venue": str(paper.source.get("conference") or ""),
-            "year": "",
+            "venue": venue,
+            "year": year,
             "reviewer_role": role,
         },
-        _fallback_anchors(paper.text),
+        paper.source.get("source_anchors") or text_source_anchors(paper.text),
+        max_chars=max_chars if max_chars is not None else paper.source.get("paper_context_max_chars"),
     )
 
 
@@ -289,6 +277,8 @@ def prepare_review_invocation(
     embedding_client: Any = None,
     embedding_identity: dict[str, Any] | None = None,
     require_bubblewrap: bool = True,
+    memory_enabled: bool = True,
+    memory_runtime: dict[str, Any] | None = None,
 ) -> PreparedReviewInvocation:
     """Execute and validate one Program plan, then assemble the exact prompt."""
     intervention = normalize_s2_intervention(s2_intervention)
@@ -311,6 +301,8 @@ def prepare_review_invocation(
         s2_retrieval_pool={paper.paper_id: exposed_evidence},
         s2_retrieval_pool_sha256=str(pool_provenance.get("pool_sha256") or ""),
         require_bubblewrap=require_bubblewrap,
+        memory_enabled=memory_enabled,
+        memory_runtime=memory_runtime,
     )
     raw_plan = memory_result.pop("review_plan", None)
     s2_trace = dict(memory_result.pop("s2_trace", {}) or {})
@@ -333,8 +325,17 @@ def prepare_review_invocation(
             "(capability unavailable due to an explicit diagnostic intervention)"
         )
 
+    memory_parts = ["[REVIEW EXPERIENCE]\n" + (memory_result["context"] or "(none)")]
+    if memory_enabled:
+        for key, heading in (
+            ("instruction_response", "[MEMORY RESPONSE INSTRUCTION]"),
+            ("always_on_knowledge", "[MEMORY ALWAYS-ON KNOWLEDGE]"),
+        ):
+            content = memory_result.get(key, "")
+            if isinstance(content, str) and content.strip():
+                memory_parts.append(heading + "\n" + content)
     context_blocks = {
-        "memory": "[REVIEW EXPERIENCE]\n" + (memory_result["context"] or "(none)"),
+        "memory": "\n\n".join(memory_parts),
         "s2": "[FROZEN S2 EVIDENCE]\n" + rendered_s2_context,
         "strategy": "\n".join(
             [

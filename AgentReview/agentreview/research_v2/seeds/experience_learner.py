@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 
 INSTRUCTION_KNOWLEDGE_ITEM = (
-    "From the complete Specialist Review and Internal Evaluation, produce one reusable "
-    "review experience. Do not copy the source paper."
+    "Produce one reusable review experience from the supplied complete Specialist "
+    "Review and any explicitly supplied feedback. Preserve its source role and "
+    "express the experience as general review guidance."
 )
 INSTRUCTION_QUERY = (
     "Use the deterministic title and abstract query supplied by the host."

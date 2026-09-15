@@ -16,11 +16,12 @@ from agentreview.research_v2.coco_scoring_spec import (
     materialize_coco_scoring_spec,
 )
 from agentreview.research_v2.config import ResearchConfig
-from agentreview.research_v2.constants import ROLES
+from agentreview.research_v2.constants import ROLES, SCHEMA_VERSION
 from agentreview.research_v2.evolution import (
     MAX_MUTATION_ATTEMPTS,
     EvolutionPool,
     PoolEntry,
+    build_evaluation_receipt,
     feedback_packet,
 )
 from agentreview.research_v2.formal_evolution import (
@@ -234,8 +235,14 @@ class FormalTransitionTest(unittest.TestCase):
             review_path,
             {
                 **review_identity,
+                "schema_version": SCHEMA_VERSION,
                 "review_id": review_id,
                 "review_text": f"Complete {role} review for {paper_id}",
+                "raw_model_output": "Complete review.",
+                "reviewer_identity": {"role": role},
+                "model_identity": {"model": "test-reviewer"},
+                "generation_config": {},
+                "created_at": "2026-09-15T00:00:00Z",
                 "retrieval_provenance": {
                     "memory": {
                         "seed_kind": "vector_search",
@@ -269,10 +276,15 @@ class FormalTransitionTest(unittest.TestCase):
             evaluation_path,
             {
                 **evaluation_identity,
+                "schema_version": SCHEMA_VERSION,
                 "evaluation_id": value_sha256(evaluation_identity),
                 "major_missing_points": [],
                 "factual_evidence_issues": [],
                 "improvement_suggestions": [],
+                "raw_model_output": "Complete evaluation.",
+                "evaluator_identity": {"model": "test-judge"},
+                "prompt_version": "test-v1",
+                "created_at": "2026-09-15T00:00:00Z",
             },
         )
         return review_path.resolve(), evaluation_path.resolve()
@@ -561,8 +573,9 @@ class FormalTransitionTest(unittest.TestCase):
                 atomic_write_json(snapshot_path, snapshot)
                 review_run_id = f"{program_version}-static-review"
                 evaluation_run_id = f"{program_version}-static-eval"
+                review_paths, evaluation_paths = [], []
                 for record in records_by_split["static"]:
-                    self._review_evaluation_fixture(
+                    review_path, evaluation_path = self._review_evaluation_fixture(
                         root=root,
                         role=role,
                         paper_id=record["paper_id"],
@@ -572,6 +585,12 @@ class FormalTransitionTest(unittest.TestCase):
                         memory_snapshot_id=snapshot["snapshot_id"],
                         review_quality=seed_scores[seed_name],
                     )
+                    review_paths.append(review_path)
+                    evaluation_paths.append(evaluation_path)
+                receipt = build_evaluation_receipt(
+                    role=role, snapshot_path=snapshot_path,
+                    review_paths=review_paths, evaluation_paths=evaluation_paths,
+                )
                 pool.add(
                     PoolEntry(
                         candidate_id=f"seed-{seed_name}",
@@ -585,6 +604,7 @@ class FormalTransitionTest(unittest.TestCase):
                         memory_snapshot_sha256=file_sha256(snapshot_path),
                         memory_snapshot_id=snapshot["snapshot_id"],
                         capability_manifest=capability_manifest,
+                        evaluation_receipt=receipt,
                         lineage=[
                             {
                                 "candidate_id": f"seed-{seed_name}",
@@ -833,6 +853,12 @@ class FormalTransitionTest(unittest.TestCase):
                     "run_id": run_id,
                     "status": "complete",
                     "winner_id": winner_payload["winner_id"],
+                    "failure_policy": {
+                        "protocol": "research-v2-failure-policy-v1", "status": "running",
+                        "evaluation_epoch": 0, "pending_candidates": [],
+                        "repair_budget": {"limit": 3, "used": 0},
+                        "candidate_failure_budget": {"limit": 3, "used": 0},
+                    },
                     "attempts": coordinator_attempts,
                 },
             )

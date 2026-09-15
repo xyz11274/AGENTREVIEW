@@ -48,7 +48,6 @@ def _paper_asset_path(asset_root: Path, record: dict[str, Any]) -> Path | None:
         return None
     base = asset_root / raw
     candidates = (
-        base / "md_content_no_appendix.md",
         base / "md_content.md",
         base,
     )

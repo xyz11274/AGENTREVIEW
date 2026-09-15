@@ -5,10 +5,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agentreview.research_v2 import formal_evolution as formal_module
-from agentreview.research_v2.evolution import initialize_pool
+from agentreview.research_v2.evaluation import EvaluationFailure
+from agentreview.research_v2.evolution import EvolutionPool, initialize_pool, validate_pool_evaluation_receipts
 from agentreview.research_v2.formal_evolution import (
-    _internal_evaluation_failure_score,
-    _load_internal_evaluation_failure_score,
     materialize_role_attempt,
     record_candidate_failure,
     run_formal_evolution_roles,
@@ -21,6 +20,7 @@ from agentreview.research_v2.io import (
     value_sha256,
 )
 from agentreview.research_v2.memory import SEED_NAMES, seed_program_path
+from agentreview.research_v2.models import InternalEvaluation, SpecialistReview
 from agentreview.research_v2.program_checks import program_capability_manifest
 
 
@@ -69,25 +69,27 @@ class FormalEvolutionTests(unittest.TestCase):
                 seed_reviews.append(
                     self._json(
                         f"reviews/{seed_name}-{index}.json",
-                        {
-                            "review_id": review_id,
-                            "paper_id": paper_id,
-                            "role": "QUAL",
-                            "program_version": version,
-                            "memory_snapshot_id": payload["snapshot_id"],
-                            "review_text": "complete",
-                        },
+                        SpecialistReview(
+                            review_id=review_id, paper_id=paper_id, role="QUAL",
+                            program_version=version, memory_snapshot_id=payload["snapshot_id"],
+                            review_text="Complete review.", raw_model_output="Complete review.",
+                            reviewer_identity={"role": "QUAL"}, model_identity={"model": "test-reviewer"},
+                            generation_config={}, retrieval_provenance={}, run_id=f"review-{seed_name}",
+                            created_at="2026-09-15T00:00:00Z",
+                        ).to_dict(),
                     )
                 )
                 seed_evaluations.append(
                     self._json(
                         f"evaluations/{seed_name}-{index}.json",
-                        {
-                            "review_id": review_id,
-                            "paper_id": paper_id,
-                            "role": "QUAL",
-                            "review_quality": 3.0 + index,
-                        },
+                        InternalEvaluation(
+                            evaluation_id=f"eval-{review_id}", review_id=review_id,
+                            paper_id=paper_id, role="QUAL", review_quality=3.0 + index,
+                            major_missing_points=[], factual_evidence_issues=[], improvement_suggestions=[],
+                            raw_model_output="Complete evaluation.", evaluator_identity={"model": "test-judge"},
+                            prompt_version="internal-evaluator-v1", run_id=f"eval-{seed_name}",
+                            created_at="2026-09-15T00:00:00Z",
+                        ).to_dict(),
                     )
                 )
             reviews[seed_name] = seed_reviews
@@ -260,6 +262,23 @@ class FormalEvolutionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "625/625"):
             validate_canonical_evaluation_summary(incomplete)
 
+    def test_current_canonical_batch_protocol_requires_every_successful_task(self):
+        tasks = [
+            {"paper_id": f"p-{index}", "role": role, "status": "completed"}
+            for index in range(125) for role in formal_module.ROLES
+        ]
+        value = {
+            "schema_version": "research-v2-internal-evaluation-batch-v2", "status": "complete",
+            "task_count": 625, "completed": 625, "resumed": 0, "failed": 0,
+            "run_id": "current-eval", "review_run_id": "canonical", "task_results": tasks,
+        }
+        path = self._json("current-summary.json", value)
+        self.assertEqual(validate_canonical_evaluation_summary(path)["run_id"], "current-eval")
+        for changed in (tasks[:-1], [tasks[0], *tasks[:-1]]):
+            atomic_write_json(path, {**value, "task_results": changed}, immutable=False)
+            with self.assertRaisesRegex(ValueError, "complete successful task manifest"):
+                validate_canonical_evaluation_summary(path)
+
     def test_candidate_failure_is_terminal_idempotent_and_allows_next_attempt(self):
         snapshots, reviews, evaluations = self._seed_inputs()
         pool_path = self.root / "pool.json"
@@ -320,201 +339,162 @@ class FormalEvolutionTests(unittest.TestCase):
         )
         self.assertEqual(next_work["attempt"], 2)
 
-    def test_internal_evaluator_paper_failure_score_is_resumable_but_transport_is_not(self):
-        review_path = self._json(
-            "reviews/eval-run/paper/QUAL.json",
-            {
-                "review_id": "review-1",
-                "paper_id": "paper",
-                "role": "QUAL",
-            },
-        )
-        parse_failure = self._json(
-            "evaluations/eval-run/paper/QUAL.failure.json",
-            {
-                "paper_id": "paper",
-                "role": "QUAL",
-                "review_id": "review-1",
-                "status": "failed",
-                "errors": [
-                    "JSONDecodeError: invalid JSON",
-                    "ValueError: Internal Evaluator fields mismatch: bad",
-                ],
-                "review_quality": 1.0,
-            },
-        )
-        score = _internal_evaluation_failure_score(
-            output_root=self.root,
-            run_id="eval-run",
-            review_path=review_path,
-            failure_path=parse_failure,
-        )
-        self.assertEqual(
-            _load_internal_evaluation_failure_score(
-                path=score,
-                run_id="eval-run",
-                review={"review_id": "review-1", "paper_id": "paper", "role": "QUAL"},
-            ),
-            score,
-        )
-        self.assertEqual(1.0, formal_module.read_json(score)["review_quality"])
+    def test_formal_evaluation_failure_propagates_without_score_and_preserves_retry_budget(self):
+        _, reviews, _ = self._seed_inputs()
+        review_path = reviews["vector_search"][0]
+        paper_path = self._json("paper.json", {
+            "paper_id": "paper-0", "title": "Paper", "abstract": "Abstract", "text": "Full paper text.",
+        })
 
-        transport_failure = self._json(
-            "evaluations/transport/paper/QUAL.failure.json",
-            {
-                "paper_id": "paper",
-                "role": "QUAL",
-                "review_id": "review-1",
-                "status": "failed",
-                "errors": ["APIConnectionError: endpoint unavailable"],
-                "review_quality": 1.0,
-            },
-        )
-        with self.assertRaisesRegex(RuntimeError, "must stop"):
-            _internal_evaluation_failure_score(
-                output_root=self.root,
-                run_id="transport",
-                review_path=review_path,
-                failure_path=transport_failure,
-            )
+        class FailingClient:
+            def __init__(self, response):
+                self.response = response
+                self.calls = 0
+
+            def complete(self, *args, **kwargs):
+                self.calls += 1
+                if isinstance(self.response, Exception):
+                    raise self.response
+                return self.response
+
+        for run_id, response, expected_calls in (
+            ("parse-failure", "invalid JSON", 2),
+            ("transport-failure", TimeoutError("endpoint unavailable"), 3),
+        ):
+            with self.subTest(run_id=run_id):
+                client = FailingClient(response)
+                events = []
+                arguments = dict(
+                    records=[{"paper_id": "paper-0", "path": str(paper_path)}],
+                    review_paths=[review_path], run_id=run_id, output_root=self.root,
+                    completion_client=client, evaluator_identity={"model": "test-judge"},
+                    max_workers=1, progress=events.append,
+                )
+                with self.assertRaises(EvaluationFailure):
+                    formal_module._run_evaluation_batch(**arguments)
+                self.assertEqual(client.calls, expected_calls)
+                target = self.root / "evaluations" / run_id / "paper-0"
+                failure = formal_module.read_json(target / "QUAL.failure.json")
+                self.assertEqual(failure["status"], "paused")
+                self.assertNotIn("review_quality", failure)
+                self.assertFalse((target / "QUAL.json").exists())
+                self.assertFalse(list(target.glob("*.paper_failure.json")))
+                self.assertEqual(events[-1]["disposition"], "failed")
+                with self.assertRaises(EvaluationFailure):
+                    formal_module._run_evaluation_batch(**arguments)
+                self.assertEqual(client.calls, expected_calls)
 
     def test_role_runner_propagates_frozen_identities_through_all_memory_builds(self):
-        pool_path = (
-            self.root / "evolution" / "QUAL" / "formal-v1" / "pool.json"
-        )
-        static_records = [
-            {"paper_id": f"static-{index}", "path": f"/paper/{index}.json"}
-            for index in range(25)
-        ]
-        work = {
-            "role": "QUAL",
-            "run_id": "formal-v1",
-            "attempt": 1,
-            "parent": {
-                "program_path": str(seed_program_path("experience_learner")),
-                "memory_snapshot_path": "/snapshot/parent.json",
-                "program_version": "parent-v1",
-            },
-            "rotating_batch": {
-                "paper_ids": [f"rotating-{index}" for index in range(5)],
-                "paper_paths": [f"/rotating/{index}.json" for index in range(5)],
-            },
-            "artifact_run_ids": {
-                "rotating_reviews": "rotating-review",
-                "rotating_evaluations": "rotating-eval",
-                "candidate_static_reviews": "candidate-static-review",
-                "candidate_static_evaluations": "candidate-static-eval",
-            },
-        }
-        build_calls = []
+        pool_path = self.root / "evolution" / "QUAL" / "formal-v1" / "pool.json"
+        summary, static, rotating, _ = self._formal_inputs(pool_path)
+        static_records = formal_module.read_json(static)["records"]
+        build_calls, review_batches = [], []
 
         def fake_build(**kwargs):
             build_calls.append(kwargs)
-            return {}
-
-        review_batches = []
+            program = Path(kwargs["program_path"]).resolve()
+            snapshot = {
+                "snapshot_protocol": "research-v2-memory-snapshot-v1", "role": kwargs["role"],
+                "program_version": kwargs["program_version"], "program_path": str(program),
+                "program_sha256": file_sha256(program), "seed_kind": kwargs["seed_kind"],
+                "source_review_ids": [], "source_evaluation_ids": [], "items": [], "snapshot": {},
+                "capability_manifest": program_capability_manifest(path=program),
+                "embedding_identity": kwargs["embedding_identity"],
+            }
+            snapshot["snapshot_id"] = value_sha256(snapshot)
+            atomic_write_json(kwargs["output_path"], snapshot)
+            return snapshot
 
         def fake_reviews(**kwargs):
             review_batches.append(kwargs)
-            return [Path(f"/reviews/{index}.json") for index in range(len(kwargs["records"]))]
+            snapshot = formal_module.read_json(kwargs["snapshot_path"])
+            paths = []
+            for record in kwargs["records"]:
+                paper_id, run_id = record["paper_id"], kwargs["run_id"]
+                review = SpecialistReview(
+                    review_id=f"{run_id}-{paper_id}", paper_id=paper_id, role=kwargs["role"],
+                    program_version=kwargs["program_version"], memory_snapshot_id=snapshot["snapshot_id"],
+                    review_text="Complete review.", raw_model_output="Complete review.",
+                    reviewer_identity={"role": kwargs["role"]}, model_identity=kwargs["model_identity"],
+                    generation_config={}, retrieval_provenance={}, run_id=run_id,
+                    created_at="2026-09-15T00:00:00Z",
+                ).to_dict()
+                path = self.root / "reviews" / run_id / paper_id / f"{kwargs['role']}.json"
+                atomic_write_json(path, review)
+                paths.append(path)
+            return paths
 
         def fake_evaluations(**kwargs):
-            return [Path(f"/evaluations/{index}.json") for index in range(len(kwargs["records"]))]
+            paths = []
+            for review_path in kwargs["review_paths"]:
+                review = formal_module.read_json(review_path)
+                version = review["program_version"]
+                score = 5.0 if "experience_learner" in version else 1.0
+                evaluation = InternalEvaluation(
+                    evaluation_id=f"{kwargs['run_id']}-{review['review_id']}",
+                    review_id=review["review_id"], paper_id=review["paper_id"], role=review["role"],
+                    review_quality=score, major_missing_points=[], factual_evidence_issues=[],
+                    improvement_suggestions=[], raw_model_output="Complete evaluation.",
+                    evaluator_identity=kwargs["evaluator_identity"], prompt_version="internal-evaluator-v1",
+                    run_id=kwargs["run_id"], created_at="2026-09-15T00:00:00Z",
+                ).to_dict()
+                path = self.root / "evaluations" / kwargs["run_id"] / review["paper_id"] / f"{review['role']}.json"
+                atomic_write_json(path, evaluation)
+                paths.append(path)
+            return paths
 
-        advance_calls = []
-
-        def fake_advance(**kwargs):
-            advance_calls.append(kwargs)
-            if kwargs.get("candidate_memory_snapshot_path") is None:
-                return {
-                    "status": "awaiting_candidate_static",
-                    "candidate_id": "candidate-1",
-                    "program_path": "/candidate/program.py",
-                    "seed_kind": "experience_learner",
-                }
-            coordinator = {
-                "protocol": formal_module.FORMAL_ROLE_EVOLUTION_PROTOCOL,
-                "role": "QUAL",
-                "run_id": "formal-v1",
-                "status": "complete",
-                "attempts": {},
-                "winner_id": "winner-1",
+        def fake_propose(**kwargs):
+            parent = kwargs["pool"].select_parent(seed=kwargs["attempt"])
+            self.assertEqual(parent.seed_kind, "experience_learner")
+            outcome = {
+                "status": "proposed", "role": kwargs["role"], "candidate_id": "candidate-1",
+                "parent_id": parent.candidate_id, "program_path": parent.program_path,
+                "program_sha256": parent.program_sha256, "capability_manifest": parent.capability_manifest,
+                "parent_capability_manifest": parent.capability_manifest,
             }
-            formal_module.atomic_write_json(
-                self.root / "evolution/QUAL/formal-v1/coordinator.json",
-                coordinator,
-                immutable=False,
-            )
-            return {"status": "committed"}
+            target = self.root / "evolution" / "QUAL" / "formal-v1" / "attempt-001.json"
+            atomic_write_json(target, outcome)
+            return outcome
 
         with ExitStack() as stack:
-            stack.enter_context(
-                patch.object(
-                    formal_module,
-                    "_preflight_formal_role_run",
-                    return_value=(
-                        {"sha256": "canonical"},
-                        [Path("/canonical-review.json")],
-                        [Path("/canonical-eval.json")],
-                        static_records,
-                    ),
-                )
-            )
+            stack.enter_context(patch.object(
+                formal_module, "_preflight_formal_role_run",
+                return_value=(
+                    {"sha256": "canonical"}, [Path("/canonical-review.json")],
+                    [Path("/canonical-eval.json")], static_records,
+                ),
+            ))
             stack.enter_context(patch.object(formal_module, "MAX_MUTATION_ATTEMPTS", 1))
-            stack.enter_context(
-                patch.object(formal_module, "build_memory_snapshot", side_effect=fake_build)
-            )
-            stack.enter_context(patch.object(formal_module, "initialize_pool"))
-            stack.enter_context(
-                patch.object(formal_module, "materialize_role_attempt", return_value=work)
-            )
-            stack.enter_context(
-                patch.object(formal_module, "_run_review_batch", side_effect=fake_reviews)
-            )
-            stack.enter_context(
-                patch.object(
-                    formal_module,
-                    "_run_evaluation_batch",
-                    side_effect=fake_evaluations,
-                )
-            )
-            stack.enter_context(
-                patch.object(formal_module, "advance_role_attempt", side_effect=fake_advance)
-            )
+            stack.enter_context(patch.object(formal_module, "build_memory_snapshot", side_effect=fake_build))
+            stack.enter_context(patch.object(formal_module, "_run_review_batch", side_effect=fake_reviews))
+            stack.enter_context(patch.object(formal_module, "_run_evaluation_batch", side_effect=fake_evaluations))
+            stack.enter_context(patch.object(formal_module, "propose_candidate", side_effect=fake_propose))
+            advance = stack.enter_context(patch.object(
+                formal_module, "advance_role_attempt", wraps=formal_module.advance_role_attempt,
+            ))
             result = run_formal_role_evolution(
-                role="QUAL",
-                run_id="formal-v1",
-                pool_path=pool_path,
-                canonical_evaluation_summary_path="/canonical-summary.json",
-                canonical_split_path="/canonical-split.json",
-                static_split_path="/static-split.json",
-                rotating_split_path="/rotating-split.json",
-                frozen_s2_path="/s2.jsonl",
-                output_root=self.root,
-                completion_client=object(),
-                model_identity={"model": "frozen-model"},
-                embedding_client=object(),
-                embedding_identity={"provider": "frozen-embedding"},
-                max_workers=8,
-                require_bubblewrap=True,
+                role="QUAL", run_id="formal-v1", pool_path=pool_path,
+                canonical_evaluation_summary_path=summary,
+                canonical_split_path="/canonical-split.json", static_split_path=static,
+                rotating_split_path=rotating, frozen_s2_path="/s2.jsonl", output_root=self.root,
+                completion_client=object(), model_identity={"model": "frozen-model"},
+                embedding_client=object(), embedding_identity={"provider": "frozen-embedding"},
+                max_workers=8, require_bubblewrap=True,
             )
-        self.assertEqual(result["status"], "complete")
+        self.assertEqual(result["status"], "complete", result)
+        pool = EvolutionPool.from_dict(formal_module.read_json(pool_path))
+        self.assertEqual(len(pool.entries), 4)
+        validate_pool_evaluation_receipts(pool, expected_epoch=0)
+        self.assertTrue((pool_path.parent / "winner.json").is_file())
         self.assertEqual(len(build_calls), 4)
-        self.assertTrue(
-            all(
-                call["embedding_identity"] == {"provider": "frozen-embedding"}
-                for call in build_calls
-            )
-        )
-        experience_calls = [
-            call for call in build_calls if call["seed_kind"] == "experience_learner"
-        ]
+        self.assertTrue(all(call["embedding_identity"] == {"provider": "frozen-embedding"} for call in build_calls))
+        experience_calls = [call for call in build_calls if call["seed_kind"] == "experience_learner"]
         self.assertEqual(len(experience_calls), 2)
-        self.assertTrue(
-            all(call["completion_identity"] == {"model": "frozen-model"} for call in experience_calls)
-        )
+        self.assertTrue(all(call["completion_identity"] == {"model": "frozen-model"} for call in experience_calls))
+        self.assertTrue(all(call["completion_client"] is not None for call in experience_calls))
+        self.assertTrue(all(call["completion_client"] is None for call in build_calls if call["seed_kind"] != "experience_learner"))
         self.assertEqual(len(review_batches), 5)
-        self.assertEqual(len(advance_calls), 2)
+        self.assertEqual(advance.call_count, 2)
 
     def test_all_role_runner_reuses_one_client_pair_and_canonical_pool_paths(self):
         completion_client = object()

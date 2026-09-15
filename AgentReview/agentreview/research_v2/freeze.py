@@ -14,7 +14,8 @@ from agentreview.reviewer_identity import (
 
 from .coco_scoring_spec import validate_coco_scoring_spec
 from .constants import ROLES
-from .evolution import EvolutionPool
+from .evolution import EvolutionPool, validate_pool_evaluation_receipts
+from .failure_policy import validate_promotion_policy
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
 from .memory import validate_memory_snapshot_artifact
 from .program_checks import (
@@ -207,6 +208,18 @@ def _validate_completed_evolution(
         for name, expected in expected_coordinator.items()
     ):
         raise ValueError(f"Evolution coordinator is not complete: {role}")
+    policy = coordinator.get("failure_policy")
+    if not isinstance(policy, dict):
+        raise ValueError("Evolution coordinator requires a verified failure policy")
+    if coordinator.get("failure_policy_path") is not None:
+        policy_path = coordinator["failure_policy_path"]
+        if not isinstance(policy_path, str) or not policy_path.strip():
+            raise ValueError("Evolution coordinator failure policy path is invalid")
+        policy = read_json(Path(policy_path).expanduser().resolve())
+    validate_promotion_policy(policy)
+    validate_pool_evaluation_receipts(
+        pool, expected_epoch=policy["evaluation_epoch"]
+    )
     expected_attempts = {
         f"{attempt:03d}" for attempt in range(1, FORMAL_MUTATION_ATTEMPTS + 1)
     }

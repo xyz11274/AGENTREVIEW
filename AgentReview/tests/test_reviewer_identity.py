@@ -33,11 +33,13 @@ class FrozenReviewerIdentityTest(unittest.TestCase):
 
     def test_meta_has_independent_prompt_and_manifest(self):
         payload = validate_meta_synthesis_manifest(
-            self.root / "configs" / "frozen_meta_synthesis_v1.json"
+            self.root / "configs" / "frozen_meta_synthesis_v2.json"
         )
         prompt = load_meta_synthesizer().system_prompt
-        self.assertEqual(payload["source_path"], "META_SYNTHESIS_Request_v1.md")
-        self.assertIn("must not use or request related-work Memory", prompt)
+        self.assertEqual(payload["source_path"], "META_SYNTHESIS_Request_v2.md")
+        self.assertIn("complete evidence set", prompt)
+        self.assertEqual(payload["output_protocol_version"], "meta-synthesis-output-v2")
+        self.assertEqual(payload["rendering_protocol_version"], "meta-opinion-markdown-v2")
         self.assertNotIn("Final score", prompt)
         self.assertNotIn("Confidence (", prompt)
 

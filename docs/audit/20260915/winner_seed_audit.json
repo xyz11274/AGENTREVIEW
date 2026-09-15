@@ -1,0 +1,220 @@
+{
+  "scope": "Historical internal 1-5 static scores; not CoCo scores",
+  "model_calls": 0,
+  "source_batch": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runs/formal-coco1300-winner-v1/coco_review_batch.json",
+  "source_batch_sha256": "bc1a19346f05558c86aea55ea2925d5ac4d49c5c706041e1e2f61f5769718e69",
+  "source_system": {
+    "path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/frozen/formal-evolution-v1.system.json",
+    "sha256": "1e6fb3447f2b7107f055af015f84f75837da87d951e636edd80a920df9907601",
+    "system_id": "a0095532164fb6dc065d0f24960ca31f23f729790430e20f75a4393ad1b202e0"
+  },
+  "roles": [
+    {
+      "role": "QUAL",
+      "winner_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/QUAL/formal-evolution-v1/winner.json",
+      "winner_sha256": "5ff18d574eb969ab251ff0f7089368aad3ba31ebf9022ee4d2966e35eee74701",
+      "pool_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/QUAL/formal-evolution-v1/pool.json",
+      "pool_sha256": "301ef2549519d68b6e1f1da895fd8c24e7e42e60d848e5f13300070c74f09668",
+      "selected_seed": "llm_summarizer",
+      "candidate_id": "dcbea0fb12561359172a45ac",
+      "static_score": 4.12,
+      "program_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/programs/QUAL/dcbea0fb12561359172a45ac/program.py",
+      "program_sha256": "bb60da85ac627fa7613eca58c3939ffcb5ab71e7bb64b511aea4882b84dcf4a8",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "f920763b7acd9008b7a1c928911e019e063487c7de9deb433161b20ff6ecc372",
+      "plan_ast_sha256_recomputed": "e47d201fcd4579a0ef59c90b067c276e36f6e3600d789232fca92f50d3e95740",
+      "deployed_matches_winner": true,
+      "seed_lineages": {
+        "vector_search": {
+          "initial_score": 4.04,
+          "lineage_best_score": 4.12,
+          "successful_children": 9,
+          "top_tied_candidates": [
+            "184a87aab79f70c1b3d9444b"
+          ]
+        },
+        "llm_summarizer": {
+          "initial_score": 4.04,
+          "lineage_best_score": 4.12,
+          "successful_children": 8,
+          "top_tied_candidates": [
+            "dcbea0fb12561359172a45ac",
+            "61c93106a8534207021174f1"
+          ]
+        },
+        "experience_learner": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.0,
+          "successful_children": 1,
+          "top_tied_candidates": []
+        }
+      }
+    },
+    {
+      "role": "CLAR",
+      "winner_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/CLAR/formal-evolution-v1/winner.json",
+      "winner_sha256": "29f2e8c24bdafdbf0426cdbbbd1ad1f33bbd4569467b4d1960bb923848c07195",
+      "pool_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/CLAR/formal-evolution-v1/pool.json",
+      "pool_sha256": "b574c67ea06ef98748ac6f1d6d73a035fa854bb390fab0413f622782bb830e18",
+      "selected_seed": "vector_search",
+      "candidate_id": "570bfdffa1ec0610cc72946c",
+      "static_score": 4.4,
+      "program_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/programs/CLAR/570bfdffa1ec0610cc72946c/program.py",
+      "program_sha256": "c706cc66fbeb0c554cb02fca2ba365283735b05362e0b131bc90a4c579103670",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "4abdd142de0ae866677a73b9f14fad51e5d41020acaf282413e8ee820a8a1a37",
+      "plan_ast_sha256_recomputed": "ec7001ce9b6fec0d5c0320cb1ac24a382fa4d1944f965db543bef9fc06c237e3",
+      "deployed_matches_winner": true,
+      "seed_lineages": {
+        "vector_search": {
+          "initial_score": 4.24,
+          "lineage_best_score": 4.4,
+          "successful_children": 12,
+          "top_tied_candidates": [
+            "570bfdffa1ec0610cc72946c"
+          ]
+        },
+        "llm_summarizer": {
+          "initial_score": 4.12,
+          "lineage_best_score": 4.28,
+          "successful_children": 5,
+          "top_tied_candidates": []
+        },
+        "experience_learner": {
+          "initial_score": 4.16,
+          "lineage_best_score": 4.16,
+          "successful_children": 0,
+          "top_tied_candidates": []
+        }
+      }
+    },
+    {
+      "role": "SIGN",
+      "winner_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/SIGN/formal-evolution-v1/winner.json",
+      "winner_sha256": "578281f02f9dd2b7d48f5e1013b867cca2e1b2c5260a4acec1ea191429a5af80",
+      "pool_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/SIGN/formal-evolution-v1/pool.json",
+      "pool_sha256": "45f37b8e5fd1c904f197064c5e023371f6578cd046c54a85223a905d90903469",
+      "selected_seed": "vector_search",
+      "candidate_id": "4406d91196c84d07a99021cb",
+      "static_score": 4.08,
+      "program_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/programs/SIGN/4406d91196c84d07a99021cb/program.py",
+      "program_sha256": "276f8279c3dd14423097714237ec69ead982dcf989ead5f5ceb9344af447b9c9",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "378841c941466888676ad8939d301e4793512c6e6e0639ad2a617889921addac",
+      "plan_ast_sha256_recomputed": "2844770103a41b6725b0e22752174afc59191fe252e81e6c56e038013b0b661d",
+      "deployed_matches_winner": true,
+      "seed_lineages": {
+        "vector_search": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.08,
+          "successful_children": 7,
+          "top_tied_candidates": [
+            "4406d91196c84d07a99021cb"
+          ]
+        },
+        "llm_summarizer": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.04,
+          "successful_children": 11,
+          "top_tied_candidates": []
+        },
+        "experience_learner": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.0,
+          "successful_children": 1,
+          "top_tied_candidates": []
+        }
+      }
+    },
+    {
+      "role": "ORIG",
+      "winner_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/ORIG/formal-evolution-v1/winner.json",
+      "winner_sha256": "0c481529b9c4a3742dbd0317bdd181b7754dc850a2e92e098ff250724011df3d",
+      "pool_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/ORIG/formal-evolution-v1/pool.json",
+      "pool_sha256": "8a4d3b13721324c57263afc36ebb29495777800e22a956b89381874feb4c062a",
+      "selected_seed": "vector_search",
+      "candidate_id": "d58a61efe824d34d01ee37cd",
+      "static_score": 4.12,
+      "program_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/programs/ORIG/d58a61efe824d34d01ee37cd/program.py",
+      "program_sha256": "eb98c6b6d0055fb28c48131834606fbb8a64b2b2f52a6d717138486363d3f203",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "9ef66582163e3c5ef253d0e3d8f56c0acfdde0f1c1032a886bb5c6ec4ad1ba07",
+      "plan_ast_sha256_recomputed": "1f184b9715d87440e4f61eb210fcaba85cdaac2bc11e74211ce8b7fafd4059fb",
+      "deployed_matches_winner": true,
+      "seed_lineages": {
+        "vector_search": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.12,
+          "successful_children": 10,
+          "top_tied_candidates": [
+            "d0f6de26bd34bdb0d8b4ce8e",
+            "9c8117565065d45159e7d1e5",
+            "d58a61efe824d34d01ee37cd",
+            "59d7f20bad39f394b70c8c4b",
+            "50d9cf5272143f539f7e30eb"
+          ]
+        },
+        "llm_summarizer": {
+          "initial_score": 4.04,
+          "lineage_best_score": 4.12,
+          "successful_children": 7,
+          "top_tied_candidates": [
+            "4bae2bb00b540025a34d7edc",
+            "7afa0e9e960a55c61442ec81"
+          ]
+        },
+        "experience_learner": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.0,
+          "successful_children": 2,
+          "top_tied_candidates": []
+        }
+      }
+    },
+    {
+      "role": "POL",
+      "winner_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/POL/formal-evolution-v1/winner.json",
+      "winner_sha256": "096f7d8af5ef02cf14d668eeac53ecfe7354176adbb2e16a1aecdbc2be6501f6",
+      "pool_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/evolution/POL/formal-evolution-v1/pool.json",
+      "pool_sha256": "1438fab384da97a4c53693a43196d03f22ddf0d1a56b49f41fee358553707fdd",
+      "selected_seed": "vector_search",
+      "candidate_id": "dcd97380af50b278c32b5ab6",
+      "static_score": 4.12,
+      "program_path": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/programs/POL/dcd97380af50b278c32b5ab6/program.py",
+      "program_sha256": "0ea8968dcb083ad432844c0c26e0c77bb5305a449b380bcb6e9a563453b133df",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "1611e1506fb3285d055941611dea98650051a3316953d144bed38e20e6d8efe7",
+      "plan_ast_sha256_recomputed": "01ffa2df49a85b34850f8daa5e84170a58812cbf4aab980482af08d71cbeca73",
+      "deployed_matches_winner": true,
+      "seed_lineages": {
+        "vector_search": {
+          "initial_score": 4.0,
+          "lineage_best_score": 4.12,
+          "successful_children": 9,
+          "top_tied_candidates": [
+            "6e6c0ac11fcb8f82eca59dd9",
+            "dcd97380af50b278c32b5ab6"
+          ]
+        },
+        "llm_summarizer": {
+          "initial_score": 4.04,
+          "lineage_best_score": 4.12,
+          "successful_children": 9,
+          "top_tied_candidates": [
+            "336801a830c8851b78848157",
+            "6011586fbe3a8a02066771e2",
+            "01e1b0623ca22840dc374240"
+          ]
+        },
+        "experience_learner": {
+          "initial_score": 3.92,
+          "lineage_best_score": 3.92,
+          "successful_children": 1,
+          "top_tied_candidates": []
+        }
+      }
+    }
+  ],
+  "vector_lineage_reaches_top_in_every_role": true,
+  "distinct_winner_plan_asts": 5
+}

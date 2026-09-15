@@ -63,12 +63,17 @@ class FakeCompletion:
                 }
             )
         if component == "meta_synthesis":
-            return (
-                "Synthesis:\n- QUAL: sound\n- CLAR: clear\n- SIGN: useful\n"
-                "- ORIG: novel\n- POL: no issue\n\nEvidence anchors used:\n"
-                "- SRC-001(page=1): evidence\n\nFinal recommendation: Accept\n"
-                "Actionable suggestions:\n- add ablation"
-            )
+            return json.dumps({
+                "sections": [
+                    {"role": role, "opinions": [
+                        {"statement": f"The {role} review supports the paper's contribution.",
+                         "source_roles": [role], "evidence_anchors": [],
+                         "suggestions": ["Add a controlled ablation study."]}
+                    ]}
+                    for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
+                ],
+                "recommendation": "Accept",
+            })
         raise AssertionError(component)
 
 
@@ -393,7 +398,7 @@ class ResearchV2Test(unittest.TestCase):
                 "Confidence: 5\nFinal recommendation: Accept",
             ]
         )
-        with self.assertRaisesRegex(RuntimeError, "concat fallback is forbidden"):
+        with self.assertRaisesRegex(RuntimeError, "requires a valid structured Final Review"):
             generate_final_review(
                 paper_path=self.paper_path,
                 review_paths=paths,
@@ -640,7 +645,7 @@ class ResearchV2Test(unittest.TestCase):
             relative = Path("train") / "MD" / paper_id
             folder = asset_root / relative
             folder.mkdir(parents=True)
-            (folder / "md_content_no_appendix.md").write_text(
+            (folder / "md_content.md").write_text(
                 f"# Paper {index}\n\nunique method {index}", encoding="utf-8"
             )
             records.append(
@@ -657,7 +662,7 @@ class ResearchV2Test(unittest.TestCase):
             )
         held_folder = asset_root / "train" / "MD" / "held-copy"
         held_folder.mkdir(parents=True)
-        (held_folder / "md_content_no_appendix.md").write_text(
+        (held_folder / "md_content.md").write_text(
             "# held", encoding="utf-8"
         )
         records.append(

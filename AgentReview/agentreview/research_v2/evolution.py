@@ -6,18 +6,19 @@ import hashlib
 import json
 import math
 import random
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from agentreview.reviewer_runtime.sandbox import SandboxSession
 from agentreview.reviewer_runtime.toolkit import MemoryToolkit
 
-from .constants import REFLECTOR_MAX_TOKENS, ROLES
+from .constants import REFLECTOR_MAX_TOKENS, ROLES, SCHEMA_VERSION
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
 from .llm import CompletionClient
 from .memory import SEED_NAMES, seed_program_path, validate_memory_snapshot_artifact
+from .models import InternalEvaluation, SpecialistReview
 from .patcher import AppliedPatch, apply_v4a_patch
 from .program_checks import (
     REVIEW_PLAN_PROTOCOL,
@@ -30,6 +31,7 @@ REFLECTOR_PROMPT_PROTOCOL = "research-v2-reflector-prompt-v2"
 REFLECTOR_FEEDBACK_VIEW_PROTOCOL = "research-v2-reflector-feedback-view-v1"
 REFLECTOR_CONTEXT_BUDGET_PROTOCOL = "research-v2-reflector-context-budget-v1"
 REFLECTOR_CONTEXT_HEADROOM_TOKENS = 512
+EVALUATION_RECEIPT_PROTOCOL = "research-v2-candidate-evaluation-receipt-v1"
 
 
 class ReflectorContextBudgetError(RuntimeError):
@@ -50,6 +52,7 @@ class PoolEntry:
     memory_snapshot_id: str = ""
     capability_manifest: dict[str, Any] = field(default_factory=dict)
     lineage: list[dict[str, Any]] = field(default_factory=list)
+    evaluation_receipt: dict[str, Any] = field(default_factory=dict)
 
     @property
     def has_memory_snapshot(self) -> bool:
@@ -66,6 +69,7 @@ class PoolEntry:
 class EvolutionPool:
     role: str
     entries: list[PoolEntry] = field(default_factory=list)
+    failure_policy_path: str = ""
 
     def __post_init__(self) -> None:
         if self.role not in ROLES:
@@ -78,7 +82,24 @@ class EvolutionPool:
             raise ValueError("Evolution pool role mismatch")
         if any(value.candidate_id == entry.candidate_id for value in self.entries):
             raise ValueError(f"Duplicate candidate_id: {entry.candidate_id}")
+        candidate_pool = EvolutionPool(self.role, [*self.entries, entry], self.failure_policy_path)
+        candidate_pool._validate_selection()
         self.entries.append(entry)
+
+    def _validate_selection(self, *, require_snapshot: bool = False) -> None:
+        if self.failure_policy_path:
+            from .failure_policy import validate_promotion_policy
+            policy = read_json(self.failure_policy_path)
+            validate_promotion_policy(policy)
+            validate_pool_evaluation_receipts(self, expected_epoch=policy["evaluation_epoch"])
+        for entry in self.entries:
+            _finite_quality(entry.static_score)
+        if require_snapshot or any(
+            entry.memory_snapshot_path or entry.memory_snapshot_sha256
+            or entry.memory_snapshot_id or entry.evaluation_receipt
+            for entry in self.entries
+        ):
+            validate_pool_evaluation_receipts(self)
 
     def select_parent(
         self,
@@ -88,6 +109,7 @@ class EvolutionPool:
     ) -> PoolEntry:
         if not self.entries:
             raise RuntimeError("Evolution pool is empty")
+        self._validate_selection()
         temperature = max(float(temperature), 1e-6)
         logits = [entry.static_score / temperature for entry in self.entries]
         offset = max(logits)
@@ -97,6 +119,7 @@ class EvolutionPool:
     def best(self, *, require_snapshot: bool = False) -> PoolEntry:
         if not self.entries:
             raise RuntimeError("Evolution pool is empty")
+        self._validate_selection(require_snapshot=require_snapshot)
         winner = max(
             self.entries,
             key=lambda value: (value.static_score, value.candidate_id),
@@ -120,6 +143,7 @@ class EvolutionPool:
             ),
             "role": self.role,
             "entries": [asdict(entry) for entry in self.entries],
+            **({"failure_policy_path": self.failure_policy_path} if self.failure_policy_path else {}),
         }
 
     @classmethod
@@ -127,15 +151,55 @@ class EvolutionPool:
         return cls(
             role=str(value.get("role") or ""),
             entries=[PoolEntry(**dict(item)) for item in value.get("entries") or []],
+            failure_policy_path=str(value.get("failure_policy_path") or ""),
         )
+
+
+def _finite_quality(value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("Static review_quality must be a finite number in [1, 5]")
+    score = float(value)
+    if not math.isfinite(score) or not 1.0 <= score <= 5.0:
+        raise ValueError("Static review_quality must be a finite number in [1, 5]")
+    return score
+
+
+def _require_success(value: dict[str, Any]) -> None:
+    if value.get("status") not in (None, "complete") or value.get("protocol") is not None:
+        raise ValueError("Candidate scoring requires successful review/evaluation artifacts")
+
+
+def _validate_scoring_artifact(value: dict[str, Any], model: type) -> None:
+    _require_success(value)
+    if value.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("Candidate scoring artifact schema mismatch")
+    try:
+        artifact = model(**{item.name: value[item.name] for item in fields(model)})
+        artifact.validate()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"Candidate scoring requires a valid {model.__name__}") from exc
+    for name in ("paper_id", "role", "run_id", "created_at", "raw_model_output"):
+        if not isinstance(value[name], str) or not value[name].strip():
+            raise ValueError(f"Candidate scoring artifact requires {name}")
+    identity_field = "model_identity" if model is SpecialistReview else "evaluator_identity"
+    if not isinstance(value[identity_field], dict) or not value[identity_field]:
+        raise ValueError(f"Candidate scoring artifact requires {identity_field}")
+    if model is InternalEvaluation:
+        _finite_quality(value["review_quality"])
+        if not isinstance(value["prompt_version"], str) or not value["prompt_version"].strip():
+            raise ValueError("Candidate Evaluation requires a prompt version")
+        for name in ("major_missing_points", "factual_evidence_issues", "improvement_suggestions"):
+            if not isinstance(value[name], list) or any(not isinstance(item, str) for item in value[name]):
+                raise ValueError(f"Candidate Evaluation requires a list of strings for {name}")
 
 
 def static_mean(evaluation_paths: list[str | Path]) -> float:
     if not evaluation_paths:
         raise ValueError("Static score requires at least one Internal Evaluation")
-    values = [float(read_json(path).get("review_quality")) for path in evaluation_paths]
-    if any(value < 1.0 or value > 5.0 for value in values):
-        raise ValueError("Static review_quality values must be in [1, 5]")
+    artifacts = [read_json(path) for path in evaluation_paths]
+    for artifact in artifacts:
+        _require_success(artifact)
+    values = [_finite_quality(value.get("review_quality")) for value in artifacts]
     return sum(values) / len(values)
 
 
@@ -147,15 +211,44 @@ def candidate_static_mean(
     evaluation_paths: list[str | Path],
 ) -> float:
     """Score one candidate only after binding Reviews to its exact snapshot."""
+    return build_evaluation_receipt(
+        role=role,
+        snapshot_path=snapshot_path,
+        review_paths=review_paths,
+        evaluation_paths=evaluation_paths,
+    )["mean_score"]
+
+
+def build_evaluation_receipt(
+    *,
+    role: str,
+    snapshot_path: str | Path,
+    review_paths: list[str | Path],
+    evaluation_paths: list[str | Path],
+    epoch: int = 0,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Bind complete successful scoring inputs to a cohort and scoring revision."""
+    if type(epoch) is not int or epoch < 0:
+        raise ValueError("Evaluation epoch must be a non-negative integer")
+    if metadata is not None and not isinstance(metadata, dict):
+        raise ValueError("Evaluation metadata must be an object")
     if not review_paths or len(review_paths) != len(evaluation_paths):
         raise ValueError("Candidate static scoring requires aligned Review/Evaluation sets")
-    snapshot = read_json(snapshot_path)
+    _, snapshot = _snapshot_payload(snapshot_path)
+    if snapshot.get("role") != role:
+        raise ValueError("Candidate static scoring snapshot has a different role")
     snapshot_id = str(snapshot.get("snapshot_id") or "")
     program_version = str(snapshot.get("program_version") or "")
     reviews = [read_json(path) for path in review_paths]
+    for review in reviews:
+        _validate_scoring_artifact(review, SpecialistReview)
     review_by_id = {str(value.get("review_id") or ""): value for value in reviews}
     if len(review_by_id) != len(reviews) or "" in review_by_id:
         raise ValueError("Candidate static Reviews have duplicate or empty identities")
+    paper_ids = sorted(value["paper_id"] for value in reviews)
+    if len(set(paper_ids)) != len(paper_ids):
+        raise ValueError("Candidate static Reviews contain duplicate papers")
     if any(
         value.get("role") != role
         or value.get("memory_snapshot_id") != snapshot_id
@@ -164,6 +257,8 @@ def candidate_static_mean(
     ):
         raise ValueError("Candidate static Review is not bound to the scored snapshot")
     evaluations = [read_json(path) for path in evaluation_paths]
+    for evaluation in evaluations:
+        _validate_scoring_artifact(evaluation, InternalEvaluation)
     if any(value.get("role") != role for value in evaluations):
         raise ValueError("Candidate static Evaluation has a cross-role artifact")
     evaluation_review_ids = [str(value.get("review_id") or "") for value in evaluations]
@@ -171,14 +266,103 @@ def candidate_static_mean(
         raise ValueError("Candidate static Evaluations contain duplicate Reviews")
     if set(evaluation_review_ids) != set(review_by_id):
         raise ValueError("Candidate static Evaluations do not match the Review set")
+    if len({value["evaluation_id"] for value in evaluations}) != len(evaluations):
+        raise ValueError("Candidate static Evaluations contain duplicate identities")
     for value in evaluations:
         review = review_by_id[str(value["review_id"])]
         if value.get("paper_id") != review.get("paper_id"):
             raise ValueError("Candidate static Evaluation paper differs from its Review")
-    values = [float(value.get("review_quality")) for value in evaluations]
-    if any(value < 1.0 or value > 5.0 for value in values):
-        raise ValueError("Static review_quality values must be in [1, 5]")
-    return sum(values) / len(values)
+    scoring_identity = {
+        "schema_version": SCHEMA_VERSION,
+        "score_field": "review_quality",
+        "evaluator_identity": evaluations[0]["evaluator_identity"],
+        "prompt_version": evaluations[0]["prompt_version"],
+    }
+    if any(
+        value["evaluator_identity"] != scoring_identity["evaluator_identity"]
+        or value["prompt_version"] != scoring_identity["prompt_version"]
+        for value in evaluations
+    ):
+        raise ValueError("Candidate static Evaluations use different scoring identities")
+    review_sources = {
+        value["review_id"]: Path(path).expanduser().resolve()
+        for path, value in zip(review_paths, reviews, strict=True)
+    }
+    items = []
+    for path, value in zip(evaluation_paths, evaluations, strict=True):
+        review_source = review_sources[value["review_id"]]
+        evaluation_source = Path(path).expanduser().resolve()
+        items.append({
+            "paper_id": value["paper_id"],
+            "review_id": value["review_id"],
+            "evaluation_id": value["evaluation_id"],
+            "review_path": str(review_source),
+            "review_sha256": file_sha256(review_source),
+            "evaluation_path": str(evaluation_source),
+            "evaluation_sha256": file_sha256(evaluation_source),
+            "score": _finite_quality(value["review_quality"]),
+        })
+    items.sort(key=lambda value: value["paper_id"])
+    receipt = {
+        "protocol": EVALUATION_RECEIPT_PROTOCOL,
+        "status": "complete",
+        "role": role,
+        "memory_snapshot_id": snapshot_id,
+        "epoch": epoch,
+        "metadata": dict(metadata or {}),
+        "scoring_identity": scoring_identity,
+        "paper_ids": paper_ids,
+        "items": items,
+        "mean_score": sum(value["score"] for value in items) / len(items),
+    }
+    receipt["receipt_id"] = value_sha256(receipt)
+    return receipt
+
+
+def validate_pool_evaluation_receipts(
+    pool: EvolutionPool,
+    *,
+    expected_epoch: int | None = None,
+    expected_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Require one complete, current scoring cohort before using any candidate."""
+    if not pool.entries:
+        raise ValueError("Verified candidate pool is empty")
+    cohort = None
+    for entry in pool.entries:
+        validate_pool_entry_snapshot(entry)
+        receipt = entry.evaluation_receipt
+        if not isinstance(receipt, dict) or receipt.get("protocol") != EVALUATION_RECEIPT_PROTOCOL:
+            raise ValueError("Pool candidate requires a complete evaluation receipt")
+        if receipt.get("status") != "complete":
+            raise ValueError("Pool candidate evaluation is pending or incomplete")
+        if receipt.get("receipt_id") != value_sha256({key: value for key, value in receipt.items() if key != "receipt_id"}):
+            raise ValueError("Pool candidate evaluation receipt hash mismatch")
+        if expected_epoch is not None and receipt.get("epoch") != expected_epoch:
+            raise ValueError("Pool candidate evaluation epoch is stale")
+        if expected_metadata is not None and receipt.get("metadata") != expected_metadata:
+            raise ValueError("Pool candidate evaluation metadata is stale")
+        items = receipt.get("items")
+        if not isinstance(items, list) or not items:
+            raise ValueError("Pool candidate evaluation receipt has no scoring inputs")
+        try:
+            current = build_evaluation_receipt(
+                role=entry.role,
+                snapshot_path=entry.memory_snapshot_path,
+                review_paths=[item["review_path"] for item in items],
+                evaluation_paths=[item["evaluation_path"] for item in items],
+                epoch=receipt["epoch"],
+                metadata=receipt["metadata"],
+            )
+        except (KeyError, TypeError) as exc:
+            raise ValueError("Pool candidate evaluation receipt inputs are invalid") from exc
+        if current != receipt or _finite_quality(entry.static_score) != current["mean_score"]:
+            raise ValueError("Pool candidate evaluation receipt differs from its scoring artifacts")
+        current_cohort = {name: current[name] for name in ("epoch", "metadata", "scoring_identity", "paper_ids")}
+        if cohort is not None and current_cohort != cohort:
+            raise ValueError("Candidate pool has mixed evaluation cohorts or epochs")
+        cohort = current_cohort
+    return cohort
 
 
 def _program_capabilities(program_path: str | Path) -> dict[str, Any]:
@@ -296,6 +480,9 @@ def initialize_pool(
     pool_path: str | Path,
     seed_memory_snapshots: dict[str, str | Path] | None = None,
     seed_static_reviews: dict[str, list[str | Path]] | None = None,
+    evaluation_epoch: int = 0,
+    evaluation_metadata: dict[str, Any] | None = None,
+    failure_policy_path: str | Path | None = None,
 ) -> EvolutionPool:
     """Create the three-seed role-local pool after their static evaluations exist."""
     if set(seed_static_evaluations) != set(SEED_NAMES):
@@ -308,7 +495,7 @@ def initialize_pool(
         raise ValueError(
             "Initial pool formal identity requires both seed snapshots and static Reviews"
         )
-    pool = EvolutionPool(role)
+    pool = EvolutionPool(role, failure_policy_path=str(Path(failure_policy_path).resolve()) if failure_policy_path else "")
     for seed_name in SEED_NAMES:
         program = seed_program_path(seed_name).resolve()
         capability_manifest = _program_capabilities(program)
@@ -322,16 +509,19 @@ def initialize_pool(
                 seed_kind=seed_name,
             )
         )
-        static_score = (
-            static_mean(seed_static_evaluations[seed_name])
+        receipt = (
+            {}
             if seed_memory_snapshots is None
-            else candidate_static_mean(
+            else build_evaluation_receipt(
                 role=role,
                 snapshot_path=seed_memory_snapshots[seed_name],
                 review_paths=seed_static_reviews[seed_name],
                 evaluation_paths=seed_static_evaluations[seed_name],
+                epoch=evaluation_epoch,
+                metadata=evaluation_metadata,
             )
         )
+        static_score = receipt["mean_score"] if receipt else static_mean(seed_static_evaluations[seed_name])
         pool.add(
             PoolEntry(
                 candidate_id=f"seed-{seed_name}",
@@ -343,6 +533,7 @@ def initialize_pool(
                 seed_kind=seed_name,
                 **memory_binding,
                 capability_manifest=capability_manifest,
+                evaluation_receipt=receipt,
                 lineage=[
                     {
                         "candidate_id": f"seed-{seed_name}",
@@ -662,14 +853,14 @@ def validate_program(
     *,
     require_bubblewrap: bool,
 ) -> list[str]:
+    from agentreview.reviewer_runtime.sandbox import SandboxError
+    from .failure_policy import failure_detail
+
     source = Path(path).expanduser().resolve()
     errors = static_check(source.read_text(encoding="utf-8"))
     if errors:
         return errors
-    try:
-        _program_capabilities(source)
-    except Exception as exc:
-        return [f"capability manifest failed: {type(exc).__name__}: {exc}"]
+    _program_capabilities(source)
 
     class SmokeLLM:
         def llm_completion(self, messages, **kwargs):
@@ -728,8 +919,12 @@ def validate_program(
                 errors.append("plan_review disposition disagrees with capability trace")
             if not set(selected_ids).issubset(candidate_ids):
                 errors.append("plan_review selected an ID absent from capability results")
-    except Exception as exc:
-        errors.append(f"protocol smoke failed: {type(exc).__name__}: {exc}")
+    except SandboxError as exc:
+        detail = failure_detail(exc, phase="candidate_validation")
+        if detail["category"] == "candidate":
+            errors.append(f"protocol smoke failed: {type(exc).__name__}: {exc}")
+        else:
+            raise
     return errors
 
 
@@ -764,6 +959,7 @@ def _load_committed_attempt(
     pool: EvolutionPool,
     feedback_sha256: str,
     completion_identity: dict[str, Any],
+    evaluation_epoch: int = 0,
 ) -> dict[str, Any]:
     value = read_json(path)
     expected = {
@@ -776,6 +972,8 @@ def _load_committed_attempt(
     }
     if {name: value.get(name) for name in expected} != expected:
         raise ValueError("Committed Evolution attempt identity mismatch")
+    if value.get("evaluation_epoch", 0) != evaluation_epoch:
+        raise ValueError("Committed Evolution attempt evaluation epoch mismatch")
     parents = {
         entry.candidate_id: entry
         for entry in pool.entries
@@ -790,9 +988,7 @@ def _load_committed_attempt(
     )
     if value.get("parent_capability_manifest") != parent_capabilities:
         raise ValueError("Committed Evolution attempt parent identity mismatch")
-    expected_candidate_id = hashlib.sha256(
-        f"{run_id}\n{role}\n{attempt}\n{parent.candidate_id}".encode("utf-8")
-    ).hexdigest()[:24]
+    expected_candidate_id = _candidate_identity(run_id, role, attempt, parent.candidate_id, evaluation_epoch)
     if value.get("candidate_id") != expected_candidate_id:
         raise ValueError("Committed Evolution attempt candidate identity mismatch")
     if value.get("status") == "proposed":
@@ -865,6 +1061,13 @@ def _load_or_call_reflector(
     return output
 
 
+def _candidate_identity(run_id: str, role: str, attempt: int, parent_id: str, epoch: int) -> str:
+    identity = f"{run_id}\n{role}\n{attempt}\n{parent_id}"
+    if epoch:
+        identity += f"\nevaluation-epoch:{epoch}"
+    return hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
+
+
 def propose_candidate(
     *,
     role: str,
@@ -877,10 +1080,18 @@ def propose_candidate(
     completion_client: CompletionClient,
     completion_identity: dict[str, Any] | None = None,
     require_bubblewrap: bool = True,
+    before_repair: Callable[[str], None] | None = None,
+    evaluation_epoch: int = 0,
+    selected_parent_id: str | None = None,
 ) -> dict[str, Any]:
     """Consume exactly one attempt and save success or failure; no candidate is pooled yet."""
     if pool.role != role:
         raise ValueError("Evolution attempt role differs from its pool")
+    pool._validate_selection()
+    if type(evaluation_epoch) is int and evaluation_epoch >= 0:
+        pass
+    else:
+        raise ValueError("Proposal evaluation epoch requires a nonnegative integer")
     if not 1 <= int(attempt) <= MAX_MUTATION_ATTEMPTS:
         raise ValueError(f"Evolution attempt must be in [1, {MAX_MUTATION_ATTEMPTS}]")
     frozen_completion_identity = dict(completion_identity or {})
@@ -890,10 +1101,17 @@ def propose_candidate(
         run_id=run_id,
     )
     attempt_path = attempt_directory / f"attempt-{attempt:03d}.json"
-    plan_path = attempt_directory / f"attempt-{attempt:03d}.plan.json"
+    proposal_prefix = f"attempt-{attempt:03d}" + (f".e{evaluation_epoch:03d}" if evaluation_epoch else "")
+    plan_path = attempt_directory / f"{proposal_prefix}.plan.json"
     plan = read_json(plan_path) if plan_path.is_file() else None
     if plan is None:
-        parent = pool.select_parent(seed=attempt)
+        if selected_parent_id is None:
+            parent = pool.select_parent(seed=attempt)
+        else:
+            selected = [item for item in pool.entries if item.candidate_id == selected_parent_id]
+            if len(selected) != 1:
+                raise ValueError("Proposal requires its frozen selected parent")
+            parent = selected[0]
     else:
         expected_plan_identity = {
             "protocol": "research-v2-evolution-attempt-plan-v1",
@@ -913,6 +1131,8 @@ def propose_candidate(
         )
         if parent is None:
             raise ValueError("Evolution attempt plan parent is absent from the pool")
+    if selected_parent_id is not None and parent.candidate_id != selected_parent_id:
+        raise ValueError("Proposal plan requires its frozen selected parent")
     parent_path = Path(parent.program_path).expanduser().resolve()
     parent_capability_manifest = _validate_recorded_capabilities(
         program_path=parent_path,
@@ -936,10 +1156,9 @@ def propose_candidate(
             pool=pool,
             feedback_sha256=feedback_sha256,
             completion_identity=frozen_completion_identity,
+            evaluation_epoch=evaluation_epoch,
         )
-    candidate_id = hashlib.sha256(
-        f"{run_id}\n{role}\n{attempt}\n{parent.candidate_id}".encode("utf-8")
-    ).hexdigest()[:24]
+    candidate_id = _candidate_identity(run_id, role, attempt, parent.candidate_id, evaluation_epoch)
     expected_plan = {
         "protocol": "research-v2-evolution-attempt-plan-v1",
         "run_id": run_id,
@@ -950,6 +1169,7 @@ def propose_candidate(
         "candidate_id": candidate_id,
         "feedback_sha256": feedback_sha256,
         "completion_identity": frozen_completion_identity,
+        **({"evaluation_epoch": evaluation_epoch} if evaluation_epoch else {}),
     }
     if plan is not None:
         if plan != expected_plan:
@@ -960,7 +1180,7 @@ def propose_candidate(
     plan_sha256 = value_sha256(plan)
     prompt = _reflector_prompt(parent_code, packet)
     raw = _load_or_call_reflector(
-        path=attempt_directory / f"attempt-{attempt:03d}.reflector.json",
+        path=attempt_directory / f"{proposal_prefix}.reflector.json",
         messages=[{"role": "user", "content": prompt}],
         component="reflector",
         completion_client=completion_client,
@@ -977,28 +1197,50 @@ def propose_candidate(
         / candidate_id
         / "program.py"
     )
-    for response in (raw,):
+    repair_path = attempt_directory / f"{proposal_prefix}.repair.json"
+    repair_request_path = attempt_directory / f"{proposal_prefix}.repair-request.json"
+    repair_pending = repair_request_path.is_file() or repair_path.is_file()
+    if repair_pending:
+        repair_request = read_json(repair_request_path)
+        if (
+            repair_request.get("protocol") == "research-v2-repair-request-v1"
+            and repair_request.get("plan_sha256") == plan_sha256
+            and repair_request.get("request_id") == value_sha256({
+                key: value for key, value in repair_request.items() if key != "request_id"
+            })
+        ):
+            repair_messages = repair_request["messages"]
+        else:
+            raise ValueError("Committed repair request identity mismatch")
+    else:
         try:
-            applied = apply_v4a_patch(parent_code, response)
+            applied = apply_v4a_patch(parent_code, raw)
+        except ValueError as exc:
+            errors = [f"{type(exc).__name__}: {exc}"]
+        else:
             _write_program(program_path, applied.code)
             errors = validate_program(
                 program_path,
                 require_bubblewrap=require_bubblewrap,
             )
-        except Exception as exc:
-            errors = [f"{type(exc).__name__}: {exc}"]
-        if applied is not None and not errors:
-            break
-    if errors:
+    if errors or repair_pending:
+        if before_repair is not None:
+            before_repair(candidate_id)
         repair_used = True
-        repair_messages = [
-            {
+        if errors:
+            repair_messages = [{
                 "role": "user",
                 "content": _repair_prompt(parent_code, raw, "\n".join(errors)),
+            }]
+            repair_request = {
+                "protocol": "research-v2-repair-request-v1",
+                "plan_sha256": plan_sha256,
+                "messages": repair_messages,
             }
-        ]
+            repair_request["request_id"] = value_sha256(repair_request)
+            atomic_write_json(repair_request_path, repair_request)
         repair_response = _load_or_call_reflector(
-            path=attempt_directory / f"attempt-{attempt:03d}.repair.json",
+            path=repair_path,
             messages=repair_messages,
             component="reflector_repair",
             completion_client=completion_client,
@@ -1007,6 +1249,9 @@ def propose_candidate(
         )
         try:
             applied = apply_v4a_patch(parent_code, repair_response)
+        except ValueError as exc:
+            errors = [f"{type(exc).__name__}: {exc}"]
+        else:
             if program_path.exists():
                 program_path.unlink()
             _write_program(program_path, applied.code)
@@ -1015,8 +1260,6 @@ def propose_candidate(
                 require_bubblewrap=require_bubblewrap,
             )
             raw = raw + "\n\n--- EXPLICIT REPAIR ---\n\n" + repair_response
-        except Exception as exc:
-            errors = [f"{type(exc).__name__}: {exc}"]
     status = "proposed" if applied is not None and not errors else "failed"
     capability_manifest = (
         _program_capabilities(program_path) if status == "proposed" else {}
@@ -1044,6 +1287,7 @@ def propose_candidate(
         "completion_identity": frozen_completion_identity,
         "plan_sha256": plan_sha256,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "evaluation_epoch": evaluation_epoch,
     }
     atomic_write_json(attempt_path, outcome)
     return outcome
@@ -1057,7 +1301,10 @@ def commit_candidate(
     static_evaluation_paths: list[str | Path],
     pool_path: str | Path,
     memory_snapshot_path: str | Path,
+    evaluation_epoch: int = 0,
+    evaluation_metadata: dict[str, Any] | None = None,
 ) -> PoolEntry:
+    pool._validate_selection()
     target = Path(pool_path).expanduser().resolve()
     if target.is_file():
         committed_pool = EvolutionPool.from_dict(read_json(target))
@@ -1077,12 +1324,15 @@ def commit_candidate(
     )
     if not attempt.get("capability_manifest"):
         raise ValueError("Evolution attempt has no Program capability manifest")
-    score = candidate_static_mean(
+    receipt = build_evaluation_receipt(
         role=pool.role,
         snapshot_path=memory_snapshot_path,
         review_paths=static_review_paths,
         evaluation_paths=static_evaluation_paths,
+        epoch=evaluation_epoch,
+        metadata=evaluation_metadata,
     )
+    score = receipt["mean_score"]
     parent = next(
         (
             value
@@ -1117,6 +1367,7 @@ def commit_candidate(
         seed_kind=parent.seed_kind,
         **memory_binding,
         capability_manifest=capability_manifest,
+        evaluation_receipt=receipt,
         lineage=[
             *parent.lineage,
             {

@@ -1,6 +1,16 @@
 # Research Core v2 修改记录
 
-> 状态：development 数据与 S2 已冻结；专用 27B 和真实8并发 smoke 已验证；canonical bootstrap 已完成且其后置 Internal Evaluation 正在运行；正式 seed/static/Evolution 前正在迁移 Autonomous S2 Capability；串行 CoCo S2 保留 checkpoint 待恢复
+## 2026-09-15：共享 M★ 实现与跨服务器交接
+
+分支 `0915`，修改基点 `907f02d`。按 ADR-0011–0016 完成共享候选池与五个独立 Memory 库、完整正文、严格用途分区、标准 CoCo `Paper.` 选优、三 seed 配对无记忆与 Native 基线、有限失败恢复、系统冻结及独立结果报告。Meta 使用结构化观点与来源契约生成完整评审，标准 CoCo 评分调用配套仓库现有逻辑。
+
+28 文件组合验证为 256 passed、96 subtests passed；最后变更相关 8 文件组合为 84 passed、25 subtests passed，详见 [验收记录](audit/20260915/SHARED_IMPLEMENTATION_VALIDATION.md)。正式实验处于资产准备和参数冻结阶段，模型端到端验收在部署服务器执行。
+
+本次提交整理代码、测试、配置模板、ADR 与历史审计证据；附配套 CoCo `0467b41` 的 9 个历史提交增量 Git 包。源 CoCo 和 0831 工作区保持原样。目标服务器按 [部署交接](DEPLOYMENT_0915.md) 恢复源码、准备权重和数据后生成自己的冻结配置。
+
+## 2026-09-01：历史实施记录
+
+> 当时状态：development 数据与 S2 已冻结；专用 27B 和真实8并发 smoke 已验证；canonical bootstrap 已完成且其后置 Internal Evaluation 正在运行；正式 seed/static/Evolution 前正在迁移 Autonomous S2 Capability；串行 CoCo S2 保留 checkpoint 待恢复
 > 实施日期：2026-09-01  
 > 本轮实验起点 branch / commit：`20260831-minimal` / `827289a`
 

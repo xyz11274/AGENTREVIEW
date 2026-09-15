@@ -15,7 +15,7 @@ from typing import Literal
 
 PROTOCOL = "research-v2-qwen27b-mode-lease-v1"
 LEASE_PATH = Path(
-    "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/runtime/"
+    "/data0/xyj/shengao/AgentReview_0915/artifacts/research_v2/runtime/"
     "qwen38_27b_mode.lock"
 )
 _STATE_LOCK = threading.RLock()

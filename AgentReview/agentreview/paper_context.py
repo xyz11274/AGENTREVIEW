@@ -20,8 +20,8 @@ from .source_map import (
     load_content_list,
 )
 
-CANONICAL_PAPER_CONTEXT_VERSION = "canonical-rich-paper-v1"
-DEFAULT_PAPER_CONTEXT_MAX_CHARS = 60000
+CANONICAL_PAPER_CONTEXT_VERSION = "canonical-complete-paper-v2"
+DEFAULT_PAPER_CONTEXT_MAX_CHARS = None
 CANDIDATE_VISIBLE_METADATA_FIELDS = (
     "paper_id",
     "title",
@@ -112,22 +112,33 @@ def candidate_visible_metadata(
     )
 
 
-def _fallback_anchors(paper_text: str, max_anchors: int = 40) -> list[dict[str, Any]]:
+class PaperContextBudgetError(ValueError):
+    """The complete paper requires a larger explicitly configured input budget."""
+
+    failure_category = "shared_data"
+
+
+def text_source_anchors(paper_text: str, block_chars: int = 2000) -> list[dict[str, Any]]:
+    """Bind citations to real character intervals when page extraction is absent."""
+    if isinstance(block_chars, int) and isinstance(block_chars, bool) is False and block_chars > 0:
+        pass
+    else:
+        raise ValueError("block_chars requires a positive integer")
     anchors: list[dict[str, Any]] = []
-    for start in range(0, min(len(paper_text), 40000), 1000):
-        excerpt = paper_text[start : start + 500].replace("\n", " ").strip()
+    for start in range(0, len(paper_text), block_chars):
+        end = min(len(paper_text), start + block_chars)
+        excerpt = " ".join(paper_text[start:end].split())[:120]
         if not excerpt:
             continue
         anchors.append(
             {
                 "source_id": f"SRC-{len(anchors) + 1:03d}",
-                "page_idx": 0,
+                "char_start": start,
+                "char_end": end,
                 "type": "text",
                 "text": excerpt,
             }
         )
-        if len(anchors) >= max_anchors:
-            break
     return anchors
 
 
@@ -136,15 +147,9 @@ def format_canonical_paper_context(
     metadata: Mapping[str, Any],
     source_anchors: Iterable[Mapping[str, Any]],
     *,
-    max_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    max_chars: int | None = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
 ) -> str:
-    """Format the one canonical Reviewer/MemoryProgram paper input.
-
-    The total result, rather than only the Markdown section, is bounded.  This
-    makes Evolution, historical replay and deployment use identical clipping.
-    Semantic Scholar results are intentionally absent; they are an optional
-    capability and are never default context.
-    """
+    """Preserve complete paper text and enforce an explicit budget before review."""
     visible = _clean_metadata(metadata)
     metadata_text = "\n".join(
         f"{name}: {visible[name] or '(unknown)'}"
@@ -165,20 +170,16 @@ def format_canonical_paper_context(
         f"{anchors_text}\n"
         "=== END SOURCE ANCHORS ==="
     )
-    limit = max(1, int(max_chars))
-    paper_budget = max(0, limit - len(prefix) - len(suffix))
-    clipped_paper = clip_text(
-        paper_text,
-        paper_budget,
-        marker="paper markdown clipped by canonical builder",
-    )
-    result = prefix + clipped_paper + suffix
-    # Extremely large anchor blocks are clipped only as a final safety guard.
-    return clip_text(
-        result,
-        limit,
-        marker="canonical paper context clipped at safety boundary",
-    )
+    result = prefix + paper_text + suffix
+    if max_chars is None:
+        return result
+    if isinstance(max_chars, int) and isinstance(max_chars, bool) is False and max_chars > 0:
+        if len(result) <= max_chars:
+            return result
+        raise PaperContextBudgetError(
+            f"Complete paper context requires {len(result)} characters; configured budget is {max_chars}"
+        )
+    raise ValueError("max_chars requires a positive integer or None")
 
 
 @dataclass(frozen=True)
@@ -198,11 +199,11 @@ def build_canonical_paper_context(
     venue: str = "",
     year: Any = "",
     reviewer_role: str = "",
-    max_chars: int = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
+    max_chars: int | None = DEFAULT_PAPER_CONTEXT_MAX_CHARS,
     internal_provenance: Mapping[str, Any] | None = None,
 ) -> CanonicalPaperContext:
     path = Path(paper_md_path).expanduser().resolve()
-    paper_text = path.read_text(encoding="utf-8", errors="ignore")
+    paper_text = path.read_text(encoding="utf-8")
     content_list = load_content_list(str(path))
     resolved_title = (
         str(title or "").strip()
@@ -211,7 +212,7 @@ def build_canonical_paper_context(
     )
     anchors = build_source_anchors(content_list)
     if not anchors:
-        anchors = _fallback_anchors(paper_text)
+        anchors = text_source_anchors(paper_text)
     visible = candidate_visible_metadata(
         paper_id=paper_id,
         title=resolved_title,

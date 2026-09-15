@@ -33,6 +33,7 @@ from .data import prepare_data
 from .evaluation import run_internal_evaluation
 from .evaluation_batch import EvaluationBatchOptions, run_evaluation_batch
 from .evolution import EvolutionPool, commit_candidate, initialize_pool, propose_candidate
+from .failure_policy import FailureLimits
 from .formal_transition import (
     freeze_formal_system,
     materialize_formal_freeze_spec,
@@ -69,6 +70,18 @@ def _base_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m agentreview.research_v2")
     parser.add_argument("--config", default=None)
     stages = parser.add_subparsers(dest="stage", required=True)
+
+    shared = stages.add_parser("shared-experiment", help="Shared M★ MemoryProgram search with standard final-review CoCo fitness")
+    shared.add_argument("--protocol", required=True)
+    shared.add_argument("--output", required=True)
+    shared.add_argument("--action", choices=("preflight", "run", "final-test"), required=True)
+    shared.add_argument("--repair-evidence")
+    shared.add_argument("--frozen-system")
+
+    report = stages.add_parser("experiment-report", help="Generate a separate report from existing experiment artifacts")
+    report.add_argument("--manifest", required=True)
+    report.add_argument("--output", required=True)
+    report.add_argument("--report-stage", choices=("development", "final"), default="development")
 
     prepare = stages.add_parser("prepare-data")
     prepare.add_argument("--tiny", action="store_true")
@@ -145,10 +158,10 @@ def _base_parser() -> argparse.ArgumentParser:
     evolve.add_argument("--seed-reviews", default="")
     evolve.add_argument("--memory-snapshot", default="")
 
-    run_evolution = stages.add_parser("run-evolution")
+    run_evolution = stages.add_parser("run-evolution", help="Historical role-local internal-evaluation protocol")
     run_evolution.add_argument("--spec", required=True)
 
-    formal_evolution = stages.add_parser("formal-evolution")
+    formal_evolution = stages.add_parser("formal-evolution", help="Historical role-local protocol; shared 0915 runs use shared-experiment")
     formal_evolution.add_argument(
         "--action",
         choices=(
@@ -163,6 +176,10 @@ def _base_parser() -> argparse.ArgumentParser:
     )
     formal_evolution.add_argument("--role", default="")
     formal_evolution.add_argument("--run-id", required=True)
+    formal_evolution.add_argument("--repair-evidence", default="")
+    formal_evolution.add_argument("--candidate-repairs", type=int, default=1)
+    formal_evolution.add_argument("--round-repairs", type=int, default=10)
+    formal_evolution.add_argument("--candidate-failures", type=int, default=5)
     formal_evolution.add_argument("--attempt", type=int, default=0)
     formal_evolution.add_argument("--pool", default="")
     formal_evolution.add_argument("--canonical-evaluation-summary", default="")
@@ -405,6 +422,30 @@ def _run_evolution_spec(config: ResearchConfig, spec_path: str) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     args = _base_parser().parse_args(argv)
+    if args.stage == "experiment-report":
+        from .experiment_report import generate_experiment_report
+        result = generate_experiment_report(args.manifest, args.output, stage=args.report_stage)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.stage == "shared-experiment":
+        from .experiment_protocol import load_experiment_protocol
+        from .shared_experiment import LocalSharedBackend, run_shared_experiment, run_shared_final_test
+        if args.action == "preflight":
+            protocol = load_experiment_protocol(args.protocol)
+            LocalSharedBackend(protocol=protocol, output_root=args.output).preflight()
+            result = {"status": "ready", "protocol_sha256": protocol.protocol_sha256,
+                      "scope": "frozen configuration and development assets; model requests pending"}
+        elif args.action == "final-test":
+            if args.frozen_system:
+                result = run_shared_final_test(protocol_path=args.protocol, output_root=args.output,
+                    frozen_system_path=args.frozen_system, repair_evidence=args.repair_evidence)
+            else:
+                raise ValueError("Final test requires --frozen-system")
+        else:
+            result = run_shared_experiment(protocol_path=args.protocol, output_root=args.output,
+                                           repair_evidence=args.repair_evidence)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("status") in {"ready", "complete"} else 2
     config = ResearchConfig.load(args.config)
     output_root = config.artifact_path()
     if args.stage == "prepare-data":
@@ -696,6 +737,8 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     result = run_formal_evolution_roles(
                         **common_inputs,
+                        repair_evidence_path=args.repair_evidence or None,
+                        failure_limits=FailureLimits(args.candidate_repairs, args.round_repairs, args.candidate_failures),
                         completion_client=OpenAICompletionClient(config.model),
                         embedding_client=_embedding_client(config),
                         max_workers=config.model.max_num_seqs,
@@ -720,6 +763,8 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     result = run_formal_role_evolution(
                         **common,
+                        repair_evidence_path=args.repair_evidence or None,
+                        failure_limits=FailureLimits(args.candidate_repairs, args.round_repairs, args.candidate_failures),
                         completion_client=OpenAICompletionClient(config.model),
                         embedding_client=_embedding_client(config),
                         max_workers=config.model.max_num_seqs,
@@ -864,4 +909,6 @@ def main(argv: list[str] | None = None) -> int:
             **({"frozen_s2": result["frozen_s2"]} if "frozen_s2" in result else {}),
         }
     print(json.dumps(printable, ensure_ascii=False, indent=2, sort_keys=True))
+    if isinstance(result, dict) and result.get("status") in {"paused", "reevaluating", "ended"}:
+        return 2
     return 0

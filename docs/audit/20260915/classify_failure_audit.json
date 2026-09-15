@@ -1,0 +1,1052 @@
+{
+  "protocol": "historical-coco-classify-cache-failure-diagnostic-v1",
+  "created_at": "2026-09-15T05:23:43.573726+00:00",
+  "model_calls": 0,
+  "historical_artifacts_modified": false,
+  "thresholds": {
+    "chunk_max_english_words": 150,
+    "accepted_label_count_min": 1,
+    "accepted_label_count_max": 3,
+    "presence_penalties": [
+      0.0,
+      0.5,
+      1.0
+    ]
+  },
+  "interpretation": "Dominant failure is more than three recognized labels on one pre-split chunk. This is a review segmentation and classification contract mismatch; this replay supplies no evidence of tokenizer failure.",
+  "limitations": "Missing or empty cache does not identify the original transport or generation failure.",
+  "source_bindings": {
+    "/data0/xyj/shengao/AgentReview_0915/docs/audit/20260915/audit_classify_failures.py": "eae7df372d1898f8834d7f2f1fc1a68523527f5e9cba865329c1ccee6efac9a6",
+    "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/preliminary_common902/build_inputs.py": "e62a016fad4542d077e67f6b59852643be0494e7b8d1aaf3bf287294759fdfff",
+    "/data0/xyj/shengao/CoCoReviewBench/src/utils.py": "b87e902f9cc19056612b62898d64a58e38b5395be7eab5fef2cb564dd4c6823f",
+    "/data0/xyj/shengao/CoCoReviewBench/src/evaluation/_2_split.py": "b472c818add041683e85ea41ec296578aa3979f3cd8acfe76410e024eabea11b",
+    "/data0/xyj/shengao/CoCoReviewBench/src/evaluation/_3_classify.py": "82d539ead8c344c345036f9ec88355f074a868d81f631aacc102465419b64819",
+    "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/preliminary_common902/manifest.json": "6483d10ea72065561fefe62cfb9fbdd30fbd3b244223ff013d98bb3e0173f552"
+  },
+  "arms": {
+    "memory_meta": {
+      "source": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/coco_scoring/formal-coco1300-winner-v1-meta/candidate_official_split.jsonl",
+      "source_sha256": "095c96d782651291b79f92c5dd72028c52d80ceb9b6effe89f0b6250a77ae1ff",
+      "paper_count": 1300,
+      "opinion_count": 26432,
+      "failed_papers": 244,
+      "failed_opinions": 274,
+      "failed_single_chunk_opinions": 274,
+      "all_three_attempts_more_than_three_labels": 265,
+      "failure_reason_union": {
+        "more_than_3_labels": 265,
+        "duplicate_or_unrecognized_labels+more_than_3_labels": 8,
+        "duplicate_or_unrecognized_labels": 1
+      },
+      "historical_manifest_counts_match": true,
+      "failed_paper_ids": [
+        "B1Igu2ogg",
+        "BJ0Ee8cxx",
+        "BJAA4wKxg",
+        "BJtNZAFgg",
+        "Bk2TqVcxe",
+        "BkLhzHtlg",
+        "Byiy-Pqlx",
+        "H1fl8S9ee",
+        "HJF3iD9xe",
+        "HkCjNI5ex",
+        "HkE0Nvqlg",
+        "HkJq1Ocxl",
+        "Hy-lMNqex",
+        "S1Bb3D5gg",
+        "S1QefL5ge",
+        "SJTQLdqlg",
+        "SJqaCVLxx",
+        "SkB-_mcel",
+        "Sy2fzU9gl",
+        "ry7O1ssex",
+        "BJE-4xW0W",
+        "BJOFETxR-",
+        "BkM3ibZRW",
+        "BkeqO7x0-",
+        "ByQZjx-0-",
+        "H1VjBebR-",
+        "HkwZSG-CZ",
+        "SJOl4DlCZ",
+        "SksY3deAW",
+        "SyX0IeWAW",
+        "rJIN_4lA-",
+        "rJl63fZRb",
+        "rkcya1ZAW",
+        "B1MbDj0ctQ",
+        "B1lnzn0ctQ",
+        "BJemQ209FQ",
+        "BygANhA9tQ",
+        "BygqBiRcFQ",
+        "H1MW72AcK7",
+        "HyGcghRct7",
+        "S1gd7nCcF7",
+        "S1lqMn05Ym",
+        "SJxu5iR9KQ",
+        "Ske25sC9FQ",
+        "SyNPk2R9K7",
+        "r1eiqi09K7",
+        "rJedV3R5tm",
+        "rkl6As0cF7",
+        "SJeWHlSYDB",
+        "SJxUjlBtwB",
+        "SklSQgHFDS",
+        "Sklf1yrYDr",
+        "SkxJ8REYPH",
+        "SygWvAVFPr",
+        "SylzhkBtDB",
+        "SyxS0T4tvS",
+        "r1lEd64YwH",
+        "rJe04p4YDB",
+        "rJgD2ySFDr",
+        "rJxBa1HFvS",
+        "rkg1ngrFPr",
+        "rkg6FgrtPB",
+        "rkgg6xBYDH",
+        "rklklCVYvB",
+        "rkx35lHKwB",
+        "rylHspEKPr",
+        "ryljMpNtwr",
+        "ryx6WgStPB",
+        "ryxF80NYwS",
+        "0p-aRvcVs-U",
+        "2kImxCmYBic",
+        "4artD3N3xB0",
+        "4cC0HFuVd2d",
+        "7R7fAoUygoa",
+        "HP-tcf48fT",
+        "Jnspzp-oIZE",
+        "MY3WGKsXct_",
+        "Pgq5GE_-ph",
+        "RLRXCV6DbEJ",
+        "SRzz6RtOdKR",
+        "TQt98Ya7UMP",
+        "VErQxgyrbfn",
+        "WPO0vDYLXem",
+        "ZHkbzSR56jA",
+        "iAX0l6Cz8ub",
+        "jN5y-zb5Q7m",
+        "oweBPxtma_i",
+        "rvosiWfMoMR",
+        "4j4qVy8OQA1",
+        "5_zwnS5oJDp",
+        "7b4zxUnrO2N",
+        "BnQhMqDfcKG",
+        "FH_mZOKFX-b",
+        "LNmNWds-q-J",
+        "NudBMY-tzDr",
+        "Q83vFlie_Pr",
+        "T8vZHIRTrY",
+        "V3C8p78sDa",
+        "fILj7WpI-g",
+        "fpU10jwpPvw",
+        "hpBTIv2uy_E",
+        "l4IHywGq6a",
+        "xbx7Hxjbd79",
+        "yKIAXjkJc2F",
+        "1hKE9qjvz-",
+        "Bvaekygzl2m",
+        "FUORz1tG8Og",
+        "K7CbYQbyYhY",
+        "LvwOdSbB9Ic",
+        "NpsVSN6o4ul",
+        "S9GpoS2TmN",
+        "SMa9EAovKMC",
+        "VYaTFO2Myi5",
+        "Wc5bmZZU9cy",
+        "YnPpdxEcZbi",
+        "_4F4CDK9Mo",
+        "esFxSb_0pSL",
+        "gcD2UtCGMc2",
+        "hhvkdRdWt1F",
+        "n05upKp02kQ",
+        "osei3IzUia",
+        "Bk0ykeYCfP",
+        "E6EbeJR20o",
+        "J7hbPeOZ39",
+        "Jf5gplvglq",
+        "KS8mIvetg2",
+        "NSBP7HzA5Z",
+        "NsCXDyv2Bn",
+        "OIsahq1UYC",
+        "c43FGk8Pcg",
+        "cuAxSHcsSX",
+        "dONpC9GL1o",
+        "gwDuW7Ok5f",
+        "hqUznsPMLn",
+        "ktdETU9JBg",
+        "mQ72XRfYRZ",
+        "pbLjYjjWqd",
+        "uHVIxJGwr4",
+        "ul6EYKM1Kv",
+        "viftsX50Rt",
+        "yQuF0jslCc",
+        "2kje23LSOE",
+        "4AuyYxt7A2",
+        "6yENDA7J4G",
+        "BSBZCa6N3E",
+        "D23JcXiUwf",
+        "DtATVd5NLc",
+        "EzjsoomYEb",
+        "FbQLFsBbTe",
+        "HtvZCGiATs",
+        "SZm3hxmksx",
+        "TSrhLq5hSA",
+        "XCP0MOMLPo",
+        "anN4a8h4od",
+        "cmXWYolrlo",
+        "fzZfju8y0g",
+        "i4ouG6Kc8M",
+        "lOi6FtIwR8",
+        "n87wrNlcJu",
+        "pPQPQ7Yd58",
+        "rqBc4WnvUP",
+        "tTOo7r4G9j",
+        "w2uIJiHTIA",
+        "2STmSnZAEt2",
+        "5j_lH4OpZBl",
+        "8PA2nX9v_r2",
+        "BEVDmheFG0",
+        "D-ti-5lgbG",
+        "F9HNBbytcqT",
+        "Owggnutk6lE",
+        "PFBHMlpaWY",
+        "PIcuKeiWvj-",
+        "YadmOcMC9aa",
+        "_6j_jQiYB2c",
+        "_y2G1-i7L8",
+        "dsevgAwUH4m",
+        "fCCEbUze_n5",
+        "iHXQPrISusS",
+        "jfd_GB546GJ",
+        "mjyMGFL8N2",
+        "nTfnB6CvPJ",
+        "qcjOWDHAc4J",
+        "rndqBJsGoKh",
+        "tfBBt_q4nHT",
+        "u14Kuxl8fN",
+        "w-EabDtADg",
+        "wGmOLwb8ClT",
+        "waWmZSw0mn",
+        "x1Lp2bOlVIo",
+        "2zQx2Pxbd7J",
+        "7vlIVOBKarp",
+        "AlkMMzUX95",
+        "BsSP7pZGFQO",
+        "CCahlgHoQG",
+        "EZZsnke1kt",
+        "FzdmrTUyZ4g",
+        "KwwBBSzQgRX",
+        "QYQH9w9Z8bO",
+        "RIArO3o_74Z",
+        "VrJWseIN98",
+        "XcDVT8HarS",
+        "buXZ7nIqiwE",
+        "cx5ViLfcVq",
+        "gc87Cs_V9qR",
+        "mWaYC6CZf5",
+        "rQAJmrLmGC6",
+        "3kitbpEZZO",
+        "42zI5dyNwc",
+        "6f320HfMeS",
+        "7JuReDmGSL",
+        "9rmwPAjk9O",
+        "Eb74zfBkWa",
+        "MtekhXRP4h",
+        "RmxP5ZcQhC",
+        "UDqHhbqYJV",
+        "VAC7aB6qSG",
+        "XsZ5YebcCz",
+        "ZBzYWP2Gpl",
+        "gpJw8f4tIU",
+        "n6ztJ3Lrdj",
+        "tFsxtqGmkn",
+        "tP50lLiZIo",
+        "tfyr2zRVoK",
+        "uTlKUAm68H",
+        "w7TyuWhGZP",
+        "xQOHOpe1Fv",
+        "5jRU8ufi8H",
+        "GrMczQGTlA",
+        "JrIPBXWiS8",
+        "NadTwTODgC",
+        "OAjHFvrTbq",
+        "OycU0bAus6",
+        "S98OzJD3jn",
+        "SadbRPoG2k",
+        "Ujo8V7iXmR",
+        "X3ydKRcQr6",
+        "bbFjpasRgs",
+        "bzuQtVDxv0",
+        "dIVb5C0QFf",
+        "ibKpPabHVn",
+        "oTzydUKWpq",
+        "vCOgjBIZuL",
+        "vI1WqFn15v",
+        "zqLAMwVLkt"
+      ],
+      "examples": [
+        {
+          "paper_id": "B1Igu2ogg",
+          "source_jsonl_line": 5,
+          "opinion_index": 7,
+          "part_indices": [
+            7
+          ],
+          "character_count": 600,
+          "english_words": 81,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/e94d61b5f6b51e027122cbe3112d57c33c37738749f832e845c69fded8dafb09.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/4f9f6350859b4e942c4520d0f2a9af3bb337eacf9e0544017268e037740805a9.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/e4db8d8e9951c071ac68f16f1058703bdf6ea981588f0f569a23fd95774508be.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "BJ0Ee8cxx",
+          "source_jsonl_line": 9,
+          "opinion_index": 2,
+          "part_indices": [
+            2
+          ],
+          "character_count": 471,
+          "english_words": 65,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/c174c52c2b27fcb65bb9693a20d03ef78e66770588368f3c044203a973937b25.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/35ef869d1089dcfcfa243c5882b25575e31757371ee3c1f4ede76e8504b02776.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/c1abc6d7152b7a8ce08cfeb047f8a63fd8ec5d0bae9de3465d93f02128a366d0.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "BJAA4wKxg",
+          "source_jsonl_line": 11,
+          "opinion_index": 6,
+          "part_indices": [
+            6
+          ],
+          "character_count": 291,
+          "english_words": 41,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/8d941767456212859d4575b5230bd0540647148c165e7adb4b157d38c1e0558c.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/ab78fac6d8c87d31588308397ae2496310448479f32e0ad2afab9e738c693987.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/e9288a240758e36408d545153993a5f3499bf7facd760cdf7cd1792b8d0cc48c.json"
+            }
+          ]
+        }
+      ]
+    },
+    "memory_concat": {
+      "source": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2/coco_scoring/formal-coco1300-winner-v1-concat/candidate_official_split.jsonl",
+      "source_sha256": "114884c7241364283bd079c9cf17597a73a113b2483fbef562ee386ae209249c",
+      "paper_count": 1300,
+      "opinion_count": 93598,
+      "failed_papers": 10,
+      "failed_opinions": 10,
+      "failed_single_chunk_opinions": 9,
+      "all_three_attempts_more_than_three_labels": 6,
+      "failure_reason_union": {
+        "more_than_3_labels": 6,
+        "missing_or_empty_cache": 3,
+        "duplicate_or_unrecognized_labels": 1
+      },
+      "historical_manifest_counts_match": true,
+      "failed_paper_ids": [
+        "WPO0vDYLXem",
+        "DmpCfq6Mg39",
+        "FNSR8Okx8a",
+        "9kBCMNb5mc",
+        "P4MUGRM4Acu",
+        "esCx4oejjxw",
+        "gbEreV4H2Jv",
+        "nTfnB6CvPJ",
+        "htR7ZXXe_TY",
+        "0XeNkkENuI"
+      ],
+      "examples": [
+        {
+          "paper_id": "WPO0vDYLXem",
+          "source_jsonl_line": 462,
+          "opinion_index": 62,
+          "part_indices": [
+            80
+          ],
+          "character_count": 285,
+          "english_words": 40,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/893b9b69711a1a80c8768898078feef45af15fedcdbf8cffd2d29ab6a3ecf24a.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/6a55e2d1ea27ede3cdbc4d6547198e3f283498efeafa46d26eaf476295fe67d4.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/94ba0df9ad5c3b1d9b83198cd84d008d99a501b19a7e1b1d2e8917efb180f088.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "DmpCfq6Mg39",
+          "source_jsonl_line": 530,
+          "opinion_index": 66,
+          "part_indices": [
+            95
+          ],
+          "character_count": 274,
+          "english_words": 42,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/81640eaa84ce2b575a3bfb40983ca047410414998ca40e4c2a3b4ce7662f324a.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/ed3c3a7f7fec5a3302565098fa2f380650ec02ab9145e4ba73d522d3c654c99c.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/a89bb702183d386215a82d298d8b24422cb7ea8cbc2f3668bdd5c35baf88dec1.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "FNSR8Okx8a",
+          "source_jsonl_line": 533,
+          "opinion_index": 70,
+          "part_indices": [
+            89
+          ],
+          "character_count": 316,
+          "english_words": 46,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/7ba224a9772eef1b1956eee5dec8e65462b9da98a36345bdbcd2d695f8a33ad5.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/2754d00b7e4bea31be16b3bcbf448f8e4394966ddae69fa34b2286e60d0a3207.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench/.llm_cache/fe7273826467246e9af774798fd25e7cccc228cecf4430621140e799a5d346bb.json"
+            }
+          ]
+        }
+      ]
+    },
+    "no_memory_meta": {
+      "source": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2_no_memory/coco_scoring/coco1300-no-memory-nos2-v1-meta/candidate_official_split.jsonl",
+      "source_sha256": "18aef248dea9ef6b5616e89d1da5487e039af01f6f91abfa96cd18f641fa6154",
+      "paper_count": 1300,
+      "opinion_count": 25415,
+      "failed_papers": 201,
+      "failed_opinions": 222,
+      "failed_single_chunk_opinions": 222,
+      "all_three_attempts_more_than_three_labels": 213,
+      "failure_reason_union": {
+        "more_than_3_labels": 213,
+        "duplicate_or_unrecognized_labels+more_than_3_labels": 3,
+        "duplicate_or_unrecognized_labels": 6
+      },
+      "historical_manifest_counts_match": true,
+      "failed_paper_ids": [
+        "B1oK8aoxe",
+        "BJK3Xasel",
+        "Bk2TqVcxe",
+        "BkLhzHtlg",
+        "Bk_zTU5eg",
+        "ByxpMd9lx",
+        "HJ5PIaseg",
+        "HJpfMIFll",
+        "HyoST_9xl",
+        "SkyQWDcex",
+        "rk5upnsxe",
+        "rkE8pVcle",
+        "ry3iBFqgl",
+        "BJE-4xW0W",
+        "BkeqO7x0-",
+        "By4HsfWAZ",
+        "HJsjkMb0Z",
+        "HyI6s40a-",
+        "S1EzRgb0W",
+        "SkYXvCR6W",
+        "SylJ1D1C-",
+        "r1ZdKJ-0W",
+        "BygANhA9tQ",
+        "H1Gfx3Rqtm",
+        "H1gsz30cKX",
+        "HJeRkh05Km",
+        "HJlEUoR9Km",
+        "HyGcghRct7",
+        "Hyg1G2AqtQ",
+        "SJxu5iR9KQ",
+        "SkEqro0ctQ",
+        "Skgge3R9FQ",
+        "Sklr9i09KQ",
+        "SyeLno09Fm",
+        "SyxZOsA9tX",
+        "r1Gsk3R9Fm",
+        "r1eiqi09K7",
+        "r1lYRjC9F7",
+        "r1xlvi0qYm",
+        "ryeaZhRqFm",
+        "S1e2agrFvS",
+        "SJe9qT4YPr",
+        "Skl4LTEtDS",
+        "SylzhkBtDB",
+        "SyxS0T4tvS",
+        "SyxjVRVKDB",
+        "rJe5_CNtPB",
+        "rJe7CkrFvS",
+        "rJeidA4KvS",
+        "rJgqMRVYvr",
+        "rJld3hEYvS",
+        "rkeIIkHKvS",
+        "rkeJRhNYDH",
+        "rkgg6xBYDH",
+        "ryevtyHtPr",
+        "ryl0cAVtPH",
+        "rylHspEKPr",
+        "ryx6WgStPB",
+        "21aG-pxQWa",
+        "3AOj0RCNC2",
+        "4rsTcjH7co",
+        "5PiSFHhRe2C",
+        "6YEQUn0QICG",
+        "Fblk4_Fd7ao",
+        "KWToR-Phbrz",
+        "LFs3CnHwfM",
+        "TQt98Ya7UMP",
+        "VG3i3CfFN__",
+        "_TM6rT7tXke",
+        "oweBPxtma_i",
+        "vY0bnzBBvtr",
+        "yvzMA5im3h",
+        "2-mkiUs9Jx7",
+        "5MbRzxoCAql",
+        "5fbUEUTZEn7",
+        "7b4zxUnrO2N",
+        "BnQhMqDfcKG",
+        "FndDxSz3LxQ",
+        "KjR-3lBYB3y",
+        "LNmNWds-q-J",
+        "MIX3fJkl_1",
+        "NudBMY-tzDr",
+        "hpBTIv2uy_E",
+        "l4IHywGq6a",
+        "xbx7Hxjbd79",
+        "FUORz1tG8Og",
+        "K7CbYQbyYhY",
+        "KemSBwOYJC",
+        "NpsVSN6o4ul",
+        "SMa9EAovKMC",
+        "Wc5bmZZU9cy",
+        "WmvIJJgt8L",
+        "esFxSb_0pSL",
+        "locB7rYBzTw",
+        "pT4ref-FMAX",
+        "r_4nJuPpCh-",
+        "uKiE0VIluA-",
+        "uKmuzIuVl8z",
+        "0VBsoluxR2",
+        "14rn7HpKVk",
+        "4PzxLPEGRn",
+        "7vKWg2Vdrs",
+        "HCCkCjClO0",
+        "J7hbPeOZ39",
+        "KTf4DGAzus",
+        "NSBP7HzA5Z",
+        "OIsahq1UYC",
+        "c43FGk8Pcg",
+        "dLrhRIMVmB",
+        "k0nlUXYKhX",
+        "rGvDRT4Z60",
+        "tAcEidZ1Y2",
+        "xiGwCVzsCi",
+        "y0GJXRungR",
+        "yQuF0jslCc",
+        "2IhkyiF3to",
+        "2kje23LSOE",
+        "6yENDA7J4G",
+        "AsckJZlPcy",
+        "BSBZCa6N3E",
+        "D23JcXiUwf",
+        "LYHEY783Np",
+        "NIkfix2eDQ",
+        "Xe6UmKMInx",
+        "ZqM9mZkrRB",
+        "auZZ2gN0ZN",
+        "blSYKTWurU",
+        "cmXWYolrlo",
+        "eR9C6c76j5",
+        "esYrEndGsr",
+        "fyl82vAale",
+        "fzZfju8y0g",
+        "n87wrNlcJu",
+        "qxRoo7ULCo",
+        "tTOo7r4G9j",
+        "unDQOUah0F",
+        "x1yOHtFfDh",
+        "AzmEMstdf3o",
+        "B1Kh0SVodY",
+        "BEVDmheFG0",
+        "F9HNBbytcqT",
+        "GlEWs-V9boR",
+        "JQznhE5mdyv",
+        "Owggnutk6lE",
+        "PIcuKeiWvj-",
+        "_6j_jQiYB2c",
+        "et2st4Jqhc",
+        "gZLhHMyxa-",
+        "ki4eJ1fSJNq",
+        "o4t543Oon5G",
+        "pPbrtkTHe9",
+        "qcjOWDHAc4J",
+        "rkA36z2plsI",
+        "txWfwhc6gi",
+        "w-EabDtADg",
+        "yJqcM36Qvnu",
+        "zoQJBVrhnn3",
+        "zqo2sqixxbE",
+        "3-3XMModtrx",
+        "AlkMMzUX95",
+        "B5qRau1IxjM",
+        "BsSP7pZGFQO",
+        "CwkX0j8YFm",
+        "JSha3zfdmSo",
+        "UaXD4Al3mdb",
+        "cx5ViLfcVq",
+        "fORXbIlTELP",
+        "iivHwZoWzR4",
+        "oWx_9VJgyV7",
+        "sipwrPCrIS",
+        "29WbraPk8U",
+        "42zI5dyNwc",
+        "7ym1abRTF3",
+        "GfITbjrIOd",
+        "OQQoD8Vc3B",
+        "RmxP5ZcQhC",
+        "SGerL9HMrp",
+        "VAC7aB6qSG",
+        "ZmeAoWQqe0",
+        "cBS5CU96Jq",
+        "d6LShzSTOP",
+        "kMmAYbT0VL",
+        "tP50lLiZIo",
+        "tp2nEZ5zfP",
+        "v54eUIayFh",
+        "y8UAQQHVTX",
+        "0XeNkkENuI",
+        "FaNhyXY6Y1",
+        "GrMczQGTlA",
+        "NadTwTODgC",
+        "OIsUWQSvkD",
+        "QFUsZvw9mx",
+        "RYQ0KuZvkL",
+        "S98OzJD3jn",
+        "SadbRPoG2k",
+        "Ujo8V7iXmR",
+        "Wy9UgrMwD0",
+        "hjspWd7jvg",
+        "jTyjwRpLZ5",
+        "jij4vOVU7i",
+        "zqLAMwVLkt"
+      ],
+      "examples": [
+        {
+          "paper_id": "B1oK8aoxe",
+          "source_jsonl_line": 8,
+          "opinion_index": 8,
+          "part_indices": [
+            8
+          ],
+          "character_count": 563,
+          "english_words": 83,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/b633b305b0fe6e5f4d0c9c694d6c01decdb1571fbbf462739cc94c6b44e252d2.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/2cbaa795bbb6642bd6220cbb6fdf6b5cc5b11ef73edaa14096b94244e187b630.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/fe941204e04847a41e57096a9d67f04ed1bca77eea9d33b5e7fcf0ca4e2aa6ca.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "BJK3Xasel",
+          "source_jsonl_line": 13,
+          "opinion_index": 6,
+          "part_indices": [
+            6
+          ],
+          "character_count": 455,
+          "english_words": 65,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/cd1cd3e7097c94e904b9777f2b7bdb6267e980b9b585b8cafd211037c350834b.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/55ed465175fb5ed340c31f15d2b3385f5bf7a32721875281d70b2a4c41a5efcc.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/a160ab2394d8674308cc7bac3e038ef421ea2115fd9a5147578678d3c64ddfa7.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "Bk2TqVcxe",
+          "source_jsonl_line": 18,
+          "opinion_index": 3,
+          "part_indices": [
+            3
+          ],
+          "character_count": 558,
+          "english_words": 79,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/711c7e4af99a5956ef1124abc4823a561b893fe9302200512f9d108b73483368.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/f22b30320deea63ee7cdc219bfa58fb8f5acecdd38c4a68045168f2998f8ce91.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/92aec559403c1174807e454b4a87abb755bcfbeaa459d6fec3655642e6e9ca9a.json"
+            }
+          ]
+        }
+      ]
+    },
+    "no_memory_concat": {
+      "source": "/data0/xyj/shengao/AgentReview_0831/artifacts/research_v2_no_memory/coco_scoring/coco1300-no-memory-nos2-v1-concat/candidate_official_split.jsonl",
+      "source_sha256": "340ce0c5a43a835ac3f37cc438c80e82cc35458b47943886dcef9c6ca5950f97",
+      "paper_count": 1300,
+      "opinion_count": 90998,
+      "failed_papers": 10,
+      "failed_opinions": 12,
+      "failed_single_chunk_opinions": 11,
+      "all_three_attempts_more_than_three_labels": 10,
+      "failure_reason_union": {
+        "more_than_3_labels": 10,
+        "duplicate_or_unrecognized_labels+missing_or_empty_cache": 2
+      },
+      "historical_manifest_counts_match": true,
+      "failed_paper_ids": [
+        "H1gsz30cKX",
+        "SylzhkBtDB",
+        "OyDjznG-x2e",
+        "GoWFBE2-aLt",
+        "sMIMAXqiqj3",
+        "pF5aR69c9c",
+        "MtekhXRP4h",
+        "3dn1hINA6o",
+        "fkf0OquD3Q",
+        "nv7ox1vd3q"
+      ],
+      "examples": [
+        {
+          "paper_id": "H1gsz30cKX",
+          "source_jsonl_line": 228,
+          "opinion_index": 67,
+          "part_indices": [
+            88
+          ],
+          "character_count": 339,
+          "english_words": 48,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/be0abd2e89f2b3e6ac4ccba74b77a3b45928fe2c2a8516067e42d361ca583eef.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/2e7837bdadccae2a3daa77f900f1dc8bed0e5604fc617875d4e9237b57a42b24.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/9fae1bede00e0526e73a9626959aaa798198f48dc03e02098ec4b2f1637a47df.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "SylzhkBtDB",
+          "source_jsonl_line": 335,
+          "opinion_index": 71,
+          "part_indices": [
+            99
+          ],
+          "character_count": 227,
+          "english_words": 29,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/a6cba697e3ba74e7261bfc442f72c109eff47bb6a1ed3da93886e6f9b6df8369.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/9bde9eca6a3c5c829664ebbc67a923fb15dac48902f4da2383fc98abb3f69732.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 4,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/48bf43d8dd7949a17ea912fcf3c670a1e2cb45fdbb4e4a6170e81890d706271c.json"
+            }
+          ]
+        },
+        {
+          "paper_id": "OyDjznG-x2e",
+          "source_jsonl_line": 443,
+          "opinion_index": 69,
+          "part_indices": [
+            89
+          ],
+          "character_count": 22,
+          "english_words": 2,
+          "deterministic_chunk_count_on_replay": 1,
+          "attempts": [
+            {
+              "presence_penalty": 0.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 23,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/cb7db6483b1148f8eb685c0fb8f527ad6bfe6159a494be9763785ac6d5ff92b5.json"
+            },
+            {
+              "presence_penalty": 0.5,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 5,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/4d4ca4ce1499865817cf4fbc765bb3be1f64ae653125ba4897b959ae15f745d4.json"
+            },
+            {
+              "presence_penalty": 1.0,
+              "reasons": [
+                "more_than_3_labels"
+              ],
+              "parsed_label_count": 5,
+              "format_ok": true,
+              "cache_path": "/data0/xyj/shengao/CoCoReviewBench_no_memory/.llm_cache/e0ca1cfb410544bf8399dbb86192322e61a14ca5aa1a4e6ef92bf3c93b74258d.json"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

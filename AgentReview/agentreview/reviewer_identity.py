@@ -11,9 +11,12 @@ from pathlib import Path
 from typing import Any
 
 REVIEWER_IDENTITY_VERSION = "frozen-specialist-identity-v3"
-META_SYNTHESIS_IDENTITY_VERSION = "meta-synthesis-identity-v1"
+META_SYNTHESIS_IDENTITY_VERSION = "meta-synthesis-identity-v2"
 SPECIALIST_REQUEST_PROTOCOL_VERSION = "specialist-review-request-v2"
-META_REQUEST_PROTOCOL_VERSION = "meta-synthesis-request-v1"
+META_REQUEST_PROTOCOL_VERSION = "meta-synthesis-request-v2"
+META_OUTPUT_PROTOCOL_VERSION = "meta-synthesis-output-v2"
+META_RENDER_PROTOCOL_VERSION = "meta-opinion-markdown-v2"
+META_SYNTHESIS_REQUEST_PATH = "META_SYNTHESIS_Request_v2.md"
 SPECIALIST_REQUEST_TEMPLATE = (
     "Review task: {task_id}\n\n"
     "{paper_context}\n\n"
@@ -25,13 +28,13 @@ META_REQUEST_TEMPLATE = (
     "=== FROZEN PAPER ===\n"
     "{paper_context}\n\n"
     "{specialist_block}\n\n"
-    "Return the complete Final Review using META Synthesis Request v1."
+    "Return the structured Final Review using META Synthesis Request v2."
 )
 EXPECTED_REVIEW_REQUEST_SHA256 = (
     "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2"
 )
 EXPECTED_META_SYNTHESIS_REQUEST_SHA256 = (
-    "6beb7fb87506d9413ac1c3f8c7aee5915d130750794ec7fc647e806fbdd19fe5"
+    "21a013957565addad6c93bb5c1b9a8bf3660705f6864c1414b7ce9379835f3c0"
 )
 
 REVIEWER_SPECS = (
@@ -122,7 +125,7 @@ def load_review_request_sections() -> dict[str, str]:
 
 def load_meta_synthesis_request() -> str:
     """Load the independent stateless Meta prompt after hash verification."""
-    source = _project_file("META_SYNTHESIS_Request_v1.md")
+    source = _project_file(META_SYNTHESIS_REQUEST_PATH)
     raw = source.read_bytes()
     actual_hash = hashlib.sha256(raw).hexdigest()
     if actual_hash != EXPECTED_META_SYNTHESIS_REQUEST_SHA256:
@@ -275,10 +278,12 @@ class FrozenMetaSynthesizer:
             "identity_version": META_SYNTHESIS_IDENTITY_VERSION,
             "name": self.name,
             "system_prompt_sha256": self.system_prompt_sha256,
-            "source_path": "META_SYNTHESIS_Request_v1.md",
+            "source_path": META_SYNTHESIS_REQUEST_PATH,
             "source_sha256": EXPECTED_META_SYNTHESIS_REQUEST_SHA256,
             "request_protocol_version": protocol["version"],
             "request_template_sha256": protocol["template_sha256"],
+            "output_protocol_version": META_OUTPUT_PROTOCOL_VERSION,
+            "rendering_protocol_version": META_RENDER_PROTOCOL_VERSION,
         }
 
     def manifest_payload(self) -> dict[str, Any]:

@@ -763,7 +763,7 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
     lock_owners = _lock_owners()
     formal_progress = _formal_progress(artifact_root)
     s2_progress = _s2_progress(artifact_root)
-    formal_active = formal_progress["summary_status"] != "complete"
+    formal_active = formal_progress["summary_status"] not in {"complete", "paused", "ended"}
     s2_active = not s2_progress["complete"]
     previous_logs = dict((previous or {}).get("logs") or {})
     formal_log = _log_snapshot(
@@ -810,6 +810,10 @@ def collect_probe(repo_root: Path, previous: dict[str, Any] | None) -> dict[str,
 
     if formal_progress["summary_status"] == "interrupted":
         _issue(issues, "critical", "formal_interrupted", "Formal summary is interrupted")
+    if formal_progress["summary_status"] == "paused":
+        _issue(issues, "warning", "formal_paused", "Formal round awaits verified repair and complete reevaluation")
+    if formal_progress["summary_status"] == "ended":
+        _issue(issues, "warning", "formal_budget_exhausted", "Formal round ended at its failure budget; verified Champion retained")
     if formal_active and len(formal_processes) != 1:
         _issue(
             issues,

@@ -46,6 +46,7 @@ class SpecialistReviewInfrastructureFailure(SpecialistReviewFailure):
 
 def specialist_generation_identity(
     model_identity: dict[str, Any],
+    *, max_tokens: int = REVIEW_MAX_TOKENS,
 ) -> dict[str, Any]:
     """Return the frozen invocation policy shared by raw artifacts and run specs."""
     return {
@@ -53,7 +54,7 @@ def specialist_generation_identity(
         "model_identity": dict(model_identity),
         "temperature": model_identity.get("temperature", TEMPERATURE),
         "enable_thinking": model_identity.get("enable_thinking", ENABLE_THINKING),
-        "max_tokens": REVIEW_MAX_TOKENS,
+        "max_tokens": max_tokens,
         "retry": {
             "protocol": SPECIALIST_RETRY_PROTOCOL,
             "max_attempts": SPECIALIST_MAX_ATTEMPTS,
@@ -332,6 +333,9 @@ def run_specialist_review(
     require_bubblewrap: bool = True,
     _canonical_bootstrap_s2_enabled: bool | None = None,
     _allow_legacy_missing_require_bubblewrap: bool = False,
+    memory_enabled: bool = True,
+    memory_runtime: dict[str, Any] | None = None,
+    max_tokens: int = REVIEW_MAX_TOKENS,
 ) -> dict[str, Any]:
     """Generate and save one full Review; this function has no evaluator hook."""
     if role not in ROLES:
@@ -379,6 +383,10 @@ def run_specialist_review(
             embedding_identity=embedding_identity,
             require_bubblewrap=require_bubblewrap,
         )
+        if memory_runtime is not None or memory_enabled is False or max_tokens != REVIEW_MAX_TOKENS:
+            from agentreview.paper_context import CANONICAL_PAPER_CONTEXT_VERSION
+            input_identity.update({"memory_enabled": memory_enabled, "memory_runtime": memory_runtime,
+                                   "max_tokens": max_tokens, "paper_context_version": CANONICAL_PAPER_CONTEXT_VERSION})
         request_path = target_dir / f"{role}.request.json"
         if request_path.is_file():
             request_materialization = _load_review_request(
@@ -402,6 +410,8 @@ def run_specialist_review(
                     embedding_identity=embedding_identity,
                     completion_client=completion_client,
                     require_bubblewrap=require_bubblewrap,
+                    memory_enabled=memory_enabled,
+                    memory_runtime=memory_runtime,
                 )
             except Exception as exc:
                 _save_failure_attempt(
@@ -499,7 +509,7 @@ def run_specialist_review(
             "s2": {**s2_provenance, "evidence": s2_values},
         }
     request_sha256 = value_sha256(messages)
-    generation_identity = specialist_generation_identity(model_identity)
+    generation_identity = specialist_generation_identity(model_identity, max_tokens=max_tokens)
     raw_path = target_dir / f"{role}.raw.json"
     raw_artifact = _load_resumable_raw_artifact(
         raw_path,
@@ -518,7 +528,7 @@ def run_specialist_review(
             raw_output, attempts = _call_with_identical_retry(
                 completion_client,
                 messages,
-                max_tokens=REVIEW_MAX_TOKENS,
+                max_tokens=max_tokens,
                 component=f"specialist_review:{role}",
             )
         except Exception as exc:

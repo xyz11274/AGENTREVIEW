@@ -1,6 +1,14 @@
 # AgentReview Research Core v2 设计
 
-> 状态：已确认并进入实现。本文定义 Research Core v2 的目标协议；实际完成项与迁移状态见 `RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md`。
+0915 已实现的共享标准 CoCo 运行协议、代码入口与验证边界统一见 [SHARED_MSTAR_IMPLEMENTATION.md](SHARED_MSTAR_IMPLEMENTATION.md)。下文保留被 ADR-0011–0016 取代的历史研究设计，以便解释旧实验。
+
+> 状态：0831 历史设计与实现基线。0915 已确认的数据和评测边界由 [ADR-0011](adr/0011-development-coco-and-sealed-test.md) 定义：开发集使用标准 CoCo，最终测试严格隔离。本文原有整体 1–5 内评、全部 CoCo 外置、固定数据来源与样本量等条款保留为历史背景；0915 的其余实验条件仍在讨论。实际旧实现完成项见 `RESEARCH_CORE_V2_IMPLEMENTATION_LOG.md`。
+
+> 共享策略更新：0915 已采用 [ADR-0013](adr/0013-shared-strategy-independent-role-memory.md) 的一套共享记忆策略和五个角色独立记忆库。下文关于五个独立 Program/pool/lineage 的条款属于被取代的历史设计。
+
+> 算法更新：0915 已采用 [ADR-0014](adr/0014-mstar-paper-guided-memory-evolution.md) 的 M★ 原文机制。下文是旧实现基线，其中的确定性查询限制、搜索参数和非记忆工作流变异范围仍需按新协议核定；当前 GEPA 方案研究已经结束。
+
+> 评分与报告更新：0915 已采用 [ADR-0015](adr/0015-paper-fitness-and-separate-results-report.md) 的标准 CoCo Table-1 `Paper.` 主指标；每个 seed 的逐篇分数和 CoCo 汇总由独立后处理另外生成，原始生成流程保存自身产物。
 
 ## 1. 研究目标
 

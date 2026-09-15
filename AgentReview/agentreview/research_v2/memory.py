@@ -1,4 +1,4 @@
-"""Offline M★ Memory build and read-only deterministic Review retrieval."""
+"""Offline M★ Memory build and role-local retrieval with frozen task planning."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 from contextlib import contextmanager
 from dataclasses import MISSING, asdict, fields, is_dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from agentreview.reviewer_identity import load_reviewer_suite
 from agentreview.reviewer_runtime.sandbox import SandboxSession
@@ -27,6 +27,68 @@ ITEM_CHECKPOINT_PROTOCOL = "research-v2-memory-item-checkpoint-v1"
 DETERMINISTIC_FALLBACK_EMBEDDING_IDENTITY = {
     "provider": "deterministic-fallback-v1"
 }
+HOST_ROLE_FIELDS = frozenset({"role", "reviewer_role", "reviewer_dimension", "dimension"})
+
+
+class MemoryProgramContractError(ValueError):
+    """A returned memory value violates the candidate's structured schema."""
+
+    failure_category = "candidate"
+
+    def __init__(self, *, stage: str, schema: str, error: Exception, parser: dict[str, Any]):
+        self.stage = stage
+        self.failure_record = {
+            "stage": stage, "schema": schema, "error_type": type(error).__name__,
+            "message": str(error), "parser": dict(parser),
+        }
+        super().__init__(f"{stage} requires a valid {schema} value: {type(error).__name__}: {error}")
+
+
+def _structured_memory_value(
+    task_agent: TaskAgent,
+    *,
+    stage: str,
+    schema: str,
+    operation: Callable[[], Any],
+    candidate_scope: bool,
+) -> Any:
+    # Parser evidence appears only after the completion client returns a value.
+    task_agent.last_parser_debug = {}
+    try:
+        return operation()
+    except (ValueError, TypeError) as exc:
+        parser = task_agent.last_parser_debug
+        returned_invalid_value = (
+            parser.get("schema") == schema
+            and parser.get("parser_success") is False
+            and "raw_response_prefix" in parser
+        )
+        if candidate_scope and returned_invalid_value:
+            raise MemoryProgramContractError(stage=stage, schema=schema, error=exc, parser=parser) from exc
+        raise
+
+
+def _bind_host_role(item: Any, role: str) -> Any:
+    """Bind generated memory schema role fields to the owning host role."""
+    for field in fields(item):
+        if field.name in HOST_ROLE_FIELDS:
+            setattr(item, field.name, role)
+    return item
+
+
+def _validate_item_role(envelope: dict[str, Any], role: str) -> None:
+    if envelope.get("role") == role:
+        pass
+    else:
+        raise ValueError("Memory item envelope requires the owning host role")
+    payload = envelope.get("payload")
+    if isinstance(payload, dict):
+        for name in HOST_ROLE_FIELDS & set(payload):
+            if payload[name] == role:
+                continue
+            raise ValueError(f"Memory item {name} requires the owning host role {role}")
+        return
+    raise ValueError("Memory item payload requires an object")
 
 
 def _runtime_embedding_identity(
@@ -154,6 +216,9 @@ def _experience_source(
     evaluation: dict[str, Any] | None,
 ) -> str:
     feedback = evaluation or {}
+    if evaluation is None:
+        return (f"SOURCE REVIEW ID: {review.get('review_id', '')}\nROLE: {review.get('role', '')}\n\n"
+                f"COMPLETE SPECIALIST REVIEW:\n{review.get('review_text', '')}")
     return (
         f"SOURCE REVIEW ID: {review.get('review_id', '')}\n"
         f"ROLE: {review.get('role', '')}\n\n"
@@ -193,6 +258,11 @@ def validate_memory_snapshot_artifact(
             raise TypeError(f"Memory snapshot {field_name} must be a list: {path}")
     if not isinstance(value.get("snapshot"), dict):
         raise TypeError(f"Memory snapshot state must be an object: {path}")
+    for item in value["items"]:
+        if isinstance(item, dict):
+            _validate_item_role(item, value["role"])
+        else:
+            raise TypeError(f"Memory snapshot item must be an object: {path}")
     manifest = value.get("capability_manifest")
     if manifest is not None and (
         not isinstance(manifest, dict)
@@ -269,6 +339,7 @@ def build_memory_snapshot(
     completion_client: CompletionClient | None = None,
     completion_identity: dict[str, Any] | None = None,
     require_bubblewrap: bool = True,
+    memory_runtime: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one role-local snapshot; this is the only stage allowed to write KB."""
     if role not in ROLES:
@@ -340,9 +411,11 @@ def build_memory_snapshot(
             "Memory item induction with a completion client requires completion_identity"
         )
     normalized_completion_identity = dict(completion_identity or {"provider": "none"})
+    runtime = dict(memory_runtime or {})
+    build_calls = runtime.get("build_llm_calls", 1)
     llm_adapter = (
         ToolkitCompletionAdapter(
-            completion_client, SUMMARIZER_MAX_TOKENS, "memory_build"
+            completion_client, runtime.get("max_tokens", SUMMARIZER_MAX_TOKENS), "memory_build"
         )
         if completion_client is not None
         else None
@@ -350,7 +423,7 @@ def build_memory_snapshot(
     toolkit = MemoryToolkit(
         llm_client=llm_adapter,
         embedding_client=embedding_client,
-        max_llm_calls_per_operation=1,
+        max_llm_calls_per_operation=build_calls,
     )
     item_records = []
     program_source = Path(program_path).expanduser().resolve()
@@ -396,6 +469,8 @@ def build_memory_snapshot(
                 for ordinal, review_source in enumerate(review_sources)
             ],
         }
+        if memory_runtime is not None:
+            build_identity["memory_runtime"] = runtime
         existing_output = Path(output_path).expanduser().resolve()
         if existing_output.is_file():
             existing = validate_memory_snapshot_artifact(
@@ -433,7 +508,12 @@ def build_memory_snapshot(
                     with toolkit.operation(
                         "knowledge_item_generation", max_llm_calls=1
                     ):
-                        item = task_agent.extract_knowledge_item(program, raw_text)
+                        item = _structured_memory_value(
+                            task_agent, stage="knowledge_item_generation", schema="KnowledgeItem",
+                            operation=lambda: task_agent.extract_knowledge_item(program, raw_text),
+                            candidate_scope=memory_runtime is not None,
+                        )
+                item = _bind_host_role(item, role)
                 envelope = {
                     "item_id": hashlib.sha256(
                         f"{program_version}\n{role}\n{review_id}\n{evaluation_id}".encode(
@@ -458,6 +538,7 @@ def build_memory_snapshot(
                     if checkpoint_path.is_file():
                         checkpoint = _load_checkpoint(checkpoint_path, item_identity)
                         envelope = dict(checkpoint["item"])
+                        _validate_item_role(envelope, role)
                     else:
                         if seed_kind in {"vector_search", "llm_summarizer"}:
                             item = _deterministic_item(
@@ -471,9 +552,12 @@ def build_memory_snapshot(
                             with toolkit.operation(
                                 "knowledge_item_generation", max_llm_calls=1
                             ):
-                                item = task_agent.extract_knowledge_item(
-                                    program, raw_text
+                                item = _structured_memory_value(
+                                    task_agent, stage="knowledge_item_generation", schema="KnowledgeItem",
+                                    operation=lambda: task_agent.extract_knowledge_item(program, raw_text),
+                                    candidate_scope=memory_runtime is not None,
                                 )
+                        item = _bind_host_role(item, role)
                         envelope = {
                             "item_id": value_sha256(item_identity),
                             "role": role,
@@ -492,7 +576,8 @@ def build_memory_snapshot(
                         checkpoint["checkpoint_id"] = value_sha256(checkpoint)
                         atomic_write_json(checkpoint_path, checkpoint)
                     item = program.KnowledgeItem(**dict(envelope["payload"]))
-            with toolkit.operation("memory_write", max_llm_calls=0):
+            write_calls = max(0, build_calls - int(requires_item_induction)) if memory_runtime is not None else 0
+            with toolkit.operation("memory_write", max_llm_calls=write_calls):
                 sandbox.write(item, raw_text)
             item_records.append(envelope)
         snapshot = sandbox.snapshot()
@@ -534,6 +619,8 @@ def retrieve_memory(
     s2_retrieval_pool: dict[str, list[dict[str, Any]]] | None = None,
     s2_retrieval_pool_sha256: str = "",
     require_bubblewrap: bool = True,
+    memory_enabled: bool = True,
+    memory_runtime: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Read a frozen snapshot and optionally execute its autonomous Review Plan.
 
@@ -547,7 +634,7 @@ def retrieve_memory(
     if snapshot_artifact.get("role") != role:
         raise ValueError("Memory snapshot role mismatch")
     seed_kind = str(snapshot_artifact.get("seed_kind") or "")
-    if seed_kind != "no_memory":
+    if memory_enabled and seed_kind != "no_memory":
         runtime_embedding_identity = _runtime_embedding_identity(
             embedding_client=embedding_client,
             embedding_identity=embedding_identity,
@@ -557,13 +644,24 @@ def retrieve_memory(
             raise ValueError(
                 "Memory retrieval embedding identity differs from snapshot"
             )
-    summarizer = seed_kind == "llm_summarizer"
+    runtime = dict(memory_runtime or {})
+    query_mode = runtime.get("query_mode", "deterministic")
+    if query_mode in {"deterministic", "instruction"}:
+        pass
+    else:
+        raise ValueError("Memory query_mode requires deterministic or instruction")
+    read_calls = runtime.get("read_llm_calls", int(seed_kind == "llm_summarizer")) if memory_enabled else 0
+    if type(read_calls) is int and read_calls >= 0:
+        pass
+    else:
+        raise ValueError("Memory read_llm_calls requires a nonnegative integer")
+    summarizer = memory_enabled and (read_calls > 0 or query_mode == "instruction")
     if summarizer and completion_client is None:
         raise ValueError("LLM Summarizer read requires its explicit completion client")
     llm_adapter = (
         ToolkitCompletionAdapter(
             completion_client,
-            SUMMARIZER_MAX_TOKENS,
+            runtime.get("max_tokens", SUMMARIZER_MAX_TOKENS),
             "memory_summarizer",
         )
         if summarizer and completion_client is not None
@@ -572,7 +670,7 @@ def retrieve_memory(
     toolkit = MemoryToolkit(
         llm_client=llm_adapter,
         embedding_client=embedding_client,
-        max_llm_calls_per_operation=1 if summarizer else 0,
+        max_llm_calls_per_operation=max(read_calls, int(query_mode == "instruction")) if memory_enabled else 0,
         s2_retrieval_pool=s2_retrieval_pool,
         s2_retrieval_pool_sha256=s2_retrieval_pool_sha256,
     )
@@ -590,11 +688,24 @@ def retrieve_memory(
         toolkit,
         require_bubblewrap=require_bubblewrap,
     ) as sandbox:
-        sandbox.restore(dict(snapshot_artifact.get("snapshot") or {}))
         program = sandbox.program_interface()
-        query = deterministic_query(program, paper, role)
-        with toolkit.operation("memory_read", max_llm_calls=1 if summarizer else 0):
-            context = sandbox.read(query)
+        planning_query = deterministic_query(program, paper, role)
+        query = planning_query
+        context = ""
+        if memory_enabled:
+            sandbox.restore(dict(snapshot_artifact.get("snapshot") or {}))
+            if query_mode == "instruction":
+                task_agent = TaskAgent(toolkit, system_prompt=load_reviewer_suite().task(role).system_prompt, task_id=role)
+                with toolkit.operation("memory_query", max_llm_calls=1):
+                    query = _structured_memory_value(
+                        task_agent, stage="memory_query", schema="Query",
+                        operation=lambda: task_agent.generate_query(program, f"Role: {role}\nTitle: {paper.title}\nAbstract: {paper.abstract}"),
+                        candidate_scope=memory_runtime is not None,
+                    )
+                # Role identity belongs to the host, including evolved Query schemas.
+                query = _bind_host_role(query, role)
+            with toolkit.operation("memory_read", max_llm_calls=read_calls):
+                context = sandbox.read(query)
         if len(context) > 6000:
             raise ValueError("KnowledgeBase.read() exceeded 6000 characters")
         review_plan = None
@@ -606,7 +717,7 @@ def retrieve_memory(
                     max_llm_calls=0,
                     allowed_capabilities={"retrieve_current_s2"},
                 ):
-                    review_plan = sandbox.plan_review(query, context)
+                    review_plan = sandbox.plan_review(planning_query, context)
                 s2_trace = toolkit.s2_trace_snapshot()
         logs = list(sandbox.logs)
     result = {
@@ -618,6 +729,13 @@ def retrieve_memory(
         "program_sha256": snapshot_artifact.get("program_sha256"),
         "seed_kind": seed_kind,
     }
+    if memory_runtime is not None or memory_enabled is False:
+        result.update({
+            "memory_enabled": memory_enabled,
+            "memory_runtime": runtime,
+            "instruction_response": str(program.INSTRUCTION_RESPONSE) if memory_enabled else "",
+            "always_on_knowledge": str(program.ALWAYS_ON_KNOWLEDGE) if memory_enabled else "",
+        })
     if prepare_review_plan:
         result["review_plan"] = review_plan
         result["s2_trace"] = s2_trace

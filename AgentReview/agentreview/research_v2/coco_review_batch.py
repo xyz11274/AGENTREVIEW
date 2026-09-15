@@ -39,11 +39,14 @@ from .memory import (
 from .meta import (
     META_MAX_ATTEMPTS,
     META_RAW_PROTOCOL,
+    MetaOutputValidationError,
     MetaSynthesisInfrastructureFailure,
     MetaSynthesisPaperFailure,
     _final_review_id,
     _load_resumable_meta_raw,
     generate_final_review,
+    parse_meta_synthesis,
+    render_meta_synthesis,
 )
 from .models import Paper
 from .program_checks import REVIEW_PLAN_PROTOCOL, program_capability_manifest
@@ -2154,7 +2157,7 @@ def _validated_final_payload(
         "run_id": invocation.run_id,
     }
     if invocation.mode == "meta":
-        expected_fields.update({"model_identity", "generation_config"})
+        expected_fields.update({"model_identity", "generation_config", "structured_meta"})
         expected_identity.update(
             {
                 "meta_identity": load_meta_synthesizer().identity(),
@@ -2191,12 +2194,13 @@ def _validated_final_payload(
             )
         paper = Paper.from_dict(read_json(invocation.paper_path))
         synthesizer = load_meta_synthesizer()
+        paper_context = frozen_paper_context(paper, "META")
         question = build_meta_review_question(
             paper_id=invocation.paper_id,
             specialist_reviews={
                 role: str(reviews[role]["review_text"]) for role in ROLES
             },
-            paper_context=frozen_paper_context(paper, "META"),
+            paper_context=paper_context,
         )
         messages = [
             {"role": "system", "content": synthesizer.system_prompt},
@@ -2225,11 +2229,20 @@ def _validated_final_payload(
                 raw_path,
                 expected_identity={**raw_identity, "attempt": attempt},
             )
-            if raw is not None and (
-                raw.get("raw_model_output") == text
-                and raw.get("created_at") == value.get("created_at")
-            ):
-                matching_raw = True
+            if raw is not None and raw.get("created_at") == value.get("created_at"):
+                try:
+                    structured = parse_meta_synthesis(
+                        raw.get("raw_model_output"),
+                        paper_context=paper_context,
+                        source_review_ids_by_role=dict(zip(ROLES, source_ids, strict=True)),
+                    )
+                except MetaOutputValidationError:
+                    continue
+                if (
+                    structured == value.get("structured_meta")
+                    and render_meta_synthesis(structured) == text
+                ):
+                    matching_raw = True
         if not matching_raw:
             raise ValueError("Meta Final Review content identity mismatch")
     return value

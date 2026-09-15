@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import fcntl
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
-
-from agentreview.reviewer_runtime.sandbox import SandboxError
 
 from .constants import ROLES
 from .evaluation import run_internal_evaluation
@@ -22,14 +20,22 @@ from .evolution import (
     initialize_pool,
     propose_candidate,
     validate_pool_entry_snapshot,
+    build_evaluation_receipt,
+    validate_pool_evaluation_receipts,
+    validate_program,
+    _load_or_call_reflector,
+    _write_program,
+)
+from .failure_policy import (
+    EvolutionPaused, EvolutionBudgetExhausted, FailureController, FailureLimits,
+    controller_for_run, failure_detail, validate_promotion_policy,
 )
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
 from .llm import CompletionClient, complete_with_response_format
 from .memory import SEED_NAMES, build_memory_snapshot, seed_program_path
 from .models import Paper
 from .program_checks import program_capability_manifest
-from .review import SpecialistReviewPaperFailure, run_specialist_review
-from .review_preparation import ReviewPlanError
+from .review import run_specialist_review
 from .s2 import FrozenS2Store
 
 FORMAL_ROLE_EVOLUTION_PROTOCOL = "research-v2-formal-role-evolution-v1"
@@ -38,9 +44,6 @@ FORMAL_WINNER_PROTOCOL = "research-v2-formal-role-winner-v1"
 FORMAL_RUN_SPEC_PROTOCOL = "research-v2-formal-role-run-spec-v1"
 FORMAL_ALL_ROLES_PROTOCOL = "research-v2-formal-all-roles-run-v1"
 FORMAL_CANDIDATE_FAILURE_PROTOCOL = "research-v2-formal-candidate-failure-v1"
-FORMAL_PAPER_FAILURE_SCORE_PROTOCOL = (
-    "research-v2-internal-evaluation-paper-failure-score-v1"
-)
 FORMAL_STATIC_SIZE = 25
 FORMAL_ROTATING_POOL_SIZE = 125
 FORMAL_ROTATING_BATCH_SIZE = 5
@@ -88,12 +91,12 @@ def validate_canonical_evaluation_summary(path: str | Path) -> dict[str, Any]:
     source = Path(path).expanduser().resolve()
     value = read_json(source)
     expected = {
-        "schema_version": "research-v2-internal-evaluation-batch-v1",
         "status": "complete",
         "task_count": CANONICAL_EVALUATION_TASKS,
         "failed": 0,
     }
-    if {name: value.get(name) for name in expected} != expected:
+    supported_versions = {"research-v2-internal-evaluation-batch-v1", "research-v2-internal-evaluation-batch-v2"}
+    if value.get("schema_version") not in supported_versions or {name: value.get(name) for name in expected} != expected:
         raise ValueError(
             "Formal Evolution requires a complete 625/625 canonical Internal "
             "Evaluation summary with zero failures"
@@ -101,6 +104,13 @@ def validate_canonical_evaluation_summary(path: str | Path) -> dict[str, Any]:
     completed = int(value.get("completed") or 0) + int(value.get("resumed") or 0)
     if completed != CANONICAL_EVALUATION_TASKS:
         raise ValueError("Canonical Internal Evaluation completion count differs from 625")
+    if value["schema_version"] == "research-v2-internal-evaluation-batch-v2":
+        tasks = value.get("task_results", [])
+        identities = {(item.get("paper_id"), item.get("role")) for item in tasks}
+        if len(tasks) != CANONICAL_EVALUATION_TASKS or len(identities) != CANONICAL_EVALUATION_TASKS or any(
+            item.get("status") not in {"completed", "resumed"} for item in tasks
+        ):
+            raise ValueError("Canonical Evaluation requires a complete successful task manifest")
     return {
         "path": str(source),
         "sha256": file_sha256(source),
@@ -118,6 +128,94 @@ def _coordinator_root(output_root: str | Path, role: str, run_id: str) -> Path:
     )
 
 
+def _evaluation_metadata(static_split_path: str | Path) -> dict[str, Any]:
+    from .evaluation import INTERNAL_EVALUATOR_PROMPT_VERSION
+    return {
+        "scoring_protocol": INTERNAL_EVALUATOR_PROMPT_VERSION,
+        "scoring_implementation_sha256": file_sha256(Path(__file__).with_name("evaluation.py")),
+        "static_split_sha256": file_sha256(static_split_path),
+    }
+
+
+def _epoch_run_id(run_id: str, epoch: int) -> str:
+    return f"{run_id}-e{epoch:03d}" if epoch else run_id
+
+
+def _effective_attempt(root: Path, attempt: int) -> tuple[Path, dict[str, Any]]:
+    original = root / f"attempt-{attempt:03d}.json"
+    repaired = root / f"attempt-{attempt:03d}.runtime-repair.json"
+    if repaired.is_file():
+        value = read_json(repaired)
+        if value.get("status") == "proposed":
+            if file_sha256(value["program_path"]) != value["program_sha256"]:
+                raise ValueError("Repaired candidate Program requires its recorded hash")
+            return repaired, value
+    return original, read_json(original)
+
+
+def _repair_runtime_candidate(
+    *, root: Path, attempt: int, error: Exception, phase: str,
+    controller: FailureController, completion_client: CompletionClient,
+    completion_identity: dict[str, Any], require_bubblewrap: bool,
+) -> bool:
+    """Create one complete corrected Program, preserving every prior revision."""
+    source, outcome = _effective_attempt(root, attempt)
+    target = root / f"attempt-{attempt:03d}.runtime-repair.json"
+    if target.is_file():
+        return False
+    candidate_id = outcome["candidate_id"]
+    role = outcome["role"]
+    if controller.reserve_repair(
+        operation_id=f"{role}:{candidate_id}:runtime-repair",
+        candidate_id=f"{role}:{candidate_id}",
+    ) is False:
+        return False
+    code = Path(outcome["program_path"]).read_text(encoding="utf-8")
+    request_path = root / f"attempt-{attempt:03d}.runtime-repair-request.json"
+    if request_path.is_file():
+        request = read_json(request_path)
+        if request.get("source_sha256") != file_sha256(source) or request.get("request_id") != value_sha256({
+            key: value for key, value in request.items() if key != "request_id"
+        }):
+            raise ValueError("Runtime repair requires its original request and candidate source")
+    else:
+        request = {
+            "source_path": str(source), "source_sha256": file_sha256(source),
+            "phase": phase, "error": f"{type(error).__name__}: {error}",
+            "messages": [{"role": "user", "content": (
+                "Repair this MemoryProgram using the execution error below. Preserve its public "
+                "interface and permitted capabilities. Return the complete corrected Python source.\n\n"
+                f"PHASE: {phase}\nERROR: {type(error).__name__}: {error}\n\nPROGRAM:\n{code}"
+            )}],
+        }
+        request["request_id"] = value_sha256(request)
+        atomic_write_json(request_path, request)
+    raw = _load_or_call_reflector(
+        path=root / f"attempt-{attempt:03d}.runtime-repair.raw.json",
+        messages=request["messages"], component="reflector_repair", completion_client=completion_client,
+        completion_identity=completion_identity,
+        plan_sha256=request["request_id"],
+    )
+    corrected = raw.strip()
+    if corrected.startswith("```python\n") and corrected.endswith("```"):
+        corrected = corrected[len("```python\n"):-3].strip()
+    elif corrected.startswith("```\n") and corrected.endswith("```"):
+        corrected = corrected[4:-3].strip()
+    program = Path(outcome["program_path"]).parent / "runtime-repair-001" / "program.py"
+    _write_program(program, corrected + "\n")
+    errors = validate_program(program, require_bubblewrap=require_bubblewrap)
+    repaired = {
+        **outcome, "status": "failed" if errors else "proposed",
+        "program_path": str(program), "program_sha256": file_sha256(program),
+        "capability_manifest": program_capability_manifest(path=program) if errors == [] else {},
+        "runtime_repair": {"source_path": str(source), "source_sha256": file_sha256(source),
+                           "phase": request["phase"], "error": request["error"], "revision": 1},
+        "errors": errors,
+    }
+    atomic_write_json(target, repaired)
+    return repaired["status"] == "proposed"
+
+
 def _pool(path: str | Path, role: str) -> tuple[Path, EvolutionPool]:
     source = Path(path).expanduser().resolve()
     value = EvolutionPool.from_dict(read_json(source))
@@ -127,6 +225,7 @@ def _pool(path: str | Path, role: str) -> tuple[Path, EvolutionPool]:
         raise ValueError("Formal Evolution pool is empty")
     for entry in value.entries:
         validate_pool_entry_snapshot(entry)
+    validate_pool_evaluation_receipts(value)
     return source, value
 
 
@@ -202,6 +301,7 @@ def materialize_role_attempt(
             f"Formal Evolution attempt must be in [1, {MAX_MUTATION_ATTEMPTS}]"
         )
     root = _coordinator_root(output_root, role, run_id)
+    controller_for_run(output_root, run_id).require_running()
     with _exclusive_lock(root / "coordinator.lock"):
         canonical = validate_canonical_evaluation_summary(
             canonical_evaluation_summary_path
@@ -407,6 +507,10 @@ def _validate_feedback_artifacts(
         for value in evaluations
     ):
         raise ValueError("Formal rotating Evaluation identity mismatch")
+    build_evaluation_receipt(
+        role=work["role"], snapshot_path=parent["memory_snapshot_path"],
+        review_paths=review_paths, evaluation_paths=evaluation_paths,
+    )
 
 
 def _state(root: Path, *, role: str, run_id: str) -> dict[str, Any]:
@@ -428,10 +532,17 @@ def _state(root: Path, *, role: str, run_id: str) -> dict[str, Any]:
         "attempts": {},
         "status": "running",
         "started_at": _utc_now(),
+        "failure_policy": controller_for_run(root.parents[2], run_id).value,
     }
 
 
 def _write_state(root: Path, state: dict[str, Any]) -> None:
+    controller = controller_for_run(root.parents[2], state["run_id"])
+    state["failure_policy"] = controller.value
+    state["failure_policy_path"] = str(controller.path)
+    state["champion"] = controller.value["champions"].get(state["role"])
+    if controller.value["status"] in {"paused", "reevaluating", "ended"}:
+        state["status"] = controller.value["status"]
     state["updated_at"] = _utc_now()
     atomic_write_json(root / "coordinator.json", state, immutable=False)
 
@@ -446,8 +557,26 @@ def _record_winner_if_complete(
     attempt: int,
     state: dict[str, Any],
 ) -> None:
+    controller = controller_for_run(root.parents[2], run_id)
+    state["failure_policy"] = controller.value
+    if controller.value["status"] in {"paused", "reevaluating", "ended"}:
+        state["status"] = controller.value["status"]
+        return
+    try:
+        controller.require_running()
+    except EvolutionBudgetExhausted:
+        state["status"] = "ended"
+        return
     if attempt != MAX_MUTATION_ATTEMPTS:
         return
+    expected = {f"{index:03d}" for index in range(1, MAX_MUTATION_ATTEMPTS + 1)}
+    attempts = state.get("attempts", {})
+    if set(attempts) != expected or any(
+        item.get("status") not in {"committed", "failed", "candidate_failed"}
+        for item in attempts.values()
+    ):
+        raise ValueError("Winner publication requires the complete terminal attempt set")
+    validate_pool_evaluation_receipts(pool, expected_epoch=controller.value["evaluation_epoch"])
     winner = pool.best(require_snapshot=True)
     winner_payload = {
         "protocol": FORMAL_WINNER_PROTOCOL,
@@ -456,11 +585,15 @@ def _record_winner_if_complete(
         "pool_path": str(pool_source),
         "pool_sha256": file_sha256(pool_source),
         "winner": asdict(winner),
+        "evaluation_epoch": controller.value["evaluation_epoch"],
     }
     winner_payload["winner_id"] = value_sha256(winner_payload)
-    atomic_write_json(root / "winner.json", winner_payload)
+    epoch = controller.value["evaluation_epoch"]
+    atomic_write_json(root / f"winner.e{epoch:03d}.json", winner_payload)
+    atomic_write_json(root / "winner.json", winner_payload, immutable=False)
     state["status"] = "complete"
     state["winner_id"] = winner_payload["winner_id"]
+    controller.preserve_champion(role, asdict(winner))
 
 
 def record_candidate_failure(
@@ -495,7 +628,7 @@ def record_candidate_failure(
         attempt_path = root / f"attempt-{attempt:03d}.json"
         if not attempt_path.is_file():
             raise ValueError("Candidate failure requires a committed proposal artifact")
-        outcome = read_json(attempt_path)
+        active_attempt_path, outcome = _effective_attempt(root, attempt)
         if outcome.get("status") != "proposed":
             raise ValueError("Candidate failure requires a successful proposal")
         if any(
@@ -503,8 +636,6 @@ def record_candidate_failure(
             for entry in pool.entries
         ):
             raise ValueError("A committed pool candidate cannot be marked failed")
-        if file_sha256(pool_source) != work["pool_before"]["sha256"]:
-            raise ValueError("Formal Evolution pool changed before candidate failure")
         failure_path = _candidate_failure_path(root, attempt)
         if failure_path.is_file():
             failure = _load_candidate_failure(
@@ -513,6 +644,8 @@ def record_candidate_failure(
                 outcome=outcome,
             )
         else:
+            if file_sha256(pool_source) != work["pool_before"]["sha256"]:
+                raise ValueError("Formal Evolution pool changed before candidate failure")
             program_path = Path(str(outcome.get("program_path") or "")).resolve()
             failure = {
                 "protocol": FORMAL_CANDIDATE_FAILURE_PROTOCOL,
@@ -530,6 +663,12 @@ def record_candidate_failure(
             }
             failure["failure_id"] = value_sha256(failure)
             atomic_write_json(failure_path, failure)
+        controller = controller_for_run(output_root, run_id)
+        controller.candidate_failed(
+            operation_id=f"{role}:{outcome['candidate_id']}:failed",
+            candidate_id=outcome["candidate_id"],
+            detail=failure_detail(error, phase=phase),
+        )
         state = _state(root, role=role, run_id=run_id)
         terminal = {
             "status": "candidate_failed",
@@ -579,6 +718,8 @@ def advance_role_attempt(
     run_id = str(work.get("run_id") or "")
     attempt = int(work.get("attempt") or 0)
     root = _coordinator_root(output_root, role, run_id)
+    controller = controller_for_run(output_root, run_id)
+    controller.require_running()
     with _exclusive_lock(root / "coordinator.lock"):
         pool_source, pool = _pool(pool_path, role)
         state = _state(root, role=role, run_id=run_id)
@@ -640,30 +781,37 @@ def advance_role_attempt(
                 )
                 _write_state(root, state)
                 return committed
+        elif attempt_path.is_file():
+            active_attempt_path, outcome = _effective_attempt(root, attempt)
+            if outcome.get("status") == "proposed" and file_sha256(outcome["program_path"]) == outcome["program_sha256"]:
+                _validate_feedback_artifacts(work=work, review_paths=rotating_review_paths, evaluation_paths=rotating_evaluation_paths)
+            elif outcome.get("status") != "failed":
+                raise ValueError("Candidate proposal requires its frozen Program identity")
         else:
             if file_sha256(pool_source) != work["pool_before"]["sha256"]:
                 raise ValueError("Formal Evolution pool changed after attempt materialization")
-            _validate_feedback_artifacts(
-                work=work,
-                review_paths=rotating_review_paths,
-                evaluation_paths=rotating_evaluation_paths,
-            )
+            _validate_feedback_artifacts(work=work, review_paths=rotating_review_paths, evaluation_paths=rotating_evaluation_paths)
             outcome = propose_candidate(
-                role=role,
-                pool=pool,
-                evaluation_paths=rotating_evaluation_paths,
-                review_paths=rotating_review_paths,
-                attempt=attempt,
-                run_id=run_id,
-                output_root=output_root,
-                completion_client=completion_client,
-                completion_identity=completion_identity,
-                require_bubblewrap=require_bubblewrap,
+                role=role, pool=pool, evaluation_paths=rotating_evaluation_paths,
+                review_paths=rotating_review_paths, attempt=attempt, run_id=run_id,
+                output_root=output_root, completion_client=completion_client,
+                completion_identity=completion_identity, require_bubblewrap=require_bubblewrap,
+                evaluation_epoch=controller.value["evaluation_epoch"],
+                selected_parent_id=work["parent"]["candidate_id"],
+                before_repair=lambda candidate_id: controller.reserve_repair(
+                    operation_id=f"{role}:{candidate_id}:proposal-repair",
+                    candidate_id=f"{role}:{candidate_id}",
+                ),
             )
             if outcome.get("parent_id") != work["parent"]["candidate_id"]:
                 raise ValueError("Reflector attempt selected a different frozen parent")
         key = f"{attempt:03d}"
         if outcome.get("status") == "failed":
+            controller.candidate_failed(
+                operation_id=f"{role}:{outcome.get('candidate_id')}:failed",
+                candidate_id=str(outcome.get("candidate_id")),
+                detail={"phase": "candidate_proposal", "errors": outcome.get("errors", [])},
+            )
             state["attempts"][key] = {
                 "status": "failed",
                 "attempt_path": str(attempt_path),
@@ -707,14 +855,19 @@ def advance_role_attempt(
             work["static_split"]["paper_ids"]
         ):
             raise ValueError("Candidate static Reviews differ from the frozen static split")
+        controller.require_running()
+        active_attempt_path, outcome = _effective_attempt(root, attempt)
         entry = commit_candidate(
             pool=pool,
-            attempt_path=attempt_path,
+            attempt_path=active_attempt_path,
             static_review_paths=candidate_static_review_paths,
             static_evaluation_paths=candidate_static_evaluation_paths,
             pool_path=pool_source,
             memory_snapshot_path=candidate_memory_snapshot_path,
+            evaluation_epoch=controller.value["evaluation_epoch"],
+            evaluation_metadata=_evaluation_metadata(work["static_split"]["path"]),
         )
+        controller.preserve_champion(role, asdict(pool.best(require_snapshot=True)))
         committed = {
             "status": "committed",
             "attempt_path": str(attempt_path),
@@ -784,264 +937,43 @@ def _artifact_paths(
     ]
 
 
-def _paper_failure_review(
-    *,
-    output_root: Path,
-    run_id: str,
-    paper_id: str,
-    role: str,
-    program_version: str,
-    snapshot_id: str,
-    error: Exception,
-) -> Path:
-    identity = {
-        "protocol": "research-v2-specialist-paper-failure-score-v1",
-        "run_id": run_id,
-        "paper_id": paper_id,
-        "role": role,
-        "program_version": program_version,
-        "memory_snapshot_id": snapshot_id,
-        "status": "paper_failure",
-        "review_quality": 1.0,
-    }
-    review_id = value_sha256(identity)
-    payload = {
-        **identity,
-        "review_id": review_id,
-        "review_text": "",
-        "failure": f"{type(error).__name__}: {error}",
-        "retrieval_provenance": {"memory": {}, "s2": {}},
-    }
-    path = (
-        output_root
-        / "reviews"
-        / run_id
-        / paper_id
-        / f"{role}.paper_failure.json"
-    )
-    atomic_write_json(path, payload)
-    return path
+class RecordedStageFailure(RuntimeError):
+    """Replay a classified failure while preserving the original attempt budget."""
+
+    def __init__(self, record: dict[str, Any]):
+        super().__init__(record["error"])
+        self.failure_category = record["category"]
+        self.failure_record = record
 
 
-def _load_paper_failure_review(
-    *,
-    path: Path,
-    run_id: str,
-    paper_id: str,
-    role: str,
-    program_version: str,
-    snapshot_id: str,
-) -> Path:
-    value = read_json(path)
-    identity = {
-        "protocol": "research-v2-specialist-paper-failure-score-v1",
-        "run_id": run_id,
-        "paper_id": paper_id,
-        "role": role,
-        "program_version": program_version,
-        "memory_snapshot_id": snapshot_id,
-        "status": "paper_failure",
-        "review_quality": 1.0,
-    }
-    if any(value.get(name) != expected for name, expected in identity.items()):
-        raise ValueError("Formal Specialist paper-failure identity mismatch")
-    if value.get("review_id") != value_sha256(identity):
-        raise ValueError("Formal Specialist paper-failure hash mismatch")
-    return path
-
-
-def _paper_failure_evaluation(
-    *, output_root: Path, run_id: str, review_path: str | Path
-) -> Path:
-    review = read_json(review_path)
-    payload = {
-        "protocol": "research-v2-internal-evaluation-paper-failure-score-v1",
-        "evaluation_id": value_sha256(
-            {
-                "run_id": run_id,
-                "review_id": review["review_id"],
-                "review_quality": 1.0,
-            }
-        ),
-        "review_id": review["review_id"],
-        "paper_id": review["paper_id"],
-        "role": review["role"],
-        "review_quality": 1.0,
-        "major_missing_points": ["Specialist Review generation failed twice."],
-        "factual_evidence_issues": [],
-        "improvement_suggestions": ["Inspect the saved paper-local failure artifact."],
-        "status": "paper_failure_score",
-        "run_id": run_id,
-    }
-    path = (
-        output_root
-        / "evaluations"
-        / run_id
-        / str(review["paper_id"])
-        / f"{review['role']}.paper_failure.json"
-    )
-    atomic_write_json(path, payload)
-    return path
-
-
-_PAPER_LOCAL_EVALUATION_ERROR_PREFIXES = (
-    "EmptyCompletionOutput:",
-    "JSONDecodeError:",
-    "ValueError: Internal Evaluator output must be a JSON object",
-    "ValueError: Internal Evaluator fields mismatch:",
-    "ValueError: review_quality must be in [1, 5]",
-    "TypeError: major_missing_points must be a list of strings",
-    "TypeError: factual_evidence_issues must be a list of strings",
-    "TypeError: improvement_suggestions must be a list of strings",
-)
-
-
-def _paper_local_evaluation_failure(value: dict[str, Any]) -> bool:
-    errors = value.get("errors")
-    return (
-        value.get("status") == "failed"
-        and isinstance(errors, list)
-        and bool(errors)
-        and all(
-            isinstance(error, str)
-            and error.startswith(_PAPER_LOCAL_EVALUATION_ERROR_PREFIXES)
-            for error in errors
-        )
-    )
-
-
-def _internal_evaluation_failure_score(
-    *,
-    output_root: Path,
-    run_id: str,
-    review_path: str | Path,
-    failure_path: str | Path,
-) -> Path:
-    review = read_json(review_path)
-    source = Path(failure_path).expanduser().resolve()
-    failure = read_json(source)
-    if not _paper_local_evaluation_failure(failure):
-        raise RuntimeError(
-            "Internal Evaluation failure is not paper-local; formal run must stop"
-        )
-    identity = {
-        "protocol": FORMAL_PAPER_FAILURE_SCORE_PROTOCOL,
-        "run_id": run_id,
-        "review_id": review["review_id"],
-        "paper_id": review["paper_id"],
-        "role": review["role"],
-        "review_quality": 1.0,
-        "status": "paper_failure_score",
-        "failure_kind": "internal_evaluation",
-        "source_failure_path": str(source),
-        "source_failure_sha256": file_sha256(source),
-    }
-    payload = {
-        **identity,
-        "evaluation_id": value_sha256(identity),
-        "major_missing_points": ["Internal Evaluator output failed validation twice."],
-        "factual_evidence_issues": [],
-        "improvement_suggestions": [
-            "Inspect the saved paper-local Internal Evaluation failure artifact."
-        ],
-        "errors": list(failure["errors"]),
-    }
-    path = (
-        output_root
-        / "evaluations"
-        / run_id
-        / str(review["paper_id"])
-        / f"{review['role']}.paper_failure.json"
-    )
-    atomic_write_json(path, payload)
-    return path
-
-
-def _load_internal_evaluation_failure_score(
-    *,
-    path: Path,
-    run_id: str,
-    review: dict[str, Any],
-) -> Path:
-    value = read_json(path)
-    expected = {
-        "protocol": FORMAL_PAPER_FAILURE_SCORE_PROTOCOL,
-        "run_id": run_id,
-        "review_id": review["review_id"],
-        "paper_id": review["paper_id"],
-        "role": review["role"],
-        "review_quality": 1.0,
-        "status": "paper_failure_score",
-        "failure_kind": "internal_evaluation",
-    }
-    if {name: value.get(name) for name in expected} != expected:
-        raise ValueError("Formal paper-failure score identity mismatch")
-    identity = {
-        name: value[name]
-        for name in (
-            "protocol",
-            "run_id",
-            "review_id",
-            "paper_id",
-            "role",
-            "review_quality",
-            "status",
-            "failure_kind",
-            "source_failure_path",
-            "source_failure_sha256",
-        )
-    }
-    if value.get("evaluation_id") != value_sha256(identity):
-        raise ValueError("Formal paper-failure score hash mismatch")
-    source = Path(str(value.get("source_failure_path") or "")).resolve()
-    if not source.is_file() or file_sha256(source) != value.get(
-        "source_failure_sha256"
-    ):
-        raise ValueError("Formal paper-failure source artifact differs")
-    if not _paper_local_evaluation_failure(read_json(source)):
-        raise ValueError("Formal paper-failure source is not paper-local")
-    return path
-
-
-_INFRASTRUCTURE_ERROR_MARKERS = (
-    "APIConnectionError",
-    "APITimeoutError",
-    "APIStatusError",
-    "InternalServerError",
-    "RateLimitError",
-    "ConnectionError",
-    "ConnectError",
-    "ReadTimeout",
-    "OutOfMemoryError",
-    "CUDA out of memory",
-    "No space left on device",
-    "bubblewrap was required",
-)
-
-
-def _is_candidate_local_failure(error: Exception) -> bool:
-    if isinstance(error, ReviewPlanError):
-        return True
-    if isinstance(error, TypeError):
-        return True
-    if isinstance(error, TimeoutError):
-        return True
-    message = f"{type(error).__name__}: {error}"
-    if any(marker in message for marker in _INFRASTRUCTURE_ERROR_MARKERS):
-        return False
-    if isinstance(error, SandboxError):
-        return True
-    return isinstance(error, ValueError) and any(
-        marker in str(error)
-        for marker in (
-            "KnowledgeBase.read()",
-            "Review Plan",
-            "plan_review",
-            "selected_s2_ids",
-            "s2_disposition",
-            "context_order",
-        )
-    )
+def _bounded_batch(items: list[Any], run: Callable[[Any], Path], max_workers: int) -> list[Path]:
+    """Keep one bounded window active and stop submitting at the first failure."""
+    if max_workers < 1:
+        raise ValueError("Batch workers must be positive")
+    results: dict[int, Path] = {}
+    iterator = iter(enumerate(items))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        pending = {}
+        for _ in range(min(max_workers, len(items))):
+            index, item = next(iterator)
+            pending[executor.submit(run, item)] = index
+        try:
+            while pending:
+                done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                # Inspect the entire completed window before submitting more work.
+                for future in done:
+                    results[pending.pop(future)] = future.result()
+                for _ in done:
+                    next_item = next(iterator, None)
+                    if next_item is None:
+                        break
+                    index, item = next_item
+                    pending[executor.submit(run, item)] = index
+        except BaseException:
+            for future in pending:
+                future.cancel()
+            raise
+    return [results[index] for index in range(len(items))]
 
 
 def _run_review_batch(
@@ -1061,10 +993,8 @@ def _run_review_batch(
     max_workers: int,
     require_bubblewrap: bool,
     progress: ProgressCallback | None = None,
-    score_program_failures: bool = False,
 ) -> list[Path]:
-    snapshot = read_json(snapshot_path)
-    snapshot_id = str(snapshot.get("snapshot_id") or "")
+    snapshot_id = read_json(snapshot_path)["snapshot_id"]
     progress_lock = threading.Lock()
     finished = 0
 
@@ -1072,107 +1002,59 @@ def _run_review_batch(
         nonlocal finished
         paper_id = str(record["paper_id"])
         final_path = output_root / "reviews" / run_id / paper_id / f"{role}.json"
-        failure_path = final_path.with_name(f"{role}.paper_failure.json")
-        resumed = final_path.is_file() or failure_path.is_file()
-        disposition = "resumed" if resumed else "completed"
+        failure_path = final_path.with_name(f"{role}.stage-failure.json")
+        identity = {"run_id": run_id, "paper_id": paper_id, "role": role,
+                    "program_version": program_version, "snapshot_id": snapshot_id}
+        disposition = "resumed" if final_path.is_file() else "completed"
         try:
-            if failure_path.is_file() and not final_path.is_file():
-                result = _load_paper_failure_review(
-                    path=failure_path,
-                    run_id=run_id,
-                    paper_id=paper_id,
-                    role=role,
-                    program_version=program_version,
-                    snapshot_id=snapshot_id,
+            if failure_path.is_file():
+                failure = read_json(failure_path)
+                if failure.get("identity") != identity:
+                    raise ValueError("Review failure artifact identity mismatch")
+                raise RecordedStageFailure(failure)
+            try:
+                run_specialist_review(
+                    paper_path=record["path"], role=role, program_path=program_path,
+                    snapshot_path=snapshot_path, run_id=run_id, output_root=output_root,
+                    completion_client=completion_client, model_identity=model_identity,
+                    program_version=program_version, frozen_s2_path=frozen_s2_path,
+                    s2_intervention=FORMAL_AUTONOMOUS_S2_INTERVENTION,
+                    embedding_client=embedding_client, embedding_identity=embedding_identity,
+                    require_bubblewrap=require_bubblewrap,
+                    _allow_legacy_missing_require_bubblewrap=(require_bubblewrap is True),
                 )
-                disposition = "paper_failure_score"
-            else:
-                try:
-                    run_specialist_review(
-                        paper_path=record["path"],
-                        role=role,
-                        program_path=program_path,
-                        snapshot_path=snapshot_path,
-                        run_id=run_id,
-                        output_root=output_root,
-                        completion_client=completion_client,
-                        model_identity=model_identity,
-                        program_version=program_version,
-                        frozen_s2_path=frozen_s2_path,
-                        s2_intervention=FORMAL_AUTONOMOUS_S2_INTERVENTION,
-                        embedding_client=embedding_client,
-                        embedding_identity=embedding_identity,
-                        require_bubblewrap=require_bubblewrap,
-                        _allow_legacy_missing_require_bubblewrap=(
-                            require_bubblewrap is True
-                        ),
-                    )
-                    result = final_path
-                except SpecialistReviewPaperFailure as exc:
-                    disposition = "paper_failure_score"
-                    result = _paper_failure_review(
-                        output_root=output_root,
-                        run_id=run_id,
-                        paper_id=paper_id,
-                        role=role,
-                        program_version=program_version,
-                        snapshot_id=snapshot_id,
-                        error=exc,
-                    )
-                except Exception as exc:
-                    if not score_program_failures or not _is_candidate_local_failure(
-                        exc
-                    ):
-                        raise
-                    disposition = "paper_failure_score"
-                    result = _paper_failure_review(
-                        output_root=output_root,
-                        run_id=run_id,
-                        paper_id=paper_id,
-                        role=role,
-                        program_version=program_version,
-                        snapshot_id=snapshot_id,
-                        error=exc,
-                    )
-            return result
+            except Exception as exc:
+                atomic_write_json(failure_path, {
+                    "protocol": "research-v2-stage-failure-v1", "status": "failed",
+                    "identity": identity, **failure_detail(exc, phase="candidate_review"),
+                })
+                raise
+            return final_path
         except BaseException:
-            disposition = "error"
+            disposition = "failed"
             raise
         finally:
             if progress is not None:
                 with progress_lock:
                     finished += 1
                     current = finished
-                progress(
-                    {
-                        "event": "formal_review_progress",
-                        "run_id": run_id,
-                        "role": role,
-                        "paper_id": paper_id,
-                        "disposition": disposition,
-                        "finished": current,
-                        "total": len(records),
-                    }
-                )
+                progress({"event": "formal_review_progress", "run_id": run_id,
+                          "role": role, "paper_id": paper_id, "disposition": disposition,
+                          "finished": current, "total": len(records)})
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        return list(executor.map(run, records))
+    return _bounded_batch(records, run, max_workers)
 
 
 def _run_evaluation_batch(
-    *,
-    records: list[dict[str, Any]],
-    review_paths: list[str | Path],
-    run_id: str,
-    output_root: Path,
-    completion_client: CompletionClient,
-    evaluator_identity: dict[str, Any],
-    max_workers: int,
+    *, records: list[dict[str, Any]], review_paths: list[str | Path], run_id: str,
+    output_root: Path, completion_client: CompletionClient,
+    evaluator_identity: dict[str, Any], max_workers: int,
     progress: ProgressCallback | None = None,
 ) -> list[Path]:
     if len(records) != len(review_paths):
-        raise ValueError("Formal Evaluation batch inputs are not aligned")
+        raise ValueError("Formal Evaluation requires aligned paper and Review sets")
     progress_lock = threading.Lock()
+    stop = threading.Event()
     finished = 0
 
     def run(item: tuple[dict[str, Any], str | Path]) -> Path:
@@ -1180,74 +1062,32 @@ def _run_evaluation_batch(
         record, review_path = item
         review = read_json(review_path)
         role = str(review["role"])
-        final_path = (
-            output_root
-            / "evaluations"
-            / run_id
-            / str(record["paper_id"])
-            / f"{role}.json"
-        )
-        score_path = final_path.with_name(f"{role}.paper_failure.json")
-        resumed = final_path.is_file() or score_path.is_file()
-        disposition = "resumed" if resumed else "completed"
+        final_path = output_root / "evaluations" / run_id / str(record["paper_id"]) / f"{role}.json"
+        disposition = "resumed" if final_path.is_file() else "completed"
         try:
-            if review.get("status") == "paper_failure":
-                disposition = "paper_failure_score"
-                return _paper_failure_evaluation(
-                    output_root=output_root,
-                    run_id=run_id,
-                    review_path=review_path,
-                )
-            if score_path.is_file():
-                disposition = "paper_failure_score"
-                return _load_internal_evaluation_failure_score(
-                    path=score_path,
-                    run_id=run_id,
-                    review=review,
-                )
-            try:
-                run_internal_evaluation(
-                    paper_path=record["path"],
-                    review_path=review_path,
-                    run_id=run_id,
-                    output_root=output_root,
-                    completion_client=completion_client,
-                    evaluator_identity=evaluator_identity,
-                )
-                return final_path
-            except RuntimeError:
-                failure_path = final_path.with_name(f"{role}.failure.json")
-                if not failure_path.is_file():
-                    raise
-                disposition = "paper_failure_score"
-                return _internal_evaluation_failure_score(
-                    output_root=output_root,
-                    run_id=run_id,
-                    review_path=review_path,
-                    failure_path=failure_path,
-                )
+            if review.get("status", "complete") != "complete" or review.get("paper_id") != record["paper_id"]:
+                raise ValueError("Formal Evaluation requires a complete matching Review")
+            run_internal_evaluation(
+                paper_path=record["path"], review_path=review_path, run_id=run_id,
+                output_root=output_root, completion_client=completion_client,
+                evaluator_identity=evaluator_identity,
+                stop_requested=stop.is_set,
+            )
+            return final_path
         except BaseException:
-            disposition = "error"
+            stop.set()
+            disposition = "failed"
             raise
         finally:
             if progress is not None:
                 with progress_lock:
                     finished += 1
                     current = finished
-                progress(
-                    {
-                        "event": "formal_evaluation_progress",
-                        "run_id": run_id,
-                        "role": role,
-                        "paper_id": record["paper_id"],
-                        "disposition": disposition,
-                        "finished": current,
-                        "total": len(records),
-                    }
-                )
+                progress({"event": "formal_evaluation_progress", "run_id": run_id,
+                          "role": role, "paper_id": record["paper_id"], "disposition": disposition,
+                          "finished": current, "total": len(records)})
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        return list(executor.map(run, zip(records, review_paths, strict=True)))
+    return _bounded_batch(list(zip(records, review_paths, strict=True)), run, max_workers)
 
 
 def _canonical_sources(
@@ -1326,6 +1166,7 @@ def _preflight_formal_role_run(
     model_identity: dict[str, Any],
     embedding_identity: dict[str, Any],
     require_bubblewrap: bool,
+    evaluation_epoch: int | None = None,
 ) -> tuple[
     dict[str, Any],
     list[Path],
@@ -1478,7 +1319,8 @@ def _preflight_formal_role_run(
         },
     }
     run_spec["run_spec_id"] = value_sha256(run_spec)
-    atomic_write_json(root / "run-spec.json", run_spec)
+    spec_name = "run-spec.json" if evaluation_epoch is None else f"run-spec.e{evaluation_epoch:03d}.json"
+    atomic_write_json(root / spec_name, run_spec)
     return canonical, canonical_reviews, canonical_evaluations, split_records["static"]
 
 
@@ -1521,7 +1363,7 @@ def preflight_formal_role_evolution(
     return read_json(root / "run-spec.json")
 
 
-def run_formal_role_evolution(
+def _run_formal_role_evolution(
     *,
     role: str,
     run_id: str,
@@ -1548,6 +1390,9 @@ def run_formal_role_evolution(
     output = Path(output_root).expanduser().resolve()
     pool_source = Path(pool_path).expanduser().resolve()
     root = _coordinator_root(output, role, run_id)
+    controller = controller_for_run(output, run_id)
+    controller.require_running()
+    epoch = controller.value["evaluation_epoch"]
     limited_client = BoundedCompletionClient(completion_client, max_workers)
 
     def emit(event: str, **values: Any) -> None:
@@ -1592,6 +1437,8 @@ def run_formal_role_evolution(
                     raise FileNotFoundError(
                         "Completed formal role coordinator has no winner artifact"
                     )
+                validate_pool_evaluation_receipts(completed_pool, expected_epoch=epoch)
+                validate_promotion_policy(existing_state.get("failure_policy", {}))
                 completed_pool.best(require_snapshot=True)
                 emit(
                     "formal_role_complete",
@@ -1606,7 +1453,7 @@ def run_formal_role_evolution(
             for seed_name in SEED_NAMES:
                 emit("formal_seed_started", seed_name=seed_name)
                 program = seed_program_path(seed_name).resolve()
-                version = f"{run_id}-{role.lower()}-seed-{seed_name}"
+                version = _epoch_run_id(f"{run_id}-{role.lower()}-seed-{seed_name}", epoch)
                 snapshot_path = (
                     output / "memories" / role / version / "snapshot.json"
                 )
@@ -1667,15 +1514,23 @@ def run_formal_role_evolution(
                 seed_reviews[seed_name] = review_paths
                 seed_evaluations[seed_name] = evaluation_paths
                 emit("formal_seed_complete", seed_name=seed_name)
-            initialize_pool(
+            seed_pool = initialize_pool(
                 role=role,
                 seed_static_evaluations=seed_evaluations,
                 seed_static_reviews=seed_reviews,
                 seed_memory_snapshots=seed_snapshots,
                 pool_path=pool_source,
+                evaluation_epoch=epoch,
+                evaluation_metadata=_evaluation_metadata(static_split_path),
+                failure_policy_path=controller.path,
             )
+            controller.preserve_champion(role, asdict(seed_pool.best(require_snapshot=True)))
             emit("formal_seed_pool_complete", pool_path=str(pool_source))
         for attempt in range(1, MAX_MUTATION_ATTEMPTS + 1):
+            controller.require_running()
+            state = _state(root, role=role, run_id=run_id)
+            if state.get("attempts", {}).get(f"{attempt:03d}", {}).get("status") in {"committed", "failed", "candidate_failed"}:
+                continue
             emit("formal_attempt_started", attempt=attempt)
             work = materialize_role_attempt(
                 role=role,
@@ -1721,7 +1576,7 @@ def run_formal_role_evolution(
                 program_path=parent["program_path"],
                 snapshot_path=parent["memory_snapshot_path"],
                 program_version=parent["program_version"],
-                run_id=work["artifact_run_ids"]["rotating_reviews"],
+                run_id=_epoch_run_id(work["artifact_run_ids"]["rotating_reviews"], epoch),
                 output_root=output,
                 completion_client=limited_client,
                 model_identity=model_identity,
@@ -1731,12 +1586,11 @@ def run_formal_role_evolution(
                 max_workers=max_workers,
                 require_bubblewrap=require_bubblewrap,
                 progress=progress,
-                score_program_failures=True,
             )
             rotating_evaluations = _run_evaluation_batch(
                 records=rotating_records,
                 review_paths=rotating_reviews,
-                run_id=work["artifact_run_ids"]["rotating_evaluations"],
+                run_id=_epoch_run_id(work["artifact_run_ids"]["rotating_evaluations"], epoch),
                 output_root=output,
                 completion_client=limited_client,
                 evaluator_identity=model_identity,
@@ -1762,127 +1616,138 @@ def run_formal_role_evolution(
                 )
                 continue
             candidate_id = str(attempt_state["candidate_id"])
-            candidate_program = str(attempt_state["program_path"])
-            candidate_version = f"{run_id}-{role.lower()}-{candidate_id}"
-            candidate_snapshot = (
-                output / "memories" / role / candidate_version / "snapshot.json"
-            )
-            try:
-                build_memory_snapshot(
-                    role=role,
-                    program_path=candidate_program,
-                    program_version=candidate_version,
-                    review_paths=canonical_reviews,
-                    evaluation_paths=canonical_evaluations,
-                    output_path=candidate_snapshot,
-                    seed_kind=str(attempt_state["seed_kind"]),
-                    embedding_client=embedding_client,
-                    embedding_identity=embedding_identity,
-                    completion_client=(
-                        limited_client
-                        if attempt_state["seed_kind"] == "experience_learner"
-                        else None
-                    ),
-                    completion_identity=(
-                        model_identity
-                        if attempt_state["seed_kind"] == "experience_learner"
-                        else None
-                    ),
-                    require_bubblewrap=require_bubblewrap,
-                )
-            except Exception as exc:
-                if not _is_candidate_local_failure(exc):
+            while True:
+                active_path, active = _effective_attempt(root, attempt)
+                revision = int(active.get("runtime_repair", {}).get("revision", 0))
+                candidate_program = active["program_path"]
+                candidate_version = _epoch_run_id(f"{run_id}-{role.lower()}-{candidate_id}-r{revision}", epoch)
+                candidate_snapshot = output / "memories" / role / candidate_version / "snapshot.json"
+                phase = "candidate_memory_build"
+                try:
+                    build_memory_snapshot(
+                        role=role, program_path=candidate_program, program_version=candidate_version,
+                        review_paths=canonical_reviews, evaluation_paths=canonical_evaluations,
+                        output_path=candidate_snapshot, seed_kind=str(attempt_state["seed_kind"]),
+                        embedding_client=embedding_client, embedding_identity=embedding_identity,
+                        completion_client=limited_client if attempt_state["seed_kind"] == "experience_learner" else None,
+                        completion_identity=model_identity if attempt_state["seed_kind"] == "experience_learner" else None,
+                        require_bubblewrap=require_bubblewrap,
+                    )
+                    phase = "candidate_static_review"
+                    static_reviews = _run_review_batch(
+                        records=static_records, role=role, program_path=candidate_program,
+                        snapshot_path=candidate_snapshot, program_version=candidate_version,
+                        run_id=_epoch_run_id(work["artifact_run_ids"]["candidate_static_reviews"] + f"-r{revision}", epoch),
+                        output_root=output, completion_client=limited_client, model_identity=model_identity,
+                        frozen_s2_path=frozen_s2_path, embedding_client=embedding_client,
+                        embedding_identity=embedding_identity, max_workers=max_workers,
+                        require_bubblewrap=require_bubblewrap, progress=progress,
+                    )
+                    phase = "candidate_static_evaluation"
+                    static_evaluations = _run_evaluation_batch(
+                        records=static_records, review_paths=static_reviews,
+                        run_id=_epoch_run_id(work["artifact_run_ids"]["candidate_static_evaluations"] + f"-r{revision}", epoch),
+                        output_root=output, completion_client=limited_client, evaluator_identity=model_identity,
+                        max_workers=max_workers, progress=progress,
+                    )
+                    committed = advance_role_attempt(
+                        work_path=root / f"attempt-{attempt:03d}.work.json", pool_path=pool_source,
+                        output_root=output, completion_client=limited_client, completion_identity=model_identity,
+                        rotating_review_paths=rotating_reviews, rotating_evaluation_paths=rotating_evaluations,
+                        candidate_memory_snapshot_path=candidate_snapshot,
+                        candidate_static_review_paths=static_reviews,
+                        candidate_static_evaluation_paths=static_evaluations,
+                        require_bubblewrap=require_bubblewrap,
+                    )
+                    emit("formal_attempt_complete", attempt=attempt, status=committed["status"], candidate_id=candidate_id)
+                    break
+                except (EvolutionPaused, EvolutionBudgetExhausted):
                     raise
-                failed = record_candidate_failure(
-                    work_path=root / f"attempt-{attempt:03d}.work.json",
-                    pool_path=pool_source,
-                    output_root=output,
-                    phase="candidate_memory_build",
-                    error=exc,
-                )
-                emit(
-                    "formal_attempt_complete",
-                    attempt=attempt,
-                    status=failed["status"],
-                    phase=failed["phase"],
-                )
-                continue
-            emit(
-                "formal_candidate_memory_complete",
-                attempt=attempt,
-                candidate_id=candidate_id,
-            )
-            try:
-                static_reviews = _run_review_batch(
-                    records=static_records,
-                    role=role,
-                    program_path=candidate_program,
-                    snapshot_path=candidate_snapshot,
-                    program_version=candidate_version,
-                    run_id=work["artifact_run_ids"]["candidate_static_reviews"],
-                    output_root=output,
-                    completion_client=limited_client,
-                    model_identity=model_identity,
-                    frozen_s2_path=frozen_s2_path,
-                    embedding_client=embedding_client,
-                    embedding_identity=embedding_identity,
-                    max_workers=max_workers,
-                    require_bubblewrap=require_bubblewrap,
-                    progress=progress,
-                )
-            except Exception as exc:
-                if not _is_candidate_local_failure(exc):
+                except Exception as exc:
+                    if failure_detail(exc, phase=phase)["category"] == "candidate":
+                        repaired = _repair_runtime_candidate(
+                            root=root, attempt=attempt, error=exc, phase=phase, controller=controller,
+                            completion_client=limited_client, completion_identity=model_identity,
+                            require_bubblewrap=require_bubblewrap,
+                        )
+                        if repaired:
+                            continue
+                        failed = record_candidate_failure(
+                            work_path=root / f"attempt-{attempt:03d}.work.json", pool_path=pool_source,
+                            output_root=output, phase=phase, error=exc,
+                        )
+                        emit("formal_attempt_complete", attempt=attempt, status=failed["status"], phase=phase)
+                        break
                     raise
-                failed = record_candidate_failure(
-                    work_path=root / f"attempt-{attempt:03d}.work.json",
-                    pool_path=pool_source,
-                    output_root=output,
-                    phase="candidate_static_review",
-                    error=exc,
-                )
-                emit(
-                    "formal_attempt_complete",
-                    attempt=attempt,
-                    status=failed["status"],
-                    phase=failed["phase"],
-                )
-                continue
-            static_evaluations = _run_evaluation_batch(
-                records=static_records,
-                review_paths=static_reviews,
-                run_id=work["artifact_run_ids"]["candidate_static_evaluations"],
-                output_root=output,
-                completion_client=limited_client,
-                evaluator_identity=model_identity,
-                max_workers=max_workers,
-                progress=progress,
-            )
-            committed = advance_role_attempt(
-                work_path=root / f"attempt-{attempt:03d}.work.json",
-                pool_path=pool_source,
-                output_root=output,
-                completion_client=limited_client,
-                completion_identity=model_identity,
-                rotating_review_paths=rotating_reviews,
-                rotating_evaluation_paths=rotating_evaluations,
-                candidate_memory_snapshot_path=candidate_snapshot,
-                candidate_static_review_paths=static_reviews,
-                candidate_static_evaluation_paths=static_evaluations,
-                require_bubblewrap=require_bubblewrap,
-            )
-            emit(
-                "formal_attempt_complete",
-                attempt=attempt,
-                status=committed["status"],
-                candidate_id=candidate_id,
-            )
-        result = read_json(root / "coordinator.json")
+        result = _state(root, role=role, run_id=run_id)
+        _, final_pool = _pool(pool_source, role)
+        _record_winner_if_complete(root=root, pool_source=pool_source, pool=final_pool, role=role,
+                                   run_id=run_id, attempt=MAX_MUTATION_ATTEMPTS, state=result)
+        _write_state(root, result)
         emit(
             "formal_role_complete",
             resumed=False,
             winner_id=result.get("winner_id"),
         )
         return result
+
+
+def run_formal_role_evolution(
+    *, role: str, run_id: str, pool_path: str | Path,
+    canonical_evaluation_summary_path: str | Path, canonical_split_path: str | Path,
+    static_split_path: str | Path, rotating_split_path: str | Path,
+    frozen_s2_path: str | Path, output_root: str | Path,
+    completion_client: CompletionClient, model_identity: dict[str, Any],
+    embedding_client: Any, embedding_identity: dict[str, Any], max_workers: int = 8,
+    require_bubblewrap: bool = True, progress: ProgressCallback | None = None,
+    failure_limits: FailureLimits | None = None,
+    repair_evidence_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Run within a persistent round gate, retaining the Champion during repair."""
+    from .formal_recovery import affected_population, population_ids, recover_formal_round
+
+    output = Path(output_root).resolve()
+    root = _coordinator_root(output, role, run_id)
+    controller = FailureController(output / "runs" / run_id / "failure-policy.json", limits=failure_limits)
+    arguments = dict(
+        run_id=run_id, canonical_evaluation_summary_path=canonical_evaluation_summary_path,
+        canonical_split_path=canonical_split_path, static_split_path=static_split_path,
+        rotating_split_path=rotating_split_path, frozen_s2_path=frozen_s2_path,
+        output_root=output, completion_client=completion_client, model_identity=model_identity,
+        embedding_client=embedding_client, embedding_identity=embedding_identity,
+        max_workers=max_workers, require_bubblewrap=require_bubblewrap, progress=progress,
+    )
+    try:
+        if controller.value["status"] == "reevaluating" and repair_evidence_path is None:
+            repair_evidence_path = controller.value["repair_evidence"]["path"]
+        if repair_evidence_path is not None and controller.value["status"] in {"paused", "reevaluating"}:
+            recover_formal_round(**arguments, repair_evidence_path=repair_evidence_path)
+        controller.require_running()
+        return _run_formal_role_evolution(role=role, pool_path=pool_path, **arguments)
+    except EvolutionBudgetExhausted:
+        controller.end("budget_exhausted")
+    except EvolutionPaused:
+        pass
+    except Exception as exc:
+        detail = failure_detail(exc, phase=getattr(exc, "failure_phase", "formal_execution"))
+        try:
+            population = affected_population(output, run_id)
+            discovered = population_ids(population)
+        except Exception as capture_error:
+            discovered = []
+            detail["population_capture_error"] = f"{type(capture_error).__name__}: {capture_error}"
+        # Reuse the original affected set during interrupted multi-pool recovery.
+        affected = sorted(set(discovered) | set(controller_for_run(output, run_id).value["pending_candidates"]))
+        controller.pause(operation_id=f"{role}:shared:{detail['fingerprint']}", detail=detail, affected=affected)
+    for affected_role in ROLES:
+        affected_root = _coordinator_root(output, affected_role, run_id)
+        if affected_root == root or (affected_root / "coordinator.json").is_file():
+            state = _state(affected_root, role=affected_role, run_id=run_id)
+            _write_state(affected_root, state)
+    result = _state(root, role=role, run_id=run_id)
+    if progress is not None:
+        progress({"event": "formal_role_stopped", "role": role, "status": result["status"]})
+    return result
 
 
 def run_formal_evolution_roles(
@@ -1901,9 +1766,12 @@ def run_formal_evolution_roles(
     max_workers: int = 8,
     require_bubblewrap: bool = True,
     progress: ProgressCallback | None = None,
+    failure_limits: FailureLimits | None = None,
+    repair_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run all five roles serially while reusing one embedding/model client pair."""
     output = Path(output_root).expanduser().resolve()
+    FailureController(output / "runs" / run_id / "failure-policy.json", limits=failure_limits)
     summary_path = output / "runs" / run_id / "formal-evolution.json"
     if summary_path.is_file():
         state = read_json(summary_path)
@@ -1943,6 +1811,7 @@ def run_formal_evolution_roles(
                 max_workers=max_workers,
                 require_bubblewrap=require_bubblewrap,
                 progress=progress,
+                repair_evidence_path=repair_evidence_path,
             )
         except BaseException as exc:
             state["status"] = "interrupted"
@@ -1960,6 +1829,11 @@ def run_formal_evolution_roles(
             "pool_path": str(pool_path),
         }
         state["updated_at"] = _utc_now()
+        if result.get("status") != "complete":
+            state["status"] = result.get("status", "paused")
+            state["failed_role"] = role
+            atomic_write_json(summary_path, state, immutable=False)
+            return state
         atomic_write_json(summary_path, state, immutable=False)
     state["status"] = "complete"
     state["completed_at"] = _utc_now()

@@ -1,0 +1,242 @@
+{
+  "scope": "Historical diagnosis; no generation or evaluator requests",
+  "inputs": {
+    "development": {
+      "papers": 275,
+      "empty_text": 0,
+      "source_text_over_60000_chars": 20,
+      "canonical_context_clipped": 231,
+      "source_files_present": 275,
+      "source_hash_matches": 275
+    },
+    "coco1300": {
+      "papers": 1300,
+      "empty_text": 0,
+      "source_text_over_60000_chars": 116,
+      "canonical_context_clipped": 1127
+    },
+    "native_paired_input": {
+      "papers": 902,
+      "source_present": 902,
+      "same_source_text": 902,
+      "agentreview_clipped": 767,
+      "native_recorded_truncations": 0
+    }
+  },
+  "evolution": {
+    "CLAR": {
+      "entries": 20,
+      "source_sha_matches": 20,
+      "successful_children": 17,
+      "unchanged_nonplan_ast": 17
+    },
+    "ORIG": {
+      "entries": 22,
+      "source_sha_matches": 22,
+      "successful_children": 19,
+      "unchanged_nonplan_ast": 19
+    },
+    "POL": {
+      "entries": 22,
+      "source_sha_matches": 22,
+      "successful_children": 19,
+      "unchanged_nonplan_ast": 19
+    },
+    "QUAL": {
+      "entries": 21,
+      "source_sha_matches": 21,
+      "successful_children": 18,
+      "unchanged_nonplan_ast": 18
+    },
+    "SIGN": {
+      "entries": 22,
+      "source_sha_matches": 22,
+      "successful_children": 19,
+      "unchanged_nonplan_ast": 19
+    }
+  },
+  "historical_table1": {
+    "memory_concat": {
+      "input_label": "candidate_classified_common902",
+      "absolute_scores": {
+        "BLEU": 0.9069930687712073,
+        "ROUGE-L": 8.993941285001336,
+        "BERT.": 81.51484627417081,
+        "Correct.": 2.5338579811417947,
+        "Thoro.": 2.0523007234204598,
+        "Ground.": 4.104781502065312,
+        "Verify.": 3.4098278076936652,
+        "Clarity": 4.553444606022213,
+        "Average": 3.328677002044519,
+        "Paper.": 3.9760266370699218,
+        "Complete.": 195.81587702937603
+      },
+      "paper_counts": {
+        "BLEU": 902,
+        "ROUGE-L": 902,
+        "BERT.": 902,
+        "Correct.": 902,
+        "Thoro.": 902,
+        "Ground.": 902,
+        "Verify.": 902,
+        "Clarity": 902,
+        "Average": 902,
+        "Paper.": 901,
+        "Complete.": 902
+      },
+      "category_coverage": {
+        "item_count": 902,
+        "metric_counts": {
+          "Complete.": 902
+        },
+        "metrics": {
+          "Complete.": 195.81587702937603
+        }
+      }
+    },
+    "memory_meta": {
+      "input_label": "candidate_classified_common902",
+      "absolute_scores": {
+        "BLEU": 1.3033091061327293,
+        "ROUGE-L": 14.249792867173216,
+        "BERT.": 82.61879895981029,
+        "Correct.": 2.35289392179636,
+        "Thoro.": 1.904204941400063,
+        "Ground.": 3.859116865519306,
+        "Verify.": 3.181947307224777,
+        "Clarity": 4.523359025798049,
+        "Average": 3.1646674277619398,
+        "Paper.": 3.8254988913525625,
+        "Complete.": 135.19090346464242
+      },
+      "paper_counts": {
+        "BLEU": 902,
+        "ROUGE-L": 902,
+        "BERT.": 902,
+        "Correct.": 902,
+        "Thoro.": 902,
+        "Ground.": 902,
+        "Verify.": 901,
+        "Clarity": 902,
+        "Average": 902,
+        "Paper.": 902,
+        "Complete.": 902
+      },
+      "category_coverage": {
+        "item_count": 902,
+        "metric_counts": {
+          "Complete.": 902
+        },
+        "metrics": {
+          "Complete.": 135.19090346464242
+        }
+      }
+    },
+    "no_memory_concat": {
+      "input_label": "candidate_classified_common902",
+      "absolute_scores": {
+        "BLEU": 0.9264135299861851,
+        "ROUGE-L": 9.410640428677189,
+        "BERT.": 81.42989924768122,
+        "Correct.": 2.5339380901187973,
+        "Thoro.": 2.0198907430337587,
+        "Ground.": 4.0069389252039,
+        "Verify.": 3.3263682117340685,
+        "Clarity": 4.537942419123128,
+        "Average": 3.283361955394934,
+        "Paper.": 3.8976640711902153,
+        "Complete.": 190.99128562382458
+      },
+      "paper_counts": {
+        "BLEU": 902,
+        "ROUGE-L": 902,
+        "BERT.": 902,
+        "Correct.": 902,
+        "Thoro.": 902,
+        "Ground.": 902,
+        "Verify.": 902,
+        "Clarity": 902,
+        "Average": 902,
+        "Paper.": 899,
+        "Complete.": 902
+      },
+      "category_coverage": {
+        "item_count": 902,
+        "metric_counts": {
+          "Complete.": 902
+        },
+        "metrics": {
+          "Complete.": 190.99128562382458
+        }
+      }
+    },
+    "no_memory_meta": {
+      "input_label": "candidate_classified_common902",
+      "absolute_scores": {
+        "BLEU": 1.25727763229109,
+        "ROUGE-L": 14.324208551330733,
+        "BERT.": 82.58798801053125,
+        "Correct.": 2.379569878265771,
+        "Thoro.": 1.8787088420273768,
+        "Ground.": 3.843057537480403,
+        "Verify.": 3.2146389910947573,
+        "Clarity": 4.569271356341278,
+        "Average": 3.1748799834399146,
+        "Paper.": 3.802439024390259,
+        "Complete.": 130.26006158212505
+      },
+      "paper_counts": {
+        "BLEU": 902,
+        "ROUGE-L": 902,
+        "BERT.": 902,
+        "Correct.": 901,
+        "Thoro.": 901,
+        "Ground.": 901,
+        "Verify.": 893,
+        "Clarity": 901,
+        "Average": 901,
+        "Paper.": 902,
+        "Complete.": 902
+      },
+      "category_coverage": {
+        "item_count": 902,
+        "metric_counts": {
+          "Complete.": 902
+        },
+        "metrics": {
+          "Complete.": 130.26006158212505
+        }
+      }
+    },
+    "native": {
+      "input_label": "classify_successful",
+      "absolute_scores": {
+        "BLEU": 1.3550371378278996,
+        "ROUGE-L": 14.452063363422269,
+        "BERT.": 83.50368419789379,
+        "Correct.": null,
+        "Thoro.": null,
+        "Ground.": null,
+        "Verify.": null,
+        "Clarity": null,
+        "Average": null,
+        "Paper.": 4.2536645962733255,
+        "Complete.": null
+      },
+      "paper_counts": {
+        "BLEU": 805,
+        "ROUGE-L": 805,
+        "BERT.": 805,
+        "Correct.": 0,
+        "Thoro.": 0,
+        "Ground.": 0,
+        "Verify.": 0,
+        "Clarity": 0,
+        "Average": 0,
+        "Paper.": 805,
+        "Complete.": 0
+      },
+      "category_coverage": null
+    }
+  }
+}

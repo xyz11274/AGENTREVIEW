@@ -1,5 +1,17 @@
 # AgentReview Research Core v2
 
+## 0915 共享 M★ 实验
+
+新实验使用 `python -m agentreview.research_v2 shared-experiment`，包含显式协议预检、共享候选池与五个独立 Memory 库、最终完整评审的标准 CoCo `Paper.` 选优和冻结最终测试。结果在运行后通过 `experiment-report` 另外生成。
+
+配置模板为 [shared_memory_experiment.pending.json](configs/shared_memory_experiment.pending.json)。填写并冻结实际数据、生成与搜索条件后按 [共享 M★ 实现说明](../docs/SHARED_MSTAR_IMPLEMENTATION.md) 执行；本轮自动化验收使用测试替身，部署模型验收另行执行。
+
+另一台服务器的代码获取、配套 CoCo 版本恢复、外部资产与运行步骤见 [0915 部署交接](../docs/DEPLOYMENT_0915.md)。
+
+## 历史角色运行协议
+
+以下角色内评与独立角色候选池描述保留旧实验协议身份。
+
 Research Core v2 的正式主链只有五个固定 Specialist Reviewer：`QUAL / CLAR / SIGN / ORIG / POL`。
 
 ```text
