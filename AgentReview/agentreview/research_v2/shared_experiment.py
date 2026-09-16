@@ -201,7 +201,8 @@ class LocalSharedBackend:
 
     def _candidate_check(self, candidate):
         source = bound(candidate["program"])
-        errors = validate_program(source, require_bubblewrap=self.require_bubblewrap)
+        errors = validate_program(source, require_bubblewrap=self.require_bubblewrap,
+                                  memory_runtime=self.memory_runtime(), seed_kind=candidate["seed_kind"])
         if errors:
             raise CandidateContractError("; ".join(errors))
         actual = program_capability_manifest(path=source)
@@ -362,7 +363,9 @@ class LocalSharedBackend:
                   "plan_review function and its imports, the fixed host task, and role-local memory boundaries. Each revised "
                   "program builds fresh role-local knowledge bases. Keep canonical Query query_text and reviewer_dimension "
                   "fields for host planning. Use only the toolkit interfaces present in the parent, return read results "
-                  "within 6000 characters, and respect the configured memory call budgets. Program imports and methods "
+                  "within 6000 characters, and respect the configured memory call budgets. For evolved programs, "
+                  "reserve one build LLM call for host KnowledgeItem induction; KnowledgeBase.write may use only "
+                  "the remaining build_llm_calls minus one calls. Program imports and methods "
                   "must satisfy the existing sandbox interface. Return a JSON object with change (text) and program "
                   "(the complete Python source).\n\nMemory runtime: " + json.dumps(self.memory_runtime()) +
                   "\n\nParent source:\n" + source.read_text(encoding="utf-8") +

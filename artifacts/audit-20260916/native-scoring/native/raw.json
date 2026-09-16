@@ -1,0 +1,10 @@
+{
+  "failure": {
+    "category": "shared_runtime",
+    "error_type": "InternalServerError",
+    "message": "Error code: 502",
+    "stage": "coco_native_generation"
+  },
+  "request_id": "6ad5218ee6b93c390c30fb67e2d3e5a1e7c2a454dcf9a3db7b3ace5f210e90f7",
+  "status": "failed"
+}

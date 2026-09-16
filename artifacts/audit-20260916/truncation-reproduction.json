@@ -1,0 +1,5 @@
+{
+  "finish_reason": "length",
+  "returned_as_success": "The methodology has several unresolved",
+  "reproduction": "mock transport, actual OpenAICompletionClient.complete"
+}

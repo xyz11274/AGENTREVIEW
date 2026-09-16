@@ -1,0 +1,24 @@
+{
+  "artifact": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/audit-20260916/native-scoring-direct/scoring/stages/classify/result-001.jsonl",
+    "sha256": "5c3759bed33d5416c62b5011b7d66e5b229b10b16eab5b4f7ffec852d3cdb2e5"
+  },
+  "input": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/audit-20260916/native-scoring-direct/scoring/stages/split/result-001.jsonl",
+    "sha256": "e4395e8f1ac112e046a80eeca88d1f6def4b894b1c978a85800fd508e62af411"
+  },
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/audit-20260916/native-scoring-direct/scoring/request.json",
+    "sha256": "2b9afa3913049635a3699eac6cb7d448531b7808f47091ee198655b71d2645ac"
+  },
+  "service_runtime": {
+    "argv_sha256": "1b58113127c070aa4ec4def64a51e059dcf37e207097b931cc4dac332f3ebcd6",
+    "base_url": "http://127.0.0.1:13098/v1",
+    "max_model_len": 32768,
+    "model": "Qwen3-8B-Classify",
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+    "pid": 2440325,
+    "start_identity": "505048497"
+  },
+  "stage": "classify"
+}

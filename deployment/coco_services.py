@@ -28,13 +28,14 @@ def command(config, role):
               "--host", "127.0.0.1", "--port", str(service["port"]),
               "--dtype", "bfloat16", "--tensor-parallel-size", str(len(gpus)),
               "--max-model-len", str({"split": 65536, "classify": 32768, "judge": 65536}[role]),
-              "--gpu-memory-utilization", str(service.get("gpu_memory_utilization", 0.9))]
+              "--gpu-memory-utilization", str(service.get("gpu_memory_utilization", 0.9)),
+              "--max-num-seqs", str(service.get("max_num_seqs", 8))]
     if role == "split":
         # Current vLLM accepts the original YaRN setting via HF overrides.
         result += ["--hf-overrides", json.dumps({"rope_scaling": {
             "rope_type": "yarn", "factor": 4.0, "original_max_position_embeddings": 32768}})]
     if role == "judge":
-        result += ["--max-num-seqs", "8", "--reasoning-parser", "qwen3"]
+        result += ["--reasoning-parser", "qwen3"]
     # Split/Classify retain think text in content for the upstream parsers.
     return result
 
@@ -71,6 +72,10 @@ def manage(config, role, action):
             probe.bind(("127.0.0.1", service["port"]))
         environment = dict(os.environ, CUDA_VISIBLE_DEVICES=",".join(map(str, service["gpus"])),
                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
+        # FlashInfer invokes tools such as ninja by name. Calling a venv's Python
+        # does not activate that environment's executable search path.
+        serving_bin = str(Path(config["serving_python"]).expanduser().absolute().parent)
+        environment["PATH"] = serving_bin + os.pathsep + environment.get("PATH", os.defpath)
         with (root / f"{role}.log").open("ab") as log:
             child = subprocess.Popen(args, env=environment, stdout=log, stderr=subprocess.STDOUT,
                                      cwd=root, start_new_session=True)

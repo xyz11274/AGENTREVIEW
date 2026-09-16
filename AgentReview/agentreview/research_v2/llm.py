@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import inspect
+import ipaddress
 import json
 import os
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from typing import Any, Protocol
 
 from .config import ModelConfig
@@ -57,7 +59,7 @@ def complete_with_response_format(
 
 class OpenAICompletionClient:
     def __init__(self, config: ModelConfig):
-        from openai import OpenAI
+        from openai import DefaultHttpxClient, OpenAI
 
         self.config = config
         self._mode_lease: Qwen27BModeLease | None = None
@@ -68,10 +70,17 @@ class OpenAICompletionClient:
             self._mode_lease = Qwen27BModeLease("reviewer")
         api_key = os.environ.get(config.api_key_env) or "local-not-required"
         try:
+            hostname = urlparse(config.base_url).hostname or ""
+            local = hostname == "localhost"
+            try:
+                local = local or ipaddress.ip_address(hostname).is_loopback
+            except ValueError:
+                pass
             self.client = OpenAI(
                 base_url=config.base_url,
                 api_key=api_key,
                 max_retries=0,
+                http_client=DefaultHttpxClient(trust_env=False) if local else None,
             )
         except BaseException:
             lease = self._mode_lease

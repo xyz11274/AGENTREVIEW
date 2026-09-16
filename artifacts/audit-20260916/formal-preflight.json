@@ -1,0 +1,6 @@
+{
+  "status": "blocked",
+  "error": "ExperimentProtocolError",
+  "message": "experiment requires shared-memory-experiment-v1 and status=frozen",
+  "stage": "formal protocol load"
+}

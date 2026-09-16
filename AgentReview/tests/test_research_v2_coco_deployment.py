@@ -36,6 +36,7 @@ def test_launch_parameters_preserve_original_split_and_classify(tmp_path):
     classify = tool.command(config, "classify")
     assert classify[classify.index("--max-model-len") + 1] == "32768"
     assert "--reasoning-parser" not in classify
+    assert classify[classify.index("--max-num-seqs") + 1] == "8"
     config["services"]["judge"]["gpus"] = []
     with pytest.raises(ValueError, match="allocated GPU"):
         tool.command(config, "judge")
@@ -51,6 +52,8 @@ def test_managed_child_is_the_only_process_signaled(tmp_path, monkeypatch):
     child = tool.manage(config, "judge", "start")["process"]["pid"]
     try:
         assert tool.manage(config, "judge", "status")["running"]
+        environment = dict(item.split(b"=", 1) for item in Path(f"/proc/{child}/environ").read_bytes().split(b"\0") if b"=" in item)
+        assert environment[b"PATH"].decode().split(os.pathsep)[0] == str(Path(sys.executable).absolute().parent)
         signals = []
         real_kill = os.kill
         monkeypatch.setattr(tool.os, "kill", lambda pid, sig: (signals.append((pid, sig)), real_kill(pid, sig)))

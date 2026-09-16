@@ -852,6 +852,8 @@ def validate_program(
     path: str | Path,
     *,
     require_bubblewrap: bool,
+    memory_runtime: dict[str, Any] | None = None,
+    seed_kind: str | None = None,
 ) -> list[str]:
     from agentreview.reviewer_runtime.sandbox import SandboxError
     from .failure_policy import failure_detail
@@ -861,6 +863,17 @@ def validate_program(
     if errors:
         return errors
     _program_capabilities(source)
+    runtime = memory_runtime or {}
+    build_calls = runtime.get("build_llm_calls", 1)
+    read_calls = runtime.get("read_llm_calls", 1)
+    if any(type(value) is not int or value < 0 for value in (build_calls, read_calls)):
+        raise ValueError("Candidate validation requires nonnegative memory call budgets")
+    # The build budget also pays for host KnowledgeItem induction for learned
+    # and evolved programs; only the remainder is available inside KB.write.
+    induction_calls = int(seed_kind is not None and seed_kind not in {
+        "no_memory", "vector_search", "llm_summarizer",
+    })
+    write_calls = max(0, build_calls - induction_calls)
 
     class SmokeLLM:
         def llm_completion(self, messages, **kwargs):
@@ -868,7 +881,7 @@ def validate_program(
 
     toolkit = MemoryToolkit(
         llm_client=SmokeLLM(),
-        max_llm_calls_per_operation=1,
+        max_llm_calls_per_operation=max(write_calls, read_calls),
         s2_retrieval_pool={
             "protocol-smoke-paper": [
                 {"paperId": "protocol-smoke-s2", "title": "Frozen smoke evidence"}
@@ -885,9 +898,9 @@ def validate_program(
             program = sandbox.program_interface()
             item = _sample_dataclass(program.KnowledgeItem)
             query = _sample_dataclass(program.Query)
-            with toolkit.operation("protocol_smoke_write", max_llm_calls=1):
+            with toolkit.operation("protocol_smoke_write", max_llm_calls=write_calls):
                 sandbox.write(item, "traceable Review Experience")
-            with toolkit.operation("protocol_smoke_read", max_llm_calls=1):
+            with toolkit.operation("protocol_smoke_read", max_llm_calls=read_calls):
                 result = sandbox.read(query)
             if not isinstance(result, str):
                 errors.append("KnowledgeBase.read() did not return str")
