@@ -14,10 +14,10 @@ from typing import Literal
 
 
 PROTOCOL = "research-v2-qwen27b-mode-lease-v1"
-LEASE_PATH = Path(
-    "/data0/xyj/shengao/AgentReview_0915/artifacts/research_v2/runtime/"
-    "qwen38_27b_mode.lock"
-)
+LEASE_PATH = Path(os.environ.get(
+    "AGENTREVIEW_QWEN27B_MODE_LEASE_PATH",
+    str(Path(__file__).resolve().parents[3] / "artifacts/research_v2/runtime/qwen38_27b_mode.lock"),
+)).expanduser().absolute()
 _STATE_LOCK = threading.RLock()
 _STATE_MODE: Literal["reviewer", "judge"] | None = None
 _STATE_DESCRIPTOR: int | None = None

@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
-import importlib.util
 import json
-import os
 import sys
 import urllib.request
 from urllib.parse import urlparse
@@ -31,11 +29,18 @@ def _load_standard(root: Path, name: str) -> Any:
     return importlib.import_module(name)
 
 
-def _runner(root: Path) -> Any:
-    spec = importlib.util.spec_from_file_location("standard_candidate_contract", root / "scripts/run_official_candidate.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def normalize_table(table: dict[str, Any]) -> dict[str, Any]:
+    """Map upstream display names without changing values, counts or raw output."""
+    aliases = {"BERT-F1": "BERT.", "Correctness": "Correct.", "Thoroughness": "Thoro.",
+               "Grounding": "Ground.", "Verifiability": "Verify."}
+    result = dict(table)
+    for field in ("absolute_scores", "paper_counts"):
+        values = dict(table[field])
+        for original, canonical in aliases.items():
+            if original in values:
+                values[canonical] = values.pop(original)
+        result[field] = values
+    return result
 
 
 def _service_ready(service: dict[str, Any]) -> dict[str, Any]:
@@ -71,9 +76,9 @@ def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
     utils = importlib.import_module("src.utils")
     service = config["services"][stage]
     return utils.LLMClient(api_key="local-vllm", base_url=service["base_url"], model_name=service["model"],
-        max_workers={"split": 64, "classify": 128, "judge": 4}[stage],
-        cache=True, allow_local_cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
-        cache_version=value_sha256({"request": request, "stage": stage}), cache_identity=request)
+        max_workers={"split": 64, "classify": 128, "judge": 128}[stage],
+        cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
+        cache_version=value_sha256({"request": request, "stage": stage}))
 
 
 def _previous_stage(request: dict[str, Any], stage: str) -> Path:
@@ -87,23 +92,12 @@ def _previous_stage(request: dict[str, Any], stage: str) -> Path:
 def _split_or_classify(request: dict[str, Any], config: dict[str, Any], stage: str, output: Path) -> dict[str, Any]:
     root = Path(config["coco_root"])
     module = _load_standard(root, "_2_split" if stage == "split" else "_3_classify")
-    contract = _runner(root)
     source = Path(request["output_root"]) / "candidate.jsonl" if stage == "split" else _previous_stage(request, "split")
     target = output.with_suffix(".jsonl")
-    records = read_jsonl(source)
     service = config["services"][stage]
-    model_root = Path(service["model_identity"]["root"])
-    if stage == "split":
-        preflight = contract._preflight_split_prompts(candidate_records=records, model_root=model_root,
-            python_executable=Path(config["python_executable"]), expected_transformers_version=None,
-            max_model_len=40960, max_completion_tokens=8192)
-    else:
-        preflight = contract._preflight_classify_prompts(split_records=records, model_root=model_root,
-            python_executable=Path(config["python_executable"]), expected_transformers_version=None,
-            max_model_len=32768, max_completion_tokens=4096)
     args = SimpleNamespace(input_jsonl=str(source), output_jsonl=str(target), model=service["model"],
         base_url=service["base_url"], max_workers=64 if stage == "split" else 128,
-        max_completion_tokens=8192 if stage == "split" else 4096, effort="medium")
+        effort="medium")
     client = _client(config, stage, request)
     module.client = client
     try:
@@ -113,8 +107,7 @@ def _split_or_classify(request: dict[str, Any], config: dict[str, Any], stage: s
             module.classify_opinions(args)
     finally:
         client.shutdown()
-    contract._validate_processed_output(target, stage=stage, expected_records=records)
-    return {"stage": stage, "input": _binding(source), "artifact": _binding(target), "prompt_preflight": preflight}
+    return {"stage": stage, "input": _binding(source), "artifact": _binding(target)}
 
 
 def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config: dict[str, Any],
@@ -136,36 +129,33 @@ def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config
         if set(values) == set(paper_ids):
             continue
         raise ValueError("Standard CoCo input loading requires complete cohort coverage")
-    evaluation.preflight_all_judge_prompts(judge_client=judge_client, human_ref_data=human_refs,
-        ai_category_data=ai_categories, ai_paper_level_data=ai_paper, category_level_eval=True,
-        category_incorrect_eval=False, paper_level_eval=True)
     average, metric_details = evaluation.compute_full_text_metrics([ai_full[p] for p in paper_ids], [full_refs[p] for p in paper_ids])
-    category = evaluation.evaluate_categories_batch(human_refs, ai_categories, judge_client, ref_label_for_eval="category_correct", require_complete=True)
-    paper = evaluation.evaluate_full_judge_batch(human_refs, ai_paper, judge_client, ref_label_for_eval="paper_correct", require_complete=True)
+    category = evaluation.evaluate_categories_batch(human_refs, ai_categories, judge_client, ref_label_for_eval="category_correct")
+    paper = evaluation.evaluate_full_judge_batch(human_refs, ai_paper, judge_client, ref_label_for_eval="paper_correct")
     if set(category) == set(paper_ids) and set(paper) == set(paper_ids):
         pass
     else:
         raise ValueError("Standard CoCo judging requires complete cohort coverage")
     full = {"average": average, "count": len(paper_ids)}
     table = evaluation.build_table_1_summary("candidate", full, category, paper, ai_categories, human_categories)
+    raw_table = table
+    table = normalize_table(raw_table)
     details = {}
     for index, paper_id in enumerate(paper_ids):
         single_full = {"average": {metric: values[index] for metric, values in metric_details.items()}, "count": 1}
         single_category, single_paper = {paper_id: category[paper_id]}, {paper_id: paper[paper_id]}
         single_ai, single_human = {paper_id: ai_categories[paper_id]}, {paper_id: human_categories[paper_id]}
         single_table = evaluation.build_table_1_summary(paper_id, single_full, single_category, single_paper, single_ai, single_human)
-        details[paper_id] = {"table_1_summary": single_table, "paper_judge_scores": paper[paper_id]["judge_scores"],
+        details[paper_id] = {"raw_table_1_summary": single_table, "table_1_summary": normalize_table(single_table), "paper_judge_scores": paper[paper_id]["judge_scores"],
                              "category_judge_scores": category[paper_id], "full_text_metrics": single_full["average"]}
     return {"paper_ids": paper_ids, "papers": details, "table_1_summary": table,
-            "judge_prompt_preflight": evaluation.build_judge_prompt_preflight_summary(candidate_count=len(paper_ids),
-                prompt_token_counts=list(getattr(judge_client, "official_judge_prompt_token_counts", [])))}
+            "raw_table_1_summary": raw_table}
+
 
 
 def _evaluate(request: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     evaluation = _load_standard(Path(config["coco_root"]), "_4_evaluation")
     references = read_json(_bound_file(request["inputs"]["references"]))
-    os.environ["COCO_BERT_SCORE_MODEL_ROOT"] = config["bert_score_model"]["root"]
-    os.environ["COCO_BERT_SCORE_NUM_LAYERS"] = "17"
     with Qwen27BModeLease("judge"):
         client = _client(config, "judge", request)
         try:
@@ -194,11 +184,11 @@ def main() -> int:
         _validate_inputs(_bound_file(request["inputs"]["reviews"]), _bound_file(request["inputs"]["references"]), request["partition"])
         service_role = "judge" if args.stage == "evaluation" else args.stage
         before_runtime = _service_ready(config["services"][service_role])
-        required_context = {"split": 40960, "classify": 32768, "judge": 65536}[service_role]
+        required_context = {"split": 65536, "classify": 32768, "judge": 65536}[service_role]
         if before_runtime["max_model_len"] == required_context:
             pass
         else:
-            raise ValueError("Scoring service context window differs from the standard prompt preflight")
+            raise ValueError("Scoring service context window differs from the original deployment contract")
         result = _evaluate(request, config) if args.stage == "evaluation" else _split_or_classify(request, config, args.stage, target)
         after_runtime = _service_ready(config["services"][service_role])
         if before_runtime != after_runtime:

@@ -175,7 +175,7 @@ def standard_pure_functions():
     """Compile the exact benchmark pure functions without importing model stacks."""
     root = Path(__file__).resolve().parents[3] / "CoCoReviewBench"
     if root.is_dir() is False:
-        root = Path("/data0/xyj/shengao/CoCoReviewBench")
+        root = Path(__file__).resolve().parents[3] / "CoCoReviewBench"
     source = ast.parse((root / "src/evaluation/_4_evaluation.py").read_text())
     names = {"calculate_scores_from_parsed", "compute_table_average_from_scores", "is_numeric_score", "summarize_full_judge_results"}
     namespace = {"Any": Any, "Dict": Dict, "List": List, "Tuple": Tuple, "Optional": Optional,
@@ -220,7 +220,7 @@ def test_standard_formula_and_adapter_aggregation_match_with_mixed_applicability
 def test_worker_calls_actual_standard_reference_filter_judge_and_table(tmp_path, monkeypatch):
     import json
     from agentreview.research_v2.development_coco_worker import _load_standard, evaluate_loaded_standard
-    root = Path("/data0/xyj/shengao/CoCoReviewBench")
+    root = Path(__file__).resolve().parents[3] / "CoCoReviewBench"
     evaluation = _load_standard(root, "_4_evaluation")
     original_selection = evaluation.benchmark_reviewer_selection_file
     benchmark_row = {"id": "paper", "sentence_texts": ["Held out reviewer opinion.", "The reference accurately explains the mathematical claim."],
@@ -243,8 +243,8 @@ def test_worker_calls_actual_standard_reference_filter_judge_and_table(tmp_path,
             return 100, 65536
         def submit_task(self, prompt, **kwargs):
             assert kwargs["temperature"] == 0.0
-            assert kwargs["max_completion_tokens"] == 8192
-            assert kwargs["enable_thinking"] is False
+            assert kwargs["reasoning_effort"] == "medium"
+            assert "max_completion_tokens" not in kwargs
             assert "The reference accurately explains" in prompt
             return prompt
         def get_result(self, key):
@@ -264,6 +264,11 @@ def test_worker_calls_actual_standard_reference_filter_judge_and_table(tmp_path,
     assert result["papers"]["paper"]["paper_judge_scores"]["average"] == 26 / 6
     assert result["table_1_summary"]["absolute_scores"]["Complete."] == 100.0
     assert result["table_1_summary"]["absolute_scores"]["BLEU"] == 10.0
+    assert result["table_1_summary"]["absolute_scores"]["BERT."] == 30.0
+    assert result["table_1_summary"]["paper_counts"]["BERT."] == 1
+    assert result["raw_table_1_summary"]["absolute_scores"]["BERT-F1"] == 30.0
+    assert result["raw_table_1_summary"]["absolute_scores"]["BERT."] is None
+    assert set(result["table_1_summary"]["absolute_scores"]) == set(coco.COLUMNS)
 
 
 def test_model_digest_detects_equal_length_weight_changes(tmp_path):

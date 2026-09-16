@@ -9,3 +9,8 @@ outputs*/
 
 # Research v2 generated immutable run/data artifacts (hashes are recorded in logs)
 artifacts/research_v2/
+
+# Local deployment assets and validation caches
+/artifacts/deployment/
+__pycache__/
+.pytest_cache/

@@ -16,6 +16,34 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .io import atomic_write_json, file_sha256, read_json, read_jsonl, value_sha256, write_immutable_jsonl
+from . import judge_lease
+
+ORIGINAL_REQUEST_SETTINGS = {
+    "split": {"max_completion_tokens": 32768, "effort": "medium", "max_workers": 64},
+    "classify": {"max_completion_tokens": 12288, "effort": "medium", "max_workers": 128},
+    "judge": {"max_completion_tokens": 32768, "effort": "medium", "temperature": 0, "max_workers": 128},
+}
+
+
+def _python_runtime(executable: str | Path) -> dict[str, Any]:
+    """Bind the scoring interpreter and the actual packages used by CoCo."""
+    script = (
+        "import importlib.metadata as m,json,sys; "
+        "names=['openai','torch','transformers','numpy','requests','nltk','rouge-score','bert-score']; "
+        "print(json.dumps({'python':sys.version,'packages':{n:m.version(n) for n in names}}))"
+    )
+    import json
+    observed = json.loads(subprocess.check_output([str(executable), "-s", "-B", "-c", script], text=True))
+    return {"executable_sha256": file_sha256(executable), **observed}
+
+
+def _validate_bert_cache(value: dict[str, Any]) -> None:
+    """Original BERTScore loads roberta-large by name; bind its offline resolution."""
+    cache = Path(value["hf_home"]) / "hub/models--roberta-large"
+    revision = (cache / "refs/main").read_text().strip()
+    snapshot = (cache / "snapshots" / revision).resolve(strict=True)
+    if snapshot != Path(value["bert_score_model"]["root"]):
+        raise ValueError("Original BERTScore roberta-large cache resolves to a different frozen model")
 
 SCORING_PROTOCOL = "research-v2-standard-coco-v1"
 RECEIPT_PROTOCOL = "research-v2-development-coco-receipt-v1"
@@ -58,9 +86,9 @@ def _ids(value: Any) -> list[str]:
 
 def _source_identity(root: Path) -> list[dict[str, str]]:
     paths = sorted(set((root / "src").rglob("*.py")) | set((root / "src").rglob("*.txt")))
-    if all((root / "src/evaluation" / name).is_file() for name in ("_2_split.py", "_3_classify.py", "_4_evaluation.py", "table_1_contract.py")):
+    if all((root / "src/evaluation" / name).is_file() for name in ("_2_split.py", "_3_classify.py", "_4_evaluation.py")):
         return [_binding(path) for path in paths]
-    raise ValueError("CoCo source requires the standard split, classify, evaluation and Table-1 modules")
+    raise ValueError("CoCo source requires the upstream split, classify and evaluation modules")
 
 
 def _model_identity(root: str | Path) -> dict[str, Any]:
@@ -74,7 +102,7 @@ def _model_identity(root: str | Path) -> dict[str, Any]:
 def materialize_scoring_config(*, coco_root: str | Path, python_executable: str | Path,
                                output_path: str | Path, services: dict[str, Any],
                                bert_score_model_root: str | Path, timeout_seconds: int = 3600,
-                               max_stage_attempts: int = 3) -> dict[str, Any]:
+                               max_stage_attempts: int = 3, hf_home: str | Path | None = None) -> dict[str, Any]:
     """Freeze explicitly supplied services and all standard source/model files."""
     root = Path(coco_root).expanduser().resolve(strict=True)
     configured = {}
@@ -86,7 +114,11 @@ def materialize_scoring_config(*, coco_root: str | Path, python_executable: str 
             "python_executable": str(Path(python_executable).expanduser().absolute()),
             "services": configured, "source_files": _source_identity(root),
             "bert_score_model": _model_identity(bert_score_model_root),
-            "timeout_seconds": timeout_seconds, "max_stage_attempts": max_stage_attempts}
+            "timeout_seconds": timeout_seconds, "max_stage_attempts": max_stage_attempts,
+            "hf_home": str(Path(hf_home or Path.home() / ".cache/huggingface").expanduser().resolve()),
+            "lease_path": str(judge_lease.LEASE_PATH),
+            "request_settings": ORIGINAL_REQUEST_SETTINGS,
+            "python_runtime": _python_runtime(python_executable)}
     value = {**body, "config_id": value_sha256(body)}
     _validate_config(value)
     atomic_write_json(output_path, value, reject_symlink=True)
@@ -97,6 +129,14 @@ def _validate_config(value: dict[str, Any]) -> None:
     body = {key: item for key, item in value.items() if key != "config_id"}
     if value.get("protocol") != CONFIG_PROTOCOL or value.get("config_id") != value_sha256(body):
         raise ValueError("Scoring configuration requires its canonical protocol and self hash")
+    if value.get("request_settings") != ORIGINAL_REQUEST_SETTINGS:
+        raise ValueError("Scoring configuration must retain upstream request settings")
+    if value.get("lease_path") != str(judge_lease.LEASE_PATH):
+        raise ValueError("Reviewer and Judge require the same mode lease path")
+    hf_home = Path(value.get("hf_home", ""))
+    if not hf_home.is_absolute() or not hf_home.is_dir():
+        raise ValueError("Scoring requires an existing absolute HF_HOME")
+    _validate_bert_cache(value)
     for key in ("max_stage_attempts", "timeout_seconds"):
         if type(value.get(key)) is int and value[key] >= 1:
             continue
@@ -109,6 +149,8 @@ def _validate_config(value: dict[str, Any]) -> None:
         pass
     else:
         raise ValueError("Scoring Python requires an existing absolute executable")
+    if value.get("python_runtime") != _python_runtime(executable):
+        raise ValueError("Frozen scoring Python environment changed")
     for stage in ("split", "classify", "judge"):
         service = value["services"][stage]
         if urlparse(service["base_url"]).hostname in {"127.0.0.1", "localhost", "::1"} and service["model"]:
@@ -226,6 +268,11 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
         result_path = stage_root / f"result-{number:03d}.json"
         command = [config["python_executable"], "-s", "-B", str(worker), "--request", str(request_path), "--stage", stage, "--output", str(result_path)]
         environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "CUDA_VISIBLE_DEVICES": "", "TOKENIZERS_PARALLELISM": "false"}
+        environment.update(HF_HOME=config.get("hf_home", str(Path.home() / ".cache/huggingface")),
+                           HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
+                           NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
+        if config.get("lease_path"):
+            environment["AGENTREVIEW_QWEN27B_MODE_LEASE_PATH"] = config["lease_path"]
         try:
             with log_path.open("wb") as log:
                 result = subprocess.run(command, cwd=stage_root, env=environment, stdout=log, stderr=subprocess.STDOUT, timeout=config["timeout_seconds"], check=False)

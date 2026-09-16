@@ -4,7 +4,11 @@
 
 ## 标准实现与输入
 
-独立 worker 导入本地 CoCoReviewBench 原有 `split_all`、`classify_opinions`、参考评审加载、Judge、类别覆盖与 `build_table_1_summary` 函数，调用原有提示预算预检。标准类别、Split 规则、Judge 提示、`X` 语义与 Table-1 公式由 CoCo 源码定义。
+当前 worker 对接上游 `2580687` 加本地 Qwen Judge 连接配置的版本，导入原有 `split_all`、`classify_opinions`、参考评审加载、Judge、类别覆盖与 `build_table_1_summary` 函数。它不再依赖历史修改版增加的 runner、Table-1 模块、缓存构造参数或提示预算预检函数。标准类别、Split 规则、Judge 提示、解析、重试、`X` 语义与 Table-1 公式由 CoCo 源码定义。
+
+请求沿用原版 Python 入口：Split 输出 32768、Classify 输出 12288、Judge 输出 32768；客户端并发分别为 64、128、128，均保留原版 `medium` reasoning 设置。Judge 温度为 0；原版客户端将本地请求的 `medium` 转为 `enable_thinking=true`。Split 服务上下文恢复为 65536，并使用原版 YaRN 设置，Classify 为 32768，Judge 为 65536。
+
+原版 Table-1 中长指标名与预置缩写混用。适配器只在读取结果后映射 `BERT-F1→BERT.`、`Correctness→Correct.`、`Thoroughness→Thoro.`、`Grounding→Ground.`、`Verifiability→Verify.`，同时映射数值及计数。未映射的原始表保存在 `raw_table_1_summary`，不重算任何分数。
 
 开发数据的参考评审选择通过 `benchmark_reviewer_selection_file` 输入路径绑定到冻结的分区文件；留出参考评审的算法仍为原有 `left_out_one`。CoCoReviewBench 仓库与原始参考资产保持原样。分区文件包含该分区完整参考资产，固定评价与轮换反馈每次评分使用各自预定论文清单。
 
@@ -54,9 +58,13 @@ Review 清单：
 
 `materialize_scoring_config` 接收明确配置的 CoCo 路径、Python、Split/Classify/Judge 本地服务、各模型目录、BERTScore 模型目录、阶段时间上限和重试上限，冻结源码与模型文件身份。Judge 固定为本地 `qwen3.8-27b`，其请求参数沿用标准 CoCo。阶段执行前后验证实际服务模型路径、模型名、上下文与服务实例。
 
+新增 `hf_home` 参数用于原版 BERTScore 的按名称离线加载。`roberta-large` 缓存的 `refs/main` 必须指向冻结的模型 snapshot；评分配置还记录原版请求设置、Python 版本与评分包版本。Reviewer/Judge 默认共享当前仓库 `artifacts/research_v2/runtime/qwen38_27b_mode.lock`，跨进程或多仓库部署可统一设置 `AGENTREVIEW_QWEN27B_MODE_LEASE_PATH`；评分配置与运行进程的路径必须一致。
+
+参考 selection 优先从 `archive/coco-0915-0467b41` 恢复，并与历史运行中相同哈希的 selection、人工参考及 benchmark 文件配对核验。分区 selection 是同一主文件的确定性子集，不重新随机选择。所有基线与候选复用同一个冻结参考清单。
+
 ## 产物和准入
 
-`assessment.json` 包含完整论文清单、逐篇文件绑定、原始输入绑定、程序与 Memory 身份、分区、评价 epoch、评分协议、逐篇指标与有效分母、全体聚合和 `mean_score`。`papers/*.json` 保存逐篇结果，`stages/*` 保存原始阶段结果、日志和持久化尝试预算，`cache/*` 保存分区、候选和 epoch 隔离的模型响应。
+`assessment.json` 包含完整论文清单、逐篇文件绑定、原始输入绑定、程序与 Memory 身份、分区、评价 epoch、评分协议、逐篇指标与有效分母、全体聚合和 `mean_score`。`papers/*.json` 保存逐篇结果，`stages/*` 保存原始阶段结果、日志和持久化尝试预算，`cache/*` 保存分区、候选和 epoch 隔离的模型响应，行为沿用原版客户端。原版可能保存失败响应；适配器不改写缓存或重试算法，也不将缺失评分填成有效分数。
 
 `validate_assessment_receipt` 验证完整清单、所有文件 hash、逐篇与原始标准评分的一致性、冻结请求身份、适用性、真实分母与聚合。`Paper.` 使用标准五质量维度中的适用值；标准 Judge 额外 `average` 包含 actionability，保留其原始诊断身份。
 
@@ -65,5 +73,7 @@ Review 清单：
 独立报告使用 `experiment_report.py` 读取这些原始产物；生成与评分阶段只保存各自原始结果。
 
 ## 验证范围
+
+当前本机的原版适配工作记录与部署命令见 [原版 CoCo 本机适配](ORIGINAL_COCO_LOCAL_DEPLOYMENT.md)。下述 30 项为历史修改版交付记录，不是当前原版接口的验收结论。
 
 CoCo 适配、真实共享 backend 与独立报告的针对测试合跑为 **30 passed**。包含实际 CoCo 参考评审过滤、Judge 提示参数、Table-1 聚合与 `X` 语义，以及五角色独立 Memory、完整 Receipt、新 epoch、角色诊断失败暂停。测试中的模型和 embedding 返回使用 fixture；部署模型的真实端到端实验继续由正式实验验收执行。
