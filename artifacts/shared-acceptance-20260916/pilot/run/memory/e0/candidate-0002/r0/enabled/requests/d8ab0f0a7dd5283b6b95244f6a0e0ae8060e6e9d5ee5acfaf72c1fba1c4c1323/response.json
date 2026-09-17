@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"topic\": \"QUAL Review of Rotation-Equivariant Networks vs Adversarial Robustness\",\n  \"content\": \"Reviewer dimension: QUAL\\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks. The authors empirically compare Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet) against Standard CNNs on the MNIST dataset. The central finding is that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they exhibit increased vulnerability to small pixel-wise adversarial attacks compared to standard CNNs, particularly as the range of rotation augmentation increases.\\n\\nDimension score (1-10): 4\\nConfidence (1-5): 4\\n\\nOpinions:\\n- subcategory: QUAL-EXP\\n  polarity: weakness\\n  claim: The experimental evaluation is limited to a single, relatively simple dataset (MNIST), which undermines the generalizability of the claim that equivariant networks are inherently more vulnerable to pixel-wise attacks.\\n  evidence_anchors: [SRC-010]\\n  confidence: 5\\n  actionable_suggestion: Expand experiments to more complex datasets such as CIFAR-10 or ImageNet subsets to verify if the observed trade-off persists in higher-dimensional feature spaces.\\n- subcategory: QUAL-REP\\n  polarity: weakness\\n  claim: The paper lacks critical implementation details necessary for reproducibility, including specific hyperparameters (learning rate, optimizer, batch size, number of epochs) and code availability.\\n  evidence_anchors: [SRC-010]\\n  confidence: 5\\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters, random seeds, and make the code publicly available to ensure the results can be independently verified.\\n- subcategory: QUAL-STA\\n  polarity: weakness\\n  claim: The reported results appear to be based on single runs without statistical significance tests, confidence intervals, or variance reporting, making it difficult to assess the reliability of the observed performance differences.\\n  evidence_anchors: [SRC-005]\\n  confidence: 4\\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs and include statistical significance tests to validate that the observed robustness gaps are not due to random initialization variance.\\n- subcategory: QUAL-CMP\\n  polarity: weakness\\n  claim: The comparison against prior work is incomplete, as the paper does not compare against recent state-of-the-art adversarially robust models or other equivariant architectures that might mitigate the observed vulnerability.\\n  evidence_anchors: [SRC-004]\\n  confidence: 4\\n  actionable_suggestion: Include comparisons with other recent equivariant architectures (e.g., Steerable CNNs) and discuss how the findings relate to existing literature on adversarial robustness in symmetric networks.\\n- subcategory: QUAL-MET\\n  polarity: neutral\\n  claim: The methodological approach of using data augmentation to induce rotation robustness and then testing against pixel-wise attacks is a valid and clear experimental design for isolating the trade-off.\\n  evidence_anchors: [SRC-006]\\n  confidence: 4\\n  actionable_suggestion: N/A\\n\\nKey questions for the authors:\\n- Why was MNIST the only dataset chosen for this study, and do you have preliminary results on more complex datasets like CIFAR-10?\\n- Can you provide the specific hyperparameters and code used to train the GCNNs and StdCNNs to ensure reproducibility?\\n- Did you perform multiple runs with different random seeds, and if so, what was the variance in the reported accuracy drops?\\n- How do your findings compare to other equivariant architectures like Steerable CNNs, which were cited but not fully evaluated in the main experiments?\\n\\nRecommendation: Weak Reject\",\n  \"reviewer_dimension\": \"QUAL\",\n  \"source\": \"fe3cf8aa15a56e8f7bd09f92f8541452d8c1fef5c46b28429f7de1aa4735cc77\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789590793,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-9d5e2a337cff6ca0",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 923,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1938,
+      "prompt_tokens_details": null,
+      "total_tokens": 2861
+    }
+  },
+  "raw_model_output": "{\n  \"topic\": \"QUAL Review of Rotation-Equivariant Networks vs Adversarial Robustness\",\n  \"content\": \"Reviewer dimension: QUAL\\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks. The authors empirically compare Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet) against Standard CNNs on the MNIST dataset. The central finding is that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they exhibit increased vulnerability to small pixel-wise adversarial attacks compared to standard CNNs, particularly as the range of rotation augmentation increases.\\n\\nDimension score (1-10): 4\\nConfidence (1-5): 4\\n\\nOpinions:\\n- subcategory: QUAL-EXP\\n  polarity: weakness\\n  claim: The experimental evaluation is limited to a single, relatively simple dataset (MNIST), which undermines the generalizability of the claim that equivariant networks are inherently more vulnerable to pixel-wise attacks.\\n  evidence_anchors: [SRC-010]\\n  confidence: 5\\n  actionable_suggestion: Expand experiments to more complex datasets such as CIFAR-10 or ImageNet subsets to verify if the observed trade-off persists in higher-dimensional feature spaces.\\n- subcategory: QUAL-REP\\n  polarity: weakness\\n  claim: The paper lacks critical implementation details necessary for reproducibility, including specific hyperparameters (learning rate, optimizer, batch size, number of epochs) and code availability.\\n  evidence_anchors: [SRC-010]\\n  confidence: 5\\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters, random seeds, and make the code publicly available to ensure the results can be independently verified.\\n- subcategory: QUAL-STA\\n  polarity: weakness\\n  claim: The reported results appear to be based on single runs without statistical significance tests, confidence intervals, or variance reporting, making it difficult to assess the reliability of the observed performance differences.\\n  evidence_anchors: [SRC-005]\\n  confidence: 4\\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs and include statistical significance tests to validate that the observed robustness gaps are not due to random initialization variance.\\n- subcategory: QUAL-CMP\\n  polarity: weakness\\n  claim: The comparison against prior work is incomplete, as the paper does not compare against recent state-of-the-art adversarially robust models or other equivariant architectures that might mitigate the observed vulnerability.\\n  evidence_anchors: [SRC-004]\\n  confidence: 4\\n  actionable_suggestion: Include comparisons with other recent equivariant architectures (e.g., Steerable CNNs) and discuss how the findings relate to existing literature on adversarial robustness in symmetric networks.\\n- subcategory: QUAL-MET\\n  polarity: neutral\\n  claim: The methodological approach of using data augmentation to induce rotation robustness and then testing against pixel-wise attacks is a valid and clear experimental design for isolating the trade-off.\\n  evidence_anchors: [SRC-006]\\n  confidence: 4\\n  actionable_suggestion: N/A\\n\\nKey questions for the authors:\\n- Why was MNIST the only dataset chosen for this study, and do you have preliminary results on more complex datasets like CIFAR-10?\\n- Can you provide the specific hyperparameters and code used to train the GCNNs and StdCNNs to ensure reproducibility?\\n- Did you perform multiple runs with different random seeds, and if so, what was the variance in the reported accuracy drops?\\n- How do your findings compare to other equivariant architectures like Steerable CNNs, which were cited but not fully evaluated in the main experiments?\\n\\nRecommendation: Weak Reject\",\n  \"reviewer_dimension\": \"QUAL\",\n  \"source\": \"fe3cf8aa15a56e8f7bd09f92f8541452d8c1fef5c46b28429f7de1aa4735cc77\"\n}",
+  "tokens": {
+    "input_tokens": 1938,
+    "max_model_len": 65536
+  }
+}

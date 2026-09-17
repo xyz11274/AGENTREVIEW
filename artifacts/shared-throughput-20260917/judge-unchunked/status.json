@@ -1,0 +1,7 @@
+{
+  "status": "not_started",
+  "reason": "Controlled on/off comparison unavailable: its required common full-context batch ceiling failed initialization",
+  "valid_full_flow_reviews": 0,
+  "failed_scores": null,
+  "evidence": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/chunked-prefill-feasibility.json"
+}

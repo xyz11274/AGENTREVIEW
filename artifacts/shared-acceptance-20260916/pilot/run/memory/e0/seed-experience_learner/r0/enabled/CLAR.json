@@ -1,0 +1,226 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "e824e906cd25d96c55da8022cbce6aada67464221f03d13523f9d5c21e800e99",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-experience_learner/program.py",
+    "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+    "program_version": "seed-experience_learner",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "CLAR",
+    "seed_kind": "experience_learner",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "91ce142a98e5a63d0ef3b7934931ea2cf192468018ad4428344687ebbd4a21d1",
+        "review_sha256": "95fe50aeb57ccf28579a7184e26dd3517d8f8301642a1a64f446a0c47d5e067c"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 1,
+        "review_id": "e098fe1e34ab13cccd26b757eb908bcdca4da7a0e7a6e3de3c125778515fc977",
+        "review_sha256": "e4ba9d8e43ac122186fd4d9e089d5a2478f3a1a54d33fa2218b8d266c5deb18e"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 2,
+        "review_id": "a1183db720fe87be3b06a24097874fcd207b5eae4513e4317d94366712d7fbc2",
+        "review_sha256": "86ffc0b2e24da5362330e3b5d2f1259212e5455d98fce101172a8952ea652e5f"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 3,
+        "review_id": "4c13c5fcae6cba5603e7b978bc7cbe7f8f755049a6b4384f0e4c7ad3f1ef72ce",
+        "review_sha256": "e06d6dbbeda66f437dd558b74b8ae5be4727f964a4d95264197d5cd49be483e6"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "e824e906cd25d96c55da8022cbce6aada67464221f03d13523f9d5c21e800e99",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+  },
+  "completion_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "seed-experience_learner",
+      "item_id": "154f70a239f51be509592627a084bec51dc5e5d9f285ab737cc27581003a8b65",
+      "payload": {
+        "evidence_to_check": "Check Section 2 (Methodology/Experiments) and Appendix for a comprehensive hyperparameter table. Look for specific numerical values for architecture changes when comparing 'parameter equivalent' models. Ensure that any claim of equivalence is backed by a clear definition of the modifications made.",
+        "failure_mode": "The paper describes experimental conditions qualitatively (e.g., 'parameter equivalent', 'standard training') without providing the specific quantitative details (hyperparameters, exact layer dimensions) necessary for an expert to reproduce the results, leading to a lack of transparency and reproducibility.",
+        "review_heuristic": "Verify that the 'reproducibility' claim is supported by explicit, complete tables of hyperparameters (learning rate, optimizer, batch size, epochs) and precise architectural modifications (e.g., exact filter counts) rather than vague descriptions like 'doubling filters'.",
+        "reviewer_dimension": "CLAR",
+        "trigger": "Paper presents empirical results with complex experimental setups (e.g., parameter-equivalent models, multiple attack types) but lacks detailed hyperparameters or architecture specifications.",
+        "why_it_matters": "Clarity in experimental setup is a core component of the CLAR dimension. Without precise details, the paper fails to 'adequately inform the reader' and does not meet the standard of providing enough information for reproduction, which is a critical weakness in empirical ML papers."
+      },
+      "role": "CLAR",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "91ce142a98e5a63d0ef3b7934931ea2cf192468018ad4428344687ebbd4a21d1"
+      ]
+    },
+    {
+      "derivation_version": "seed-experience_learner",
+      "item_id": "9159032ccc4e742f91cd2ef46f9f8d779b74023917c9fae0319b76970248a081",
+      "payload": {
+        "evidence_to_check": "Compare notation in the 'Notation' or 'Method' section with its usage in subsequent equations, figure captions, and experimental descriptions. Look for missing function wrappers (e.g., $CE(x, y)$ vs $CE(c(x), y)$) or interchangeable use of terms with different definitions.",
+        "failure_mode": "Inconsistent notation or ambiguous terminology leads to confusion about the method's mechanics, making it difficult for readers to reproduce the results or understand the specific role of each variable.",
+        "review_heuristic": "Verify that mathematical symbols and terms are defined once and used consistently throughout the paper, particularly in loss functions and algorithmic steps. Check if distinct concepts (like latent vs. image space perturbations) are clearly distinguished in definitions and usage.",
+        "reviewer_dimension": "CLAR",
+        "trigger": "Inconsistent mathematical notation or ambiguous terminology for key variables (e.g., using the same symbol for different concepts or omitting function definitions in loss terms).",
+        "why_it_matters": "Clarity in notation and terminology is fundamental for reproducibility and accurate understanding of the proposed method. Inconsistencies can obscure the actual algorithmic steps and hinder expert evaluation."
+      },
+      "role": "CLAR",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "e098fe1e34ab13cccd26b757eb908bcdca4da7a0e7a6e3de3c125778515fc977"
+      ]
+    },
+    {
+      "derivation_version": "seed-experience_learner",
+      "item_id": "e4f18667b4a7a2b54e46262c42827dce96fc6a368a0b312f7115aa0eeb810c92",
+      "payload": {
+        "evidence_to_check": "Check if the arguments in equation definitions match their usage in subsequent text and if complex symbols (like calligraphic vs. standard fonts) are explicitly distinguished.",
+        "failure_mode": "Confusing or inconsistent notation leads to ambiguity in understanding the theoretical derivation and may obscure the logical flow of the proof.",
+        "review_heuristic": "Verify that mathematical symbols are defined before use and remain consistent throughout the text, especially when transitioning between equations and prose descriptions.",
+        "reviewer_dimension": "CLAR",
+        "trigger": "Inconsistent mathematical notation or undefined symbols in derivations",
+        "why_it_matters": "Clear and consistent notation is essential for reproducibility and for expert readers to follow the mathematical arguments without unnecessary confusion."
+      },
+      "role": "CLAR",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "a1183db720fe87be3b06a24097874fcd207b5eae4513e4317d94366712d7fbc2"
+      ]
+    },
+    {
+      "derivation_version": "seed-experience_learner",
+      "item_id": "f8497e3939a960657b48bbb83b51e6644ee12e1f6fa5cc7551b7a4aa71205d86",
+      "payload": {
+        "evidence_to_check": "Pseudocode blocks, algorithm descriptions, and experimental setup sections for missing hyperparameters or undefined logic steps.",
+        "failure_mode": "Incomplete algorithm presentation leading to non-reproducibility and ambiguity in how the method is implemented.",
+        "review_heuristic": "Verify that algorithmic descriptions (pseudocode or text) explicitly define all control flow parameters (such as min_samples_split, max_depth) and edge-case handling (e.g., multi-class splits, continuous features). If these are missing, flag as a clarity weakness regarding reproducibility.",
+        "reviewer_dimension": "CLAR",
+        "trigger": "Algorithm presentation lacks critical implementation details (e.g., stopping criteria, hyperparameters, or handling of edge cases) necessary for reproduction.",
+        "why_it_matters": "A superbly written paper provides enough information for an expert reader to reproduce its results; missing implementation details hinder this goal and obscure the method's actual behavior."
+      },
+      "role": "CLAR",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "4c13c5fcae6cba5603e7b978bc7cbe7f8f755049a6b4384f0e4c7ad3f1ef72ce"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-experience_learner/program.py",
+  "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+  "program_version": "seed-experience_learner",
+  "role": "CLAR",
+  "seed_kind": "experience_learner",
+  "snapshot": {
+    "collections": {},
+    "knowledge_base_state": {
+      "by_role": {
+        "CLAR": [
+          {
+            "evidence_to_check": "Check Section 2 (Methodology/Experiments) and Appendix for a comprehensive hyperparameter table. Look for specific numerical values for architecture changes when comparing 'parameter equivalent' models. Ensure that any claim of equivalence is backed by a clear definition of the modifications made.",
+            "failure_mode": "The paper describes experimental conditions qualitatively (e.g., 'parameter equivalent', 'standard training') without providing the specific quantitative details (hyperparameters, exact layer dimensions) necessary for an expert to reproduce the results, leading to a lack of transparency and reproducibility.",
+            "review_heuristic": "Verify that the 'reproducibility' claim is supported by explicit, complete tables of hyperparameters (learning rate, optimizer, batch size, epochs) and precise architectural modifications (e.g., exact filter counts) rather than vague descriptions like 'doubling filters'.",
+            "trigger": "Paper presents empirical results with complex experimental setups (e.g., parameter-equivalent models, multiple attack types) but lacks detailed hyperparameters or architecture specifications.",
+            "why_it_matters": "Clarity in experimental setup is a core component of the CLAR dimension. Without precise details, the paper fails to 'adequately inform the reader' and does not meet the standard of providing enough information for reproduction, which is a critical weakness in empirical ML papers."
+          },
+          {
+            "evidence_to_check": "Compare notation in the 'Notation' or 'Method' section with its usage in subsequent equations, figure captions, and experimental descriptions. Look for missing function wrappers (e.g., $CE(x, y)$ vs $CE(c(x), y)$) or interchangeable use of terms with different definitions.",
+            "failure_mode": "Inconsistent notation or ambiguous terminology leads to confusion about the method's mechanics, making it difficult for readers to reproduce the results or understand the specific role of each variable.",
+            "review_heuristic": "Verify that mathematical symbols and terms are defined once and used consistently throughout the paper, particularly in loss functions and algorithmic steps. Check if distinct concepts (like latent vs. image space perturbations) are clearly distinguished in definitions and usage.",
+            "trigger": "Inconsistent mathematical notation or ambiguous terminology for key variables (e.g., using the same symbol for different concepts or omitting function definitions in loss terms).",
+            "why_it_matters": "Clarity in notation and terminology is fundamental for reproducibility and accurate understanding of the proposed method. Inconsistencies can obscure the actual algorithmic steps and hinder expert evaluation."
+          },
+          {
+            "evidence_to_check": "Check if the arguments in equation definitions match their usage in subsequent text and if complex symbols (like calligraphic vs. standard fonts) are explicitly distinguished.",
+            "failure_mode": "Confusing or inconsistent notation leads to ambiguity in understanding the theoretical derivation and may obscure the logical flow of the proof.",
+            "review_heuristic": "Verify that mathematical symbols are defined before use and remain consistent throughout the text, especially when transitioning between equations and prose descriptions.",
+            "trigger": "Inconsistent mathematical notation or undefined symbols in derivations",
+            "why_it_matters": "Clear and consistent notation is essential for reproducibility and for expert readers to follow the mathematical arguments without unnecessary confusion."
+          },
+          {
+            "evidence_to_check": "Pseudocode blocks, algorithm descriptions, and experimental setup sections for missing hyperparameters or undefined logic steps.",
+            "failure_mode": "Incomplete algorithm presentation leading to non-reproducibility and ambiguity in how the method is implemented.",
+            "review_heuristic": "Verify that algorithmic descriptions (pseudocode or text) explicitly define all control flow parameters (such as min_samples_split, max_depth) and edge-case handling (e.g., multi-class splits, continuous features). If these are missing, flag as a clarity weakness regarding reproducibility.",
+            "trigger": "Algorithm presentation lacks critical implementation details (e.g., stopping criteria, hyperparameters, or handling of edge cases) necessary for reproduction.",
+            "why_it_matters": "A superbly written paper provides enough information for an expert reader to reproduce its results; missing implementation details hinder this goal and obscure the method's actual behavior."
+          }
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "c9bae6e30cf22eb5b4a619153fcd9b5f77ab67ab65c38eca321aa5336fdf307a",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "91ce142a98e5a63d0ef3b7934931ea2cf192468018ad4428344687ebbd4a21d1",
+    "e098fe1e34ab13cccd26b757eb908bcdca4da7a0e7a6e3de3c125778515fc977",
+    "a1183db720fe87be3b06a24097874fcd207b5eae4513e4317d94366712d7fbc2",
+    "4c13c5fcae6cba5603e7b978bc7cbe7f8f755049a6b4384f0e4c7ad3f1ef72ce"
+  ]
+}

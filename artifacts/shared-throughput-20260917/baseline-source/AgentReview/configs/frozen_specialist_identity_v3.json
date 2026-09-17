@@ -1,0 +1,41 @@
+{
+  "identity_version": "frozen-specialist-identity-v3",
+  "source": {
+    "path": "REVIEW_Request.md",
+    "sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2"
+  },
+  "request_protocols": {
+    "specialist": {
+      "version": "specialist-review-request-v2",
+      "template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "QUAL",
+      "reviewer_name": "Reviewer QUAL",
+      "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc"
+    },
+    {
+      "task_id": "CLAR",
+      "reviewer_name": "Reviewer CLAR",
+      "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8"
+    },
+    {
+      "task_id": "SIGN",
+      "reviewer_name": "Reviewer SIGN",
+      "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c"
+    },
+    {
+      "task_id": "ORIG",
+      "reviewer_name": "Reviewer ORIG",
+      "system_prompt_sha256": "733a1336772475ccf90ca3ecedfc1f427d16726772c7580043af6eaddeae3ff7"
+    },
+    {
+      "task_id": "POL",
+      "reviewer_name": "Reviewer POL",
+      "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1"
+    }
+  ],
+  "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130"
+}

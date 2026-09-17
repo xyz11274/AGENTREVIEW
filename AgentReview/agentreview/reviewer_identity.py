@@ -15,7 +15,7 @@ META_SYNTHESIS_IDENTITY_VERSION = "meta-synthesis-identity-v2"
 SPECIALIST_REQUEST_PROTOCOL_VERSION = "specialist-review-request-v2"
 META_REQUEST_PROTOCOL_VERSION = "meta-synthesis-request-v2"
 META_OUTPUT_PROTOCOL_VERSION = "meta-synthesis-output-v2"
-META_RENDER_PROTOCOL_VERSION = "meta-opinion-markdown-v2"
+META_RENDER_PROTOCOL_VERSION = "meta-opinion-markdown-v3"
 META_SYNTHESIS_REQUEST_PATH = "META_SYNTHESIS_Request_v2.md"
 SPECIALIST_REQUEST_TEMPLATE = (
     "Review task: {task_id}\n\n"

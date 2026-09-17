@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify strict adherence to double-blind policies. Ensure no author names, institutional affiliations, specific email domains, or self-identifying URLs appear in headers, footers, or acknowledgments.\n*   **Action:** If violations are found (e.g., explicit names/affiliations), flag as a critical weakness and request immediate removal. If compliant, note as a strength.\n\n**2. Broader Impact & Ethical Considerations (POL-IMP, POL-ETH)**\n*   **Check:** Assess the presence of a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. This is increasingly mandatory for major venues (NeurIPS, ICLR).\n*   **Action:**\n    *   If missing, flag as a weakness. Request a brief discussion on societal implications, potential misuse, or security risks (e.g., adversarial robustness trade-offs, dual-use potential).\n    *   For theoretical/algorithmic papers, even if low-risk, a statement on efficiency benefits or general applicability is expected.\n    *   For methods involving generative models or sensitive data, explicitly address risks of disinformation, harassment, or bias.\n\n**3. Data Privacy & Licensing (POL-DAT)**\n*   **Check:** Evaluate datasets for Personally Identifiable Information (PII) or sensitive content.\n    *   *Standard Benchmarks (MNIST, CIFAR-10, UCI):* Generally low risk; verify standard licensing.\n    *   *Sensitive Data (CelebA, Medical, Real Faces):* High risk. Verify explicit mention of license terms, consent, and compliance with privacy regulations (e.g., GDPR).\n*   **Action:** If sensitive data is used without privacy discussion, flag as a significant weakness. Request clarification on licensing, consent, and re-identification risks. For standard data, a brief mention of source/license ensures transparency.\n\n**4. Reproducibility & Open Science (POL-IMP)**\n*   **Check:** Look for code availability and software/data licenses.\n*   **Action:** If code is not provided or licenses are unspecified, flag as a weakness. Request a link to an anonymous repository and explicit license statements to support open science practices.\n\n**5. Plagiarism & Originality (POL-PLG)**\n*   **Check:** Scan for evidence of plagiarism, dual submission, or improper citation of prior work.\n*   **Action:** If citations are appropriate and no duplication is detected, note as neutral/strength. If issues arise, flag immediately.\n\n**General Recommendation Logic:**\n*   **Weak Accept/Borderline:** Often assigned when technical merit is high but POL gaps (missing Broader Impact, minor data licensing omissions) exist.\n*   **Reject:** Reserved for severe violations (e.g., broken anonymity, use of non-compliant sensitive data without mitigation).\n\n**Key Questions for Authors:**\n1.  Have all author-identifying information been removed to comply with double-blind policies?\n2.  Can you provide a statement on the broader societal impact, including potential risks or limitations of your method?\n3.  Please specify the licenses for all datasets and code used, and confirm compliance with privacy regulations if sensitive data is involved.",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789582754,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a68b11b7019ad822",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 706,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2984,
+      "prompt_tokens_details": null,
+      "total_tokens": 3690
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify strict adherence to double-blind policies. Ensure no author names, institutional affiliations, specific email domains, or self-identifying URLs appear in headers, footers, or acknowledgments.\n*   **Action:** If violations are found (e.g., explicit names/affiliations), flag as a critical weakness and request immediate removal. If compliant, note as a strength.\n\n**2. Broader Impact & Ethical Considerations (POL-IMP, POL-ETH)**\n*   **Check:** Assess the presence of a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. This is increasingly mandatory for major venues (NeurIPS, ICLR).\n*   **Action:**\n    *   If missing, flag as a weakness. Request a brief discussion on societal implications, potential misuse, or security risks (e.g., adversarial robustness trade-offs, dual-use potential).\n    *   For theoretical/algorithmic papers, even if low-risk, a statement on efficiency benefits or general applicability is expected.\n    *   For methods involving generative models or sensitive data, explicitly address risks of disinformation, harassment, or bias.\n\n**3. Data Privacy & Licensing (POL-DAT)**\n*   **Check:** Evaluate datasets for Personally Identifiable Information (PII) or sensitive content.\n    *   *Standard Benchmarks (MNIST, CIFAR-10, UCI):* Generally low risk; verify standard licensing.\n    *   *Sensitive Data (CelebA, Medical, Real Faces):* High risk. Verify explicit mention of license terms, consent, and compliance with privacy regulations (e.g., GDPR).\n*   **Action:** If sensitive data is used without privacy discussion, flag as a significant weakness. Request clarification on licensing, consent, and re-identification risks. For standard data, a brief mention of source/license ensures transparency.\n\n**4. Reproducibility & Open Science (POL-IMP)**\n*   **Check:** Look for code availability and software/data licenses.\n*   **Action:** If code is not provided or licenses are unspecified, flag as a weakness. Request a link to an anonymous repository and explicit license statements to support open science practices.\n\n**5. Plagiarism & Originality (POL-PLG)**\n*   **Check:** Scan for evidence of plagiarism, dual submission, or improper citation of prior work.\n*   **Action:** If citations are appropriate and no duplication is detected, note as neutral/strength. If issues arise, flag immediately.\n\n**General Recommendation Logic:**\n*   **Weak Accept/Borderline:** Often assigned when technical merit is high but POL gaps (missing Broader Impact, minor data licensing omissions) exist.\n*   **Reject:** Reserved for severe violations (e.g., broken anonymity, use of non-compliant sensitive data without mitigation).\n\n**Key Questions for Authors:**\n1.  Have all author-identifying information been removed to comply with double-blind policies?\n2.  Can you provide a statement on the broader societal impact, including potential risks or limitations of your method?\n3.  Please specify the licenses for all datasets and code used, and confirm compliance with privacy regulations if sensitive data is involved.",
+  "tokens": {
+    "input_tokens": 2984,
+    "max_model_len": 65536
+  }
+}

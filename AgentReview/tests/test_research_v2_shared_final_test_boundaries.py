@@ -80,7 +80,7 @@ def test_sealed_reviews_reuse_all_five_frozen_memory_libraries_without_build(bac
     assert result["identity"]["snapshots"] == snapshots
     assert {role: file_sha256(value["path"]) for role, value in snapshots.items()} == before
     assert len({value["path"] for value in snapshots.values()}) == 5
-    assert calls == [(0, "final"), *((0, f"role:{role}") for role in ROLES)]
+    assert calls == [(0, "final")]
     assert len([call for call in client.calls if call["component"].startswith("specialist_review") or call["component"] == "meta_synthesis"]) == 6
 
 
@@ -107,7 +107,7 @@ def test_scoring_recovery_reuses_complete_frozen_test_reviews_in_fresh_epoch(bac
     assert {role: file_sha256(path) for role, path in review_paths.items()} == review_hashes
     assert repaired["identity"]["snapshots"] == snapshots
     assert repaired["evaluation_epoch"] == 1
-    assert calls == [(1, "final"), *((1, f"role:{role}") for role in ROLES)]
+    assert calls == [(1, "final")]
     receipt = read_json(repaired["assessment"]["path"])
     assert receipt["rows"][0]["review"]["sha256"] == generated_hash
     assert read_json(score_failure)["status"] == "paused"
@@ -149,6 +149,6 @@ def test_concrete_backend_report_index_generates_seed_champion_and_role_tables(b
     report = read_json(report_result["paths"]["report.json"])
     assert {row["kind"] for row in report["variants"]} == {"seed", "champion"}
     assert {row["purpose"] for row in report["variants"]} == {"selection"}
-    assert len(report["role_diagnostics"]) == 10
+    assert report["role_diagnostics"] == []
     assert all(row["aggregate"]["absolute_scores"]["Paper."] == 2.0 for row in report["variants"])
     assert all(row["original_comparison"]["status"] == "equal" for row in report["variants"])

@@ -1,0 +1,31 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a helpful assistant that extracts review heuristics.",
+      "role": "system"
+    },
+    {
+      "content": "Extract concise, role-specific review heuristics from the provided text. Focus on actionable patterns, common pitfalls, and best practices relevant to the reviewer dimension. Do not include paper-specific facts or prose. Output a JSON object with keys: 'topic', 'content'. Ensure the JSON is valid and contains no markdown formatting.\n\nRole: POL\nText: 1. Anonymity: Verify explicit double-blind markers (e.g., 'Anonymous authors', 'Paper under double-blind review') and scan for self-identifying text, acknowledgments, or URLs. 2. Data Privacy: Assess datasets for PII; standard public benchmarks (e.g., MNIST) are generally compliant, but sensitive data requires explicit consent and anonymization evidence. 3. Broader Impact: Check for dedicated sections discussing societal, security, or ethical implications. Even for benign tasks, adversarial robustness research has security implications that should be addressed. 4. Ethics & Dual-Use: Identify dual-use potential (e.g., attack vs. defense) and ensure the paper discusses responsible deployment or potential harms. 5. Plagiarism: Verify proper citation of prior work and originality of empirical findings to rule out self-plagiarism or dual submission.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": null
+}

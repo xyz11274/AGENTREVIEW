@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T20:25:57.692499+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "6d1da349a09af577e850dd5ba48c93ab5f17fc200777c1bd7a46646f565cb745",
+    "request_sha256": "5d119cc50d338ef0d4425d021344ba25ada59f1cd2da5c9065c2839f0a3617a9",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "a49e3a5a36867b5b3e710fc3ab4c20d0670bfe233b65b673844cad9c88ec3698",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SkYXvCR6W",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes a compact, compression-inspired encoding for words to be used in character-level convolutional neural networks (CNNs) for text classification. By mapping characters to variable-length binary codes based on frequency rank, the method reduces the input matrix dimensionality from 1014x69 (Zhang & LeCun, 2015) to 128x256. The authors demonstrate that this reduction allows for significantly faster training times (e.g., 3 minutes vs. 60-180 minutes per epoch on Ag News) and lower parameter counts (1.8M vs. 11.3M), enabling the use of simpler hardware while maintaining competitive accuracy on standard text classification benchmarks.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem in NLP: the computational inefficiency and high resource requirements of character-level deep learning models, which limits their accessibility to researchers and practitioners without high-end hardware.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method is validated on a diverse set of standard, large-scale text classification datasets (Ag News, Sogou News, DBpedia, Yelp, Yahoo Answers, Amazon), demonstrating generalizability across different domains and languages (including Chinese via Pinyin).\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: While the paper claims \"competitive accuracies,\" the results in Table 6 show that the proposed method (\"Ours\") often underperforms the state-of-the-art baseline (Zhang et al. 2015) in terms of loss (e.g., 12.33 vs 12.82 on Ag News is better, but 7.96 vs 5.89 on Yelp Polarity is worse; 31.90 vs 29.55 on Yahoo Answers is worse). The improvement is primarily in efficiency (time/parameters), not accuracy, and in several cases, accuracy is degraded compared to the baseline.\n  evidence_anchors: [SRC-008]\n  confidence: 5\n  actionable_suggestion: The authors should explicitly discuss the trade-off between efficiency and accuracy, and provide a more nuanced analysis of why accuracy drops on certain datasets (e.g., Yelp Polarity, Yahoo Answers).\n- subcategory: SIGN-IMP\n  polarity: strength\n  claim: The paper highlights significant practical and societal benefits by enabling text classification on simpler hardware (e.g., NVIDIA 930M), which increases accessibility for students, startups, and resource-constrained environments. It also mentions potential benefits for handling unseen words and typos, which is relevant for real-world, less-curated text.\n  evidence_anchors: [SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why does the proposed method show higher loss (worse performance) than the Zhang et al. (2015) baseline on datasets like Yelp Polarity (7.96 vs 5.89) and Yahoo Answers (31.90 vs 29.55)? Is this due to the loss of information in the compact encoding, or other factors?\n- The paper states that 256 coordinates were enough to represent 99.5% of words in one database. What is the impact on accuracy for the remaining 0.5% of words that are truncated?\n- How does the proposed encoding handle out-of-vocabulary characters or characters with very low frequency (high rank) that would result in very long codes exceeding the 256 limit?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "1e8c6b01f3b0194bc1189900c3ac4e534112e507a1377121bc13c070efd8cfc3",
+      "prompt_sha256": "5d119cc50d338ef0d4425d021344ba25ada59f1cd2da5c9065c2839f0a3617a9"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "To evaluate the SIGN dimension for \"Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification,\" verify the following criteria derived from the fixed review experience:\n\n1.  **Broad Relevance (SIGN-BRD)**: Confirm that the work addresses a high-impact problem in text classification. Specifically, assess whether the proposed compact encoding method solves a significant bottleneck, such as computational inefficiency or memory constraints in character-level CNNs, rather than offering a marginal optimization.\n\n2.  **Domain Impact (SIGN-DOM)**: Verify that the method is validated on complex, high-dimensional real-world text datasets. Ensure the empirical scope extends beyond simple or toy benchmarks (e.g., MNIST-like simplicity) to demonstrate generalizability across diverse text domains. The evaluation must show that the compact encoding maintains performance on challenging, large-scale tasks.\n\n3.  **State-of-the-Art (SIGN-SOT)**: Check for quantitative comparisons against established baselines. The paper must provide objective metrics demonstrating that the proposed encoding improves efficiency (e.g., speed, memory usage) or accuracy compared to standard character-level CNN approaches. It should not rely solely on diagnostic observations but must prove concrete improvements over current state-of-the-art methods.\n\n4.  **Societal Impact (SIGN-IMP)**: Assess whether the paper discusses practical applicability and broader implications. This includes analyzing the computational sustainability of the method (e.g., reduced resource consumption enabling deployment on edge devices) and any risks associated with the encoding strategy. While fairness may be less central to encoding efficiency, the discussion should address how the method impacts the accessibility and scalability of text classification systems in real-world applications.\n\n**Note**: Do not assume facts from prior papers apply to this specific work. All claims regarding impact, novelty, and validation must be directly supported by the evidence presented in the current paper.",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "1f58de6c6997f1abb0aac3b523766334b663939d3c124bb5156c778fb06654a8",
+              "role": "SIGN",
+              "score": 0.3834487418211357
+            },
+            {
+              "id": "ecc3e4e290dc518cf52afc30e40a65f2165644572263ecc3fbf19873d21ebe54",
+              "role": "SIGN",
+              "score": 0.2941884682468524
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "To evaluate the SIGN dimension for \"Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification,\" verify the following criteria derived from the fixed review experience:\n\n1.  **Broad Relevance (SIGN-BRD)**: Confirm that the work addresses a high-impact problem in text classification. Specifically, assess whether the proposed compact encoding method solves a significant bottleneck, such as computational inefficiency or memory constraints in character-level CNNs, rather than offering a marginal optimization.\n\n2.  **Domain Impact (SIGN-DOM)**: Verify that the method is validated on complex, high-dimensional real-world text datasets. Ensure the empirical scope extends beyond simple or toy benchmarks (e.g., MNIST-like simplicity) to demonstrate generalizability across diverse text domains. The evaluation must show that the compact encoding maintains performance on challenging, large-scale tasks.\n\n3.  **State-of-the-Art (SIGN-SOT)**: Check for quantitative comparisons against established baselines. The paper must provide objective metrics demonstrating that the proposed encoding improves efficiency (e.g., speed, memory usage) or accuracy compared to standard character-level CNN approaches. It should not rely solely on diagnostic observations but must prove concrete improvements over current state-of-the-art methods.\n\n4.  **Societal Impact (SIGN-IMP)**: Assess whether the paper discusses practical applicability and broader implications. This includes analyzing the computational sustainability of the method (e.g., reduced resource consumption enabling deployment on edge devices) and any risks associated with the encoding strategy. While fairness may be less central to encoding efficiency, the discussion should address how the method impacts the accessibility and scalability of text classification systems in real-world applications.\n\n**Note**: Do not assume facts from prior papers apply to this specific work. All claims regarding impact, novelty, and validation must be directly supported by the evidence presented in the current paper."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 2260,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 9.13364374358207,
+        "prompt_chars": 7235,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "a49e3a5a36867b5b3e710fc3ab4c20d0670bfe233b65b673844cad9c88ec3698"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "2ac4e58427fbbe1f141dd6803846fbd15d2ee6f1400c48dff5857abc89547eb2",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes a compact, compression-inspired encoding for words to be used in character-level convolutional neural networks (CNNs) for text classification. By mapping characters to variable-length binary codes based on frequency rank, the method reduces the input matrix dimensionality from 1014x69 (Zhang & LeCun, 2015) to 128x256. The authors demonstrate that this reduction allows for significantly faster training times (e.g., 3 minutes vs. 60-180 minutes per epoch on Ag News) and lower parameter counts (1.8M vs. 11.3M), enabling the use of simpler hardware while maintaining competitive accuracy on standard text classification benchmarks.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem in NLP: the computational inefficiency and high resource requirements of character-level deep learning models, which limits their accessibility to researchers and practitioners without high-end hardware.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method is validated on a diverse set of standard, large-scale text classification datasets (Ag News, Sogou News, DBpedia, Yelp, Yahoo Answers, Amazon), demonstrating generalizability across different domains and languages (including Chinese via Pinyin).\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: While the paper claims \"competitive accuracies,\" the results in Table 6 show that the proposed method (\"Ours\") often underperforms the state-of-the-art baseline (Zhang et al. 2015) in terms of loss (e.g., 12.33 vs 12.82 on Ag News is better, but 7.96 vs 5.89 on Yelp Polarity is worse; 31.90 vs 29.55 on Yahoo Answers is worse). The improvement is primarily in efficiency (time/parameters), not accuracy, and in several cases, accuracy is degraded compared to the baseline.\n  evidence_anchors: [SRC-008]\n  confidence: 5\n  actionable_suggestion: The authors should explicitly discuss the trade-off between efficiency and accuracy, and provide a more nuanced analysis of why accuracy drops on certain datasets (e.g., Yelp Polarity, Yahoo Answers).\n- subcategory: SIGN-IMP\n  polarity: strength\n  claim: The paper highlights significant practical and societal benefits by enabling text classification on simpler hardware (e.g., NVIDIA 930M), which increases accessibility for students, startups, and resource-constrained environments. It also mentions potential benefits for handling unseen words and typos, which is relevant for real-world, less-curated text.\n  evidence_anchors: [SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why does the proposed method show higher loss (worse performance) than the Zhang et al. (2015) baseline on datasets like Yelp Polarity (7.96 vs 5.89) and Yahoo Answers (31.90 vs 29.55)? Is this due to the loss of information in the compact encoding, or other factors?\n- The paper states that 256 coordinates were enough to represent 99.5% of words in one database. What is the impact on accuracy for the remaining 0.5% of words that are truncated?\n- How does the proposed encoding handle out-of-vocabulary characters or characters with very low frequency (high rank) that would result in very long codes exceeding the 256 limit?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "feedback-0002-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

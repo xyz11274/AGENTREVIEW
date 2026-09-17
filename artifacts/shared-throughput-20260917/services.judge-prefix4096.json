@@ -1,0 +1,46 @@
+{
+  "services": {
+    "classify": {
+      "base_url": "http://127.0.0.1:13098/v1",
+      "gpus": [
+        6,
+        7
+      ],
+      "model": "Qwen3-8B-Classify",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "port": 13098,
+      "gpu_memory_utilization": 0.8,
+      "max_num_seqs": 8
+    },
+    "judge": {
+      "base_url": "http://127.0.0.1:18001/v1",
+      "gpus": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "model": "qwen3.8-27b",
+      "model_root": "/data/xyj/models/Qwen3.8-27B",
+      "port": 18001,
+      "gpu_memory_utilization": 0.85,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 4096,
+      "enable_prefix_caching": true
+    },
+    "split": {
+      "base_url": "http://127.0.0.1:13099/v1",
+      "gpus": [
+        4,
+        5
+      ],
+      "model": "Qwen3-8B-Split",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+      "port": 13099,
+      "gpu_memory_utilization": 0.8,
+      "max_num_seqs": 8
+    }
+  },
+  "serving_python": "/data/xyj/envs/qwen38serve/bin/python",
+  "state_root": "/data/xyj/shengao/AgentReview_0915/artifacts/deployment/original-coco/services-bounded"
+}

@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T20:19:56.301676+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot classification that represents each class by the mean of its support set embeddings (prototypes) and classifies queries via softmax over Euclidean distances to these prototypes. The method is trained using episodic training to mimic the few-shot test setting. The authors demonstrate the method's effectiveness on Omniglot and miniImageNet for few-shot learning and on CUB-200 for zero-shot learning, claiming competitive or state-of-the-art performance with a simpler and more scalable architecture than matching networks.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is mathematically well-formulated, with a clear derivation showing the equivalence of the distance-based softmax to a linear classifier, which provides strong theoretical grounding for the approach.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental results are reported as single-point estimates without standard deviations or confidence intervals, making it difficult to assess the statistical significance of the performance differences, particularly on miniImageNet where the gap to matching networks is small.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Report mean accuracy and standard deviation over multiple independent training runs (e.g., 5-10 seeds) for all datasets to validate the robustness of the results.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks critical implementation details necessary for reproduction, such as specific hyperparameters (learning rate, optimizer, number of training episodes, batch size) and does not mention code availability.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix or supplementary material listing all hyperparameters, training schedules, and random seeds used. Consider releasing the source code to facilitate independent verification.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper provides appropriate comparisons against the primary contemporary baseline (Matching Networks) and other relevant methods (Neural Statistician, Baseline Classifier) on the standard few-shot benchmarks.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The absence of statistical tests or variance reporting undermines the claim of \"state-of-the-art\" performance, especially given the small sample sizes in few-shot evaluation episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Include statistical significance tests (e.g., paired t-tests) comparing the proposed method against baselines to confirm that observed improvements are not due to random variation.\n\nKey questions for the authors:\n- What are the specific hyperparameters (learning rate, optimizer, number of episodes) used for training on Omniglot and miniImageNet?\n- Can you provide the standard deviation of the accuracy over multiple independent runs to support the reported performance gains?\n- Is the code for the prototypical networks implementation available for public use?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "9ed64f0f2f6c6f4c73d84216f71b545797f03e913faca681cdf74d13639a59f4",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "8d1745f6982d90b57053380cdefac464e1bcb5e9aceda16e8d2acfd4889b47df"
+  },
+  "review_plan_identity_sha256": "0bbf6b6e9e19c01b73a8a31bca1254ce8ce383f063e6cab0470029d9887098ae",
+  "role": "QUAL",
+  "run_id": "feedback-0002-e0"
+}

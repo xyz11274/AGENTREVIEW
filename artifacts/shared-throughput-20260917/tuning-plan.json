@@ -1,0 +1,58 @@
+{
+  "scope": "development-only",
+  "papers": [
+    "-EHqoysUYLx",
+    "SJn0sLgRb"
+  ],
+  "rules": {
+    "full_pipeline_required": true,
+    "judge_control": "Same complete final reviews and original complete Split/Classify artifacts; no candidate admission from diagnostic replay",
+    "paper_abs_delta_max": 0.2,
+    "mean_paper_abs_delta_max": 0.1,
+    "category_aggregate_abs_delta_max": 0.2,
+    "unhandled_failures_max": 0,
+    "truncated_outputs_allowed": false,
+    "changed_decoding_or_scoring_allowed": false,
+    "accept_speedup_requires_ratio": 1.03,
+    "failed_tuning_config": "Record failure, restore last verified service config, diagnose before next trial",
+    "sealed_test": "closed"
+  },
+  "variants": [
+    {
+      "name": "judge-reference",
+      "change": null
+    },
+    {
+      "name": "judge-seqs16",
+      "change": {
+        "max_num_seqs": 16
+      }
+    },
+    {
+      "name": "judge-batch4096",
+      "change": {
+        "max_num_batched_tokens": 4096
+      }
+    },
+    {
+      "name": "judge-batch65536",
+      "change": {
+        "max_num_batched_tokens": 65536
+      },
+      "reason": "A common valid batch ceiling is required for a one-variable chunked-prefill on/off comparison with unchanged 65536 context."
+    },
+    {
+      "name": "judge-unchunked",
+      "change": {
+        "enable_chunked_prefill": false
+      },
+      "requires": "batch65536 complete; otherwise record unavailable controlled comparison and retain enabled chunking"
+    },
+    {
+      "name": "judge-prefix",
+      "change": {
+        "enable_prefix_caching": true
+      }
+    }
+  ]
+}

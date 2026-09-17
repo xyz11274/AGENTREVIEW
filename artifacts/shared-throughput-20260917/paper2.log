@@ -1,0 +1,21 @@
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=17 hits=17 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=17 hits=17 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=18 hits=18 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=18 hits=18 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=12 hits=12 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=12 hits=12 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=15 hits=15 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=15 hits=15 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=13 hits=13 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=13 hits=13 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+{"status": "complete", "started": 1789612567.206999, "pid": 2843674, "formal": false, "ended": 1789613174.2318463, "seconds": 607.024845123291, "valid_reviews": 2, "valid_reviews_per_hour": 11.86112900953441, "failed_reviews": 0, "failure_rate": 0, "paper_scores": {"-EHqoysUYLx": 3.0, "SJn0sLgRb": 3.4}}

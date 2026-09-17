@@ -1,0 +1,36 @@
+Loading human full-text data...
+Loaded full-text for 1 test papers and 1 ref papers.
+Loading human review data...
+Computing metrics for 1 samples...
+BLEU/ROUGE:   0%|          | 0/1 [00:00<?, ?it/s]BLEU/ROUGE: 100%|██████████| 1/1 [00:00<00:00,  1.32it/s]BLEU/ROUGE: 100%|██████████| 1/1 [00:00<00:00,  1.32it/s]
+Some weights of RobertaModel were not initialized from the model checkpoint at roberta-large and are newly initialized: ['pooler.dense.bias', 'pooler.dense.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+calculating scores...
+computing bert embedding.
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:01<00:00,  1.01s/it]100%|██████████| 1/1 [00:01<00:00,  1.01s/it]
+computing greedy matching.
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 205.13it/s]
+done in 1.02 seconds, 5.88 sentences/sec
+
+Starting category-level judging
+================================================================================
+Phase 1: preparing and submitting all judge tasks...
+Preparing category-level tasks:   0%|          | 0/1 [00:00<?, ?it/s]Preparing category-level tasks: 100%|██████████| 1/1 [00:00<00:00, 111.06it/s]
+Total tasks submitted: 9
+
+Phase 2: collecting all judge results...
+Getting category-level results:   0%|          | 0/9 [00:00<?, ?it/s]Getting category-level results:  11%|█         | 1/9 [01:50<14:47, 110.91s/it]Getting category-level results:  78%|███████▊  | 7/9 [02:02<00:26, 13.29s/it] Getting category-level results: 100%|██████████| 9/9 [02:05<00:00,  9.79s/it]Getting category-level results: 100%|██████████| 9/9 [02:05<00:00, 13.95s/it]
+
+Processed 1 papers for category-level evaluation
+
+Starting full-text judge evaluation (full_judge)
+================================================================================
+Phase 1: preparing and submitting all judge tasks...
+Preparing full-judge tasks:   0%|          | 0/1 [00:00<?, ?it/s]Preparing full-judge tasks: 100%|██████████| 1/1 [00:00<00:00, 497.96it/s]
+Total tasks submitted: 1
+
+Phase 2: collecting all judge results...
+Getting full-judge results:   0%|          | 0/1 [00:00<?, ?it/s]Getting full-judge results: 100%|██████████| 1/1 [01:02<00:00, 62.88s/it]Getting full-judge results: 100%|██████████| 1/1 [01:02<00:00, 62.88s/it]
+
+Processed 1 papers for full-judge evaluation
+[LLM usage] prompt=41898, completion=23567, total=65465

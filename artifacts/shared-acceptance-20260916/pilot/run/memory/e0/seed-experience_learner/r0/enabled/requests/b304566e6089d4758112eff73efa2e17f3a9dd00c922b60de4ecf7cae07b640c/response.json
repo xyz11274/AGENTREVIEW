@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"trigger\": \"Paper proposes a new machine learning methodology or model architecture.\",\n  \"review_heuristic\": \"Verify the presence of a dedicated 'Broader Impact' statement and explicit declarations of software/data licensing and code availability.\",\n  \"evidence_to_check\": \"Check for a specific section discussing societal implications, risks, and benefits. Look for explicit mentions of code repository links (anonymized if double-blind) and the specific licenses under which code and data are released.\",\n  \"failure_mode\": \"Missing or boilerplate impact statements; absent/unclear required checklists; ambiguous or incompatible licensing; lack of reproducibility due to missing code links.\",\n  \"why_it_matters\": \"Compliance with open science practices and conference policies (e.g., NeurIPS) requires transparency regarding societal impact and reproducibility. Missing these elements can lead to rejection or requests for major revisions.\",\n  \"reviewer_dimension\": \"POL\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789584934,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-bde289eac6efd2b7",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 197,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1872,
+      "prompt_tokens_details": null,
+      "total_tokens": 2069
+    }
+  },
+  "raw_model_output": "{\n  \"trigger\": \"Paper proposes a new machine learning methodology or model architecture.\",\n  \"review_heuristic\": \"Verify the presence of a dedicated 'Broader Impact' statement and explicit declarations of software/data licensing and code availability.\",\n  \"evidence_to_check\": \"Check for a specific section discussing societal implications, risks, and benefits. Look for explicit mentions of code repository links (anonymized if double-blind) and the specific licenses under which code and data are released.\",\n  \"failure_mode\": \"Missing or boilerplate impact statements; absent/unclear required checklists; ambiguous or incompatible licensing; lack of reproducibility due to missing code links.\",\n  \"why_it_matters\": \"Compliance with open science practices and conference policies (e.g., NeurIPS) requires transparency regarding societal impact and reproducibility. Missing these elements can lead to rejection or requests for major revisions.\",\n  \"reviewer_dimension\": \"POL\"\n}",
+  "tokens": {
+    "input_tokens": 1872,
+    "max_model_len": 65536
+  }
+}

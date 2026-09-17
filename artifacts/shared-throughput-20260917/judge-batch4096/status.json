@@ -1,0 +1,21 @@
+{
+  "diagnostic_scored_papers_per_hour": 29.71216823452862,
+  "ended": 1789615288.8373828,
+  "failed_scores": 0,
+  "failure_rate": 0,
+  "paper_scores": {
+    "-EHqoysUYLx": 3.2,
+    "SJn0sLgRb": 3.6
+  },
+  "pid": 2886616,
+  "result": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/judge-batch4096/result.json",
+    "sha256": "3a4bbddf9474995cbfcbf6a4712b072e2c06c4f3091aad8cbbeb2c30cd58e1d6"
+  },
+  "scope": "original Judge replay; fixed complete reviews, Split and Classify; no pool admission",
+  "scored_papers": 2,
+  "seconds": 242.32496070861816,
+  "started": 1789615046.5124178,
+  "status": "complete",
+  "valid_full_flow_reviews": 0
+}

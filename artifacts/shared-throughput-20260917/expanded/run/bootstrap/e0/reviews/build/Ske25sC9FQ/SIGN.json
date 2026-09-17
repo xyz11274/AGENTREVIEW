@@ -1,0 +1,130 @@
+{
+  "created_at": "2026-09-17T03:40:57.525923+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "1298a8b4b07fba5eb5b68b6b82ff03d1855529b6502105b91562967fa41e6f03",
+    "request_sha256": "97b5e74fde5722de8118cb5e06e57a9e91adfe69362059798a4b14f158c7097b",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "4a057be4781975746835a0c674fd8984178480d6177b79a99ddea6110824d74e",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "Ske25sC9FQ",
+  "program_version": "seed-vector_search",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. Using the MNIST dataset, the authors demonstrate that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they become more vulnerable to small pixel-wise adversarial attacks as the range of rotation augmentation increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem by identifying a fundamental tension between two key robustness properties (geometric symmetry and adversarial perturbation resistance) in deep learning models.\n  evidence_anchors: [SRC-001]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The domain impact is limited because the empirical study is conducted exclusively on the MNIST dataset, which is a simple, low-dimensional benchmark that may not generalize to complex real-world vision tasks like CIFAR-10 or ImageNet.\n  evidence_anchors: [SRC-004, SRC-010]\n  confidence: 5\n  actionable_suggestion: Extend the experiments to more complex datasets (e.g., CIFAR-10, SVHN) to demonstrate that the observed trade-off holds for non-trivial visual recognition tasks.\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The paper does not propose a new state-of-the-art method or algorithm; instead, it provides an empirical analysis of existing architectures. The \"improvement\" is limited to a diagnostic observation rather than a performance gain over current SOTA models.\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The practical and societal impact is unclear because the paper does not discuss how this trade-off affects real-world deployment scenarios, nor does it offer a solution to mitigate the vulnerability of equivariant networks to adversarial attacks.\n  evidence_anchors: [SRC-001, SRC-009]\n  confidence: 4\n  actionable_suggestion: Discuss the implications of this trade-off for safety-critical applications (e.g., autonomous driving) where both rotation invariance and adversarial robustness are required.\n\nKey questions for the authors:\n- Does the observed trade-off between rotation robustness and adversarial vulnerability persist on more complex datasets like CIFAR-10 or ImageNet?\n- Are there any architectural modifications or training strategies that can mitigate the increased vulnerability of equivariant networks to pixel-wise perturbations?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "a0dd8a1fac2fb4f228eef6df195af50be70662a23261821cc3d8fed0161960c8",
+      "prompt_sha256": "97b5e74fde5722de8118cb5e06e57a9e91adfe69362059798a4b14f158c7097b"
+    },
+    "memory": {
+      "always_on_knowledge": "",
+      "context": "",
+      "instruction_response": "",
+      "logs": [],
+      "memory_enabled": false,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+      "program_version": "seed-vector_search",
+      "query": {
+        "query_text": "Robustness and Equivariance of Neural Networks\nNeural networks models are known to be vulnerable to geometric transformations\nas well as small pixel-wise perturbations of input. Convolutional Neural Networks\n(CNNs) are translation-equivariant but can be easily fooled using rotations and\nsmall pixel-wise perturbations. Moreover, CNNs require sufficient translations in\ntheir training data to achieve translation-invariance. Recent work by Cohen &\nWelling (2016), Worrall et al. (2016), Kondor & Trivedi (2018), Cohen & Welling\n(2017), Marcos et al. (2017), and Esteves et al. (2018) has gone beyond translations,\nand constructed rotation-equivariant or more general group-equivariant\nneural network models. In this paper, we do an extensive empirical study of various\nrotation-equivariant neural network models to understand how effectively they\nlearn rotations. This includes Group-equivariant Convolutional Networks (GCNNs)\nby Cohen & Welling (2016), Harmonic Networks (H-Nets) by Worrall et al.\n(2016), Polar Transformer Networks (PTN) by Esteves et al. (2018) and Rotation\nequivariant vector field networks by Marcos et al. (2017). We empirically compare\nthe ability of these networks to learn rotations efficiently in terms of their\nnumber of parameters, sample complexity, rotation augmentation used in training.\nWe compare them against each other as well as Standard CNNs. We observe\nthat as these rotation-equivariant neural networks learn rotations, they instead become\nmore vulnerable to small pixel-wise adversarial attacks, e.g., Fast Gradient\nSign Method (FGSM) and Projected Gradient Descent (PGD), in comparison with\nStandard CNNs. In other words, robustness to geometric transformations in these\nmodels comes at the cost of robustness to small pixel-wise perturbations.",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 0,
+        "completion_tokens": 0,
+        "llm_call_count": 0,
+        "llm_latency_seconds": 0.0,
+        "prompt_chars": 0,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "vector_search",
+      "snapshot_id": "4a057be4781975746835a0c674fd8984178480d6177b79a99ddea6110824d74e"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "9c626316ec348fcfca1cf4fc9af37d273a3c50eb68f7c8cb48a84658b33ab48c",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. Using the MNIST dataset, the authors demonstrate that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they become more vulnerable to small pixel-wise adversarial attacks as the range of rotation augmentation increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem by identifying a fundamental tension between two key robustness properties (geometric symmetry and adversarial perturbation resistance) in deep learning models.\n  evidence_anchors: [SRC-001]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The domain impact is limited because the empirical study is conducted exclusively on the MNIST dataset, which is a simple, low-dimensional benchmark that may not generalize to complex real-world vision tasks like CIFAR-10 or ImageNet.\n  evidence_anchors: [SRC-004, SRC-010]\n  confidence: 5\n  actionable_suggestion: Extend the experiments to more complex datasets (e.g., CIFAR-10, SVHN) to demonstrate that the observed trade-off holds for non-trivial visual recognition tasks.\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The paper does not propose a new state-of-the-art method or algorithm; instead, it provides an empirical analysis of existing architectures. The \"improvement\" is limited to a diagnostic observation rather than a performance gain over current SOTA models.\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The practical and societal impact is unclear because the paper does not discuss how this trade-off affects real-world deployment scenarios, nor does it offer a solution to mitigate the vulnerability of equivariant networks to adversarial attacks.\n  evidence_anchors: [SRC-001, SRC-009]\n  confidence: 4\n  actionable_suggestion: Discuss the implications of this trade-off for safety-critical applications (e.g., autonomous driving) where both rotation invariance and adversarial robustness are required.\n\nKey questions for the authors:\n- Does the observed trade-off between rotation robustness and adversarial vulnerability persist on more complex datasets like CIFAR-10 or ImageNet?\n- Are there any architectural modifications or training strategies that can mitigate the increased vulnerability of equivariant networks to pixel-wise perturbations?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "build",
+  "schema_version": "research-core-v2-artifact-v1"
+}

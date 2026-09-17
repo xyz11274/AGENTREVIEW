@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Definition (CLAR-NOT)**\n*   **Argument Matching:** Verify that mathematical definitions match their usage. If a function is defined with specific arguments (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$), ensure subsequent text and equations use identical argument structures. Inconsistencies between definitions and immediate usage are critical clarity flaws.\n*   **Symbol Distinction:** Explicitly distinguish between similar-looking symbols (e.g., calligraphic $\\mathcal{Z}$ for dataset concatenation vs. hat-$z$ for single samples). Define all variables before use, especially when symbols are reused for different concepts (e.g., using $x$ for both input image and rotation angle).\n*   **Standardization:** Maintain consistent notation for core functions (e.g., classifier $c(\\cdot)$). If a loss function implicitly includes a model component, state this explicitly; otherwise, include the function in the notation (e.g., $CE(c(x'), y)$ vs. $CE(x', y)$).\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Proofreading:** Flag grammatical errors, typos, and sentence fragments. Specific examples include subject-verb agreement (\"RotEqNet seem\" vs. \"seems\"), article usage (\"an technique\" vs. \"a technique\"), and missing prepositions.\n*   **Terminology Precision:** Ensure distinct terms for distinct concepts. For example, clearly differentiate between \"latent perturbation\" ($\\epsilon$) and \"image perturbation\" ($x' - x$) to prevent ambiguity in experimental descriptions.\n*   **Logical Flow & Justification:** Ensure transitions between theoretical steps are justified in the main text. If a simplification (e.g., NTK reducing to identity) enables a key result (e.g., decoupling dynamics), provide a brief explanation in the main body rather than relying solely on appendices. Group experimental results logically (by attack type or network type) to avoid disjointed presentation.\n\n**3. Figures & Tables (CLAR-FIG)**\n*   **Caption Completeness:** Captions must explicitly describe all subplots. Avoid vague terms like \"neural updates\"; instead, specify what is plotted (e.g., \"Trajectories of representation components in the eigenbasis\"). Ensure axis labels are visible in the figure itself.\n*   **Visual-Textual Alignment:** Ensure diagrams (e.g., method overview figures) have labels that exactly match the notation defined in the text. If a figure is complex, add a brief textual description in the main text to guide the reader.\n*   **Reproducibility Details:** While primarily a methodology issue, clarity in experimental setup is a CLAR concern. Provide complete hyperparameter tables and explicit architecture details for \"parameter equivalent\" comparisons to ensure the reader can understand the experimental conditions.\n\n**Actionable Checklist for Reviewers:**\n1.  Check if all mathematical symbols are defined before first use and used consistently.\n2.  Verify that figure captions fully explain all axes, legends, and subplots.\n3.  Identify any ambiguous terminology where two distinct concepts share a name.\n4.  Assess if the main text provides sufficient justification for key theoretical simplifications.\n5.  Note any significant grammatical errors that hinder readability.",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789587474,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-9fff0b474e8c7109",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 706,
+      "completion_tokens_details": null,
+      "prompt_tokens": 3163,
+      "prompt_tokens_details": null,
+      "total_tokens": 3869
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Definition (CLAR-NOT)**\n*   **Argument Matching:** Verify that mathematical definitions match their usage. If a function is defined with specific arguments (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$), ensure subsequent text and equations use identical argument structures. Inconsistencies between definitions and immediate usage are critical clarity flaws.\n*   **Symbol Distinction:** Explicitly distinguish between similar-looking symbols (e.g., calligraphic $\\mathcal{Z}$ for dataset concatenation vs. hat-$z$ for single samples). Define all variables before use, especially when symbols are reused for different concepts (e.g., using $x$ for both input image and rotation angle).\n*   **Standardization:** Maintain consistent notation for core functions (e.g., classifier $c(\\cdot)$). If a loss function implicitly includes a model component, state this explicitly; otherwise, include the function in the notation (e.g., $CE(c(x'), y)$ vs. $CE(x', y)$).\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Proofreading:** Flag grammatical errors, typos, and sentence fragments. Specific examples include subject-verb agreement (\"RotEqNet seem\" vs. \"seems\"), article usage (\"an technique\" vs. \"a technique\"), and missing prepositions.\n*   **Terminology Precision:** Ensure distinct terms for distinct concepts. For example, clearly differentiate between \"latent perturbation\" ($\\epsilon$) and \"image perturbation\" ($x' - x$) to prevent ambiguity in experimental descriptions.\n*   **Logical Flow & Justification:** Ensure transitions between theoretical steps are justified in the main text. If a simplification (e.g., NTK reducing to identity) enables a key result (e.g., decoupling dynamics), provide a brief explanation in the main body rather than relying solely on appendices. Group experimental results logically (by attack type or network type) to avoid disjointed presentation.\n\n**3. Figures & Tables (CLAR-FIG)**\n*   **Caption Completeness:** Captions must explicitly describe all subplots. Avoid vague terms like \"neural updates\"; instead, specify what is plotted (e.g., \"Trajectories of representation components in the eigenbasis\"). Ensure axis labels are visible in the figure itself.\n*   **Visual-Textual Alignment:** Ensure diagrams (e.g., method overview figures) have labels that exactly match the notation defined in the text. If a figure is complex, add a brief textual description in the main text to guide the reader.\n*   **Reproducibility Details:** While primarily a methodology issue, clarity in experimental setup is a CLAR concern. Provide complete hyperparameter tables and explicit architecture details for \"parameter equivalent\" comparisons to ensure the reader can understand the experimental conditions.\n\n**Actionable Checklist for Reviewers:**\n1.  Check if all mathematical symbols are defined before first use and used consistently.\n2.  Verify that figure captions fully explain all axes, legends, and subplots.\n3.  Identify any ambiguous terminology where two distinct concepts share a name.\n4.  Assess if the main text provides sufficient justification for key theoretical simplifications.\n5.  Note any significant grammatical errors that hinder readability.",
+  "tokens": {
+    "input_tokens": 3163,
+    "max_model_len": 65536
+  }
+}

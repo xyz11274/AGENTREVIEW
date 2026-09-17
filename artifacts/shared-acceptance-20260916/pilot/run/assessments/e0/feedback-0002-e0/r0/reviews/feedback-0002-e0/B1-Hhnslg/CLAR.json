@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T20:20:40.224103+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "4ebd174bda4cd4f5c1f153ae2bbe178cf5cae18b3b3c5bbf76b561c7ec01ae46",
+    "request_sha256": "919f72d4b1075d1d668d881cbd6dd1273d0850270cfdc7ed73ef6b17d7711677",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "fcc4a9e241ae27b49d3d2688af8210fc15e7ba3e7eed48f0f760f3cdbd1ae5a3",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper introduces prototypical networks for few-shot learning, a method that classifies by computing Euclidean distances to class prototypes (means of support set embeddings). It presents the mathematical formulation, discusses prototype normalization and equivalence to linear classifiers, and reports experiments on Omniglot, miniImageNet, and CUB-200 for zero-shot learning.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper lacks sufficient architectural and training hyperparameter details for full reproducibility, such as optimizer type, learning rate, batch size, and number of training episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Add a dedicated \"Implementation Details\" subsection or appendix listing the specific optimizer (e.g., Adam), learning rate schedule, batch size, number of training steps/episodes, and any other critical hyperparameters used for the Omniglot, miniImageNet, and CUB-200 experiments.\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: There is a minor notational inconsistency in Equation (4) where the term $2 c_{k}^{\\top} f_{\\theta}(\\tilde{x})^{\\top}$ appears to have an extra transpose on the embedding vector, which is dimensionally incorrect for a scalar dot product.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Correct Equation (4) to $2 c_{k}^{\\top} f_{\\theta}(\\tilde{x})$ to ensure dimensional consistency and mathematical accuracy.\n\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1 (t-SNE visualization) lacks a legend or color coding explanation in its caption, making it difficult for the reader to distinguish between different bird species or classes without relying on external context.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Enhance the caption of Figure 1 to explicitly state how classes are represented (e.g., \"Each color represents a different bird species\") and, if possible, include a small legend or clarify that colors correspond to species labels.\n\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-structured with a clear narrative flow, moving logically from introduction to related work, method, experiments, and conclusion. The terminology is generally precise and consistently used.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The mathematical notation is largely clear and well-defined, with key variables like $f_{\\theta}(x)$, $c_k$, and $S^k$ introduced and used consistently throughout the method section.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide the specific hyperparameters (optimizer, learning rate, batch size, number of episodes) used for training the prototypical networks on each dataset?\n- Could you clarify the notational error in Equation (4) regarding the transpose on the embedding vector?\n- Can you add more detail to the caption of Figure 1 to explain the color coding or class representation in the t-SNE plot?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "09fd6a647cb4b3a98db80d7b19f86f100dd2ff78843dd5b4285630a3eedd70ac",
+      "prompt_sha256": "919f72d4b1075d1d668d881cbd6dd1273d0850270cfdc7ed73ef6b17d7711677"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Check for overloaded symbols (e.g., using the same variable for different concepts like input images and angles) and resolve inconsistencies in function definitions (e.g., loss functions).\n*   **Terminology Precision:** Distinguish clearly between similar but distinct concepts (e.g., latent vs. image-space perturbations). Avoid interchangeable use of terms that have specific technical definitions.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Proofreading:** Correct grammatical errors, typos, and sentence fragments. Ensure consistent capitalization and terminology (e.g., \"neural networks\" vs. \"Neural Networks\").\n*   **Reproducibility Details:** Explicitly specify architectural details (layers, activations, filter counts) and training protocols (optimizer, learning rate, batch size, epochs). Vague descriptions like \"parameter equivalent\" are insufficient; provide a detailed hyperparameter table or explicit specifications.\n*   **Logical Flow:** Organize results to group related comparisons logically. Avoid disjointed presentations where comparisons between methods are scattered across sections.\n\n**3. Figures, Tables & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure all figures are legible. All labels, arrows, and axes must strictly match the notation defined in the text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, legends, and subplot conditions. Do not rely on the main text to explain figure components.\n*   **Text-Figure Alignment:** Explicitly state the relationship between figures and the main text. Clarify what each figure illustrates (e.g., predictions on reconstructed vs. perturbed inputs) and ensure figure components are described in the text to aid understanding.\n\n**Actionable Checklist for Reviewers:**\n1.  **Notation Audit:** Verify consistent use of symbols and clear definitions.\n2.  **Reproducibility Check:** Confirm presence of specific hyperparameters and architecture details.\n3.  **Figure Review:** Check for legibility, complete captions, and alignment with text notation.\n4.  **Language Check:** Identify grammatical errors and inconsistent terminology.\n5.  **Structure Review:** Assess if results are logically grouped for readability.\n\n**Key Questions for Authors:**\n*   Are all mathematical symbols defined and used consistently?\n*   Are architectural and training details sufficient for reproducibility?\n*   Do figure captions and labels fully describe the visual content and match the text notation?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "2d4f41d59c19aaf8e0567df091c214727aaa1b83d616c20b1bd1e0b348bcd2c1",
+              "role": "CLAR",
+              "score": 0.5133211893363667
+            },
+            {
+              "id": "260f2ae50fdb1caa94e52d73a709cb7aa17006eedb504ccb891ea254495fafa6",
+              "role": "CLAR",
+              "score": 0.49987686668327297
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Check for overloaded symbols (e.g., using the same variable for different concepts like input images and angles) and resolve inconsistencies in function definitions (e.g., loss functions).\n*   **Terminology Precision:** Distinguish clearly between similar but distinct concepts (e.g., latent vs. image-space perturbations). Avoid interchangeable use of terms that have specific technical definitions.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Proofreading:** Correct grammatical errors, typos, and sentence fragments. Ensure consistent capitalization and terminology (e.g., \"neural networks\" vs. \"Neural Networks\").\n*   **Reproducibility Details:** Explicitly specify architectural details (layers, activations, filter counts) and training protocols (optimizer, learning rate, batch size, epochs). Vague descriptions like \"parameter equivalent\" are insufficient; provide a detailed hyperparameter table or explicit specifications.\n*   **Logical Flow:** Organize results to group related comparisons logically. Avoid disjointed presentations where comparisons between methods are scattered across sections.\n\n**3. Figures, Tables & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure all figures are legible. All labels, arrows, and axes must strictly match the notation defined in the text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, legends, and subplot conditions. Do not rely on the main text to explain figure components.\n*   **Text-Figure Alignment:** Explicitly state the relationship between figures and the main text. Clarify what each figure illustrates (e.g., predictions on reconstructed vs. perturbed inputs) and ensure figure components are described in the text to aid understanding.\n\n**Actionable Checklist for Reviewers:**\n1.  **Notation Audit:** Verify consistent use of symbols and clear definitions.\n2.  **Reproducibility Check:** Confirm presence of specific hyperparameters and architecture details.\n3.  **Figure Review:** Check for legibility, complete captions, and alignment with text notation.\n4.  **Language Check:** Identify grammatical errors and inconsistent terminology.\n5.  **Structure Review:** Assess if results are logically grouped for readability.\n\n**Key Questions for Authors:**\n*   Are all mathematical symbols defined and used consistently?\n*   Are architectural and training details sufficient for reproducibility?\n*   Do figure captions and labels fully describe the visual content and match the text notation?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Review the clarity of writing, notation, algorithm presentation, and figures/tables for the paper titled 'Prototypical Networks for Few-shot Learning' with the abstract: 'A recent approach to few-shot classification called matching networks has demonstrated the benefits of coupling metric learning with a training procedure that mimics test. This approach relies on a complicated fine-tuning procedure and an attention scheme that forms a distribution over all points in the support set, scaling poorly with its size. We propose a more streamlined approach, prototypical networks, that learns a metric space in which few-shot classification can be performed by computing Euclidean distances to prototype representations of each class, rather than individual points. Our method is competitive with state-of-the-art one-shot classification approaches while being much simpler and more scalable with the size of the support set. We empirically demonstrate the performance of our approach on the Omniglot and mini-ImageNet datasets. We further demonstrate that a similar idea can be used for zero-shot learning, where each class is described by a set of attributes, and achieve state-of-the-art results on the Caltech UCSD bird dataset.'",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 4050,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 17.61460255458951,
+        "prompt_chars": 11195,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "fcc4a9e241ae27b49d3d2688af8210fc15e7ba3e7eed48f0f760f3cdbd1ae5a3"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "8bf0af9a5b120b64ddcc8e57d170dac85f01d9ef8dd2245b894d8bbfbef2da61",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper introduces prototypical networks for few-shot learning, a method that classifies by computing Euclidean distances to class prototypes (means of support set embeddings). It presents the mathematical formulation, discusses prototype normalization and equivalence to linear classifiers, and reports experiments on Omniglot, miniImageNet, and CUB-200 for zero-shot learning.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper lacks sufficient architectural and training hyperparameter details for full reproducibility, such as optimizer type, learning rate, batch size, and number of training episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Add a dedicated \"Implementation Details\" subsection or appendix listing the specific optimizer (e.g., Adam), learning rate schedule, batch size, number of training steps/episodes, and any other critical hyperparameters used for the Omniglot, miniImageNet, and CUB-200 experiments.\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: There is a minor notational inconsistency in Equation (4) where the term $2 c_{k}^{\\top} f_{\\theta}(\\tilde{x})^{\\top}$ appears to have an extra transpose on the embedding vector, which is dimensionally incorrect for a scalar dot product.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Correct Equation (4) to $2 c_{k}^{\\top} f_{\\theta}(\\tilde{x})$ to ensure dimensional consistency and mathematical accuracy.\n\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1 (t-SNE visualization) lacks a legend or color coding explanation in its caption, making it difficult for the reader to distinguish between different bird species or classes without relying on external context.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Enhance the caption of Figure 1 to explicitly state how classes are represented (e.g., \"Each color represents a different bird species\") and, if possible, include a small legend or clarify that colors correspond to species labels.\n\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-structured with a clear narrative flow, moving logically from introduction to related work, method, experiments, and conclusion. The terminology is generally precise and consistently used.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The mathematical notation is largely clear and well-defined, with key variables like $f_{\\theta}(x)$, $c_k$, and $S^k$ introduced and used consistently throughout the method section.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide the specific hyperparameters (optimizer, learning rate, batch size, number of episodes) used for training the prototypical networks on each dataset?\n- Could you clarify the notational error in Equation (4) regarding the transpose on the embedding vector?\n- Can you add more detail to the caption of Figure 1 to explain the color coding or class representation in the t-SNE plot?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "feedback-0002-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

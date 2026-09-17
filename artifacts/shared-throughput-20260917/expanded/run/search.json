@@ -1,0 +1,205 @@
+{
+  "attempts": {},
+  "champion": null,
+  "identity": {
+    "experiment_protocol_sha256": "a5f596d0c73dad93aa4569104d948ce792c15819ce27e7de75240785a69c4b03",
+    "protocol": "research-v2-shared-mstar-v1"
+  },
+  "pool": [],
+  "recipes": {
+    "coco-native": {
+      "candidate": {
+        "candidate_id": "coco-native",
+        "lineage": [],
+        "parent_id": null,
+        "program_sha256": null,
+        "round": 0,
+        "seed": null,
+        "seed_kind": "coco_native"
+      },
+      "key": "coco-native",
+      "kind": "coco_native",
+      "memory_enabled": false,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "no-memory-experience_learner": {
+      "candidate": {
+        "candidate_id": "seed-experience_learner",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-experience_learner/program.py",
+          "sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+        },
+        "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+        "revision": 0,
+        "round": 0,
+        "seed": "experience_learner",
+        "seed_kind": "experience_learner"
+      },
+      "key": "no-memory-experience_learner",
+      "kind": "no_memory",
+      "memory_enabled": false,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "no-memory-llm_summarizer": {
+      "candidate": {
+        "candidate_id": "seed-llm_summarizer",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-llm_summarizer/program.py",
+          "sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+        },
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+        "revision": 0,
+        "round": 0,
+        "seed": "llm_summarizer",
+        "seed_kind": "llm_summarizer"
+      },
+      "key": "no-memory-llm_summarizer",
+      "kind": "no_memory",
+      "memory_enabled": false,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "no-memory-vector_search": {
+      "candidate": {
+        "candidate_id": "seed-vector_search",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-vector_search/program.py",
+          "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+        },
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+        "revision": 0,
+        "round": 0,
+        "seed": "vector_search",
+        "seed_kind": "vector_search"
+      },
+      "key": "no-memory-vector_search",
+      "kind": "no_memory",
+      "memory_enabled": false,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "seed-experience_learner": {
+      "candidate": {
+        "candidate_id": "seed-experience_learner",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-experience_learner/program.py",
+          "sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+        },
+        "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+        "revision": 0,
+        "round": 0,
+        "seed": "experience_learner",
+        "seed_kind": "experience_learner"
+      },
+      "key": "seed-experience_learner",
+      "kind": "seed",
+      "memory_enabled": true,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "seed-llm_summarizer": {
+      "candidate": {
+        "candidate_id": "seed-llm_summarizer",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-llm_summarizer/program.py",
+          "sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+        },
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+        "revision": 0,
+        "round": 0,
+        "seed": "llm_summarizer",
+        "seed_kind": "llm_summarizer"
+      },
+      "key": "seed-llm_summarizer",
+      "kind": "seed",
+      "memory_enabled": true,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    },
+    "seed-vector_search": {
+      "candidate": {
+        "candidate_id": "seed-vector_search",
+        "lineage": [],
+        "parent_id": null,
+        "program": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/run/programs/seed-vector_search/program.py",
+          "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+        },
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+        "revision": 0,
+        "round": 0,
+        "seed": "vector_search",
+        "seed_kind": "vector_search"
+      },
+      "key": "seed-vector_search",
+      "kind": "seed",
+      "memory_enabled": true,
+      "paper_ids": [
+        "-EHqoysUYLx",
+        "SJn0sLgRb",
+        "BJKYvt5lg",
+        "BJIgi_eCZ",
+        "_-eJYVfSYH",
+        "SJe8DsR9tm"
+      ],
+      "split": "static"
+    }
+  },
+  "results": {},
+  "status": "running",
+  "winner": null
+}

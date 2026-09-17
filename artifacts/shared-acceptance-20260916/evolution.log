@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/data/xyj/shengao/AgentReview_0915/deployment/shared_acceptance.py", line 218, in <module>
+    {"prepare": prepare, "evolution": evolution, "pilot": pilot}[args.action]()
+  File "/data/xyj/shengao/AgentReview_0915/deployment/shared_acceptance.py", line 159, in evolution
+    check_result(host, search._evaluate(native), native, search.epoch)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_evolution.py", line 152, in _evaluate
+    result = self.backend.assess(recipe, epoch=epoch)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_experiment.py", line 287, in assess
+    receipt = evaluate_final_reviews(review_manifest_path=manifest, reference_manifest_path=reference,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco.py", line 425, in evaluate_final_reviews
+    return _evaluate_locked(review_manifest_path=Path(review_manifest_path).resolve(),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco.py", line 531, in _evaluate_locked
+    raise DevelopmentCoCoFailure(failure)
+agentreview.research_v2.development_coco.DevelopmentCoCoFailure: CoCo Classify has an unresolved opinion or fallback N/A without valid model evidence

@@ -1,0 +1,53 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_summarizer",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a specialist reviewer for the QUAL dimension of a machine learning paper review. Your expertise focus is technical quality, methodology, experiments, reproducibility, and comparisons to prior work. You must review strictly according to the rubric below and stay centered on this dimension.\n\n## Official Rubric Section\n1. QUAL (Quality): Is the submission technically sound? Are claims well supported (e.g., by theoretical analysis or experimental results)? Are the methods used appropriate? Is this a complete piece of work or work in progress? Are the authors careful and honest about evaluating both the strengths and weaknesses of their work?\n● QUAL-MET (Methodological Soundness): Evaluates whether the proposed algorithms, models or system architectures are technically correct and free of conceptual or implementation errors.\n\n    ○ Strength: Highlights that the method is well-formulated, mathematically consistent and correctly implemented; no major flaws are apparent.\n    ○ Weakness: Points out conceptual errors, mis-specified objectives, algorithmic flaws or misuses of optimisation methods.\n● QUAL-EXP (Experimental Design & Evaluation): Assesses the adequacy of the experimental setup: choice of datasets, baselines, evaluation metrics, ablation studies, and statistical tests.\n\n    ○ Strength: Notes comprehensive experiments, appropriate baselines, sufficiently large data and proper metrics; experiments convincingly validate claims.\n    ○ Weakness: Points out inadequate baselines, missing standard benchmarks, inappropriate metrics or lack of ablation studies.\n● QUAL-REP (Reproducibility & Implementation Details): Considers whether the submission provides enough detail (e.g., hyperparameters, code availability, dataset splits) to replicate the work and whether the implementation follows best practices.\n\n    ○ Strength: Commends open-sourced code, detailed hyperparameters, clear dataset descriptions and comprehensive training details enabling easy reproduction.\n    ○ Weakness: Notes lack of code, incomplete hyperparameters, unspecified data splits or other missing details that hinder reproduction.\n● QUAL-CMP (Comparisons to Prior Work): Evaluates whether the paper sufficiently compares against relevant prior work and state-of-the-art methods.\n\n    ○ Strength: Acknowledges thorough comparisons against recent and appropriate baselines and proper citation of related work.\n    ○ Weakness: Notes missing comparisons to well-known recent methods, outdated baselines, or incomplete literature review.\n● QUAL-STA (Statistical Rigor & Validation): Evaluates whether statistical analyses (e.g., significance tests, confidence intervals) are properly applied and whether reported improvements are statistically meaningful.\n\n    ○ Strength: Praises appropriate statistical tests, robust validation, confidence intervals and transparent reporting of variance.\n    ○ Weakness: Criticises absence of statistical tests, reliance on single runs, or misuse of statistical methods.\n\n## Reviewing Instructions\n- Evaluate the paper only through the QUAL lens while grounding every claim in the Frozen Paper.\n- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n- Be rigorous, evidence-based, and constructive.\n- Explicitly comment on the listed sub-dimensions from the rubric.\n- Base experiments and claims on evidence present in the paper.\n- Return only the final review, excluding private reasoning, analysis, and <think> tags.\n- Cite original-paper evidence anchors for every major judgment.\n- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.\n- Use SRC-<digits>(page=<digits>) with the numeric ID and page from one listed token.\n- Use numeric Source Anchors present in the input list.\nWrite your review in the following format:\n```\nReviewer dimension: QUAL\nPaper summary: ...\n\nDimension score (1-10): ...\nConfidence (1-5): ...\n\nOpinions:\n- subcategory: <one rubric subcategory code>\n  polarity: strength | weakness | neutral\n  claim: <one atomic review opinion>\n  evidence_anchors: [<copy allowed numeric Source Anchor token>]\n  confidence: <1-5>\n  actionable_suggestion: <specific suggestion or N/A>\n- subcategory: ...\n  polarity: ...\n  claim: ...\n  evidence_anchors: [...]\n  confidence: ...\n  actionable_suggestion: ...\n\nKey questions for the authors:\n- ...\n\nRecommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject\n```\n",
+      "role": "system"
+    },
+    {
+      "content": "Use the deterministic title and abstract query supplied by the host.\n\nQuestion:\nRole: QUAL\nTitle: Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses\nAbstract: In {federated learning}, the underlying data distributions may be different across clients. This paper provides a theoretical analysis of generalization error of {federated learning}, which captures both heterogeneity and relatedness of the distributions. In particular, we assume that the heterogeneous distributions are sampled from a meta-distribution. In this two-level distribution framework, we characterize the generalization error not only for clients participating in the training but also for unparticipating clients. We first show that the generalization error for unparticipating clients can be bounded by participating generalization error and participating gap caused by clients' sampling. We further establish fast learning bounds of order $\\mathcal{O}(\\frac{1}{mn} + \\frac{1}{m})$ for unparticipating clients, where $m$ is the number of clients and $n$ is the sample size at each client. To our knowledge, the obtained fast bounds are state-of-the-art in the two-level distribution framework. Moreover, previous theoretical results mostly require the loss function to be bounded. We derive convergence bounds of order $\\mathcal{O}(\\frac{1}{\\sqrt{mn}} + \\frac{1}{\\sqrt{m}})$ under unbounded assumptions, including sub-exponential and sub-Weibull losses. \n\nThe Query must conform to this schema:\n{\"type\": \"object\", \"properties\": {\"query_text\": {\"type\": \"string\"}, \"reviewer_dimension\": {\"type\": \"string\"}}, \"required\": [\"query_text\", \"reviewer_dimension\"], \"additionalProperties\": false}\n\nOutput ONLY a valid JSON object matching the schema fields. No explanation.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": {
+    "json_schema": {
+      "name": "Query",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query_text": {
+            "type": "string"
+          },
+          "reviewer_dimension": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query_text",
+          "reviewer_dimension"
+        ],
+        "type": "object"
+      },
+      "strict": true
+    },
+    "type": "json_schema"
+  }
+}

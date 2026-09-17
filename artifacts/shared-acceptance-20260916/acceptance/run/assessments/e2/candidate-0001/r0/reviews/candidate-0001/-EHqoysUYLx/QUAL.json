@@ -1,0 +1,141 @@
+{
+  "created_at": "2026-09-16T16:40:22.134372+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "071efe1ae61eab4dece6661ebe53b968aca51fdbe108a1c91acc1c00649a71c4",
+    "request_sha256": "4743423d3132c87a0d9ca0d0917be85f87c76578dbe657dd3cabb51c6c3b0ce5",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "6e030e96f1fde5d9e216daa03261a321d3ab8e2bf169ffbe6979ab1cb43ac2fe",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-EHqoysUYLx",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning using a two-level distribution framework (meta-distribution of client distributions). It derives generalization bounds for both participating and unparticipating clients. Key contributions include fast learning rates (O(1/mn) and O(1/mn + 1/m)) under Bernstein conditions in high probability form, and bounds for unbounded losses (sub-Weibull) using small-ball methods. The work is purely theoretical, with no experimental validation.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The theoretical framework is well-formulated, correctly defining the two-level distribution, semi-empirical risk, and excess risk for unparticipating clients. The decomposition of the unparticipating excess risk into participating error and participation gap is mathematically consistent and clearly presented.\n  evidence_anchors: [SRC-006, SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The paper contains no experimental validation. All claims are purely theoretical. While this is common for pure theory papers, the lack of any empirical illustration (e.g., on synthetic or real federated datasets) to demonstrate the tightness of the bounds or the practical relevance of the assumptions (Bernstein, small-ball) is a significant gap for a complete piece of work.\n  evidence_anchors: [SRC-001, SRC-005]\n  confidence: 5\n  actionable_suggestion: Add a section with empirical results on at least one synthetic or real-world federated learning benchmark to validate the theoretical predictions, especially for the fast rates and unbounded loss scenarios.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: As a theoretical paper, reproducibility is limited to the correctness of the proofs. However, the paper does not provide code for any potential numerical verification of the bounds, nor does it specify concrete function classes or loss functions for which the assumptions (Bernstein, small-ball) are verified in practice, making it difficult for readers to apply the results.\n  evidence_anchors: [SRC-010, SRC-016]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with explicit examples of function classes and loss functions satisfying the Bernstein and small-ball conditions, and consider releasing code for computing the theoretical bounds for specific cases.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper provides a clear and comprehensive comparison with prior work in Table 1, highlighting the novelty of its contributions (fast rates in probability form, unparticipating clients, unbounded losses) relative to existing results (Mohri et al., 2019; Chen et al., 2021; Fallah et al., 2021).\n  evidence_anchors: [SRC-021]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: neutral\n  claim: The paper is theoretical and does not involve statistical tests on experimental data. The 'statistical rigor' is reflected in the high-probability bounds, which are appropriately derived and stated. However, the lack of empirical data means there is no variance or significance testing to evaluate.\n  evidence_anchors: [SRC-008, SRC-013]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide any empirical evidence or numerical examples to support the tightness of the derived bounds, particularly for the fast rates and unbounded loss cases?\n- For which specific, common function classes (e.g., neural networks, linear models) and loss functions (e.g., cross-entropy, squared loss) can you explicitly verify that the Bernstein and small-ball conditions hold in the federated setting?\n- How do the constants in the bounds (c1, c2, etc.) behave in practice? Are they likely to be large, potentially making the bounds loose for realistic sample sizes?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "b58212a2542418f709774005c672b5bc31e0a2ea414ffc2b7a309d19488bb053",
+      "prompt_sha256": "4743423d3132c87a0d9ca0d0917be85f87c76578dbe657dd3cabb51c6c3b0ce5"
+    },
+    "memory": {
+      "always_on_knowledge": "Ground every judgment in the Frozen Paper. Use memory only for general review heuristics.",
+      "context": "[REVIEW EXPERIENCE c21d8b2a45d1fbcf3003012613bb1d3bfbda5f730a53616c30e1e480c0006cdb]\n1. Experimental Scope: Flag reliance on single, simple datasets (e.g., MNIST) as a weakness for generalizability; recommend expansion to complex benchmarks (e.g., CIFAR-10, ImageNet). 2. Reproducibility: Criticize missing implementation details (hyperparameters, seeds, code availability) and demand detailed appendices or public code. 3. Statistical Rigor: Identify single-run results without variance reporting or significance tests as a major flaw; require mean/std over multiple runs. 4. Comparisons: Note incomplete baselines if recent SOTA or relevant architectural variants are omitted. 5. Methodology: Acknowledge valid experimental designs that isolate specific trade-offs (e.g., augmentation vs. adversarial robustness) as a strength.",
+      "instruction_response": "Synthesize the retrieved review experience into actionable guidance for the current review. Ensure the guidance is general and does not reference specific details from the retrieved papers. Maintain a professional, constructive tone.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "c21d8b2a45d1fbcf3003012613bb1d3bfbda5f730a53616c30e1e480c0006cdb",
+              "role": "QUAL",
+              "score": 0.3587030648074338
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "e09a78e405f20416a780083ee1da3edf582a4e5efbbcf99cf717664a3bf91ce3",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Theoretical analysis of generalization bounds in federated learning with heterogeneous data distributions, meta-distribution framework, fast learning rates, unparticipating clients, and unbounded loss functions (sub-exponential, sub-Weibull).",
+        "reviewer_dimension": "QUAL"
+      },
+      "resources": {
+        "completion_chars": 296,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 2.2697793701663613,
+        "prompt_chars": 6357,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "6e030e96f1fde5d9e216daa03261a321d3ab8e2bf169ffbe6979ab1cb43ac2fe"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "8c2d4ffb8bef75690ecc7f25ed605b2fb889f96f44bda68f8417323624be12b3",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "e09a78e405f20416a780083ee1da3edf582a4e5efbbcf99cf717664a3bf91ce3"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "86d21d30931ff5eff78822908eb515399d9152bb7a24ba33f899d79da526ad96",
+  "review_text": "```\nReviewer dimension: QUAL\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning using a two-level distribution framework (meta-distribution of client distributions). It derives generalization bounds for both participating and unparticipating clients. Key contributions include fast learning rates (O(1/mn) and O(1/mn + 1/m)) under Bernstein conditions in high probability form, and bounds for unbounded losses (sub-Weibull) using small-ball methods. The work is purely theoretical, with no experimental validation.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The theoretical framework is well-formulated, correctly defining the two-level distribution, semi-empirical risk, and excess risk for unparticipating clients. The decomposition of the unparticipating excess risk into participating error and participation gap is mathematically consistent and clearly presented.\n  evidence_anchors: [SRC-006, SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The paper contains no experimental validation. All claims are purely theoretical. While this is common for pure theory papers, the lack of any empirical illustration (e.g., on synthetic or real federated datasets) to demonstrate the tightness of the bounds or the practical relevance of the assumptions (Bernstein, small-ball) is a significant gap for a complete piece of work.\n  evidence_anchors: [SRC-001, SRC-005]\n  confidence: 5\n  actionable_suggestion: Add a section with empirical results on at least one synthetic or real-world federated learning benchmark to validate the theoretical predictions, especially for the fast rates and unbounded loss scenarios.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: As a theoretical paper, reproducibility is limited to the correctness of the proofs. However, the paper does not provide code for any potential numerical verification of the bounds, nor does it specify concrete function classes or loss functions for which the assumptions (Bernstein, small-ball) are verified in practice, making it difficult for readers to apply the results.\n  evidence_anchors: [SRC-010, SRC-016]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with explicit examples of function classes and loss functions satisfying the Bernstein and small-ball conditions, and consider releasing code for computing the theoretical bounds for specific cases.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper provides a clear and comprehensive comparison with prior work in Table 1, highlighting the novelty of its contributions (fast rates in probability form, unparticipating clients, unbounded losses) relative to existing results (Mohri et al., 2019; Chen et al., 2021; Fallah et al., 2021).\n  evidence_anchors: [SRC-021]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: neutral\n  claim: The paper is theoretical and does not involve statistical tests on experimental data. The 'statistical rigor' is reflected in the high-probability bounds, which are appropriately derived and stated. However, the lack of empirical data means there is no variance or significance testing to evaluate.\n  evidence_anchors: [SRC-008, SRC-013]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide any empirical evidence or numerical examples to support the tightness of the derived bounds, particularly for the fast rates and unbounded loss cases?\n- For which specific, common function classes (e.g., neural networks, linear models) and loss functions (e.g., cross-entropy, squared loss) can you explicitly verify that the Bernstein and small-ball conditions hold in the federated setting?\n- How do the constants in the bounds (c1, c2, etc.) behave in practice? Are they likely to be large, potentially making the bounds loose for realistic sample sizes?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer QUAL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+    "task_id": "QUAL"
+  },
+  "role": "QUAL",
+  "run_id": "candidate-0001",
+  "schema_version": "research-core-v2-artifact-v1"
+}

@@ -1,0 +1,27 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/rotating/references.json",
+          "sha256": "045fe89c8aa9f3a3ff73ef2151befb430758a4a1ed546947a703de734a63acb5"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/rotating/papers/S1EzRgb0W.json",
+          "sha256": "84c795d6abefc74e37f3d4b08ef77eff9be1539e4b1ff91efbe564b2551908d0"
+        }
+      },
+      "content_sha256": "26423f5ff695eb0d60e0c9bf81b33997bb4f54c7e378376ada93fa3aea684d32",
+      "normalized_content_sha256": "4cf03add19bc0e85c2cbb8118b900fce270c14e27636bc896dec22adf82bc136",
+      "paper_id": "S1EzRgb0W",
+      "source_partition": "rotating",
+      "title": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples",
+      "version_ids": [
+        "S1EzRgb0W"
+      ],
+      "work_family": "coco-title-37eecf0337d78c859875afeee24dbf28b150811f89d0be74d99c7a07d2b77a5f"
+    }
+  ],
+  "split": "rotating"
+}

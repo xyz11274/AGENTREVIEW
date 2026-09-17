@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to the creation of \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" that generates diversity through data permutation rather than random subsampling or feature selection. The authors demonstrate this on a toy example and compare performance against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The paper introduces a genuinely novel algorithmic approach by repurposing a complexity measure (ETC) from time-series analysis as a splitting criterion for decision trees, which is a distinct conceptual advance over standard impurity measures.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: weakness\n  claim: The problem formulation of \"Permutation Decision Trees\" is a minor variation of existing ensemble methods; the core task remains standard classification, and the motivation for order-dependence in tabular data is not strongly established beyond a toy example.\n  evidence_anchors: [SRC-002, SRC-006]\n  confidence: 4\n  actionable_suggestion: Provide a more rigorous theoretical or empirical justification for why order-dependence is a critical factor in the specific domains where this method is intended to be applied, rather than relying on general psychological effects.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is derivative, relying on standard UCI datasets and a single toy example, without introducing new benchmarks or evaluation protocols that specifically test the claimed order-sensitivity in realistic scenarios.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Design experiments on time-series or sequential data where order is explicitly known to matter, to validate the core premise of the method.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of the method's performance is superficial; the paper acknowledges that the proposed method underperforms Random Forest on most datasets but does not provide a deep analysis of why the structural impurity measure fails to translate into better predictive power in these cases.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an ablation study or error analysis to understand the conditions under which ETC-based splitting is beneficial versus detrimental compared to entropy-based splitting.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of ETC with decision trees is a creative application of an existing technique, but the rationale for why this combination should lead to improved generalization (beyond just capturing order) is not fully articulated.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 3\n  actionable_suggestion: Clarify the theoretical link between structural impurity and model generalization, especially in the absence of a clear i.i.d. violation in the test datasets used.\n\nKey questions for the authors:\n- How does the method perform on datasets where the order of instances is explicitly random or irrelevant, to isolate the effect of the ETC measure from the effect of permutation?\n- What is the computational cost of calculating ETC for large datasets compared to standard impurity measures, and does this impact the scalability of the Permutation Decision Forest?\n- Can the authors provide a theoretical bound or explanation for when ETC gain would be a better proxy for information gain than Shannon entropy?\n\nRecommendation: Weak Reject\n```",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789579952,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a45df9839c71d0e8",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 833,
+      "completion_tokens_details": null,
+      "prompt_tokens": 8600,
+      "prompt_tokens_details": null,
+      "total_tokens": 9433
+    }
+  },
+  "raw_model_output": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to the creation of \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" that generates diversity through data permutation rather than random subsampling or feature selection. The authors demonstrate this on a toy example and compare performance against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The paper introduces a genuinely novel algorithmic approach by repurposing a complexity measure (ETC) from time-series analysis as a splitting criterion for decision trees, which is a distinct conceptual advance over standard impurity measures.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: weakness\n  claim: The problem formulation of \"Permutation Decision Trees\" is a minor variation of existing ensemble methods; the core task remains standard classification, and the motivation for order-dependence in tabular data is not strongly established beyond a toy example.\n  evidence_anchors: [SRC-002, SRC-006]\n  confidence: 4\n  actionable_suggestion: Provide a more rigorous theoretical or empirical justification for why order-dependence is a critical factor in the specific domains where this method is intended to be applied, rather than relying on general psychological effects.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is derivative, relying on standard UCI datasets and a single toy example, without introducing new benchmarks or evaluation protocols that specifically test the claimed order-sensitivity in realistic scenarios.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Design experiments on time-series or sequential data where order is explicitly known to matter, to validate the core premise of the method.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of the method's performance is superficial; the paper acknowledges that the proposed method underperforms Random Forest on most datasets but does not provide a deep analysis of why the structural impurity measure fails to translate into better predictive power in these cases.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an ablation study or error analysis to understand the conditions under which ETC-based splitting is beneficial versus detrimental compared to entropy-based splitting.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of ETC with decision trees is a creative application of an existing technique, but the rationale for why this combination should lead to improved generalization (beyond just capturing order) is not fully articulated.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 3\n  actionable_suggestion: Clarify the theoretical link between structural impurity and model generalization, especially in the absence of a clear i.i.d. violation in the test datasets used.\n\nKey questions for the authors:\n- How does the method perform on datasets where the order of instances is explicitly random or irrelevant, to isolate the effect of the ETC measure from the effect of permutation?\n- What is the computational cost of calculating ETC for large datasets compared to standard impurity measures, and does this impact the scalability of the Permutation Decision Forest?\n- Can the authors provide a theoretical bound or explanation for when ETC gain would be a better proxy for information gain than Shannon entropy?\n\nRecommendation: Weak Reject\n```",
+  "tokens": {
+    "input_tokens": 8600,
+    "max_model_len": 65536
+  }
+}

@@ -31,6 +31,11 @@ REQUIRED_PLANNING_QUERY_FIELDS = {"query_text", "reviewer_dimension"}
 REVIEW_PLAN_PROTOCOL = "evolvable-review-plan-v1"
 REVIEW_PLAN_FUNCTION = "plan_review"
 REVIEW_PLAN_TOOLKIT_CAPABILITIES = {"retrieve_current_s2"}
+TOOLKIT_INTERFACES = {
+    "llm_completion", "embed", "create_vector_collection", "retrieve_current_s2",
+    "log", "db", "chroma", "logger", "collections", "embedding_restore_cache",
+    "toolkit_embedding_sources", "is_toolkit_embedding",
+}
 FORBIDDEN_CALLS = {
     "__import__",
     "breakpoint",
@@ -394,6 +399,16 @@ def static_check(code: str, import_whitelist: set[str] | None = None) -> list[st
                     "Candidate Program may not call host-only capability: retrieve_s2"
                 )
         elif isinstance(node, ast.Attribute):
+            direct_toolkit = (
+                isinstance(node.value, ast.Name) and node.value.id == "toolkit"
+            ) or (
+                isinstance(node.value, ast.Attribute) and node.value.attr == "toolkit"
+            )
+            if direct_toolkit and node.attr not in TOOLKIT_INTERFACES:
+                errors.append(
+                    f"Unknown toolkit interface: {node.attr}; use llm_completion(messages, **kwargs) "
+                    "for model calls and embed(texts) for embeddings"
+                )
             if node.attr == "retrieve_s2":
                 errors.append(
                     "Candidate Program may not access host-only capability: retrieve_s2"

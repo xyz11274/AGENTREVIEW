@@ -1,0 +1,83 @@
+{
+  "checked_at": "2026-09-17T01:27:49.885270+08:00",
+  "command": "/data/xyj/envs/coco-original/bin/python /data/xyj/shengao/AgentReview_0915/deployment/shared_acceptance.py pilot ",
+  "completed_real_requests": [
+    {
+      "component": "specialist_review:ORIG",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/bootstrap/e0/requests/0d00082392f28c59bb445b681f4128ecc3a9039ef84c619b8d295c0ae89a103c/response.json",
+        "sha256": "2b3fe687205ca754ad776cd67517b81ee9aedbc4512e715825630c489dffcadd"
+      },
+      "usage": {
+        "completion_tokens": 917,
+        "completion_tokens_details": null,
+        "prompt_tokens": 8854,
+        "prompt_tokens_details": null,
+        "total_tokens": 9771
+      }
+    },
+    {
+      "component": "specialist_review:CLAR",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/bootstrap/e0/requests/15a15816cdcba804e7ac7278548260ae9602a1ad7b632e67b61c602a7ea19d5b/response.json",
+        "sha256": "33a12118a655daf799320b9f3b8673a37ab1bd64390b668d23254d92bfbbf93a"
+      },
+      "usage": {
+        "completion_tokens": 1012,
+        "completion_tokens_details": null,
+        "prompt_tokens": 8632,
+        "prompt_tokens_details": null,
+        "total_tokens": 9644
+      }
+    },
+    {
+      "component": "specialist_review:SIGN",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/bootstrap/e0/requests/a470aa7e49c7c75084c6d4a754e82ccba423517a136362330a8be2ed7b0be8a9/response.json",
+        "sha256": "78674176593687951ab0d9b9189636f0cda3a5e204b9172d047ef90e13679e77"
+      },
+      "usage": {
+        "completion_tokens": 644,
+        "completion_tokens_details": null,
+        "prompt_tokens": 8693,
+        "prompt_tokens_details": null,
+        "total_tokens": 9337
+      }
+    },
+    {
+      "component": "specialist_review:QUAL",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/bootstrap/e0/requests/d64ca4ccb559b627ad22e0e11b0f476d81ce458e1e3beaa63805fb3ceec0c431/response.json",
+        "sha256": "054f03f843c6b2a50ebfe726dc81b84822f247c60e55d838fe6cfb168ab4d727"
+      },
+      "usage": {
+        "completion_tokens": 819,
+        "completion_tokens_details": null,
+        "prompt_tokens": 8775,
+        "prompt_tokens_details": null,
+        "total_tokens": 9594
+      }
+    },
+    {
+      "component": "specialist_review:POL",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/bootstrap/e0/requests/ed503b39b9f7fe64b534537dee813f3916724d3f0b2b26c43ba7b8588ab9d258/response.json",
+        "sha256": "8f1d81305037ee79350a539de97be15a4586d7cf3f59eb04cda39736cffec99d"
+      },
+      "usage": {
+        "completion_tokens": 773,
+        "completion_tokens_details": null,
+        "prompt_tokens": 8777,
+        "prompt_tokens_details": null,
+        "total_tokens": 9550
+      }
+    }
+  ],
+  "failure_policy": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/failure-policy.json",
+  "note": "Startup checked; pilot experiment has not completed.",
+  "pid": 2520421,
+  "registered_conditions": 7,
+  "request_failures": 0,
+  "search_state": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/search.json",
+  "status": "running"
+}

@@ -1,0 +1,61 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a specialist reviewer for the CLAR dimension of a machine learning paper review. Your expertise focus is clarity of writing, notation, algorithm presentation, and figures/tables. You must review strictly according to the rubric below and stay centered on this dimension.\n\n## Official Rubric Section\n2. CLAR (Clarity): Is the submission clearly written? Is it well organized? (If not, please make constructive suggestions for improving its clarity.) Does it adequately inform the reader? (Note that a superbly written paper provides enough information for an expert reader to reproduce its results.)\n● CLAR-WRT (Writing, Terminology & Algorithm Presentation): Covers overall writing quality and organization, precision of terminology and key concepts, and the clarity of algorithm presentations (code snippets, pseudocode, workflow diagrams).\n\n    ○ Strength: Well-structured sections and smooth narrative; concise, readable prose; all specialized terms and assumptions are clearly defined and consistently used; pseudocode/code/workflows are self-contained, well-documented (clear variable names, inputs/outputs), and easy to follow step-by-step.\n    ○ Weakness: Unclear or disorganized exposition, excessive jargon or redundancy; missing/ambiguous definitions or misuse of terms; confusing or incomplete pseudocode/code/workflows (undefined parameters, missing steps, opaque variable names).\n● CLAR-NOT (Notation & Mathematical Explanation Clarity): Considers whether mathematical notation is consistent, well defined and explained.\n\n    ○ Strength: Highlights clear definitions, consistent notation and well-explained derivations.\n    ○ Weakness: Notes inconsistent symbols, missing definitions or unexplained mathematical steps.\n● CLAR-FIG (Figures & Visual Aids Clarity): Evaluates whether figures, tables, plots and visualisations are legible, properly labelled, and aid understanding.\n\n    ○ Strength: Praises informative and well-designed figures that clearly illustrate results or architectures.\n    ○ Weakness: Points out illegible plots, missing labels, confusing colour schemes or misleading visualisations.\n\n## Reviewing Instructions\n- Evaluate the paper only through the CLAR lens while grounding every claim in the Frozen Paper.\n- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n- Be rigorous, evidence-based, and constructive.\n- Explicitly comment on the listed sub-dimensions from the rubric.\n- Base experiments and claims on evidence present in the paper.\n- Return only the final review, excluding private reasoning, analysis, and <think> tags.\n- Cite original-paper evidence anchors for every major judgment.\n- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.\n- Use SRC-<digits>(page=<digits>) with the numeric ID and page from one listed token.\n- Use numeric Source Anchors present in the input list.\nWrite your review in the following format:\n```\nReviewer dimension: CLAR\nPaper summary: ...\n\nDimension score (1-10): ...\nConfidence (1-5): ...\n\nOpinions:\n- subcategory: <one rubric subcategory code>\n  polarity: strength | weakness | neutral\n  claim: <one atomic review opinion>\n  evidence_anchors: [<copy allowed numeric Source Anchor token>]\n  confidence: <1-5>\n  actionable_suggestion: <specific suggestion or N/A>\n- subcategory: ...\n  polarity: ...\n  claim: ...\n  evidence_anchors: [...]\n  confidence: ...\n  actionable_suggestion: ...\n\nKey questions for the authors:\n- ...\n\nRecommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject\n```\n",
+      "role": "system"
+    },
+    {
+      "content": "Store complete traceable Review Experience for deterministic retrieval. Ensure content is self-contained, specific to the reviewer dimension, and actionable.\n\nText:\nSOURCE REVIEW ID: a1183db720fe87be3b06a24097874fcd207b5eae4513e4317d94366712d7fbc2\nROLE: CLAR\n\nCOMPLETE SPECIALIST REVIEW:\n```\nReviewer dimension: CLAR\nPaper summary: The paper investigates the mechanism by which predictor networks and stop-gradient operations in non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam prevent representational collapse. By analyzing the learning dynamics in the eigenspace of the representation correlation matrix, the authors show that these methods implicitly regularize variance. They propose a new \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the exponential moving average (EMA) target network without performance degradation.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a logical flow from theoretical analysis to empirical validation, and the introduction clearly defines the problem and the contribution.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the empirical Neural Tangent Kernel (NTK) is inconsistent and potentially confusing. Equation (3) defines $\\hat{\\Theta}_t(x, \\mathcal{X})$ but the text immediately following defines it as $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$. Furthermore, the use of calligraphic $\\mathcal{Z}$ for the dataset-concatenated vector and hat-$z$ for single samples is not explicitly distinguished in the text before being used in the derivation of the decoupled dynamics.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: Clarify the definition of $\\hat{\\Theta}_t$ to ensure the arguments match the definition. Explicitly state that $\\mathcal{Z}$ denotes the concatenation of all sample representations in the dataset $\\mathcal{X}$ to distinguish it from the single-sample representation $z$.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 2 is complex and the caption does not sufficiently explain the \"neural updates\" visualized in the top and middle rows. The caption mentions \"neural updates\" but the plots appear to show trajectories of eigenvalues or representation components over time, which is not explicitly labeled in the caption. The bottom row is described as \"evolution of the eigenvalues,\" but the top/middle rows lack clear axis labels or descriptions in the caption.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Expand the caption of Figure 2 to explicitly describe what is plotted in the top and middle rows (e.g., \"Trajectories of representation components in the eigenbasis\"). Ensure axis labels are visible in the figure itself.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The transition from the continuous-time gradient descent dynamics (Eq. 3) to the simplified representational dynamics (Eq. 5) relies on the assumption that the NTK reduces to the identity for linear networks with i.i.d Gaussian inputs. This assumption is stated briefly but the justification for why this allows the decoupling of the loss into per-component losses is not fully detailed in the main text, relying on Appendix A.1.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 3\n  actionable_suggestion: Provide a brief sentence in the main text explaining how the identity NTK leads to the decoupling, or explicitly state that the decoupling is a direct consequence of the diagonal form of the loss in the eigenbasis when the NTK is identity.\n- subcategory: CLAR-FIG\n  polarity: strength\n  claim: Table 1 is clear and effectively summarizes the empirical results, showing the impact of the isotropic loss with and without EMA on CIFAR-10 and STL-10.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you clarify the exact definition of $\\hat{\\Theta}_t$ in Equation (3) and why the arguments differ from the text description?\n- In Figure 2, what exactly are the axes and curves in the top and middle rows? Are they showing the time evolution of specific eigenmodes?\n\nRecommendation: Weak Accept\n```\n\nThe KnowledgeItem must conform to this schema:\n{\"type\": \"object\", \"properties\": {\"topic\": {\"type\": \"string\"}, \"content\": {\"type\": \"string\"}, \"reviewer_dimension\": {\"type\": \"string\"}, \"source\": {\"type\": \"string\"}}, \"required\": [\"topic\", \"content\", \"reviewer_dimension\", \"source\"], \"additionalProperties\": false}\n\nOutput ONLY a valid JSON object matching the schema fields. No explanation.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": {
+    "json_schema": {
+      "name": "KnowledgeItem",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "reviewer_dimension": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "content",
+          "reviewer_dimension",
+          "source"
+        ],
+        "type": "object"
+      },
+      "strict": true
+    },
+    "type": "json_schema"
+  }
+}

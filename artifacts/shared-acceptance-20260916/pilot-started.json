@@ -1,0 +1,17 @@
+{
+  "prerequisites": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/gate-one-paper.json",
+      "sha256": "4332a00ff8c0eec16e0ede562c2f4d4ede2065012da555f30a40e9c9f613f6ca"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/gate-child-freeze-development-final.json",
+      "sha256": "b7a4abb453d8eaa743d42af4f540d4fbb42d6725076faae7d1210d1769c89868"
+    }
+  ],
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/protocol.fail-fast.json",
+    "sha256": "865097b1b2848370cd17ceee037a1d8d13ff493d3b0dda2b769c23610a1e2a9d"
+  },
+  "status": "started"
+}

@@ -1,0 +1,27 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_summarizer",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "Summarize the fixed Review Experience hits below into reusable peer-review guidance for the supplied query. Do not filter, add, or replace hits. Do not claim that prior-paper facts apply to the current paper. Return at most 1500 characters.\n\nRole:\nSIGN\n\nQuery:\nCompact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification\n\nFrozen hit set:\n[REVIEW EXPERIENCE 1f58de6c6997f1abb0aac3b523766334b663939d3c124bb5156c778fb06654a8]\nEvaluate the SIGN dimension by verifying:\n1. **Broad Relevance (SIGN-BRD)**: Does the work address a high-impact problem?\n2. **Domain Impact (SIGN-DOM)**: Is the method validated on complex, high-dimensional real-world tasks, not just simple benchmarks (e.g., MNIST)?\n3. **State-of-the-Art (SIGN-SOT)**: Are there quantitative comparisons against established baselines (e.g., LIME, SHAP) using objective metrics for explanation quality?\n4. **Societal Impact (SIGN-IMP)**: Are fairness, risks of misleading explanations, and computational sustainability explicitly discussed?\n\n[REVIEW EXPERIENCE ecc3e4e290dc518cf52afc30e40a65f2165644572263ecc3fbf19873d21ebe54]\nTo evaluate the SIGN dimension for robustness trade-off studies in equivariant networks, verify that empirical scope extends beyond simple benchmarks (e.g., MNIST) to complex datasets to ensure domain impact (SIGN-DOM) and generalizability. Confirm the paper proposes novel methods or practical mitigation strategies rather than solely diagnostic observations, thereby demonstrating improvement over state-of-the-art (SIGN-SOT) and real-world applicability (SIGN-IMP).",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": null
+}

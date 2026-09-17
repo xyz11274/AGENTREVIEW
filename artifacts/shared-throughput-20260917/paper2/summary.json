@@ -1,0 +1,412 @@
+{
+  "status": {
+    "ended": 1789613174.2318463,
+    "failed_reviews": 0,
+    "failure_rate": 0,
+    "formal": false,
+    "paper_scores": {
+      "-EHqoysUYLx": 3.0,
+      "SJn0sLgRb": 3.4
+    },
+    "pid": 2843674,
+    "seconds": 607.024845123291,
+    "started": 1789612567.206999,
+    "status": "complete",
+    "valid_reviews": 2,
+    "valid_reviews_per_hour": 11.86112900953441
+  },
+  "stages": {
+    "_model_identity": {
+      "completed": 12,
+      "failed": 0,
+      "sum_seconds": 33.01027368288487,
+      "max_seconds": 16.91519148554653,
+      "durations": [
+        2.1881617419421673,
+        7.717200951650739,
+        6.169534295797348,
+        16.91519148554653,
+        0.0009133452549576759,
+        0.0032524922862648964,
+        0.0034190909937024117,
+        0.002710498869419098,
+        0.000802723690867424,
+        0.0031228698790073395,
+        0.003307064063847065,
+        0.0026571229100227356
+      ]
+    },
+    "_validate_config": {
+      "completed": 3,
+      "failed": 0,
+      "sum_seconds": 33.599024447612464,
+      "max_seconds": 33.20124927908182,
+      "durations": [
+        33.20124927908182,
+        0.1986598838120699,
+        0.1991152847185731
+      ]
+    },
+    "preflight": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 33.30722150951624,
+      "max_seconds": 33.30722150951624,
+      "durations": [
+        33.30722150951624
+      ]
+    },
+    "_candidate_check": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 0.19767649192363024,
+      "max_seconds": 0.19767649192363024,
+      "durations": [
+        0.19767649192363024
+      ]
+    },
+    "embedding_cache_lookup_and_encode": {
+      "completed": 20,
+      "failed": 0,
+      "sum_seconds": 0.2401826698333025,
+      "max_seconds": 0.08058350719511509,
+      "durations": [
+        0.022782737389206886,
+        0.08058350719511509,
+        0.0018840814009308815,
+        0.0027163904160261154,
+        0.016235586255788803,
+        0.01693487074226141,
+        0.00232100673019886,
+        0.002997082658112049,
+        0.013507750816643238,
+        0.002436649054288864,
+        0.01373338233679533,
+        0.0023448457941412926,
+        0.014084137976169586,
+        0.0023591872304677963,
+        0.013404577039182186,
+        0.0023052962496876717,
+        0.013777574524283409,
+        0.012503066100180149,
+        0.0022873282432556152,
+        0.0009836116805672646
+      ]
+    },
+    "generation_request": {
+      "completed": 22,
+      "failed": 0,
+      "sum_seconds": 597.2446637153625,
+      "max_seconds": 95.3395074615255,
+      "durations": [
+        2.5929970489814878,
+        5.478389456868172,
+        35.58460069075227,
+        39.80696637555957,
+        2.3076921897009015,
+        2.6104113273322582,
+        39.734985906630754,
+        1.4344946406781673,
+        51.12160980980843,
+        1.6513806954026222,
+        35.85059553664178,
+        1.540699421428144,
+        35.666264719329774,
+        1.7510984344407916,
+        31.675360734574497,
+        42.98689458146691,
+        2.4651282811537385,
+        1.4323036754503846,
+        36.35879354272038,
+        53.547356229275465,
+        76.30713295564055,
+        95.3395074615255
+      ]
+    },
+    "run_specialist_review": {
+      "completed": 10,
+      "failed": 0,
+      "sum_seconds": 430.4484302503988,
+      "max_seconds": 55.36688420828432,
+      "durations": [
+        41.60269074793905,
+        42.93109601177275,
+        42.80594295542687,
+        53.95822987239808,
+        37.7253985311836,
+        37.78264726605266,
+        33.924465221352875,
+        44.99708584789187,
+        39.35398958809674,
+        55.36688420828432
+      ]
+    },
+    "generate_final_review": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 171.891573141329,
+      "max_seconds": 95.48361568059772,
+      "durations": [
+        76.40795746073127,
+        95.48361568059772
+      ]
+    },
+    "split": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 32.72626294847578,
+      "max_seconds": 19.21831950172782,
+      "durations": [
+        13.507943446747959,
+        19.21831950172782
+      ]
+    },
+    "classify": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 81.45751538313925,
+      "max_seconds": 41.082707974128425,
+      "durations": [
+        40.37480740901083,
+        41.082707974128425
+      ]
+    },
+    "evaluation": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 379.384390283376,
+      "max_seconds": 209.37727262731642,
+      "durations": [
+        170.00711765605956,
+        209.37727262731642
+      ]
+    },
+    "assess": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 573.3237524097785,
+      "max_seconds": 573.3237524097785,
+      "durations": [
+        573.3237524097785
+      ]
+    },
+    "coco_model_request": {
+      "completed": 90,
+      "failed": 0,
+      "sum_seconds": 2028.388512743637,
+      "max_seconds": 124.80270253494382,
+      "durations": [
+        11.013001867569983,
+        11.014011126942933,
+        9.9297269070521,
+        12.391887115314603,
+        3.5146920438855886,
+        3.5990698793902993,
+        3.674078306183219,
+        3.7478398624807596,
+        3.8084554141387343,
+        3.9659778382629156,
+        5.388213948346674,
+        8.520106943324208,
+        6.18721835501492,
+        8.733322891406715,
+        7.006689402274787,
+        7.49228785559535,
+        7.806026102975011,
+        8.722519182600081,
+        8.855033916421235,
+        8.949396509677172,
+        6.795732358470559,
+        10.373853851109743,
+        6.8859849236905575,
+        11.349489868618548,
+        8.964344306848943,
+        9.089740913361311,
+        9.253113655373454,
+        6.422591903246939,
+        8.322548722848296,
+        8.886670989915729,
+        7.466751857660711,
+        8.57346578873694,
+        7.654573054052889,
+        8.157290342263877,
+        7.898914257064462,
+        8.219242124818265,
+        6.918530191294849,
+        9.459997891448438,
+        9.407917281612754,
+        8.622806385159492,
+        8.856895237229764,
+        10.569021359086037,
+        10.608336109668016,
+        8.919502418488264,
+        11.967118720524013,
+        11.32645018864423,
+        11.127938214689493,
+        26.47624596208334,
+        11.359840841032565,
+        14.773761271499097,
+        11.522052384912968,
+        14.639022725634277,
+        11.603221925906837,
+        14.787932412698865,
+        13.39630716200918,
+        10.88125873170793,
+        26.990670590661466,
+        21.637931121513247,
+        15.153595803305507,
+        12.058758839964867,
+        10.37746658641845,
+        12.565669428557158,
+        7.9019377194345,
+        9.585390901193023,
+        8.611908711493015,
+        8.489669210277498,
+        6.38804692402482,
+        6.116963011212647,
+        8.769586083479226,
+        7.403419389389455,
+        7.14677856490016,
+        7.983932011760771,
+        8.023516679182649,
+        17.61362223047763,
+        30.912671983242035,
+        44.902366298250854,
+        53.836249622516334,
+        55.95831739064306,
+        58.266257843934,
+        68.47062871046364,
+        83.10624214168638,
+        90.18865680601448,
+        94.126573770307,
+        97.07900866121054,
+        111.64728941209614,
+        114.2305488307029,
+        114.86793506052345,
+        124.80270253494382,
+        92.18142262753099,
+        75.13475544005632
+      ]
+    },
+    "coco_cpu_full_text_metrics": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 14.067915121093392,
+      "max_seconds": 7.053513835184276,
+      "durations": [
+        7.014401285909116,
+        7.053513835184276
+      ]
+    },
+    "coco_category_judge": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 193.94867833983153,
+      "max_seconds": 125.13622326496989,
+      "durations": [
+        68.81245507486165,
+        125.13622326496989
+      ]
+    },
+    "coco_paper_judge": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 167.52394090872258,
+      "max_seconds": 92.27645166777074,
+      "durations": [
+        92.27645166777074,
+        75.24748924095184
+      ]
+    },
+    "paper_full_flow": {
+      "completed": 2,
+      "failed": 0,
+      "sum_seconds": 1097.7103167315945,
+      "max_seconds": 572.6848359331489,
+      "durations": [
+        525.0254807984456,
+        572.6848359331489
+      ]
+    }
+  },
+  "services": {
+    "18001": {
+      "observed": true,
+      "sample_count": 566,
+      "seconds": 606.8869860172272,
+      "running_max": 8.0,
+      "waiting_max": 8.0,
+      "kv_cache_peak_fraction": 0.1804008908685969,
+      "running_seconds": 507.79630064964294,
+      "waiting_seconds": 105.23077154159546,
+      "prefix_cache_token_hit_fraction": null,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 0.0,
+        "prefix_cache_hits_total": 0.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 271085.0,
+        "generation_tokens_total": 42698.0,
+        "request_success_total:stop": 38.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    },
+    "13099": {
+      "observed": true,
+      "sample_count": 566,
+      "seconds": 606.8869860172272,
+      "running_max": 4.0,
+      "waiting_max": 0.0,
+      "kv_cache_peak_fraction": 0.04715378079864063,
+      "running_seconds": 19.378275394439697,
+      "waiting_seconds": 0,
+      "prefix_cache_token_hit_fraction": 0.6822118587608261,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 13509.0,
+        "prefix_cache_hits_total": 9216.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 13509.0,
+        "generation_tokens_total": 4709.0,
+        "request_success_total:stop": 6.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    },
+    "13098": {
+      "observed": true,
+      "sample_count": 566,
+      "seconds": 606.8869860172272,
+      "running_max": 8.0,
+      "waiting_max": 8.0,
+      "kv_cache_peak_fraction": 0.051842466476612836,
+      "running_seconds": 47.323758363723755,
+      "waiting_seconds": 40.876047134399414,
+      "prefix_cache_token_hit_fraction": 0.98351998450379,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 196177.0,
+        "prefix_cache_hits_total": 192944.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 196177.0,
+        "generation_tokens_total": 24347.0,
+        "request_success_total:stop": 68.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    }
+  },
+  "admission_wait_seconds_sum": 710.5759563473985,
+  "admission_wait_seconds_max": 29.30600552726537,
+  "embedding_actual_loads": 0,
+  "embedding_uncached_texts": 0,
+  "notes": [
+    "Stage sums include concurrent/nested work and must not be added to infer wall time.",
+    "Gauge occupancy measures service activity; completed full-flow reviews require complete validated assessment receipts.",
+    "Diagnostic Judge replays are excluded from effective full-flow review throughput."
+  ]
+}

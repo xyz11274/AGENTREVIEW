@@ -1,0 +1,151 @@
+{
+  "created_at": "2026-09-16T16:32:20.316250+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "e3e0500211f61341a617f5bbcc3319c11b383b26721d21fa264991efb5350fac",
+    "request_sha256": "1e683ee7f893f6d3c50026c98dd901235525f5138b904c9a7769c9310b9bc997",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "2d152deed0c769eb7d9f9817306a5c5e135d2248e035f16c64d619b16fbc8676",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "S1EzRgb0W",
+  "program_version": "seed-vector_search",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: This paper proposes a method called Latent Sympathetic Examples (LSE) to explain why a neural network misclassifies an image. The approach uses a generative model (VAE or VAE-GAN) to find a small perturbation in the latent space that, when applied to the image, causes the classifier to predict the correct class. The resulting perturbation is intended to be visually interpretable, thereby providing an intuitive explanation for the error. The method is evaluated on MNIST and CelebA.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem in machine learning: the interpretability and explainability of neural network decisions, particularly in the context of errors. This is a significant challenge that affects the trust and adoption of deep learning in many domains.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The domain impact is limited by the choice of datasets. The experiments are conducted on MNIST (a simple, low-dimensional dataset) and CelebA (a face attribute dataset). The method's effectiveness and interpretability on more complex, real-world datasets like ImageNet or in safety-critical applications (e.g., medical imaging, autonomous driving) are not demonstrated.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 5\n  actionable_suggestion: Extend the experiments to more complex and diverse datasets to demonstrate the method's generalizability and practical utility in high-stakes domains.\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The paper does not establish a clear improvement over the state-of-the-art in model explanation. It is not compared to other established explanation methods (e.g., LIME, SHAP, Grad-CAM, or other latent-space based explanation techniques). The \"success rate\" metric is novel but not a standard benchmark for comparing explanation quality, making it difficult to assess the method's relative performance.\n  evidence_anchors: [SRC-007, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include a comparative analysis with other state-of-the-art explanation methods, using both quantitative metrics (e.g., faithfulness, stability) and qualitative assessments (e.g., human evaluation of interpretability).\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The potential real-world and societal impact is discussed but not substantiated. While the paper mentions applications like self-driving cars, it does not provide evidence that the generated explanations are reliable, robust, or useful for debugging in such critical systems. The method's failure on certain traits (e.g., \"Big Lips\" on CelebA) highlights a significant limitation for practical deployment.\n  evidence_anchors: [SRC-002, SRC-011]\n  confidence: 4\n  actionable_suggestion: Discuss the limitations and risks of using this method in safety-critical applications. Provide a more detailed analysis of the conditions under which the method fails and how these failures might impact real-world systems.\n\nKey questions for the authors:\n- How does the interpretability of the LSE explanations compare to other popular explanation methods (e.g., Grad-CAM, LIME) from a human user's perspective?\n- What are the computational costs of generating LSEs, and are they feasible for real-time or near-real-time applications?\n- How robust are the LSE explanations to small changes in the input image or the classifier's parameters?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "17436ce1026adfe36784237c60e58859bb237853c46acc68328d9d57d4ca1c5b",
+      "prompt_sha256": "1e683ee7f893f6d3c50026c98dd901235525f5138b904c9a7769c9310b9bc997"
+    },
+    "memory": {
+      "always_on_knowledge": "Ground every judgment in the Frozen Paper.",
+      "context": "[REVIEW EXPERIENCE 4fdb70188c4a2d6332689c48ae4e694c1ca675fdddde9b7552a47ed2e4c986c8]\nh rotation invariance and adversarial robustness are required.\n\nKey questions for the authors:\n- Does the observed trade-off between rotation robustness and adversarial vulnerability persist on more complex datasets like CIFAR-10 or ImageNet?\n- Are there any architectural modifications or training strategies that can mitigate the increased vulnerability of equivariant networks to pixel-wise perturbations?\n\nRecommendation: Weak Reject\n```\n\n[REVIEW EXPERIENCE 1c30bd7fa46c995233d5be5379c59f38e9ddf1fb1c1323185db9a5c87e986619]\neneralize to complex real-world vision tasks like CIFAR-10 or ImageNet.\n  evidence_anchors: [SRC-004, SRC-010]\n  confidence: 5\n  actionable_suggestion: Extend the experiments to more complex datasets (e.g., CIFAR-10, SVHN) to demonstrate that the observed trade-off holds for non-trivial visual recognition tasks.\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The paper does not propose a new state-of-the-art method or algorithm; instead, it provides an empirical analysis of existing architectures. The \"improvement\" is limited to a diagnostic observation rather than a performance gain over current SOTA models.\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The practical and societal impact is unclear because the paper does not discuss how this trade-off affects real-world deployment scenarios, nor does it offer a solution to mitigate the vulnerability of equivariant networks to adversarial attacks.\n  evidence_anchors: [SRC-001, SRC-009]\n  confidence: 4\n  actionable_suggestion: Discuss the implications of this trade-off for safety-critical applications (e.g., autonomous driving) where bot\n\n[REVIEW EXPERIENCE 4f4cbb2eb3e888106224a3ea959b4922726b363033d279c0cfb38b52983cbeb3]\n```\nReviewer dimension: SIGN\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. Using the MNIST dataset, the authors demonstrate that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they become more vulnerable to small pixel-wise adversarial attacks as the range of rotation augmentation increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem by identifying a fundamental tension between two key robustness properties (geometric symmetry and adversarial perturbation resistance) in deep learning models.\n  evidence_anchors: [SRC-001]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The domain impact is limited because the empirical study is conducted exclusively on the MNIST dataset, which is a simple, low-dimensional benchmark that may not g",
+      "instruction_response": "Use retrieved experience as review guidance, never current-paper evidence.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "4fdb70188c4a2d6332689c48ae4e694c1ca675fdddde9b7552a47ed2e4c986c8",
+              "role": "SIGN",
+              "score": 0.5480373585108085
+            },
+            {
+              "id": "1c30bd7fa46c995233d5be5379c59f38e9ddf1fb1c1323185db9a5c87e986619",
+              "role": "SIGN",
+              "score": 0.5124422185858184
+            },
+            {
+              "id": "4f4cbb2eb3e888106224a3ea959b4922726b363033d279c0cfb38b52983cbeb3",
+              "role": "SIGN",
+              "score": 0.37821206367572613
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+      "program_version": "seed-vector_search",
+      "query": {
+        "query_text": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 129,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 1.5117602432146668,
+        "prompt_chars": 5253,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "vector_search",
+      "snapshot_id": "2d152deed0c769eb7d9f9817306a5c5e135d2248e035f16c64d619b16fbc8676"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "b34c606c5cbed4421fb1c94df2401f00c521b2d683ad93d8e5ae3f38b970b536",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: This paper proposes a method called Latent Sympathetic Examples (LSE) to explain why a neural network misclassifies an image. The approach uses a generative model (VAE or VAE-GAN) to find a small perturbation in the latent space that, when applied to the image, causes the classifier to predict the correct class. The resulting perturbation is intended to be visually interpretable, thereby providing an intuitive explanation for the error. The method is evaluated on MNIST and CelebA.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem in machine learning: the interpretability and explainability of neural network decisions, particularly in the context of errors. This is a significant challenge that affects the trust and adoption of deep learning in many domains.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The domain impact is limited by the choice of datasets. The experiments are conducted on MNIST (a simple, low-dimensional dataset) and CelebA (a face attribute dataset). The method's effectiveness and interpretability on more complex, real-world datasets like ImageNet or in safety-critical applications (e.g., medical imaging, autonomous driving) are not demonstrated.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 5\n  actionable_suggestion: Extend the experiments to more complex and diverse datasets to demonstrate the method's generalizability and practical utility in high-stakes domains.\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The paper does not establish a clear improvement over the state-of-the-art in model explanation. It is not compared to other established explanation methods (e.g., LIME, SHAP, Grad-CAM, or other latent-space based explanation techniques). The \"success rate\" metric is novel but not a standard benchmark for comparing explanation quality, making it difficult to assess the method's relative performance.\n  evidence_anchors: [SRC-007, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include a comparative analysis with other state-of-the-art explanation methods, using both quantitative metrics (e.g., faithfulness, stability) and qualitative assessments (e.g., human evaluation of interpretability).\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The potential real-world and societal impact is discussed but not substantiated. While the paper mentions applications like self-driving cars, it does not provide evidence that the generated explanations are reliable, robust, or useful for debugging in such critical systems. The method's failure on certain traits (e.g., \"Big Lips\" on CelebA) highlights a significant limitation for practical deployment.\n  evidence_anchors: [SRC-002, SRC-011]\n  confidence: 4\n  actionable_suggestion: Discuss the limitations and risks of using this method in safety-critical applications. Provide a more detailed analysis of the conditions under which the method fails and how these failures might impact real-world systems.\n\nKey questions for the authors:\n- How does the interpretability of the LSE explanations compare to other popular explanation methods (e.g., Grad-CAM, LIME) from a human user's perspective?\n- What are the computational costs of generating LSEs, and are they feasible for real-time or near-real-time applications?\n- How robust are the LSE explanations to small changes in the input image or the classifier's parameters?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "feedback-0001-e2",
+  "schema_version": "research-core-v2-artifact-v1"
+}

@@ -1,0 +1,130 @@
+{
+  "created_at": "2026-09-16T17:28:23.974619+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "4267b1362b2aec39e55569983906ab7458bc35b8566a9a799f3349c0616b2598",
+    "request_sha256": "66f2d712974b997baaa899b9549c7ef7c82e0aa87cc86474c445ae248b676bf5",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "8f60cd7e4c6e9e314fafe68e63e32afc3e2d960be42902e1e12c945dc2cfed81",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "S1EzRgb0W",
+  "program_version": "seed-vector_search",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by finding a small perturbation in the latent space of a generative model (VAE/VAE-GAN) that, when mapped back to image space, corrects the classifier's prediction. The method uses gradient descent on the latent perturbation $\\epsilon$ and a linear correction term inspired by Difference Target Propagation. Experiments are conducted on MNIST and CelebA, showing that the method can generate visually interpretable perturbations that fix misclassifications, with success rates varying by dataset and trait.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and awkward phrasings that reduce readability and professionalism.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: Proofread the entire manuscript. For example, in the Abstract, \"create an technique\" should be \"create a technique\". In the Introduction, \"One approach we could take to 'explain' these errors would be to use Gradient Descent learn a perturbation\" is missing the word \"to\" before \"learn\". In Section 2.2, \"As such epsilon is updated iteratively by formula 2. Where $\\lambda$ is a small constant learning rate.\" is a sentence fragment; it should be combined with the previous sentence or rephrased.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The terminology section (2.1) defines terms but does not clearly distinguish between the \"perturbation\" in latent space ($\\epsilon$) and the \"perturbation\" in image space ($x' - x$), which are used interchangeably in later sections and figures, causing confusion.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 4\n  actionable_suggestion: In Section 2.1, explicitly define \"latent perturbation\" as $\\epsilon$ and \"image perturbation\" as $x' - x$. Use these distinct terms consistently throughout the paper, especially in figure captions and experimental descriptions, to avoid ambiguity.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the classifier is inconsistent. It is defined as $c(\\cdot)$ in Section 2.1, but in Section 2.2, the cross-entropy loss is written as $CE(c(x'), y)$, while in Section 2.3, it is written as $CE(x', y)$, omitting the classifier function $c$.\n  evidence_anchors: [SRC-003, SRC-004]\n  confidence: 5\n  actionable_suggestion: Standardize the notation for the cross-entropy loss. If $c(\\cdot)$ is the classifier, the loss should consistently be $CE(c(x'), y)$. If $CE$ is defined to implicitly include the classifier, state this clearly in Section 2.1.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1, which is supposed to visually explain the method, is described in the text but the actual image is not provided in the markdown. The caption mentions \"The original input image is encoded and reconstructed. $x'$ is then perturbed...\", but the visual flow is not clear from the text alone.\n  evidence_anchors: [SRC-004]\n  confidence: 3\n  actionable_suggestion: Ensure that Figure 1 is clearly legible and that the arrows and labels in the diagram correspond exactly to the notation defined in Section 2.1. Add a brief textual description of the figure's components in the main text to aid understanding.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The experimental setup in Section 3.1 is not fully specified. The paper states that a classifier was attached to the VAE and trained without updating the VAE weights, but does not specify the architecture of the classifier, the training procedure, or the hyperparameters used.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Provide a detailed description of the classifier architecture (e.g., number of layers, activation functions) and the training protocol (e.g., optimizer, learning rate, number of epochs) in Section 3.1 or in an appendix. This is necessary for reproducibility.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: The captions for Figures 2 and 3 are similar but describe different plots. Figure 2 shows predictions of $c(g(z))$ over a grid of $z$, while Figure 3 shows predictions of $c(x')$ over a grid of $\\epsilon$. The text in Section 3.1 refers to these figures but does not clearly explain the relationship between the two plots or why they are different.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: In Section 3.1, explicitly state that Figure 2 shows the classifier's predictions on the reconstructed images $g(z)$, while Figure 3 shows the predictions on the perturbed images $x'$. Explain that the difference between the two figures illustrates the effect of the perturbation $\\epsilon$ on the classifier's output.\n\nKey questions for the authors:\n- Can you clarify the difference between the \"perturbation\" $\\epsilon$ in latent space and the \"perturbation\" $x' - x$ in image space? Are they used interchangeably in the paper?\n- Why is the cross-entropy loss written as $CE(x', y)$ in Section 2.3 but $CE(c(x'), y)$ in Section 2.2? Which notation is correct?\n- What is the architecture of the classifier used in the MNIST and CelebA experiments? How was it trained?\n- Can you provide a clearer explanation of the relationship between Figures 2 and 3 in Section 3.1?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "a42393c3c2a715fbd2fd844e609d96cd32c9f241453c19ad305dff0d50312577",
+      "prompt_sha256": "66f2d712974b997baaa899b9549c7ef7c82e0aa87cc86474c445ae248b676bf5"
+    },
+    "memory": {
+      "always_on_knowledge": "",
+      "context": "",
+      "instruction_response": "",
+      "logs": [],
+      "memory_enabled": false,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+      "program_version": "seed-vector_search",
+      "query": {
+        "query_text": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples\nNeural networks make mistakes. The reason why a mistake is made often remains a mystery. As such neural networks often are considered a black box. It would be useful to have a method that can give an explanation that is intuitive to a user as to why an image is misclassified. In this paper we develop a method for explaining the mistakes of a classifier model by visually showing what must be added to an image such that it is correctly classified. Our work combines the fields of adversarial examples, generative modeling and a correction technique based on difference target propagation to create an technique that creates explanations of why an image is misclassified. In this paper we explain our method and demonstrate it on MNIST and CelebA. This approach could aid in demystifying neural networks for a user.",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 0,
+        "completion_tokens": 0,
+        "llm_call_count": 0,
+        "llm_latency_seconds": 0.0,
+        "prompt_chars": 0,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "vector_search",
+      "snapshot_id": "8f60cd7e4c6e9e314fafe68e63e32afc3e2d960be42902e1e12c945dc2cfed81"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "e098fe1e34ab13cccd26b757eb908bcdca4da7a0e7a6e3de3c125778515fc977",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by finding a small perturbation in the latent space of a generative model (VAE/VAE-GAN) that, when mapped back to image space, corrects the classifier's prediction. The method uses gradient descent on the latent perturbation $\\epsilon$ and a linear correction term inspired by Difference Target Propagation. Experiments are conducted on MNIST and CelebA, showing that the method can generate visually interpretable perturbations that fix misclassifications, with success rates varying by dataset and trait.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and awkward phrasings that reduce readability and professionalism.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: Proofread the entire manuscript. For example, in the Abstract, \"create an technique\" should be \"create a technique\". In the Introduction, \"One approach we could take to 'explain' these errors would be to use Gradient Descent learn a perturbation\" is missing the word \"to\" before \"learn\". In Section 2.2, \"As such epsilon is updated iteratively by formula 2. Where $\\lambda$ is a small constant learning rate.\" is a sentence fragment; it should be combined with the previous sentence or rephrased.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The terminology section (2.1) defines terms but does not clearly distinguish between the \"perturbation\" in latent space ($\\epsilon$) and the \"perturbation\" in image space ($x' - x$), which are used interchangeably in later sections and figures, causing confusion.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 4\n  actionable_suggestion: In Section 2.1, explicitly define \"latent perturbation\" as $\\epsilon$ and \"image perturbation\" as $x' - x$. Use these distinct terms consistently throughout the paper, especially in figure captions and experimental descriptions, to avoid ambiguity.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the classifier is inconsistent. It is defined as $c(\\cdot)$ in Section 2.1, but in Section 2.2, the cross-entropy loss is written as $CE(c(x'), y)$, while in Section 2.3, it is written as $CE(x', y)$, omitting the classifier function $c$.\n  evidence_anchors: [SRC-003, SRC-004]\n  confidence: 5\n  actionable_suggestion: Standardize the notation for the cross-entropy loss. If $c(\\cdot)$ is the classifier, the loss should consistently be $CE(c(x'), y)$. If $CE$ is defined to implicitly include the classifier, state this clearly in Section 2.1.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1, which is supposed to visually explain the method, is described in the text but the actual image is not provided in the markdown. The caption mentions \"The original input image is encoded and reconstructed. $x'$ is then perturbed...\", but the visual flow is not clear from the text alone.\n  evidence_anchors: [SRC-004]\n  confidence: 3\n  actionable_suggestion: Ensure that Figure 1 is clearly legible and that the arrows and labels in the diagram correspond exactly to the notation defined in Section 2.1. Add a brief textual description of the figure's components in the main text to aid understanding.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The experimental setup in Section 3.1 is not fully specified. The paper states that a classifier was attached to the VAE and trained without updating the VAE weights, but does not specify the architecture of the classifier, the training procedure, or the hyperparameters used.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Provide a detailed description of the classifier architecture (e.g., number of layers, activation functions) and the training protocol (e.g., optimizer, learning rate, number of epochs) in Section 3.1 or in an appendix. This is necessary for reproducibility.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: The captions for Figures 2 and 3 are similar but describe different plots. Figure 2 shows predictions of $c(g(z))$ over a grid of $z$, while Figure 3 shows predictions of $c(x')$ over a grid of $\\epsilon$. The text in Section 3.1 refers to these figures but does not clearly explain the relationship between the two plots or why they are different.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: In Section 3.1, explicitly state that Figure 2 shows the classifier's predictions on the reconstructed images $g(z)$, while Figure 3 shows the predictions on the perturbed images $x'$. Explain that the difference between the two figures illustrates the effect of the perturbation $\\epsilon$ on the classifier's output.\n\nKey questions for the authors:\n- Can you clarify the difference between the \"perturbation\" $\\epsilon$ in latent space and the \"perturbation\" $x' - x$ in image space? Are they used interchangeably in the paper?\n- Why is the cross-entropy loss written as $CE(x', y)$ in Section 2.3 but $CE(c(x'), y)$ in Section 2.2? Which notation is correct?\n- What is the architecture of the classifier used in the MNIST and CelebA experiments? How was it trained?\n- Can you provide a clearer explanation of the relationship between Figures 2 and 3 in Section 3.1?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "build",
+  "schema_version": "research-core-v2-artifact-v1"
+}

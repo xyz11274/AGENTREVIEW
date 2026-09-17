@@ -1,0 +1,83 @@
+{
+  "checks": [
+    {
+      "classified_count": 17,
+      "opinion_count": 17,
+      "original_na_normalizations": 0,
+      "paper_id": "-EHqoysUYLx"
+    }
+  ],
+  "stage": "classify",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/022519d5e3f4a67955b782cf324f7d8e4cb9e38a4cb24a55c4f93d7bb2657686.audit.json",
+      "sha256": "3a79c997226ab1373ca84cc486ad2f09a6f4a467942d29d07258af1808ebf8bc"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/1b870e5db3e34c8280ba2c60dcd1e9b3af4beb19c47be569689edb50ba997057.audit.json",
+      "sha256": "c63e3c369ede95b5a2ad8cd87e7e502525f021e70af3da1cd3c5e4c68b61727b"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/4262efc7fec0a070a59b37e77cf5299cc0a67dcd0090e30e419bf018c64152a8.audit.json",
+      "sha256": "3c4fc3552782575719de70b0ed5d80a15608a0ece65bf38b075a72ed0419d892"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/544f4be2081bc9945f2e112c9b27f6be9283e6bc5d20e3d963237ce50ef928b6.audit.json",
+      "sha256": "6be50d146fec1660724dded4f8451d696806ce9f0e20098cfa7cc39cbb82073d"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/6482e2d5ab2368c78d8a48c60e9682a961121120ef98a57294e2760342e2215e.audit.json",
+      "sha256": "da194faa63d341506119d044ca2fe4864d2861fb0a6eef60555bee14c68c45d3"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/73fae26a052f1b5dfbe0e12b4388f736e0c75093a55d002103974af5701f1370.audit.json",
+      "sha256": "7a850ebe2ea167311be1a41343f97b1ac9175620753cecdd4674cc68df432127"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/9bd0cdf0b0ff93c09d8fb8df162884bc578a759d491a4cac39c816c498c9fc5a.audit.json",
+      "sha256": "0d283b7fc864de1ffba57712673e904674bcd43cfa7e61a38602029e903f7182"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/a5dbbfc590e309ec58212883b2e70071b0d340a2862412ffe324517bc066cb1b.audit.json",
+      "sha256": "d22e8268a4d25badb3f2da10a0ffd069f4f0496b31f55208f459d7d1ada37179"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/b3495d042fa9df120fe97a2b672b833a30c5057e5a64738c1fb2cd9f32c2b8c5.audit.json",
+      "sha256": "52d9f8717450ace240cbc4d17f353b47360c6d4ddb65eb22475b18cc2e70593d"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/bd0ebcbddf1f314946869e4f349d6465f208c1daf97d1ada25083f2d00811763.audit.json",
+      "sha256": "c308b6d972c370d4a82b365910b305504358771ea92308804b91284f646bd0d4"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/c305007d7a9e2120084a8dd54760bba9b223f153611592f6c4fa1e0966464518.audit.json",
+      "sha256": "4695f627e8c09d2b43e746feca91501c4255940b92d44a12fa5157277c1a73e1"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/ccdb21ff0c370de168d14b182595cf76621d1dd81f17ec82fb2f43dd7f1c63f0.audit.json",
+      "sha256": "fb7a9f616a5a7cb7b4e19d5f6d000ecb0f3de2e655e2dd30dc0ca23a6d42b2a1"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/d1f9d195c4a4e9640c3e8cbbae1c10d6cbc602ea0234613b429eeafabc242b30.audit.json",
+      "sha256": "7c69416446b27df8ec1da31470f0ecaa5b86642bab397825641003cbe75fb7d4"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/ec012cfe15d677c661a51293b2990c9bc41a92caf632e2368193cc87efaa2658.audit.json",
+      "sha256": "53066d19e0699a3f817eb6532c20c1cf94a195e58ed74bf8f0dd20f031516c3b"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/f7ed45dcc755c0206bb6db12980e833c7978075627b65a29b34086fac4b37894.audit.json",
+      "sha256": "193fa587262bfa612fa7e48b9aeac0d9fd8f5fcc01ed6e96a8214af3502a1cb2"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/f90ef7af62559cdd271439b2bddae32842a91273a79d5a0156a0f774ddfaf362.audit.json",
+      "sha256": "98a3dec80dd4384d98bfa3060453bc4aa66d2b6b3741686baf7f776cc1ebc11f"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/cache/classify/fd47aa83676dd777ced036666271b8b68f2947f7e0fec94f5a7e9e95e5d2a341.audit.json",
+      "sha256": "1936a7b064d3bd11e9c63559b76a44e53b1521c8893ece262322c3506077ccea"
+    }
+  ],
+  "unhandled_failures": 0
+}

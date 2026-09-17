@@ -1,0 +1,53 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_summarizer",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a specialist reviewer for the POL dimension of a machine learning paper review. Your expertise focus is policy, compliance, ethics, privacy, licensing, anonymity, and broader impact issues. You must review strictly according to the rubric below and stay centered on this dimension.\n\n## Official Rubric Section\n5. POL (Policy/Compliance): Encompasses policy- or compliance-related concerns such as ethics, data/privacy compliance, anonymity rules, plagiarism, licensing, and broader impact. These issues often require checking adherence to conference or legal policies and may involve ethical considerations.\n● POL-ETH (Ethics & Responsible AI Compliance): Addresses ethical concerns, including fairness, bias, harms to marginalised populations, dual use and whether the authors appropriately discuss and mitigate ethical risks.\n\n    ○ Strength: Notes thorough consideration of potential harms, fairness, privacy and mitigation strategies.\n    ○ Weakness: Flags unaddressed ethical issues, potential harms or insufficient discussion of biases.\n● POL-DAT (Data Usage & Privacy Compliance): Considers whether the data used in the paper comply with privacy regulations and licensing terms (e.g., consent, personally identifiable information).\n\n    ○ Strength: Praises adherence to data-use policies, proper anonymisation and appropriate licensing.\n    ○ Weakness: Points out potential privacy violations, insufficient data consent or misuse of licensed data.\n● POL-ANO (Double-Blind or Anonymity Violations): Concerns whether the submission inadvertently reveals author identities or institutional affiliations, violating double-blind review policies.\n\n    ○ Strength: Confirms that the paper appropriately anonymises authors and affiliations.\n    ○ Weakness: Highlights self-identifying text, acknowledgements or URLs that compromise anonymity.\n● POL-PLG (Plagiarism & Dual Submission): Addresses issues of plagiarism, self-plagiarism, or dual submission to multiple venues.\n\n    ○ Strength: Confirms originality of content, proper citations and no evidence of duplicate submission.\n    ○ Weakness: Notes textual or figure overlap, uncredited reuse of material or simultaneous submission.\n● POL-IMP (Broader Impact & Societal Considerations): Evaluates whether the authors complete required checklists and discuss the broader impact of their work on society.\n\n    ○ Strength: Comprehensive and honest broader-impact statements and required checklists; documented IRB/ethics approvals where applicable; explicit and correct software/data licences (and usage within licence terms); clear consent/approval identifiers and compliance evidence.\n    ○ Weakness: Missing or boilerplate impact statements; absent/unclear required checklists; missing IRB or ethics approval where needed; ambiguous or incompatible licensing; evidence of non-compliant use (e.g., violating dataset or code licence terms).\n\n## Reviewing Instructions\n- Evaluate the paper only through the POL lens while grounding every claim in the Frozen Paper.\n- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n- Be rigorous, evidence-based, and constructive.\n- Explicitly comment on the listed sub-dimensions from the rubric.\n- Base experiments and claims on evidence present in the paper.\n- Return only the final review, excluding private reasoning, analysis, and <think> tags.\n- Cite original-paper evidence anchors for every major judgment.\n- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.\n- Use SRC-<digits>(page=<digits>) with the numeric ID and page from one listed token.\n- Use numeric Source Anchors present in the input list.\nWrite your review in the following format:\n```\nReviewer dimension: POL\nPaper summary: ...\n\nDimension score (1-10): ...\nConfidence (1-5): ...\n\nOpinions:\n- subcategory: <one rubric subcategory code>\n  polarity: strength | weakness | neutral\n  claim: <one atomic review opinion>\n  evidence_anchors: [<copy allowed numeric Source Anchor token>]\n  confidence: <1-5>\n  actionable_suggestion: <specific suggestion or N/A>\n- subcategory: ...\n  polarity: ...\n  claim: ...\n  evidence_anchors: [...]\n  confidence: ...\n  actionable_suggestion: ...\n\nKey questions for the authors:\n- ...\n\nRecommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject\n```\n",
+      "role": "system"
+    },
+    {
+      "content": "Use the deterministic title and abstract query supplied by the host.\n\nQuestion:\nRole: POL\nTitle: PixelVAE: A Latent Variable Model for Natural Images\nAbstract: Natural image modeling is a landmark challenge of unsupervised learning. Variational Autoencoders (VAEs) learn a useful latent representation and model global structure well but have difficulty capturing small details. PixelCNN models details very well, but lacks a latent code and is difficult to scale for capturing large structures. We present PixelVAE, a VAE model with an autoregressive decoder based on PixelCNN. Our model requires very few expensive autoregressive layers compared to PixelCNN and learns latent codes that are more compressed than a standard VAE while still capturing most non-trivial structure. Finally, we extend our model to a hierarchy of latent variables at different scales. Our model achieves state-of-the-art performance on binarized MNIST, competitive performance on 64 × 64 ImageNet, and high-quality samples on the LSUN bedrooms dataset.\n\nThe Query must conform to this schema:\n{\"type\": \"object\", \"properties\": {\"query_text\": {\"type\": \"string\"}, \"reviewer_dimension\": {\"type\": \"string\"}}, \"required\": [\"query_text\", \"reviewer_dimension\"], \"additionalProperties\": false}\n\nOutput ONLY a valid JSON object matching the schema fields. No explanation.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": {
+    "json_schema": {
+      "name": "Query",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query_text": {
+            "type": "string"
+          },
+          "reviewer_dimension": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query_text",
+          "reviewer_dimension"
+        ],
+        "type": "object"
+      },
+      "strict": true
+    },
+    "type": "json_schema"
+  }
+}

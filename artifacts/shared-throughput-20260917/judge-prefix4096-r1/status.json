@@ -1,0 +1,5 @@
+{
+  "status": "cancelled_by_user_direction",
+  "reason": "Stop further tuning and proceed with already validated full-flow configuration; diagnostic sent no scoring requests",
+  "valid_full_flow_reviews": 0
+}

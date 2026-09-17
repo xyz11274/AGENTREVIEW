@@ -1,0 +1,141 @@
+{
+  "created_at": "2026-09-16T16:54:22.258771+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "3d8303cce9a0d18c35a10055a2ad1262f00191e1e88ee233f04c6d7de31ea0c9",
+    "request_sha256": "7573811f68fc6423162b2c54c6ca9aa74e04b09601ef2a5070cbef14c9704834",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "eab3f30a8fd82f653d011683be6b823fb378c0232102f42f69beb5d30a4222a3",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-EHqoysUYLx",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper investigates generalization bounds for federated learning under a two-level distribution framework, where client distributions are sampled from a meta-distribution. It distinguishes between participating and unparticipating clients, deriving fast learning rates for both under bounded and unbounded (sub-Weibull) loss assumptions.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and awkward phrasings that detract from the professional quality of the writing.\n  evidence_anchors: [SRC-002, SRC-005, SRC-015]\n  confidence: 5\n  actionable_suggestion: Correct grammatical errors such as \"The realistic participation ratio may be slow\" (should be \"low\" or \"small\"), \"in the directly of generalization analysis\" (should be \"direction\"), and \"The analysis of heavy-tailed losses require new method\" (should be \"requires a new method\").\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: There is an inconsistency in the definition of the noise term $\\xi$ between the participating and unparticipating client analyses.\n  evidence_anchors: [SRC-017, SRC-020]\n  confidence: 4\n  actionable_suggestion: In Section 4.1, $\\xi_i^j$ is defined as $\\widehat{h}^*(X_i^j) - Y_i^j$ (semi-empirical minimizer), while in Section 4.2, $\\xi_i$ is defined as $h^*(X_i) - Y_i$ (population minimizer). While this reflects the different contexts, the notation should be explicitly distinguished (e.g., $\\xi^{semi}$ vs $\\xi^{pop}$) or clearly explained to avoid confusion for the reader.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the local Rademacher complexity in Section 3.2 is ambiguous and potentially incorrect.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: The definition of $\\mathcal{R}_m(\\mathcal{F}^*,r)$ uses $f(X_i, Y_i)$ inside the expectation over $\\sigma$, but the outer expectation is over the sampling of distributions $D_i$ from $P$. The notation should clearly indicate that $X_i, Y_i$ are sampled from $D_i$, and the Rademacher variables $\\sigma_i$ are independent of the data. The current notation $\\mathbb{E}[\\mathbb{E}_{\\sigma}[\\sup ... \\sigma_i f(X_i, Y_i)]]$ is slightly opaque regarding the dependency structure.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1 is referenced as an illustration of the participation gap and error, but its content is not described in the text, and the caption is minimal.\n  evidence_anchors: [SRC-004]\n  confidence: 3\n  actionable_suggestion: Provide a more detailed caption for Figure 1 that explicitly defines the visual elements representing the meta-distribution $P$, the participating distributions $\\{D_i\\}_{i=1}^m$, and the unparticipating distributions. Ensure the figure clearly distinguishes between the \"participation gap\" and \"participating error\" as mentioned in the text.\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a clear logical flow from the two-level framework to fast rates and then to unbounded losses.\n  evidence_anchors: [SRC-005, SRC-009, SRC-015]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The definitions of key concepts such as semi-empirical risk, excess risk, and Bernstein condition are clearly stated and well-defined.\n  evidence_anchors: [SRC-007, SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you clarify the dependency structure in the definition of $\\mathcal{R}_m(\\mathcal{F}^*,r)$ in Section 3.2? Specifically, are the Rademacher variables $\\sigma_i$ independent of the sampled distributions $D_i$?\n- Why is the noise term $\\xi$ defined differently in Sections 4.1 and 4.2? Is this intentional, and if so, can you add a note to clarify this distinction?\n- Can you provide a more detailed description of Figure 1 in the text or caption to help readers understand the visual representation of the participation gap and error?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "088c029022cff9a3665624c32bfcb9ea95482eddbc596b389c6fe222db38ae80",
+      "prompt_sha256": "7573811f68fc6423162b2c54c6ca9aa74e04b09601ef2a5070cbef14c9704834"
+    },
+    "memory": {
+      "always_on_knowledge": "Ground every judgment in the Frozen Paper. Use memory only for general review heuristics.",
+      "context": "[REVIEW EXPERIENCE 46cd8aa308a2e1ee3fa769ce78a7f4d001b0501cbefdc260b119dfe7edc0591c]\nCheck for grammatical errors, typos, and inconsistent terminology (capitalization, abbreviations). Ensure experimental setups and hyperparameters are detailed for reproducibility, including specific architecture modifications. Verify mathematical symbols are consistent and defined before use; flag variable name collisions. Ensure figure captions are complete, defining axes, legends, and subplot conditions, and check for ambiguous labels in multi-panel figures. Avoid disjointed results sections (e.g., scattering by attack vs. network type) and vague descriptions of parameter equivalence. Suggest restructuring results for logical flow (grouping by attack or network type), providing summary tables, and performing thorough language edits.",
+      "instruction_response": "Synthesize the retrieved review experience into actionable guidance for the current review. Ensure the guidance is general and does not reference specific details from the retrieved papers. Maintain a professional, constructive tone.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "46cd8aa308a2e1ee3fa769ce78a7f4d001b0501cbefdc260b119dfe7edc0591c",
+              "role": "CLAR",
+              "score": 0.476382411533264
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "clarity of mathematical notation and definitions in theoretical federated learning papers; clarity of algorithm presentation and pseudocode for generalization bounds; clarity of figures and tables illustrating two-level distribution frameworks and convergence rates",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 319,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 2.056839051656425,
+        "prompt_chars": 5546,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "eab3f30a8fd82f653d011683be6b823fb378c0232102f42f69beb5d30a4222a3"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "a0f7c8d59f51a26512d6d8335d9fbad009f0543b245cb88a5195c8bc3376a848",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "c9666725584938db793344da85e9f0c35276485319ac7d25eee8ba3330b35783",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper investigates generalization bounds for federated learning under a two-level distribution framework, where client distributions are sampled from a meta-distribution. It distinguishes between participating and unparticipating clients, deriving fast learning rates for both under bounded and unbounded (sub-Weibull) loss assumptions.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and awkward phrasings that detract from the professional quality of the writing.\n  evidence_anchors: [SRC-002, SRC-005, SRC-015]\n  confidence: 5\n  actionable_suggestion: Correct grammatical errors such as \"The realistic participation ratio may be slow\" (should be \"low\" or \"small\"), \"in the directly of generalization analysis\" (should be \"direction\"), and \"The analysis of heavy-tailed losses require new method\" (should be \"requires a new method\").\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: There is an inconsistency in the definition of the noise term $\\xi$ between the participating and unparticipating client analyses.\n  evidence_anchors: [SRC-017, SRC-020]\n  confidence: 4\n  actionable_suggestion: In Section 4.1, $\\xi_i^j$ is defined as $\\widehat{h}^*(X_i^j) - Y_i^j$ (semi-empirical minimizer), while in Section 4.2, $\\xi_i$ is defined as $h^*(X_i) - Y_i$ (population minimizer). While this reflects the different contexts, the notation should be explicitly distinguished (e.g., $\\xi^{semi}$ vs $\\xi^{pop}$) or clearly explained to avoid confusion for the reader.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the local Rademacher complexity in Section 3.2 is ambiguous and potentially incorrect.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: The definition of $\\mathcal{R}_m(\\mathcal{F}^*,r)$ uses $f(X_i, Y_i)$ inside the expectation over $\\sigma$, but the outer expectation is over the sampling of distributions $D_i$ from $P$. The notation should clearly indicate that $X_i, Y_i$ are sampled from $D_i$, and the Rademacher variables $\\sigma_i$ are independent of the data. The current notation $\\mathbb{E}[\\mathbb{E}_{\\sigma}[\\sup ... \\sigma_i f(X_i, Y_i)]]$ is slightly opaque regarding the dependency structure.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 1 is referenced as an illustration of the participation gap and error, but its content is not described in the text, and the caption is minimal.\n  evidence_anchors: [SRC-004]\n  confidence: 3\n  actionable_suggestion: Provide a more detailed caption for Figure 1 that explicitly defines the visual elements representing the meta-distribution $P$, the participating distributions $\\{D_i\\}_{i=1}^m$, and the unparticipating distributions. Ensure the figure clearly distinguishes between the \"participation gap\" and \"participating error\" as mentioned in the text.\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a clear logical flow from the two-level framework to fast rates and then to unbounded losses.\n  evidence_anchors: [SRC-005, SRC-009, SRC-015]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The definitions of key concepts such as semi-empirical risk, excess risk, and Bernstein condition are clearly stated and well-defined.\n  evidence_anchors: [SRC-007, SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you clarify the dependency structure in the definition of $\\mathcal{R}_m(\\mathcal{F}^*,r)$ in Section 3.2? Specifically, are the Rademacher variables $\\sigma_i$ independent of the sampled distributions $D_i$?\n- Why is the noise term $\\xi$ defined differently in Sections 4.1 and 4.2? Is this intentional, and if so, can you add a note to clarify this distinction?\n- Can you provide a more detailed description of Figure 1 in the text or caption to help readers understand the visual representation of the participation gap and error?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "candidate-0001",
+  "schema_version": "research-core-v2-artifact-v1"
+}

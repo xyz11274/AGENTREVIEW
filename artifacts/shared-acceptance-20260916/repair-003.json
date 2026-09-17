@@ -1,0 +1,5 @@
+{
+  "cause": "Real candidate-0001 r0 calls nonexistent toolkit.llm inside broad except Exception; five build snapshots silently used fallback text. Four regression cases reproduced acceptance of unsupported API and swallowed failed LLM/embedding calls. Process stopped before child admission.",
+  "repair": "Reject unknown direct toolkit attributes, report unknown aliased attributes to host, abort and poison sandbox on any failed host capability, preserving failure scope. Explain actual llm_completion interface in MSTAR reflector prompt. Reevaluate every static recipe in epoch3. Original child source remains unchanged; only real bounded MSTAR repair may create r1. No score is assigned to partial r0.",
+  "validation": "hidden-tool-red.log records four failing regressions before fix; hidden-tool-tests.log records 38 passed plus 6 subtests after fix, including actual bubblewrap and existing failure-scope/budget checks. Epoch3 real receipts, repaired child admission, Champion freeze and development final remain required before pilot."
+}

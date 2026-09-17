@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T18:19:59.612159+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-EHqoysUYLx",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning, specifically addressing the performance gap for unparticipating clients. It introduces a two-level distribution framework where client distributions are sampled from a meta-distribution. The authors derive fast learning rates for participating clients and generalization bounds for unparticipating clients under both bounded and unbounded (sub-Weibull) loss assumptions.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and explicitly stating \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying URLs in the main text or references.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. While the work is theoretical, major venues typically require a statement on the societal implications of federated learning, such as privacy preservation, potential biases in the meta-distribution assumption, or the impact of unparticipating clients on model fairness.\n  evidence_anchors: [SRC-001, SRC-028]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" section discussing the ethical implications of federated learning, specifically addressing how the theoretical bounds relate to privacy guarantees and potential biases in the assumed meta-distribution.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not explicitly discuss fairness or bias issues related to the heterogeneity of client distributions. The assumption that distributions are sampled from a meta-distribution may implicitly assume a certain level of relatedness that could mask biases against specific subgroups of clients.\n  evidence_anchors: [SRC-004, SRC-006]\n  confidence: 3\n  actionable_suggestion: Consider adding a discussion on how the meta-distribution assumption might affect fairness across different client populations, especially in scenarios where certain groups are systematically underrepresented or have different data distributions.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The paper is purely theoretical and does not use any specific datasets, so there are no direct data privacy or licensing concerns. However, the context of federated learning implies the use of sensitive data, which is not explicitly addressed in terms of compliance with privacy regulations like GDPR.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 3\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper appears to be original work with proper citations to related literature. There is no evidence of plagiarism or dual submission in the provided text.\n  evidence_anchors: [SRC-023, SRC-024, SRC-025, SRC-026, SRC-027, SRC-028]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide a brief discussion on the ethical implications of your theoretical framework, particularly regarding privacy and fairness in federated learning?\n- How does the assumption of a meta-distribution affect the fairness of the model for clients that are significantly different from the average distribution?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "c316ae2106e49491d55393bf86a2fe0b8ada89c3c208896976285967b1ba599b",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "1a8657b4335e8c0b0d8fe168a6d59cf3e0494367246de5b49149acd9b1ded2dd"
+  },
+  "review_plan_identity_sha256": "9a4061e5220a9a1d0496958e9eae2dac72557b09a14e96008327885d095bb1a8",
+  "role": "POL",
+  "run_id": "seed-llm_summarizer"
+}

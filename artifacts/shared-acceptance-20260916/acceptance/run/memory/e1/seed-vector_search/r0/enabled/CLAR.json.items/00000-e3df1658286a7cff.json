@@ -1,0 +1,54 @@
+{
+  "checkpoint_id": "3fbfb0735b079058f5bc64e766c04dba9bc8c1b7138bbac1a6b5fa32b231f16d",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": null,
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/programs/seed-vector_search/program.py",
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+    "program_version": "seed-vector_search",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "CLAR",
+    "seed_kind": "vector_search",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 0,
+      "review_id": "42841e91d7d4099bb5dd0cc65f2fed59eab2c66dd294d7a2b6fa6985258ca579",
+      "review_sha256": "ae0309e5ef56b338d152a7529e257c94a31c2d0115c54701da481284d17d18e4"
+    }
+  },
+  "item": {
+    "derivation_version": "seed-vector_search",
+    "item_id": "84f813e1f3368f5950da325d605226f062707b24a82173bd566477819f4a37b1",
+    "payload": {
+      "content": "```\nReviewer dimension: CLAR\nPaper summary: The paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. It presents empirical results on MNIST showing that while equivariant networks are robust to rotations, they often become more vulnerable to pixel-wise attacks as rotation robustness increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains numerous grammatical errors, typos, and inconsistent terminology that hinder readability and professional presentation.\n  evidence_anchors: [SRC-001, SRC-002, SRC-004, SRC-008]\n  confidence: 5\n  actionable_suggestion: Perform a thorough language edit. Correct \"Neural networks models\" to \"Neural network models\" (Abstract), \"maximizes\" to \"maximize\" (Intro), \"upto\" to \"up to\" (Sec 2.1), \"give in table 1\" to \"given in Table 1\" (Fig 7 caption), and \"RotEqNet seem\" to \"RotEqNet seems\" (Sec 2.3). Ensure consistent capitalization of terms like \"Standard CNNs\" vs \"StdCNNs\".\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The experimental setup and hyperparameters are insufficiently detailed for reproducibility, particularly regarding the \"parameter equivalent\" networks and training protocols.\n  evidence_anchors: [SRC-006, SRC-010]\n  confidence: 4\n  actionable_suggestion: Provide a complete table of hyperparameters (learning rate, optimizer, batch size, number of epochs) for all experiments. Explicitly define the architecture changes made to achieve \"parameter equivalence\" in Table 1 or a new table, as the text only vaguely mentions \"doubling the number of filters in StdCNNs and reducing the number of filters in GCNNs\" without specifying the exact new filter counts.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure captions are often ambiguous or incomplete, failing to clearly define the axes, legends, or specific conditions for all subplots.\n  evidence_anchors: [SRC-005, SRC-009]\n  confidence: 4\n  actionable_suggestion: Clarify Figure 10 and 11 captions to explicitly state what the Y-axis represents (e.g., \"Accuracy (%)\") and define the legend notation \"a/a\" more clearly in the main text or caption. Ensure all subplots in multi-panel figures (e.g., Fig 7, 8) have distinct and clear labels.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: Mathematical notation is used inconsistently and key variables are not always defined before use.\n  evidence_anchors: [SRC-002, SRC-009]\n  confidence: 3\n  actionable_suggestion: Define the cost function $J(\\theta, x, y)$ more formally. Clarify the notation for the rotation range $[-x^{\\circ}, x^{\\circ}]$; using $x$ as a variable for the angle range is confusing when $x$ is also used for the input image in the FGSM formula. Use a different symbol (e.g., $\\theta_{rot}$ or $\\alpha$) for the rotation angle range.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The organization of the results section is disjointed, with results for different attacks (FGSM, PGD) and network types scattered without a clear logical flow.\n  evidence_anchors: [SRC-006, SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: Restructure Section 2.3 to group results by attack type (FGSM then PGD) or by network type, ensuring that comparisons between StdCNNs and GCNNs are presented side-by-side for each condition. Add a summary table of key accuracy results to aid reader comprehension.\n\nKey questions for the authors:\n- What are the exact hyperparameters (learning rate, optimizer, etc.) used for training the networks?\n- Can you provide the specific architecture details for the \"parameter equivalent\" networks mentioned in Figures 4-8?\n- Why is the variable $x$ used for both the input image and the rotation angle range?\n\nRecommendation: Weak Reject\n```",
+      "reviewer_dimension": "CLAR",
+      "reviewer_name": "Reviewer CLAR",
+      "topic": ""
+    },
+    "role": "CLAR",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "42841e91d7d4099bb5dd0cc65f2fed59eab2c66dd294d7a2b6fa6985258ca579"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

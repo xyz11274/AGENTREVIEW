@@ -1,0 +1,66 @@
+{
+  "checkpoint_id": "6bc553dffb3d9f9143583beb981f0166eb91e56e3c6d971140a5af7f6450e712",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a3-e0/program.py",
+    "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+    "program_version": "candidate-0003",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "ORIG",
+    "seed_kind": "evolved",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 2,
+      "review_id": "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3",
+      "review_sha256": "c0225121c85231160f9ce6dea6e3aa5d316bbe3f4cfd30aedb119b7b9fe1b822"
+    }
+  },
+  "item": {
+    "derivation_version": "candidate-0003",
+    "item_id": "6e543024bb90905594deab07475fbfd4ece9456b9c408859a6614f380889b735",
+    "payload": {
+      "content": "When reviewing the ORIG dimension for papers that combine theoretical analysis with methodological contributions (e.g., deriving insights from existing architectures to propose new losses), reviewers should assess: (1) ORIG-ANL: Whether the theoretical reformulation (e.g., in eigenspace) reveals non-trivial mechanisms (like implicit regularization) that deepen understanding of existing methods; (2) ORIG-MTH: Whether the proposed method (e.g., a new loss function) directly addresses the specific limitations identified in the analysis, rather than being a generic tweak; (3) ORIG-COM: Whether the combination of theoretical frameworks (e.g., DirectPred) and analytical tools provides a compelling bridge between different families of methods (e.g., asymmetric vs. covariance-based SSL); and (4) ORIG-EXP: Whether the experimental protocol specifically validates the theoretical claims (e.g., testing the removal of components justified by the theory) rather than just reporting standard benchmark scores. High originality is recognized when the analysis leads to a novel, justified methodological change that is empirically verified through targeted experiments.",
+      "reviewer_dimension": "ORIG",
+      "source": "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3",
+      "topic": "Evaluating Originality in Theoretical SSL Analysis and Method Derivation"
+    },
+    "role": "ORIG",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

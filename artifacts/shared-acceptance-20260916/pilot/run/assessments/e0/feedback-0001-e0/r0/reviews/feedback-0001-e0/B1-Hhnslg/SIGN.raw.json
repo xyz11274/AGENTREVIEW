@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T19:43:58.843679+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "6f952d85c609d05e63887ecf6c4978491adabb80ea55fb954373c741175facb2",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper introduces Prototypical Networks, a simple and scalable metric learning approach for few-shot classification. It represents each class by the mean of its support set examples in a learned embedding space and classifies queries by nearest prototype. The method is trained via episodic training to mimic the few-shot test setting. Experiments demonstrate competitive performance on Omniglot and miniImageNet for few-shot learning, and state-of-the-art results on the CUB-200 dataset for zero-shot learning, highlighting the method's simplicity, efficiency, and generalizability.\n\nDimension score (1-10): 9\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses the broadly important and challenging problem of few-shot learning, introducing a simple, scalable paradigm (prototype-based metric learning) that has significantly influenced subsequent research in meta-learning and few-shot classification.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates strong domain impact by achieving state-of-the-art results on the CUB-200 zero-shot learning benchmark and competitive results on standard few-shot benchmarks (Omniglot, miniImageNet), showing applicability across different learning paradigms (few-shot and zero-shot).\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The paper achieves state-of-the-art performance on Omniglot (matching or exceeding Matching Nets) and a substantial improvement over previous methods on CUB-200 zero-shot learning (48.6% vs. 44.3% for the previous best), while offering a simpler and more scalable alternative to attention-based methods like Matching Networks.\n  evidence_anchors: [SRC-009, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: neutral\n  claim: The paper does not explicitly discuss societal impacts, fairness, or environmental considerations, which is typical for foundational algorithmic papers of this era but limits the explicit demonstration of real-world societal ramifications.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Consider adding a brief discussion on the potential applications of efficient few-shot learning in resource-constrained or data-scarce real-world scenarios (e.g., medical diagnosis, rare event detection) to highlight practical societal benefits.\n\nKey questions for the authors:\n- How does the simplicity and scalability of Prototypical Networks compare to more complex meta-learning approaches in terms of deployment efficiency on edge devices?\n- Can the prototype-based approach be extended to handle multi-modal data or non-Euclidean spaces, and what would be the impact on its broad applicability?\n\nRecommendation: Accept\n```",
+  "request_sha256": "f3bab78ae4a389e0c4da9a15b83a5a07cc7afc0e60bd45d3ef868c46e2d8ebba",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "e0f3b320150b864167ed8ecc73fe53a8b78f27a28b32415f3ec8e4a301024e37"
+  },
+  "review_plan_identity_sha256": "791266a315757711dda263aafd4fa6600562cdf2d9172455e4a24a10760e85c0",
+  "role": "SIGN",
+  "run_id": "feedback-0001-e0"
+}

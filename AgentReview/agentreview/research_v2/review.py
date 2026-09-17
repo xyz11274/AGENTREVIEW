@@ -51,6 +51,7 @@ def specialist_generation_identity(
     """Return the frozen invocation policy shared by raw artifacts and run specs."""
     return {
         "protocol": SPECIALIST_INVOCATION_PROTOCOL,
+        "completion_contract": "complete-stop-v1",
         "model_identity": dict(model_identity),
         "temperature": model_identity.get("temperature", TEMPERATURE),
         "enable_thinking": model_identity.get("enable_thinking", ENABLE_THINKING),
@@ -578,6 +579,7 @@ def run_specialist_review(
         review_plan_identity_sha256=review_plan_identity_sha256,
     )
     generation_config = {
+        "completion_contract": generation_identity["completion_contract"],
         "temperature": generation_identity["temperature"],
         "enable_thinking": generation_identity["enable_thinking"],
         "max_tokens": generation_identity["max_tokens"],

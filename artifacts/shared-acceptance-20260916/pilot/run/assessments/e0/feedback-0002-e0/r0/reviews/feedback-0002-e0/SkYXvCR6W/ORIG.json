@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T20:26:34.057568+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "5bb789edec2eef8d378b80b44abd0ae4e813456d561188dc98e85390835008c5",
+    "request_sha256": "17597a135f81110407f941f438b42c0a0fdf641a63bf48e20e24d6b6a53b1060",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "42484d5ecbe2a1e5450115b3ceeafb97426584db8ea7637d58832d33c9dc0d87",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SkYXvCR6W",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes a compact binary encoding scheme for words, inspired by the Tagged Huffman Code, to be used as input for character-level Convolutional Neural Networks (CNNs) in text classification. The method encodes each character as a sequence of '1's and '0's based on its frequency rank, concatenating these to form a fixed-length binary vector for each word. This reduces the input matrix dimensionality compared to the one-hot character-level encoding used by Zhang & LeCun (2015), aiming to reduce parameter count and training time while maintaining competitive accuracy on standard text classification benchmarks.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The paper presents a creative combination of a traditional data compression technique (Tagged Huffman Code) with deep learning input representation, offering a distinct alternative to standard one-hot or embedding-based character encodings.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed encoding method is a straightforward adaptation of an existing compression algorithm (Silva de Moura et al., 2000) with minor modifications (using one '0' instead of two), lacking significant algorithmic novelty in the context of neural network input design.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: The authors should more rigorously justify why this specific compression scheme is superior to other dimensionality reduction techniques (e.g., hashing, PCA) for CNN inputs, beyond just parameter count.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of why the compact encoding works (or fails) in the context of convolutional feature extraction is superficial; the paper relies on empirical results without providing theoretical or mechanistic insights into how the binary structure interacts with convolutional filters.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an analysis of the learned convolutional filters to understand how they process the binary encoded sequences, or provide a theoretical argument for why this encoding preserves relevant linguistic features.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup relies entirely on standard datasets from Zhang & LeCun (2015) and does not introduce new benchmarks or evaluation protocols specifically designed to test the limits or advantages of compact representations.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: Consider introducing a new benchmark or evaluation metric that specifically measures the efficiency-accuracy trade-off of compact encodings, or test on datasets with high out-of-vocabulary rates to better demonstrate the claimed robustness.\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (reducing input dimensionality for character-level CNNs) is a valid and meaningful extension of existing work, but it is not a fundamentally new problem or task.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 3\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does the binary encoding scheme compare to other dimensionality reduction techniques (e.g., feature hashing, autoencoders) in terms of both efficiency and accuracy?\n- Can you provide an analysis of the learned convolutional filters to explain how they extract meaningful features from the binary encoded sequences?\n- Why was the Tagged Huffman Code specifically chosen over other compression or encoding schemes? What are the theoretical advantages of this choice for CNNs?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "e17cc5f827b33906b5a84fd2d6f03cf276f43a435963eaf47f87ee8b4ee52667",
+      "prompt_sha256": "17597a135f81110407f941f438b42c0a0fdf641a63bf48e20e24d6b6a53b1060"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Compact Encoding for Character-level CNNs**\n\n**1. Originality & Problem Formulation**\n*   **Prioritize Novel Framing:** Evaluate whether the paper introduces a novel problem formulation or critical insight that challenges existing assumptions in character-level text classification. Merely applying standard compression techniques to CNNs is insufficient; look for unique angles (e.g., specific geometric or structural constraints in encoding).\n*   **Assess Logical Motivation:** Critically examine the rationale behind combining existing techniques (e.g., specific encoding schemes with CNN architectures). The contribution must be more than a straightforward integration; it should demonstrate a logical necessity or a new capability enabled by the combination.\n*   **Value of Negative Results:** If the paper includes negative results or failure cases, assess their value in challenging existing assumptions or providing critical insights into the limits of compact encoding.\n\n**2. Methodological Novelty**\n*   **Avoid Derivative Methods:** Penalize methodologies that rely on a straightforward combination of existing techniques without algorithmic innovation. The encoding mechanism must offer distinct technical advancements over standard character embeddings or hashing methods.\n*   **Critical Analysis:** Ensure the paper provides a deep analysis of *why* the compact encoding works (or fails) in the context of convolutional feature extraction, rather than just reporting performance metrics.\n\n**3. Experimental Scope & Generalizability**\n*   **Penalize Limited Scope:** Strictly penalize experimental validation limited to small or standard datasets (e.g., only MNIST-like text datasets or single-domain corpora) that undermines the generalizability of the findings.\n*   **Benchmark Diversity:** Require validation across diverse text classification benchmarks (e.g., sentiment analysis, topic classification, multilingual tasks) to prove the efficiency-accuracy trade-off holds broadly.\n*   **New Benchmarks:** If the paper claims a new state-of-the-art in efficiency, it should ideally introduce or utilize new benchmarks that specifically test the limits of compact representations, rather than relying solely on standard datasets.\n\n**4. Verdict Criteria**\n*   **Creative vs. Derivative:** Distinguish between creative conceptual contributions (novel problem framing) and derivative methods (standard combinations). A paper with a novel framing but derivative methods may be accepted if the insights are profound, but a paper with both derivative methods and limited experimental scope should be rejected.\n*   **Generalizability:** The final assessment must weigh the novelty of the encoding against the breadth of experimental evidence. Limited scope is a critical weakness that can offset strong conceptual contributions.",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "934444500e481321ade7ded9f4c54e2b2ed24966045d452538f9192ab79d7efe",
+              "role": "ORIG",
+              "score": 0.35922135829056306
+            },
+            {
+              "id": "c883344db6e6fd6dca1911c9c6f80f6011241de707e7d49ddc0bdd01f50f035f",
+              "role": "ORIG",
+              "score": 0.2891011495120732
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Compact Encoding for Character-level CNNs**\n\n**1. Originality & Problem Formulation**\n*   **Prioritize Novel Framing:** Evaluate whether the paper introduces a novel problem formulation or critical insight that challenges existing assumptions in character-level text classification. Merely applying standard compression techniques to CNNs is insufficient; look for unique angles (e.g., specific geometric or structural constraints in encoding).\n*   **Assess Logical Motivation:** Critically examine the rationale behind combining existing techniques (e.g., specific encoding schemes with CNN architectures). The contribution must be more than a straightforward integration; it should demonstrate a logical necessity or a new capability enabled by the combination.\n*   **Value of Negative Results:** If the paper includes negative results or failure cases, assess their value in challenging existing assumptions or providing critical insights into the limits of compact encoding.\n\n**2. Methodological Novelty**\n*   **Avoid Derivative Methods:** Penalize methodologies that rely on a straightforward combination of existing techniques without algorithmic innovation. The encoding mechanism must offer distinct technical advancements over standard character embeddings or hashing methods.\n*   **Critical Analysis:** Ensure the paper provides a deep analysis of *why* the compact encoding works (or fails) in the context of convolutional feature extraction, rather than just reporting performance metrics.\n\n**3. Experimental Scope & Generalizability**\n*   **Penalize Limited Scope:** Strictly penalize experimental validation limited to small or standard datasets (e.g., only MNIST-like text datasets or single-domain corpora) that undermines the generalizability of the findings.\n*   **Benchmark Diversity:** Require validation across diverse text classification benchmarks (e.g., sentiment analysis, topic classification, multilingual tasks) to prove the efficiency-accuracy trade-off holds broadly.\n*   **New Benchmarks:** If the paper claims a new state-of-the-art in efficiency, it should ideally introduce or utilize new benchmarks that specifically test the limits of compact representations, rather than relying solely on standard datasets.\n\n**4. Verdict Criteria**\n*   **Creative vs. Derivative:** Distinguish between creative conceptual contributions (novel problem framing) and derivative methods (standard combinations). A paper with a novel framing but derivative methods may be accepted if the insights are profound, but a paper with both derivative methods and limited experimental scope should be rejected.\n*   **Generalizability:** The final assessment must weigh the novelty of the encoding against the breadth of experimental evidence. Limited scope is a critical weakness that can offset strong conceptual contributions."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification",
+        "reviewer_dimension": "ORIG"
+      },
+      "resources": {
+        "completion_chars": 3022,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 12.076568120159209,
+        "prompt_chars": 8256,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "42484d5ecbe2a1e5450115b3ceeafb97426584db8ea7637d58832d33c9dc0d87"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "eb46c6d721b8a109b02e757abcb0738f860f63b498b2bc5ebdd962352f9f8b1b",
+  "review_text": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes a compact binary encoding scheme for words, inspired by the Tagged Huffman Code, to be used as input for character-level Convolutional Neural Networks (CNNs) in text classification. The method encodes each character as a sequence of '1's and '0's based on its frequency rank, concatenating these to form a fixed-length binary vector for each word. This reduces the input matrix dimensionality compared to the one-hot character-level encoding used by Zhang & LeCun (2015), aiming to reduce parameter count and training time while maintaining competitive accuracy on standard text classification benchmarks.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The paper presents a creative combination of a traditional data compression technique (Tagged Huffman Code) with deep learning input representation, offering a distinct alternative to standard one-hot or embedding-based character encodings.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed encoding method is a straightforward adaptation of an existing compression algorithm (Silva de Moura et al., 2000) with minor modifications (using one '0' instead of two), lacking significant algorithmic novelty in the context of neural network input design.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: The authors should more rigorously justify why this specific compression scheme is superior to other dimensionality reduction techniques (e.g., hashing, PCA) for CNN inputs, beyond just parameter count.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of why the compact encoding works (or fails) in the context of convolutional feature extraction is superficial; the paper relies on empirical results without providing theoretical or mechanistic insights into how the binary structure interacts with convolutional filters.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an analysis of the learned convolutional filters to understand how they process the binary encoded sequences, or provide a theoretical argument for why this encoding preserves relevant linguistic features.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup relies entirely on standard datasets from Zhang & LeCun (2015) and does not introduce new benchmarks or evaluation protocols specifically designed to test the limits or advantages of compact representations.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: Consider introducing a new benchmark or evaluation metric that specifically measures the efficiency-accuracy trade-off of compact encodings, or test on datasets with high out-of-vocabulary rates to better demonstrate the claimed robustness.\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (reducing input dimensionality for character-level CNNs) is a valid and meaningful extension of existing work, but it is not a fundamentally new problem or task.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 3\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does the binary encoding scheme compare to other dimensionality reduction techniques (e.g., feature hashing, autoencoders) in terms of both efficiency and accuracy?\n- Can you provide an analysis of the learned convolutional filters to explain how they extract meaningful features from the binary encoded sequences?\n- Why was the Tagged Huffman Code specifically chosen over other compression or encoding schemes? What are the theoretical advantages of this choice for CNNs?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer ORIG",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "733a1336772475ccf90ca3ecedfc1f427d16726772c7580043af6eaddeae3ff7",
+    "task_id": "ORIG"
+  },
+  "role": "ORIG",
+  "run_id": "feedback-0002-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

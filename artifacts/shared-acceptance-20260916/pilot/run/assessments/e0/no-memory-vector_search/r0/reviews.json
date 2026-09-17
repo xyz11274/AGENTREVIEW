@@ -1,0 +1,26 @@
+{
+  "paper_ids": [
+    "-EHqoysUYLx",
+    "SJn0sLgRb",
+    "BJKYvt5lg"
+  ],
+  "partition": "static",
+  "protocol": "research-v2-coco-review-manifest-v1",
+  "records": [
+    {
+      "paper_id": "-EHqoysUYLx",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/final_reviews/no-memory-vector_search/-EHqoysUYLx.json",
+      "sha256": "39d21ead55732ec4630d7dc3af98cab856cbc987e723d824b5c2e11e599177e4"
+    },
+    {
+      "paper_id": "SJn0sLgRb",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/final_reviews/no-memory-vector_search/SJn0sLgRb.json",
+      "sha256": "6888f9019ad823b34803b8b3ab97c06c76e11afd19185bf76e87b45a5a420b9b"
+    },
+    {
+      "paper_id": "BJKYvt5lg",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/final_reviews/no-memory-vector_search/BJKYvt5lg.json",
+      "sha256": "a83f9ca1b662bc7af96dc7f7dd7f3094806a546d13a22c196ca41a8b303cce5c"
+    }
+  ]
+}

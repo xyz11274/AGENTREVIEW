@@ -1,0 +1,9 @@
+# Direct dependencies for Research Core v2 and Qwen3-Embedding-8B.
+# The Qwen3.8-27B vLLM server is a separate process/environment.
+
+numpy==2.2.6
+openai==1.109.1
+requests==2.32.5
+sentence-transformers==5.1.2
+torch==2.7.1
+transformers==4.57.1

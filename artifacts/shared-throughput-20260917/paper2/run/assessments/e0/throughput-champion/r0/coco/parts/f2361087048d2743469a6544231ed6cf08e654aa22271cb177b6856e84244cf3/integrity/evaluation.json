@@ -1,0 +1,51 @@
+{
+  "checks": [
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "SJn0sLgRb",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    }
+  ],
+  "stage": "evaluation",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/1243598dfabd8907c2e84d5f58873ac5d0560eb7d6547594e5f39efcb98a5ef5.audit.json",
+      "sha256": "9f80255a67bf9bd4adaadfdc56f5d7f0566cd25ee364d5eb8a55e8aff81318c9"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/32f7618b83f85d0ec281473aedb885a6e7645f05afbd0e0c55b5eea46b698ec1.audit.json",
+      "sha256": "ac49b87463e530b411df46b8cf1f6bc254283a343c9011802d011eb5b77b9f95"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/34315a9c7b024f0d10bc242151ea96a122759f01331e24c7f0134a368d427892.audit.json",
+      "sha256": "5907269b0c977d3c2fed8b16a4241ce5377161cf4442ed73035bd112bb0d1cbd"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/7b52761c1948ee73e2dae60d4989ee74f6d3e403afadede7b482f1e8bb1aa19b.audit.json",
+      "sha256": "29733d891d83488c541e927eba3cfae1b1f83e3ec2f201272da391a178030c7e"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/877f794d768d0654215da165e7b437bde685c23a515a32d551929cfa21dd2360.audit.json",
+      "sha256": "5ab39c1162de92e873d7fe87360e73726550c75f4ad8726382900c1f6eeed99a"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/f2361087048d2743469a6544231ed6cf08e654aa22271cb177b6856e84244cf3/cache/judge/b6cd9a99372ca06002f8a8a8118780d7e15cad3aa8118fed8d8f9c2ad9a8c05a.audit.json",
+      "sha256": "3412ee03342d8488954e8e21803b44df20a48e6e0c3d76034e4504cc9eb2e263"
+    }
+  ],
+  "unhandled_failures": 0
+}

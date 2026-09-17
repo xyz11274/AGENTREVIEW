@@ -1,0 +1,232 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a1-e0/program.py",
+    "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+    "program_version": "candidate-0001",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "POL",
+    "seed_kind": "evolved",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "ebab20106117861d7913c6eb2b4a089b96029a006b1a760b66ccffa8cedb8ece",
+        "review_sha256": "da7d1b5ef14aef2b32288e6cca23809ab79ef14fada3299801bc047cdc125365"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 1,
+        "review_id": "ec6c22fc9ad5031c112a43096b360ee724ef7abed3f6055c9190c1cf9ced6115",
+        "review_sha256": "030fefcd243696c761d43e5ed3076f89a64e092894b50a32585684a74e4e0520"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 2,
+        "review_id": "6d614eef79f7034d55f0399254bda81c5e1b62b3a70a113687d37fe352cae559",
+        "review_sha256": "0ddb245f9ab174306e8f6bf21ec130c1fa75074673e61afa2283fe4c3000b932"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 3,
+        "review_id": "e16a113f7d4dea66eb396cdd74dfd8f5f12d45c3f47ee8e35e79e340d58afe8c",
+        "review_sha256": "27015f5e1ba1a56337849f67811405a01d7d644e8d5ebb9e9ef774ba05f201fb"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+  },
+  "completion_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "candidate-0001",
+      "item_id": "6984ccc45969f8879bc4eca149bcb0f31dcf59f69216fcaaeb5c7584b1b01246",
+      "payload": {
+        "content": "Reviewer dimension: POL\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. The study is conducted on the MNIST dataset.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and explicitly stating \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying acknowledgments.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The paper uses the MNIST dataset, which is a standard, publicly available benchmark for handwritten digit recognition. MNIST does not contain personally identifiable information (PII) or sensitive personal data, and its use for academic research is standard practice and compliant with data privacy regulations.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. While the work is on a benign dataset (MNIST), ICLR submissions typically require a discussion of the broader societal impact, potential misuse, or ethical implications of the research, especially regarding adversarial robustness which has security implications.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" or \"Ethical Considerations\" section discussing the implications of the observed trade-off between geometric and pixel-wise robustness, and any potential societal or security impacts of deploying such models.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The research focuses on adversarial robustness, which has dual-use potential (e.g., for creating more robust security systems or for developing more effective attacks). However, the paper does not discuss these ethical dimensions or potential harms, which is a minor gap given the benign nature of the MNIST task.\n  evidence_anchors: [SRC-002]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence or two in the conclusion or a new section acknowledging the dual-use nature of adversarial robustness research and the importance of responsible deployment.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper cites all relevant prior work on equivariant networks and adversarial attacks (e.g., Cohen & Welling, Worrall et al., Madry et al.) and presents original empirical findings. There is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-011, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Did you consider the broader societal or security implications of the trade-off between geometric and pixel-wise robustness, and if so, why is it not discussed in the paper?\n- Are there any ethical considerations or potential harms associated with the deployment of models that are robust to one type of attack but vulnerable to another, and how do you recommend practitioners handle this trade-off?\n\nRecommendation: Weak Accept",
+        "reviewer_dimension": "POL",
+        "source": "ebab20106117861d7913c6eb2b4a089b96029a006b1a760b66ccffa8cedb8ece",
+        "topic": "POL Review of Rotation-Equivariant Adversarial Robustness Trade-offs"
+      },
+      "role": "POL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "ebab20106117861d7913c6eb2b4a089b96029a006b1a760b66ccffa8cedb8ece"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0001",
+      "item_id": "8727731eeaf98d1bbe38ac7237e0408a99ad39fa3ed27263d24f5075a86ba7b5",
+      "payload": {
+        "content": "Reviewer dimension: POL\nPaper summary: The paper proposes a method called Latent Sympathetic Examples (LSE) to explain neural network misclassifications by generating visually interpretable perturbations in the latent space of a generative model (VAE/VAE-GAN). The method is evaluated on MNIST and CelebA datasets.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and explicitly stating \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying URLs in the main text or references.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-DAT\n  polarity: weakness\n  claim: The paper uses the CelebA dataset, which contains images of real individuals, but fails to discuss data licensing, consent, or privacy compliance. Specifically, it does not mention whether the use of CelebA for training and generating perturbations on facial features complies with the dataset's terms of use or relevant privacy regulations (e.g., GDPR), nor does it address the potential for re-identification or misuse of the generated facial perturbations.\n  evidence_anchors: [SRC-008, SRC-009]\n  confidence: 4\n  actionable_suggestion: Add a section or statement clarifying the license under which CelebA was used, confirming that the usage complies with the dataset's terms (typically non-commercial research only), and discussing privacy implications of generating perturbations on real human faces.\n- subcategory: POL-ETH\n  polarity: weakness\n  claim: The paper lacks a discussion on the ethical implications of using generative models to perturb facial images, particularly regarding the potential for creating misleading or deceptive visual content. While the goal is explanation, the method generates modified versions of real people's faces, which could be misused for disinformation or harassment if not properly contextualized.\n  evidence_anchors: [SRC-008, SRC-009]\n  confidence: 3\n  actionable_suggestion: Include a brief ethical discussion on the responsible use of the generated facial perturbations, emphasizing that they are for diagnostic/explanatory purposes and not for creating deceptive media.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper does not include a broader impact statement or a checklist addressing societal considerations, as is increasingly expected at venues like ICLR. The discussion section focuses on technical limitations and potential applications for improving classifiers but does not explicitly address the broader societal impact of making neural network decisions \"explainable\" in the context of high-stakes applications (e.g., self-driving cars, as mentioned in the intro).\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Add a broader impact statement that discusses the potential benefits and risks of the proposed explanation method in real-world deployments, including considerations for fairness and transparency in automated decision-making systems.\n- subcategory: POL-PLG\n  polarity: neutral\n  claim: No evidence of plagiarism or dual submission is apparent from the text. The related work section properly cites prior art (Szegedy et al., 2013; Lee et al., 2015; Kos et al., 2017) and clearly distinguishes the proposed method from existing adversarial example techniques.\n  evidence_anchors: [SRC-010, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- What is the specific license under which the CelebA dataset was used, and how does the paper ensure compliance with its terms of use?\n- Have the authors considered the privacy implications of generating perturbations on real human faces, and what measures are in place to prevent misuse of the generated images?\n- Does the paper include a broader impact statement or ethics checklist as required by the conference guidelines?\n\nRecommendation: Weak Reject",
+        "reviewer_dimension": "POL",
+        "source": "ec6c22fc9ad5031c112a43096b360ee724ef7abed3f6055c9190c1cf9ced6115",
+        "topic": "POL Review: Latent Sympathetic Examples (LSE) on MNIST and CelebA"
+      },
+      "role": "POL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "ec6c22fc9ad5031c112a43096b360ee724ef7abed3f6055c9190c1cf9ced6115"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0001",
+      "item_id": "8128fdd9fd1be0b0a667d441df50a8e104f4431ff2e4068186d3050deac03f71",
+      "payload": {
+        "content": "When reviewing theoretical machine learning papers (e.g., on self-supervised learning dynamics) for the POL dimension, prioritize checking for double-blind anonymity violations (POL-ANO) such as explicit author names, affiliations, or email addresses in the header, which are common in early drafts. Additionally, verify the presence of a 'Broader Impact' or 'Ethical Considerations' section (POL-IMP), as its absence is a frequent weakness even in purely theoretical works. For data usage (POL-DAT), standard public benchmarks like CIFAR-10 and STL-10 are generally compliant with privacy and licensing regulations. Ethical concerns (POL-ETH) are typically minimal for general-purpose optimization techniques unless specific biases or harms are introduced.",
+        "reviewer_dimension": "POL",
+        "source": "6d614eef79f7034d55f0399254bda81c5e1b62b3a70a113687d37fe352cae559",
+        "topic": "POL Review: Double-blind violations and missing broader impact statements in theoretical SSL papers"
+      },
+      "role": "POL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "6d614eef79f7034d55f0399254bda81c5e1b62b3a70a113687d37fe352cae559"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0001",
+      "item_id": "6bc386ab582dc8a6de1dc987d78d28be8fd8e38563eb11174a3d6c02050900a7",
+      "payload": {
+        "content": "Reviewer dimension: POL\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a structural impurity measure for decision trees, enabling the creation of \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" that relies on data permutation rather than random subsampling/feature selection for diversity. The authors compare performance against Random Forest on several standard UCI datasets.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using generic placeholders for author identities and affiliations.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" statement or discussion of societal implications, which is increasingly expected for NeurIPS submissions.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Add a section discussing the potential societal impacts, including both positive applications (e.g., in time-series analysis) and potential risks or limitations of the proposed method.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper does not explicitly state the software or data licenses used for the experiments, nor does it provide a link to the code repository, which hinders reproducibility and compliance with open science practices.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: Include a statement about the license of the code and data used, and provide a link to an anonymous code repository if available.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The datasets used (Iris, Breast Cancer Wisconsin, etc.) are standard public benchmarks, and their use appears to comply with general data usage norms, but specific consent or licensing details are not mentioned.\n  evidence_anchors: [SRC-009]\n  confidence: 3\n  actionable_suggestion: Briefly mention the source and license of the datasets to ensure full transparency.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not raise significant ethical concerns regarding fairness, bias, or harm to marginalized populations, as it focuses on a general machine learning methodology applied to standard datasets.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: neutral\n  claim: There is no evidence of plagiarism or dual submission in the provided text.\n  evidence_anchors: [SRC-001]\n  confidence: 3\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you provide a link to the code repository and specify the license under which the code is released?\n- Have you considered the broader societal impact of your method, particularly in applications where data order is critical (e.g., medical time-series)?\n- Are there any specific ethical considerations or potential biases associated with using permutation-based methods that you have not addressed?\n\nRecommendation: Borderline",
+        "reviewer_dimension": "POL",
+        "source": "e16a113f7d4dea66eb396cdd74dfd8f5f12d45c3f47ee8e35e79e340d58afe8c",
+        "topic": "POL Review of Permutation Decision Trees"
+      },
+      "role": "POL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "e16a113f7d4dea66eb396cdd74dfd8f5f12d45c3f47ee8e35e79e340d58afe8c"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a1-e0/program.py",
+  "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+  "program_version": "candidate-0001",
+  "role": "POL",
+  "seed_kind": "evolved",
+  "snapshot": {
+    "collections": {
+      "research_v2_summarizer": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "3ee25e5b5a80faf05425b2a1ac96e47382af78e023930cf52976e11cd0f1ab83",
+          "45013015700d2601e5c3f445d5b673f7b7a0f6275981bff490f42295c77fd3ae"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "c5d010e291561e2b996a7dc161856c40311eac6623b583cfdf6c3cda9e43634c",
+            "id": "3ee25e5b5a80faf05425b2a1ac96e47382af78e023930cf52976e11cd0f1ab83",
+            "metadata": {
+              "role": "POL",
+              "source": "ebab20106117861d7913c6eb2b4a089b96029a006b1a760b66ccffa8cedb8ece",
+              "topic": "POL Review of Rotation-Equivariant Adversarial Robustness Trade-offs"
+            },
+            "text": "**POL Review: Rotation-Equivariant Adversarial Robustness Trade-offs**\n\n**Score:** 8/10 | **Confidence:** 4/5\n\n**Strengths**\n*   **Compliance & Data Privacy:** The manuscript strictly adheres to double-blind review policies (no self-identifying information) and utilizes the standard, non-sensitive MNIST dataset, ensuring full compliance with data privacy regulations.\n*   **Originality:** The work presents original empirical findings with proper citation of relevant prior art (e.g., Cohen & Welling, Madry et al.), showing no evidence of plagiarism or dual submission.\n\n**Weaknesses & Actionable Suggestions**\n*   **Missing Broader Impact Statement:** The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section, which is typically required for ICLR submissions.\n    *   *Action:* Add a concise section discussing the societal and security implications of the observed trade-off between geometric and pixel-wise robustness.\n*   **Unaddressed Dual-Use Potential:** The dual-use nature of adversarial robustness research (security vs. attack development) is not acknowledged.\n    *   *Action:* Include a brief statement in the conclusion or impact section acknowledging the dual-use potential and recommending responsible deployment practices for models with asymmetric robustness profiles.\n\n**Recommendation:** Weak Accept"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "8bbfd90d1cefa740ea08f345f59072434c41e8c5a519f945cee4ee50f04af421",
+            "id": "45013015700d2601e5c3f445d5b673f7b7a0f6275981bff490f42295c77fd3ae",
+            "metadata": {
+              "role": "POL",
+              "source": "ec6c22fc9ad5031c112a43096b360ee724ef7abed3f6055c9190c1cf9ced6115",
+              "topic": "POL Review: Latent Sympathetic Examples (LSE) on MNIST and CelebA"
+            },
+            "text": "**POL Review: Latent Sympathetic Examples (LSE) on MNIST and CelebA**\n\n**Score:** 4/10 | **Confidence:** 4/5\n\n**Strengths**\n*   **Compliance (POL-ANO):** The manuscript strictly adheres to double-blind review policies. No author names, affiliations, or self-identifying metadata are present in the text, headers, or references.\n\n**Weaknesses & Actionable Items**\n*   **Data Privacy & Licensing (POL-DAT):** The use of the CelebA dataset (real human faces) lacks discussion on licensing, consent, or privacy compliance (e.g., GDPR).\n    *   *Action:* Add a statement confirming compliance with CelebA’s non-commercial research license and address privacy implications regarding the generation of perturbations on real identities.\n*   **Ethical Misuse Potential (POL-ETH):** The paper fails to address the risk of the generated facial perturbations being misused for disinformation or harassment, despite their visual realism.\n    *   *Action:* Include a brief ethical discussion clarifying that generated images are for diagnostic/explanatory purposes only and not for creating deceptive media.\n*   **Broader Impact (POL-IMP):** Missing a broader impact statement or societal considerations checklist, which is standard for venues like ICLR. The current discussion focuses solely on technical limitations.\n    *   *Action:* Add a broader impact statement addressing the societal risks and benefits of this explanation method in high-stakes automated decision-making contexts.\n\n**Neutral**\n*   **Plagiarism (POL-PLG):** No evidence of plagiarism or dual submission. Related work is properly cited and distinguished from prior art.\n\n**Recommendation:** Weak Reject\n*Primary reason: Significant gaps in data privacy, ethical responsibility, and broader impact statements required for modern publication standards.*"
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "build_llm_calls_remaining": 0,
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_summarizer"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "3ee25e5b5a80faf05425b2a1ac96e47382af78e023930cf52976e11cd0f1ab83",
+          "45013015700d2601e5c3f445d5b673f7b7a0f6275981bff490f42295c77fd3ae"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "c23f5c505ab83b9ba52be5d051489a57a4b8822f0020a2b5419c3b5b2d97810f",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "ebab20106117861d7913c6eb2b4a089b96029a006b1a760b66ccffa8cedb8ece",
+    "ec6c22fc9ad5031c112a43096b360ee724ef7abed3f6055c9190c1cf9ced6115",
+    "6d614eef79f7034d55f0399254bda81c5e1b62b3a70a113687d37fe352cae559",
+    "e16a113f7d4dea66eb396cdd74dfd8f5f12d45c3f47ee8e35e79e340d58afe8c"
+  ]
+}

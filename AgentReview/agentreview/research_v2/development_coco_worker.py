@@ -18,6 +18,8 @@ from agentreview.research_v2.development_coco import (  # noqa: E402
 )
 from agentreview.research_v2.io import atomic_write_json, read_json, read_jsonl, value_sha256  # noqa: E402
 from agentreview.research_v2.judge_lease import Qwen27BModeLease  # noqa: E402
+from agentreview.research_v2.execution_telemetry import span
+from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge  # noqa: E402
 from agentreview.research_v2.coco_service_runtime import (  # noqa: E402
     _listening_sockets, _socket_owner_pids, _read_null_separated, _process_start_identity,
 )
@@ -75,10 +77,18 @@ def _service_ready(service: dict[str, Any]) -> dict[str, Any]:
 def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
     utils = importlib.import_module("src.utils")
     service = config["services"][stage]
-    return utils.LLMClient(api_key="local-vllm", base_url=service["base_url"], model_name=service["model"],
+    return audited_client_class(utils.LLMClient)(api_key="local-vllm", base_url=service["base_url"], model_name=service["model"],
         max_workers={"split": 64, "classify": 128, "judge": 128}[stage],
         cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
-        cache_version=value_sha256({"request": request, "stage": stage}))
+        cache_version=value_sha256({"request": request, "stage": stage, "integrity": "complete-v1"}))
+
+
+def _integrity(client, request, stage, checks):
+    value = {"status": "complete", "stage": stage, "unhandled_failures": 0, "checks": checks,
+             "tasks": [_binding(client.cache_dir / f"{key}.audit.json") for key in sorted(client.audit_tasks)]}
+    path = Path(request["output_root"]) / "integrity" / f"{stage}.json"
+    atomic_write_json(path, value)
+    return _binding(path)
 
 
 def _previous_stage(request: dict[str, Any], stage: str) -> Path:
@@ -107,7 +117,10 @@ def _split_or_classify(request: dict[str, Any], config: dict[str, Any], stage: s
             module.classify_opinions(args)
     finally:
         client.shutdown()
-    return {"stage": stage, "input": _binding(source), "artifact": _binding(target)}
+    checks = (audit_split if stage == "split" else audit_classify)(
+        module, read_jsonl(source), read_jsonl(target), client.audit_tasks)
+    return {"stage": stage, "input": _binding(source), "artifact": _binding(target),
+            "integrity": _integrity(client, request, stage, checks)}
 
 
 def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config: dict[str, Any],
@@ -129,13 +142,17 @@ def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config
         if set(values) == set(paper_ids):
             continue
         raise ValueError("Standard CoCo input loading requires complete cohort coverage")
-    average, metric_details = evaluation.compute_full_text_metrics([ai_full[p] for p in paper_ids], [full_refs[p] for p in paper_ids])
-    category = evaluation.evaluate_categories_batch(human_refs, ai_categories, judge_client, ref_label_for_eval="category_correct")
-    paper = evaluation.evaluate_full_judge_batch(human_refs, ai_paper, judge_client, ref_label_for_eval="paper_correct")
+    with span("coco_cpu_full_text_metrics", papers=paper_ids):
+        average, metric_details = evaluation.compute_full_text_metrics([ai_full[p] for p in paper_ids], [full_refs[p] for p in paper_ids])
+    with span("coco_category_judge", papers=paper_ids):
+        category = evaluation.evaluate_categories_batch(human_refs, ai_categories, judge_client, ref_label_for_eval="category_correct")
+    with span("coco_paper_judge", papers=paper_ids):
+        paper = evaluation.evaluate_full_judge_batch(human_refs, ai_paper, judge_client, ref_label_for_eval="paper_correct")
     if set(category) == set(paper_ids) and set(paper) == set(paper_ids):
         pass
     else:
         raise ValueError("Standard CoCo judging requires complete cohort coverage")
+    checks = audit_judge(evaluation, paper_ids, human_refs, ai_categories, category, paper)
     full = {"average": average, "count": len(paper_ids)}
     table = evaluation.build_table_1_summary("candidate", full, category, paper, ai_categories, human_categories)
     raw_table = table
@@ -148,7 +165,7 @@ def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config
         single_table = evaluation.build_table_1_summary(paper_id, single_full, single_category, single_paper, single_ai, single_human)
         details[paper_id] = {"raw_table_1_summary": single_table, "table_1_summary": normalize_table(single_table), "paper_judge_scores": paper[paper_id]["judge_scores"],
                              "category_judge_scores": category[paper_id], "full_text_metrics": single_full["average"]}
-    return {"paper_ids": paper_ids, "papers": details, "table_1_summary": table,
+    return {"paper_ids": paper_ids, "papers": details, "table_1_summary": table, "completeness_checks": checks,
             "raw_table_1_summary": raw_table}
 
 
@@ -163,6 +180,7 @@ def _evaluate(request: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]
             result = evaluate_loaded_standard(evaluation=evaluation, request=request, config=config,
                 references=references, input_file=classified, judge_client=client)
             result["input"] = _binding(classified)
+            result["integrity"] = _integrity(client, request, "evaluation", result["completeness_checks"])
             return result
         finally:
             client.shutdown()

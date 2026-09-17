@@ -1,0 +1,28 @@
+{
+  "artifact": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0003-e0/r0/coco/stages/split/result-001.jsonl",
+    "sha256": "35628aaad580b18083221b283f91cc5cf66ee8798c6962a8af1efce6914d84e9"
+  },
+  "input": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0003-e0/r0/coco/candidate.jsonl",
+    "sha256": "2915e31368ae9e01d1104f8c536643133f81194c57b896a38d5d64cc555d524b"
+  },
+  "integrity": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0003-e0/r0/coco/integrity/split.json",
+    "sha256": "bf4653775636fad8ec9ff8eeb1b9d1937e5d6dd67c2b9a051b1d0abfb3eb1a82"
+  },
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0003-e0/r0/coco/request.json",
+    "sha256": "5ab483f9b00dbf293ee4db843f15521945190749f091118c7911f4c6e08c1692"
+  },
+  "service_runtime": {
+    "argv_sha256": "5da3262eff233b32e153c49ed974f7dafe5168fad8eda6d7071200615772ebaf",
+    "base_url": "http://127.0.0.1:13099/v1",
+    "max_model_len": 65536,
+    "model": "Qwen3-8B-Split",
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+    "pid": 2440323,
+    "start_identity": "505048490"
+  },
+  "stage": "split"
+}

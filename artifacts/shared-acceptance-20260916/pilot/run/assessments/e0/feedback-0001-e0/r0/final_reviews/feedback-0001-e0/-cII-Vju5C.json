@@ -1,0 +1,469 @@
+{
+  "created_at": "2026-09-16T19:41:49.032710+00:00",
+  "final_review_id": "9f8f4b5d130c6b922c62629a11b10bea6578465ae88bc2b181d45b696c9b1637",
+  "generation_config": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 16384,
+    "temperature": 0.0
+  },
+  "meta_identity": {
+    "identity_version": "meta-synthesis-identity-v2",
+    "name": "Final Meta Synthesizer",
+    "output_protocol_version": "meta-synthesis-output-v2",
+    "rendering_protocol_version": "meta-opinion-markdown-v3",
+    "request_protocol_version": "meta-synthesis-request-v2",
+    "request_template_sha256": "36cb43f63ad3a9aa719135640bcf91e32a8f7ccdad75ac6a685a9c75891f8b9e",
+    "source_path": "META_SYNTHESIS_Request_v2.md",
+    "source_sha256": "21a013957565addad6c93bb5c1b9a8bf3660705f6864c1414b7ce9379835f3c0",
+    "system_prompt_sha256": "aec56065c9c9f284b6d49d1118b11784e9ea3d6ac4f60caea6ba1dca29d8710a"
+  },
+  "mode": "meta",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-cII-Vju5C",
+  "review_text": "- QUAL: The mathematical formulation of the orthogonalization step is technically sound, correctly identifying the nearest orthonormal matrix via the SVD of the gradient matrix. Evidence anchors: SRC-004.\n\n- QUAL: The experimental evaluation lacks comparisons against modern state-of-the-art optimizers (e.g., Adam, AdamW, LAMB) and recent baselines, limiting the generalizability of the claims regarding speedup and robustness. Evidence anchors: SRC-005, SRC-007.\n\n- Suggested revision for QUAL opinion 2: Include comparisons with Adam/AdamW and other recent optimizers to demonstrate the relative advantage of Orthogonal-SGDM in the current landscape.\n\n- QUAL: The ImageNet results are presented as single-run accuracies without standard error or variance, and the absolute performance (67.5%) is significantly below standard ResNet-34 benchmarks, making the speedup claim less convincing without a clear epoch-matched comparison. Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 3: Report mean and standard deviation over multiple runs for ImageNet experiments and provide a clear comparison of accuracy at specific epoch counts (e.g., 10, 50, 100 epochs) to substantiate the speedup claim.\n\n- QUAL: The authors provide code links for both the optimizer implementation and the experiments, and specify key hyperparameters (learning rate, momentum, weight decay, batch size) for the main experiments. Evidence anchors: SRC-004, SRC-005.\n\n- QUAL: The CIFAR-10 experiments report standard errors across five runs, providing a reasonable level of statistical rigor for the main comparative results. Evidence anchors: SRC-005.\n\n- QUAL: The paper does not sufficiently compare against other methods that address feature redundancy or diversity (e.g., orthogonal weight constraints, spectral normalization, or other diversity-promoting regularizers), making it difficult to isolate the specific benefit of gradient orthogonalization. Evidence anchors: SRC-002.\n\n- Suggested revision for QUAL opinion 6: Discuss and compare with prior work on orthogonal weight constraints or other diversity-promoting techniques to contextualize the contribution.\n\n- CLAR: The paper contains several grammatical errors and typos that detract from the professional quality of the writing, such as 'SPEEDUP' in the title and 'filers' in Section 3.1. Evidence anchors: SRC-001, SRC-009.\n\n- Suggested revision for CLAR opinion 1: Correct the title typo 'SPEEDUP' to 'SPEED UP' or 'ACCELERATE', fix the typo 'filers' to 'filters' in Section 3.1, and review the entire manuscript for subject-verb agreement and article usage.\n\n- CLAR: The mathematical notation for the component function $c_l$ and its parametrization is inconsistent and potentially confusing regarding dimensions, specifically whether $c_l$ represents the layer as a whole or a single component. Evidence anchors: SRC-003.\n\n- Suggested revision for CLAR opinion 2: Clarify that $c_{li}$ is the $i$-th component of layer $l$, and define the input/output dimensions of a single component $c_{li}$ explicitly to avoid confusion with the layer-level function $f_l$.\n\n- CLAR: The algorithmic presentation lacks a clear, step-by-step pseudocode block, relying instead on a mix of equations and prose which may be harder to follow for implementation. Evidence anchors: SRC-004.\n\n- Suggested revision for CLAR opinion 3: Include a formal Algorithm 1 box that outlines the Orthogonal-SGDM procedure, explicitly listing inputs, the loop over epochs/batches, the gradient computation, the SVD orthogonalization step, and the parameter update.\n\n- CLAR: The figures are generally well-labeled and effectively illustrate the key claims, such as the speed-up in learning curves and the reduction in parameter similarity. Evidence anchors: SRC-005, SRC-010.\n\n- CLAR: The definition of the gradient matrix $G_l$ and the subsequent orthogonalization step could be clearer regarding how the gradients are stacked, specifically that the columns are flattened gradient vectors. Evidence anchors: SRC-003.\n\n- Suggested revision for CLAR opinion 5: Explicitly state that the columns of $G_l$ are the flattened gradient vectors for each component $c_{li}$, and that the SVD is performed on this $P_l \\times N_l$ matrix.\n\n- SIGN: The work addresses a broadly important problem in deep learning optimization by introducing a simple, drop-in modification to standard gradient descent that aims to improve sample efficiency and representation diversity. Evidence anchors: SRC-002.\n\n- SIGN: The method demonstrates strong domain impact in computer vision, showing consistent improvements across a suite of standard architectures (ResNet, DenseNet, Wide ResNet) on CIFAR-10 and ImageNet, which are core benchmarks for the field. Evidence anchors: SRC-005, SRC-008.\n\n- SIGN: The claim of 'state-of-the-art' improvement is not fully supported; when using hyper-parameters tuned for SGDM, Orthogonal-SGDM underperforms SGDM (90.18% vs 91.17% on CIFAR-10), indicating that the gains are largely due to the method's robustness to poor hyper-parameter choices rather than a fundamental superiority over well-tuned baselines. Evidence anchors: SRC-007.\n\n- Suggested revision for SIGN opinion 3: Clarify that the primary contribution is hyper-parameter robustness and speed-up in few-epoch regimes, rather than a new SOTA in final accuracy for well-tuned settings.\n\n- SIGN: The practical impact is limited by the computational overhead of the SVD operation, which the authors acknowledge is non-linear in matrix size and can be 'prohibitively expensive' for dense layers, without providing a detailed wall-clock time comparison to quantify the trade-off between iteration speed-up and per-step cost. Evidence anchors: SRC-011.\n\n- Suggested revision for SIGN opinion 4: Include a table comparing the total wall-clock time to reach a specific accuracy threshold for SGDM vs. Orthogonal-SGDM to demonstrate the net practical benefit.\n\n- ORIG: The paper introduces a novel optimization algorithm, Orthogonal-SGDM, which applies SVD-based orthogonalization to the gradient matrix of layer components, representing a distinct algorithmic modification to standard first-order optimizers. Evidence anchors: SRC-004.\n\n- ORIG: The paper frames the problem of 'co-learning' among identical components in a layer as a specific inefficiency in early training dynamics, drawing an analogy to Biehl et al. (1996), which provides a clear motivation for the proposed method. Evidence anchors: SRC-003.\n\n- ORIG: The analysis in Section 3.1 contradicts the paper's central hypothesis, as the authors observe that Orthogonal-SGDM actually results in more similar component parameters (higher cosine similarity) than SGDM, which they describe as 'counter-intuitive' and leave for future study, undermining the theoretical justification. Evidence anchors: SRC-009.\n\n- Suggested revision for ORIG opinion 3: Provide a more rigorous explanation for why orthogonalizing gradients leads to more similar weights, or revise the hypothesis to align with the observed dynamics.\n\n- ORIG: The experimental setup includes a diverse suite of models (BasicCNN, ResNets, DenseNets) on standard benchmarks (CIFAR-10, ImageNet) and a semi-supervised method (Barlow Twins), demonstrating the method's applicability beyond standard supervised classification and to different optimizers (LARS). Evidence anchors: SRC-008.\n\n- ORIG: The method combines SVD (a standard linear algebra technique) with gradient descent; while the combination is straightforward, the rationale—preventing redundant learning in multi-component layers—is clearly articulated and leads to practical benefits in speed and robustness. Evidence anchors: SRC-004.\n\n- ORIG: The paper provides a critical assessment of its own method's limitations, specifically noting that Orthogonal-SGDM fails to outperform SGDM with very small mini-batch sizes (e.g., size 4) due to noise in the SVD calculation, which adds credibility to the work. Evidence anchors: SRC-013.\n\n- POL: The paper adheres to double-blind review policies by using 'Anonymous authors' and 'Paper under double-blind review' on the title page, and by utilizing anonymized code repositories for code release. Evidence anchors: SRC-001, SRC-004.\n\n- POL: The paper lacks a dedicated 'Broader Impact' or 'Ethical Considerations' section, which is increasingly expected at venues like ICLR, representing a compliance gap despite the low direct ethical risk of the method. Evidence anchors: SRC-013.\n\n- Suggested revision for POL opinion 2: Add a brief 'Broader Impact' section discussing the environmental benefits of faster convergence (reduced compute) and any potential risks associated with the method's reliance on SVD stability or its impact on model generalization in sensitive applications.\n\n- POL: The paper uses standard, publicly available datasets (CIFAR-10, ImageNet) and cites them appropriately, with no indication of privacy violations or misuse of licensed data. Evidence anchors: SRC-005, SRC-008.\n\n- POL: The paper does not address fairness, bias, or harms to marginalized populations, which is typical for core optimization algorithm papers, but it does not explicitly state that no such concerns are identified. Evidence anchors: SRC-013.\n\n- Suggested revision for POL opinion 4: Consider adding a sentence in the limitations or impact section stating that the optimization method does not introduce specific biases or fairness concerns beyond those inherent in the base models and datasets used.\n\n- POL: The paper presents original work with proper citations to foundational methods (SGDM, SVD, Barlow Twins, ResNet), with no evidence of plagiarism or dual submission. Evidence anchors: SRC-014.\n\nFinal recommendation: Weak Accept",
+  "run_id": "feedback-0001-e0",
+  "schema_version": "research-core-v2-artifact-v1",
+  "source_review_ids": [
+    "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4",
+    "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece",
+    "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136",
+    "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98",
+    "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+  ],
+  "structured_meta": {
+    "paper_context_sha256": "56624934de89e53c3ae3aaa587c8793540740b339f53ebb3d96d4edc43a7bd91",
+    "protocol": "meta-synthesis-output-v2",
+    "recommendation": "Weak Accept",
+    "rendering_protocol": "meta-opinion-markdown-v3",
+    "sections": [
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The mathematical formulation of the orthogonalization step is technically sound, correctly identifying the nearest orthonormal matrix via the SVD of the gradient matrix.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005",
+              "SRC-007"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The experimental evaluation lacks comparisons against modern state-of-the-art optimizers (e.g., Adam, AdamW, LAMB) and recent baselines, limiting the generalizability of the claims regarding speedup and robustness.",
+            "suggestions": [
+              "Include comparisons with Adam/AdamW and other recent optimizers to demonstrate the relative advantage of Orthogonal-SGDM in the current landscape."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The ImageNet results are presented as single-run accuracies without standard error or variance, and the absolute performance (67.5%) is significantly below standard ResNet-34 benchmarks, making the speedup claim less convincing without a clear epoch-matched comparison.",
+            "suggestions": [
+              "Report mean and standard deviation over multiple runs for ImageNet experiments and provide a clear comparison of accuracy at specific epoch counts (e.g., 10, 50, 100 epochs) to substantiate the speedup claim."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-004",
+              "SRC-005"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The authors provide code links for both the optimizer implementation and the experiments, and specify key hyperparameters (learning rate, momentum, weight decay, batch size) for the main experiments.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The CIFAR-10 experiments report standard errors across five runs, providing a reasonable level of statistical rigor for the main comparative results.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-002"
+            ],
+            "source_review_ids": [
+              "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The paper does not sufficiently compare against other methods that address feature redundancy or diversity (e.g., orthogonal weight constraints, spectral normalization, or other diversity-promoting regularizers), making it difficult to isolate the specific benefit of gradient orthogonalization.",
+            "suggestions": [
+              "Discuss and compare with prior work on orthogonal weight constraints or other diversity-promoting techniques to contextualize the contribution."
+            ]
+          }
+        ],
+        "role": "QUAL"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-001",
+              "SRC-009"
+            ],
+            "source_review_ids": [
+              "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The paper contains several grammatical errors and typos that detract from the professional quality of the writing, such as 'SPEEDUP' in the title and 'filers' in Section 3.1.",
+            "suggestions": [
+              "Correct the title typo 'SPEEDUP' to 'SPEED UP' or 'ACCELERATE', fix the typo 'filers' to 'filters' in Section 3.1, and review the entire manuscript for subject-verb agreement and article usage."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The mathematical notation for the component function $c_l$ and its parametrization is inconsistent and potentially confusing regarding dimensions, specifically whether $c_l$ represents the layer as a whole or a single component.",
+            "suggestions": [
+              "Clarify that $c_{li}$ is the $i$-th component of layer $l$, and define the input/output dimensions of a single component $c_{li}$ explicitly to avoid confusion with the layer-level function $f_l$."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The algorithmic presentation lacks a clear, step-by-step pseudocode block, relying instead on a mix of equations and prose which may be harder to follow for implementation.",
+            "suggestions": [
+              "Include a formal Algorithm 1 box that outlines the Orthogonal-SGDM procedure, explicitly listing inputs, the loop over epochs/batches, the gradient computation, the SVD orthogonalization step, and the parameter update."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005",
+              "SRC-010"
+            ],
+            "source_review_ids": [
+              "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The figures are generally well-labeled and effectively illustrate the key claims, such as the speed-up in learning curves and the reduction in parameter similarity.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The definition of the gradient matrix $G_l$ and the subsequent orthogonalization step could be clearer regarding how the gradients are stacked, specifically that the columns are flattened gradient vectors.",
+            "suggestions": [
+              "Explicitly state that the columns of $G_l$ are the flattened gradient vectors for each component $c_{li}$, and that the SVD is performed on this $P_l \\times N_l$ matrix."
+            ]
+          }
+        ],
+        "role": "CLAR"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-002"
+            ],
+            "source_review_ids": [
+              "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The work addresses a broadly important problem in deep learning optimization by introducing a simple, drop-in modification to standard gradient descent that aims to improve sample efficiency and representation diversity.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005",
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The method demonstrates strong domain impact in computer vision, showing consistent improvements across a suite of standard architectures (ResNet, DenseNet, Wide ResNet) on CIFAR-10 and ImageNet, which are core benchmarks for the field.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007"
+            ],
+            "source_review_ids": [
+              "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The claim of 'state-of-the-art' improvement is not fully supported; when using hyper-parameters tuned for SGDM, Orthogonal-SGDM underperforms SGDM (90.18% vs 91.17% on CIFAR-10), indicating that the gains are largely due to the method's robustness to poor hyper-parameter choices rather than a fundamental superiority over well-tuned baselines.",
+            "suggestions": [
+              "Clarify that the primary contribution is hyper-parameter robustness and speed-up in few-epoch regimes, rather than a new SOTA in final accuracy for well-tuned settings."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The practical impact is limited by the computational overhead of the SVD operation, which the authors acknowledge is non-linear in matrix size and can be 'prohibitively expensive' for dense layers, without providing a detailed wall-clock time comparison to quantify the trade-off between iteration speed-up and per-step cost.",
+            "suggestions": [
+              "Include a table comparing the total wall-clock time to reach a specific accuracy threshold for SGDM vs. Orthogonal-SGDM to demonstrate the net practical benefit."
+            ]
+          }
+        ],
+        "role": "SIGN"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The paper introduces a novel optimization algorithm, Orthogonal-SGDM, which applies SVD-based orthogonalization to the gradient matrix of layer components, representing a distinct algorithmic modification to standard first-order optimizers.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The paper frames the problem of 'co-learning' among identical components in a layer as a specific inefficiency in early training dynamics, drawing an analogy to Biehl et al. (1996), which provides a clear motivation for the proposed method.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-009"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The analysis in Section 3.1 contradicts the paper's central hypothesis, as the authors observe that Orthogonal-SGDM actually results in more similar component parameters (higher cosine similarity) than SGDM, which they describe as 'counter-intuitive' and leave for future study, undermining the theoretical justification.",
+            "suggestions": [
+              "Provide a more rigorous explanation for why orthogonalizing gradients leads to more similar weights, or revise the hypothesis to align with the observed dynamics."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The experimental setup includes a diverse suite of models (BasicCNN, ResNets, DenseNets) on standard benchmarks (CIFAR-10, ImageNet) and a semi-supervised method (Barlow Twins), demonstrating the method's applicability beyond standard supervised classification and to different optimizers (LARS).",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The method combines SVD (a standard linear algebra technique) with gradient descent; while the combination is straightforward, the rationale—preventing redundant learning in multi-component layers—is clearly articulated and leads to practical benefits in speed and robustness.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-013"
+            ],
+            "source_review_ids": [
+              "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The paper provides a critical assessment of its own method's limitations, specifically noting that Orthogonal-SGDM fails to outperform SGDM with very small mini-batch sizes (e.g., size 4) due to noise in the SVD calculation, which adds credibility to the work.",
+            "suggestions": []
+          }
+        ],
+        "role": "ORIG"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-001",
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper adheres to double-blind review policies by using 'Anonymous authors' and 'Paper under double-blind review' on the title page, and by utilizing anonymized code repositories for code release.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-013"
+            ],
+            "source_review_ids": [
+              "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper lacks a dedicated 'Broader Impact' or 'Ethical Considerations' section, which is increasingly expected at venues like ICLR, representing a compliance gap despite the low direct ethical risk of the method.",
+            "suggestions": [
+              "Add a brief 'Broader Impact' section discussing the environmental benefits of faster convergence (reduced compute) and any potential risks associated with the method's reliance on SVD stability or its impact on model generalization in sensitive applications."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005",
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper uses standard, publicly available datasets (CIFAR-10, ImageNet) and cites them appropriately, with no indication of privacy violations or misuse of licensed data.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-013"
+            ],
+            "source_review_ids": [
+              "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper does not address fairness, bias, or harms to marginalized populations, which is typical for core optimization algorithm papers, but it does not explicitly state that no such concerns are identified.",
+            "suggestions": [
+              "Consider adding a sentence in the limitations or impact section stating that the optimization method does not introduce specific biases or fairness concerns beyond those inherent in the base models and datasets used."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-014"
+            ],
+            "source_review_ids": [
+              "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper presents original work with proper citations to foundational methods (SGDM, SVD, Barlow Twins, ResNet), with no evidence of plagiarism or dual submission.",
+            "suggestions": []
+          }
+        ],
+        "role": "POL"
+      }
+    ],
+    "source_anchors": {
+      "SRC-001": "SRC-001 | chars=[0,2000) | type=text | text=# ORTHOGONALISING GRADIENTS TO SPEEDUP NEURAL NETWORK OPTIMISATION Anonymous authors Paper under double-blind review # A",
+      "SRC-002": "SRC-002 | chars=[2000,4000) | type=text | text=fig. 1. Our novel contributions include this new optimisation method, thorough testing on CIFAR-10 and ImageNet, additio",
+      "SRC-003": "SRC-003 | chars=[4000,6000) | type=text | text=rning, as it is now more difficult for them to learn the same parametrisation. Orthogonalising the gradients may provide",
+      "SRC-004": "SRC-004 | chars=[6000,8000) | type=text | text=^ {\\mathbf {T}}. \\tag {4} $$ Thus, we can adjust a first-order gradient descent method, such as Stochastic Gradient Desc",
+      "SRC-005": "SRC-005 | chars=[8000,10000) | type=text | text=87.12 ± 0.12</td></tr><tr><td>\\( resnet44^2 \\)</td><td>0.7000 ± 0.0166</td><td>0.7600 ± 0.0299</td><td>79.81 ± 0.37</td>",
+      "SRC-007": "SRC-007 | chars=[12000,14000) | type=text | text=that with enough hyper-parameter tuning Stochastic Gradient Descent (SGD) or SGDM will be the best optimisation method;",
+      "SRC-008": "SRC-008 | chars=[14000,16000) | type=text | text=arge batches\" (Zbontar et al., 2021). Additionally, Barlow Twins uses the Layer-wise Adaptive Rate Scaling (LARS) algori",
+      "SRC-009": "SRC-009 | chars=[16000,18000) | type=text | text=is that components require some basic similarities – reflecting the importance of initialisation — and that it is actual",
+      "SRC-010": "SRC-010 | chars=[18000,20000) | type=text | text=1abf11239d6a28ae6b3aa75bd350e2dff0843aa9627dc62.jpg) Figure 7: Mean of the absolute cosine of all distinct pairs of diff",
+      "SRC-011": "SRC-011 | chars=[20000,22000) | type=text | text=ficiency in iterates and not in wall time. It is doubtful that convergence of SVD is needed, so a custom matrix orthogon",
+      "SRC-013": "SRC-013 | chars=[24000,26000) | type=text | text=on method, tested it on different models and data sets, showing close to state-of-the-art results out of the box and rob",
+      "SRC-014": "SRC-014 | chars=[26000,26735) | type=text | text=al. Learning multiple layers of features from tiny images. 2009. Chris Olah, Arvind Satyanarayan, Ian Johnson, Shan Cart"
+    },
+    "source_review_ids_by_role": {
+      "CLAR": "b7b69fa9f05556d07a1229f2084276e0d0f54649e7cfc06757639f216d017ece",
+      "ORIG": "164e265f89bccdfab516c7a4707d96c56c2fe8706e1339b93a03da18d08cfe98",
+      "POL": "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b",
+      "QUAL": "199cc449813fddec6757e33f66995936b1d99bf6ae1135f428e8e161de0343d4",
+      "SIGN": "836ad5ba993013c0e56779ec4af499e549e2999757813dfba1f87bdd66acd136"
+    }
+  }
+}

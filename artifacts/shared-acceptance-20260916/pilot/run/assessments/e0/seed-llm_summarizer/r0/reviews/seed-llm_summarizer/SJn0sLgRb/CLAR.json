@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T18:22:30.190981+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "ac8f191969860696bb3cb5dc73293eb954afc4b4aaf4dbf5a03780154b234c65",
+    "request_sha256": "7887482e2086767796f721fffa308c9236c0c9b406b375cd42192f7286c41bae",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "8828f24b9b620f9a3b274a6a05ded0c2e3109b9f802d9e25867007358eef2c84",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that creates new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors demonstrate that this simple method significantly reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation and regularization techniques.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a clear narrative flow, moving logically from the introduction of the problem to the method description, experimental setup, and results. The prose is generally concise and readable.\n  evidence_anchors: [SRC-001, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The algorithmic presentation lacks formal pseudocode. While the training process is described in a numbered list (Steps 1-4), the specific logic for generating the mixed samples (e.g., the random selection of image B, the averaging operation) is described in prose and a figure rather than a self-contained algorithm block, which may hinder precise reproduction.\n  evidence_anchors: [SRC-006, SRC-008]\n  confidence: 4\n  actionable_suggestion: Add a formal pseudocode block (Algorithm 1) that explicitly defines the inputs (training set, epoch count, mixing ratio), the random sampling process for the second image, the pixel-wise averaging operation, and the label assignment logic.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The mathematical notation for the mixing operation is not formally defined. The paper states \"taking an average of two images for each pixel\" but does not provide a clear equation (e.g., $x_{new} = \\frac{x_A + x_B}{2}$) or define the variables $x_A$ and $x_B$ consistently in a mathematical context.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: Introduce a formal definition for the SamplePairing operation in the Method section, using standard mathematical notation to define the mixed sample $x_{mixed}$ as a function of the two source images $x_i$ and $x_j$.\n- subcategory: CLAR-FIG\n  polarity: strength\n  claim: Figure 1 provides a clear visual overview of the SamplePairing process, effectively illustrating how two images are combined and how the label is assigned. The figure aids in understanding the core concept of the method.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The experimental setup details are somewhat sparse regarding hyperparameters. While the optimizer (Adam/SGD) and batch size are mentioned, critical details such as learning rates, weight decay, and the specific number of total training epochs for each dataset are not explicitly stated in the main text, which limits reproducibility.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Include a table or a dedicated subsection listing all hyperparameters used for each dataset (ILSVRC, CIFAR-10, etc.), including learning rate schedules, weight decay, and total training duration.\n\nKey questions for the authors:\n- Can you provide a formal pseudocode for the SamplePairing algorithm to ensure unambiguous implementation?\n- What are the specific learning rates and weight decay values used for the ILSVRC and CIFAR experiments?\n- Is the \"average\" operation strictly a 50/50 pixel-wise average, or are there any variations (e.g., weighted averages) that were tested and found to be inferior?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "970b4dc48160e1d1403cbe2c40f5e4b15e521406385a821861a7d2832eb94d60",
+      "prompt_sha256": "7887482e2086767796f721fffa308c9236c0c9b406b375cd42192f7286c41bae"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Terminology & Notation Consistency (CLAR-NOT/WRT)**\n*   **Distinct Definitions:** Explicitly distinguish between similar concepts (e.g., latent vs. image-space perturbations) to prevent interchangeable usage that causes confusion.\n*   **Standardized Math:** Ensure mathematical notation is consistent across all sections. If a function (e.g., classifier $c(\\cdot)$) is defined, it must appear consistently in all related equations (e.g., loss functions).\n*   **Variable Definitions:** Clearly define all variables in equations, especially weights or proportions (e.g., $w_{child}$), to avoid ambiguity in algorithmic logic.\n\n**2. Algorithmic & Experimental Completeness (CLAR-WRT)**\n*   **Reproducibility Details:** Provide complete pseudocode and specify all hyperparameters (stopping criteria, min/max depth, optimizer, learning rate). Do not leave critical implementation details (e.g., classifier architecture, permutation generation method) implicit.\n*   **Motivation-Experiment Alignment:** Ensure experimental datasets align with the theoretical motivation. If using standard tabular data for order-sensitive methods, explicitly justify why row order is relevant or arbitrary.\n*   **Setup Clarity:** Detail the construction of complex models (e.g., forests, ensembles), including voting schemes, tie-handling, and the number of iterations/permutations used.\n\n**3. Figure & Visual Clarity (CLAR-FIG)**\n*   **Notation Alignment:** Figure l",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "2807825349c238bafdcb666a3374e4871348588367397f387d3a42ce268324f7",
+              "role": "CLAR",
+              "score": 0.45794303803011155
+            },
+            {
+              "id": "6812d597a58544653828ad2f7532b43cd63931f98b98d199eda18fbe975fecb9",
+              "role": "CLAR",
+              "score": 0.44805015892166544
+            },
+            {
+              "id": "9683fc87486381fa3eee6e441e862c54afd59fab78ec9edf8b2275a3c518b5af",
+              "role": "CLAR",
+              "score": 0.4476898244641058
+            },
+            {
+              "id": "bb890c5501f5619d3510066f118708f70c9cd6f719d54a4bbbc7c1f1894f39e7",
+              "role": "CLAR",
+              "score": 0.42114439856394426
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Terminology & Notation Consistency (CLAR-NOT/WRT)**\n*   **Distinct Definitions:** Explicitly distinguish between similar concepts (e.g., latent vs. image-space perturbations) to prevent interchangeable usage that causes confusion.\n*   **Standardized Math:** Ensure mathematical notation is consistent across all sections. If a function (e.g., classifier $c(\\cdot)$) is defined, it must appear consistently in all related equations (e.g., loss functions).\n*   **Variable Definitions:** Clearly define all variables in equations, especially weights or proportions (e.g., $w_{child}$), to avoid ambiguity in algorithmic logic.\n\n**2. Algorithmic & Experimental Completeness (CLAR-WRT)**\n*   **Reproducibility Details:** Provide complete pseudocode and specify all hyperparameters (stopping criteria, min/max depth, optimizer, learning rate). Do not leave critical implementation details (e.g., classifier architecture, permutation generation method) implicit.\n*   **Motivation-Experiment Alignment:** Ensure experimental datasets align with the theoretical motivation. If using standard tabular data for order-sensitive methods, explicitly justify why row order is relevant or arbitrary.\n*   **Setup Clarity:** Detail the construction of complex models (e.g., forests, ensembles), including voting schemes, tie-handling, and the number of iterations/permutations used.\n\n**3. Figure & Visual Clarity (CLAR-FIG)**\n*   **Notation Alignment:** Figure labels and arrows must exactly match the notation defined in the text.\n*   **Contextual Explanation:** Do not rely solely on captions. Explain the relationship between similar figures (e.g., pre- vs. post-perturbation plots) in the main text.\n*   **Verifiability:** Annotate figures with intermediate values (e.g., impurity scores at nodes) to allow readers to trace and verify the algorithm’s logic.\n\n**4. Language & Presentation (CLAR-WRT)**\n*   **Proofreading:** Eliminate grammatical errors, typos, and sentence fragments. Ensure professional tone and readability.\n*   **Actionable Feedback:** When identifying errors, provide specific examples and suggested corrections to guide the authors.\n\n**Key Review Questions:**\n*   Are all terms and notations defined and used consistently?\n*   Are all hyperparameters and algorithmic steps specified for reproducibility?\n*   Do figures clearly support the text and allow for logical verification?\n*   Is the experimental setup logically consistent with the paper’s core motivation?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 2637,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 14.062907285057008,
+        "prompt_chars": 17796,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "8828f24b9b620f9a3b274a6a05ded0c2e3109b9f802d9e25867007358eef2c84"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "67463981b2610e438e6e4075f5514a2843d2b3689c3572a36d9f2137f1802d0d",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that creates new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors demonstrate that this simple method significantly reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation and regularization techniques.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a clear narrative flow, moving logically from the introduction of the problem to the method description, experimental setup, and results. The prose is generally concise and readable.\n  evidence_anchors: [SRC-001, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The algorithmic presentation lacks formal pseudocode. While the training process is described in a numbered list (Steps 1-4), the specific logic for generating the mixed samples (e.g., the random selection of image B, the averaging operation) is described in prose and a figure rather than a self-contained algorithm block, which may hinder precise reproduction.\n  evidence_anchors: [SRC-006, SRC-008]\n  confidence: 4\n  actionable_suggestion: Add a formal pseudocode block (Algorithm 1) that explicitly defines the inputs (training set, epoch count, mixing ratio), the random sampling process for the second image, the pixel-wise averaging operation, and the label assignment logic.\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The mathematical notation for the mixing operation is not formally defined. The paper states \"taking an average of two images for each pixel\" but does not provide a clear equation (e.g., $x_{new} = \\frac{x_A + x_B}{2}$) or define the variables $x_A$ and $x_B$ consistently in a mathematical context.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: Introduce a formal definition for the SamplePairing operation in the Method section, using standard mathematical notation to define the mixed sample $x_{mixed}$ as a function of the two source images $x_i$ and $x_j$.\n- subcategory: CLAR-FIG\n  polarity: strength\n  claim: Figure 1 provides a clear visual overview of the SamplePairing process, effectively illustrating how two images are combined and how the label is assigned. The figure aids in understanding the core concept of the method.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The experimental setup details are somewhat sparse regarding hyperparameters. While the optimizer (Adam/SGD) and batch size are mentioned, critical details such as learning rates, weight decay, and the specific number of total training epochs for each dataset are not explicitly stated in the main text, which limits reproducibility.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Include a table or a dedicated subsection listing all hyperparameters used for each dataset (ILSVRC, CIFAR-10, etc.), including learning rate schedules, weight decay, and total training duration.\n\nKey questions for the authors:\n- Can you provide a formal pseudocode for the SamplePairing algorithm to ensure unambiguous implementation?\n- What are the specific learning rates and weight decay values used for the ILSVRC and CIFAR experiments?\n- Is the \"average\" operation strictly a 50/50 pixel-wise average, or are there any variations (e.g., weighted averages) that were tested and found to be inferior?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "seed-llm_summarizer",
+  "schema_version": "research-core-v2-artifact-v1"
+}

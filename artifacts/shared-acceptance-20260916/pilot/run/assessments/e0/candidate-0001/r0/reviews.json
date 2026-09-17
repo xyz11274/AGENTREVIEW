@@ -1,0 +1,26 @@
+{
+  "paper_ids": [
+    "-EHqoysUYLx",
+    "SJn0sLgRb",
+    "BJKYvt5lg"
+  ],
+  "partition": "static",
+  "protocol": "research-v2-coco-review-manifest-v1",
+  "records": [
+    {
+      "paper_id": "-EHqoysUYLx",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0001/r0/final_reviews/candidate-0001/-EHqoysUYLx.json",
+      "sha256": "ee9edb6504fea59265c5d690ebe4318569ab2b37c3bdeea9c4c83ebab7a2b9db"
+    },
+    {
+      "paper_id": "SJn0sLgRb",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0001/r0/final_reviews/candidate-0001/SJn0sLgRb.json",
+      "sha256": "f38e9c64b07355ef9ced3659e4cfba556d95f0175cc0871135c6fa0a7be49490"
+    },
+    {
+      "paper_id": "BJKYvt5lg",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0001/r0/final_reviews/candidate-0001/BJKYvt5lg.json",
+      "sha256": "1638ff826ad27504b7ea7a4e3a593711ad5d5c2e6469174e4d55f6bb1de46e42"
+    }
+  ]
+}

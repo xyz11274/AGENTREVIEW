@@ -1,0 +1,117 @@
+{
+  "checks": [
+    {
+      "completed_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "-EHqoysUYLx",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    },
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "SJn0sLgRb",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    }
+  ],
+  "stage": "evaluation",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/09987e4d721944320736e4eda7db38274e60740193bea8e5629929c802b3b25b.audit.json",
+      "sha256": "74222c6a772bdd19d708632796f12475b5177e36155b7c34e637b291b36b1af5"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/117b5cc0efbbbd0ecd72e763336d78ea9707a8ce003d52183f4447170d31e177.audit.json",
+      "sha256": "fccebd524dc616ad38c14f721cd2b6877d230c0c2d8241cb933c64e97e4ab2c3"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/12f15beae26c89daa0c8468522d1b1938054964f139c4c98f5d7d649f1bf4766.audit.json",
+      "sha256": "3520118334f4fd444dbf502cd8c9cb334a6de81ce9b4baa470bcdc1cbd43fff2"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/3ca2a4dc18d1a4ca146e06af3db7bed8d2455ab3db3b9850f38b7736a81aa0cc.audit.json",
+      "sha256": "af5917ce0dc00b4b8959288f1da5c1694deaa2ed8400f517029f56e704e5ddb6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/41cb8c9e1292b3ddbc44ec5ddf4c56a5cf26ebb9315bd2d3b07a0aa3f6d47493.audit.json",
+      "sha256": "b93321ba5bc00ea9041b7008e9fda4e90730835f6d1e0f3403f906fee252a3c6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/4b94bf7f52ca4df459721678c8aa99f7502b09bc9c0fd8d9e163fd556396c7cb.audit.json",
+      "sha256": "4a2a6b6df4970c43c6745925a3ccb9cb0544cb0bf5db0a325e6b355701f10617"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/5086778557a90f7e5e61848ae3e2dcb1b8ab575dc04992645304beac33dcd177.audit.json",
+      "sha256": "e66a801076d6bfdd6fdb75ff09f8977ca20994656605b52b9877da7d4a88cad4"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/571bd97a3b8d0f8c1573d0c4fce04d5c705880562b9ece7a6158b2f712955e39.audit.json",
+      "sha256": "af7506c90daa06f3c9ff24e9ebac91b96bbb394c0cdfd42879d31ae04d0cfb69"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/6ef90362957d756f43705d08162ba34d41e7ae376daa64f5a52ff1f2419f1c23.audit.json",
+      "sha256": "9a4d38cce7c86af681d5ac58013bbc016fe07bff1e535b03fae6ca51ea257f15"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/8779000fd64142f0ed5b6e2dd448a3d4ba8e5571cb5a996bcde4947b8d5b176d.audit.json",
+      "sha256": "13ed839af2e37e521100db4e837359a03762fb61341620a0eef46beddc62467a"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/b295bdf55724235a42d994d7f7f81bda5186ca28a46f5917aabc664b4ef24aaa.audit.json",
+      "sha256": "d63390dd9e4ba457f8eeb1d2defbb09e823e3d789f51e61405d72f2115c36bdd"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/d57be5d5da3a2f17984c8b6132c3d4383703e93563c74d858fed511b8ccd47d7.audit.json",
+      "sha256": "a04627869f9c5f747bc3889d155d2b16d8b2b77371d83b786043b9106487517b"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/dc4cfe8c25c56adf87d4644b110012e87684ef323783f8ce7f80fa5f8f864edd.audit.json",
+      "sha256": "470609b3c64407d7dd05279463ddd346d5bf992ac3696f2db381e3fa1c1bc71e"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/e9f584b3f709118fae79f51598035d768db7315ff499f0e2c0f071c3fb0b38b7.audit.json",
+      "sha256": "a9e75394e885f3b2ea1ec6079f42ff0a8ffb5fce728b7a1045278d4e11af07e0"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/f3d2ce4c53b787ed7c8c9ed703e8fa098574e505925b6b3a76f19d68dc7d2ec6.audit.json",
+      "sha256": "f903e3fc460f7879effda3aa32b90b71540fedabe0adb2d583f284d72ade6f43"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/cache/judge/f49682791381b0c3cdbe6b5037b3e9c070db8cfabc495c27bcbb32a224e1a8fa.audit.json",
+      "sha256": "fa87dca71fca2a372b8f3247692c73aa9cb4950406256a24e67f92171bbc3079"
+    }
+  ],
+  "unhandled_failures": 0
+}

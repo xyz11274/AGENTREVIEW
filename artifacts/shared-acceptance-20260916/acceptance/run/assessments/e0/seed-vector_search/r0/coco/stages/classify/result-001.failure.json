@@ -1,0 +1,8 @@
+{
+  "category": "shared_evaluation",
+  "error_type": "ValueError",
+  "fingerprint": "8147da8ee6c01a217ef7f19aa4ac7a35bb514f954af471a5b721f1ac662466df",
+  "message": "CoCo Classify has an unresolved opinion or fallback N/A without valid model evidence",
+  "retryable": false,
+  "stage": "classify"
+}

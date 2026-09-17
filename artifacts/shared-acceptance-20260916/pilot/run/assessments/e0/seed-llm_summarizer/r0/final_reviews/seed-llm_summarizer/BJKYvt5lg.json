@@ -1,0 +1,459 @@
+{
+  "created_at": "2026-09-16T18:29:57.739923+00:00",
+  "final_review_id": "c6b8caef94f2f70418c11038ef446f5ff46716df72267cc4ad6a8f8adae44eda",
+  "generation_config": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 16384,
+    "temperature": 0.0
+  },
+  "meta_identity": {
+    "identity_version": "meta-synthesis-identity-v2",
+    "name": "Final Meta Synthesizer",
+    "output_protocol_version": "meta-synthesis-output-v2",
+    "rendering_protocol_version": "meta-opinion-markdown-v3",
+    "request_protocol_version": "meta-synthesis-request-v2",
+    "request_template_sha256": "36cb43f63ad3a9aa719135640bcf91e32a8f7ccdad75ac6a685a9c75891f8b9e",
+    "source_path": "META_SYNTHESIS_Request_v2.md",
+    "source_sha256": "21a013957565addad6c93bb5c1b9a8bf3660705f6864c1414b7ce9379835f3c0",
+    "system_prompt_sha256": "aec56065c9c9f284b6d49d1118b11784e9ea3d6ac4f60caea6ba1dca29d8710a"
+  },
+  "mode": "meta",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "BJKYvt5lg",
+  "review_text": "- QUAL: The proposed model architecture is mathematically well-formulated, correctly defining the autoregressive conditional likelihood and the hierarchical evidence lower bound (ELBO) for training. Evidence anchors: SRC-005, SRC-006.\n\n- QUAL: The experimental evaluation on 64x64 ImageNet is limited to a single run without reporting variance or confidence intervals, and the model's log-likelihood is slightly worse than the PixelRNN baseline, making the claim of 'competitive performance' less robust. Evidence anchors: SRC-011.\n\n- Suggested revision for QUAL opinion 2: Report mean and standard deviation over multiple independent runs for the 64x64 ImageNet experiments to demonstrate statistical significance and robustness of the reported log-likelihood.\n\n- QUAL: The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, batch sizes, number of training epochs), and does not mention code availability. Evidence anchors: SRC-007, SRC-011.\n\n- Suggested revision for QUAL opinion 3: Provide a detailed appendix with all hyperparameters, training schedules, and dataset splits, and make the source code publicly available to facilitate reproduction.\n\n- QUAL: The comparison to prior work on 64x64 ImageNet is incomplete, as it only compares against PixelRNN and Gated PixelCNN, omitting other relevant state-of-the-art generative models (e.g., VAEs with normalizing flows, or other autoregressive models) that were available at the time. Evidence anchors: SRC-011.\n\n- Suggested revision for QUAL opinion 4: Include comparisons with a broader set of recent state-of-the-art models on the 64x64 ImageNet benchmark to provide a more comprehensive evaluation of the model's performance.\n\n- QUAL: The paper relies on single-point estimates for most reported metrics (e.g., NLL on MNIST and ImageNet) without statistical tests or confidence intervals, which is insufficient to validate the significance of the reported improvements, especially for small margins. Evidence anchors: SRC-007, SRC-011.\n\n- Suggested revision for QUAL opinion 5: Conduct multiple independent training runs and report the mean and standard deviation (or confidence intervals) for all key metrics to ensure that the observed improvements are statistically meaningful.\n\n- CLAR: The paper contains a typographical error in the section heading '4.1.1 NUMBER OF PILXELCNN LAYERS', where 'PixelCNN' is misspelled as 'PILXELCNN'. Evidence anchors: SRC-007.\n\n- Suggested revision for CLAR opinion 1: Correct the typo in the section heading to 'NUMBER OF PIXELCNN LAYERS'.\n\n- CLAR: The text in Section 4.1.1 appears to be disjointed, with a sentence fragment 'typically needs a large number of them.' followed by a new paragraph starting with 'We can see that...', suggesting a missing transition or a formatting error in the narrative flow. Evidence anchors: SRC-008.\n\n- Suggested revision for CLAR opinion 2: Review the paragraph structure in Section 4.1.1 to ensure smooth logical flow between the discussion of computational cost and the observation about the impact of adding a single layer.\n\n- CLAR: In Equation (1), the conditioning set for the autoregressive factor is written as $x_1, \\dots, x_{i1}$, which is likely a typo for $x_{i-1}$ (previous pixels). The notation $x_{i1}$ is ambiguous and non-standard. Evidence anchors: SRC-005.\n\n- Suggested revision for CLAR opinion 3: Correct the notation in Equation (1) to clearly denote the previous pixels, e.g., $p(x_i \\mid x_1, \\dots, x_{i-1}, z)$.\n\n- CLAR: Figure 5 effectively illustrates the hierarchical nature of the model by showing how varying noise at different levels (top, middle, bottom) affects specific image features (geometry, color/texture, low-level details), providing clear visual evidence for the model's interpretability. Evidence anchors: SRC-010.\n\n- CLAR: The abstract and introduction clearly state the contributions and the motivation for combining VAEs and PixelCNNs, providing a good overview for the reader. Evidence anchors: SRC-001, SRC-003.\n\n- SIGN: The work addresses a fundamental challenge in unsupervised learning—high-fidelity natural image modeling—by proposing a hybrid architecture that bridges the gap between latent variable models and autoregressive models. This paradigm is broadly relevant to the generative modeling community as it offers a principled way to balance global coherence with local detail. Evidence anchors: SRC-001, SRC-003.\n\n- SIGN: The model achieves state-of-the-art performance on binarized MNIST, with a Gated PixelVAE variant reaching an NLL of ≤ 80.08, which is competitive with or superior to established baselines like PixelRNN (79.20) and standard PixelCNN (81.30). The paper also demonstrates that PixelVAE can achieve strong performance with significantly fewer autoregressive layers than PixelCNN, highlighting a substantial efficiency improvement. Evidence anchors: SRC-007, SRC-008.\n\n- SIGN: While the model shows competitive log-likelihood on 64x64 ImageNet (≤3.66) compared to PixelRNN (3.63) and Gated PixelCNN (3.57), the improvement is marginal in terms of likelihood. However, the paper claims that visual inspection reveals significantly more globally coherent samples, which is a qualitative but important domain-specific benefit for image generation tasks. Evidence anchors: SRC-011.\n\n- Suggested revision for SIGN opinion 3: Provide more quantitative metrics for sample quality (e.g., FID scores) to substantiate the claim of superior global coherence on ImageNet.\n\n- SIGN: The paper does not discuss the societal impact, fairness, or potential risks associated with the generated images. Given the increasing use of generative models in real-world applications, a lack of discussion on these aspects limits the broader impact assessment. Evidence anchors: SRC-012.\n\n- Suggested revision for SIGN opinion 4: Add a section discussing the potential societal implications, ethical considerations, and fairness aspects of the generated images.\n\n- ORIG: The paper presents a compelling and well-articulated creative combination of VAEs and PixelCNNs, addressing the complementary weaknesses of both architectures (VAE blurriness vs. PixelCNN lack of latent representation). Evidence anchors: SRC-001, SRC-002, SRC-005.\n\n- ORIG: The introduction of a hierarchical architecture where PixelCNN decoders model not only the output pixels but also the higher-level latent featuremaps is a methodological advance that goes beyond a simple single-level combination. Evidence anchors: SRC-003, SRC-006.\n\n- ORIG: The analysis of latent variable information content (KL divergence breakdown) provides novel insight into how the autoregressive decoder frees the latent variables from encoding small-scale details, leading to more compressed representations. Evidence anchors: SRC-008, SRC-009.\n\n- ORIG: The experimental setup includes a novel ablation study on the number of PixelCNN layers, demonstrating that PixelVAE achieves strong performance with significantly fewer autoregressive layers than standard PixelCNN, highlighting an efficiency advantage. Evidence anchors: SRC-007, SRC-008.\n\n- ORIG: The problem formulation (high-quality image generation) is a well-established challenge, and the paper does not introduce a new task or dataset, but rather a new approach to solving it. Evidence anchors: SRC-001.\n\n- ORIG: The paper does not focus on negative results or critical assessments of existing methods, but rather on proposing a new model that outperforms or matches them. Evidence anchors: SRC-001.\n\n- POL: The paper violates double-blind review policies by explicitly listing author names and institutional affiliations in the header. Evidence anchors: SRC-001.\n\n- Suggested revision for POL opinion 1: Remove all author names and institutional affiliations from the header and replace them with 'Anonymous Authors' and 'Paper under double-blind review' to comply with ICLR submission guidelines.\n\n- POL: The paper lacks a dedicated 'Broader Impact' or 'Ethical Considerations' section, which is expected for ICLR submissions. Evidence anchors: SRC-012.\n\n- Suggested revision for POL opinion 2: Add a concise 'Broader Impact' section discussing the societal implications of the work, including potential benefits (e.g., improved image generation for creative tools) and risks (e.g., misuse for generating misleading content).\n\n- POL: The datasets used (MNIST, ImageNet, LSUN) are standard public benchmarks without personally identifiable information (PII), and their use appears to comply with standard research licensing terms. Evidence anchors: SRC-007, SRC-011.\n\n- POL: The paper does not raise significant ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on general image modeling without specific applications to sensitive domains. Evidence anchors: SRC-003.\n\n- POL: There is no evidence of plagiarism or dual submission; the work builds on prior research (e.g., VAEs, PixelCNNs) with proper citations. Evidence anchors: SRC-004.\n\nFinal recommendation: Borderline",
+  "run_id": "seed-llm_summarizer",
+  "schema_version": "research-core-v2-artifact-v1",
+  "source_review_ids": [
+    "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1",
+    "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c",
+    "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715",
+    "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308",
+    "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+  ],
+  "structured_meta": {
+    "paper_context_sha256": "5585f0c299daf0fbb1e1e779766eb34643f48c7a26087370c8dc3b98be83a13e",
+    "protocol": "meta-synthesis-output-v2",
+    "recommendation": "Borderline",
+    "rendering_protocol": "meta-opinion-markdown-v3",
+    "sections": [
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-005",
+              "SRC-006"
+            ],
+            "source_review_ids": [
+              "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The proposed model architecture is mathematically well-formulated, correctly defining the autoregressive conditional likelihood and the hierarchical evidence lower bound (ELBO) for training.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The experimental evaluation on 64x64 ImageNet is limited to a single run without reporting variance or confidence intervals, and the model's log-likelihood is slightly worse than the PixelRNN baseline, making the claim of 'competitive performance' less robust.",
+            "suggestions": [
+              "Report mean and standard deviation over multiple independent runs for the 64x64 ImageNet experiments to demonstrate statistical significance and robustness of the reported log-likelihood."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007",
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, batch sizes, number of training epochs), and does not mention code availability.",
+            "suggestions": [
+              "Provide a detailed appendix with all hyperparameters, training schedules, and dataset splits, and make the source code publicly available to facilitate reproduction."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The comparison to prior work on 64x64 ImageNet is incomplete, as it only compares against PixelRNN and Gated PixelCNN, omitting other relevant state-of-the-art generative models (e.g., VAEs with normalizing flows, or other autoregressive models) that were available at the time.",
+            "suggestions": [
+              "Include comparisons with a broader set of recent state-of-the-art models on the 64x64 ImageNet benchmark to provide a more comprehensive evaluation of the model's performance."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007",
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1"
+            ],
+            "source_roles": [
+              "QUAL"
+            ],
+            "statement": "The paper relies on single-point estimates for most reported metrics (e.g., NLL on MNIST and ImageNet) without statistical tests or confidence intervals, which is insufficient to validate the significance of the reported improvements, especially for small margins.",
+            "suggestions": [
+              "Conduct multiple independent training runs and report the mean and standard deviation (or confidence intervals) for all key metrics to ensure that the observed improvements are statistically meaningful."
+            ]
+          }
+        ],
+        "role": "QUAL"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-007"
+            ],
+            "source_review_ids": [
+              "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The paper contains a typographical error in the section heading '4.1.1 NUMBER OF PILXELCNN LAYERS', where 'PixelCNN' is misspelled as 'PILXELCNN'.",
+            "suggestions": [
+              "Correct the typo in the section heading to 'NUMBER OF PIXELCNN LAYERS'."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The text in Section 4.1.1 appears to be disjointed, with a sentence fragment 'typically needs a large number of them.' followed by a new paragraph starting with 'We can see that...', suggesting a missing transition or a formatting error in the narrative flow.",
+            "suggestions": [
+              "Review the paragraph structure in Section 4.1.1 to ensure smooth logical flow between the discussion of computational cost and the observation about the impact of adding a single layer."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-005"
+            ],
+            "source_review_ids": [
+              "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "In Equation (1), the conditioning set for the autoregressive factor is written as $x_1, \\dots, x_{i1}$, which is likely a typo for $x_{i-1}$ (previous pixels). The notation $x_{i1}$ is ambiguous and non-standard.",
+            "suggestions": [
+              "Correct the notation in Equation (1) to clearly denote the previous pixels, e.g., $p(x_i \\mid x_1, \\dots, x_{i-1}, z)$."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-010"
+            ],
+            "source_review_ids": [
+              "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "Figure 5 effectively illustrates the hierarchical nature of the model by showing how varying noise at different levels (top, middle, bottom) affects specific image features (geometry, color/texture, low-level details), providing clear visual evidence for the model's interpretability.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-001",
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c"
+            ],
+            "source_roles": [
+              "CLAR"
+            ],
+            "statement": "The abstract and introduction clearly state the contributions and the motivation for combining VAEs and PixelCNNs, providing a good overview for the reader.",
+            "suggestions": []
+          }
+        ],
+        "role": "CLAR"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-001",
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The work addresses a fundamental challenge in unsupervised learning—high-fidelity natural image modeling—by proposing a hybrid architecture that bridges the gap between latent variable models and autoregressive models. This paradigm is broadly relevant to the generative modeling community as it offers a principled way to balance global coherence with local detail.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007",
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The model achieves state-of-the-art performance on binarized MNIST, with a Gated PixelVAE variant reaching an NLL of ≤ 80.08, which is competitive with or superior to established baselines like PixelRNN (79.20) and standard PixelCNN (81.30). The paper also demonstrates that PixelVAE can achieve strong performance with significantly fewer autoregressive layers than PixelCNN, highlighting a substantial efficiency improvement.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "While the model shows competitive log-likelihood on 64x64 ImageNet (≤3.66) compared to PixelRNN (3.63) and Gated PixelCNN (3.57), the improvement is marginal in terms of likelihood. However, the paper claims that visual inspection reveals significantly more globally coherent samples, which is a qualitative but important domain-specific benefit for image generation tasks.",
+            "suggestions": [
+              "Provide more quantitative metrics for sample quality (e.g., FID scores) to substantiate the claim of superior global coherence on ImageNet."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-012"
+            ],
+            "source_review_ids": [
+              "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715"
+            ],
+            "source_roles": [
+              "SIGN"
+            ],
+            "statement": "The paper does not discuss the societal impact, fairness, or potential risks associated with the generated images. Given the increasing use of generative models in real-world applications, a lack of discussion on these aspects limits the broader impact assessment.",
+            "suggestions": [
+              "Add a section discussing the potential societal implications, ethical considerations, and fairness aspects of the generated images."
+            ]
+          }
+        ],
+        "role": "SIGN"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-001",
+              "SRC-002",
+              "SRC-005"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The paper presents a compelling and well-articulated creative combination of VAEs and PixelCNNs, addressing the complementary weaknesses of both architectures (VAE blurriness vs. PixelCNN lack of latent representation).",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-003",
+              "SRC-006"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The introduction of a hierarchical architecture where PixelCNN decoders model not only the output pixels but also the higher-level latent featuremaps is a methodological advance that goes beyond a simple single-level combination.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-008",
+              "SRC-009"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The analysis of latent variable information content (KL divergence breakdown) provides novel insight into how the autoregressive decoder frees the latent variables from encoding small-scale details, leading to more compressed representations.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007",
+              "SRC-008"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The experimental setup includes a novel ablation study on the number of PixelCNN layers, demonstrating that PixelVAE achieves strong performance with significantly fewer autoregressive layers than standard PixelCNN, highlighting an efficiency advantage.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-001"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The problem formulation (high-quality image generation) is a well-established challenge, and the paper does not introduce a new task or dataset, but rather a new approach to solving it.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-001"
+            ],
+            "source_review_ids": [
+              "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308"
+            ],
+            "source_roles": [
+              "ORIG"
+            ],
+            "statement": "The paper does not focus on negative results or critical assessments of existing methods, but rather on proposing a new model that outperforms or matches them.",
+            "suggestions": []
+          }
+        ],
+        "role": "ORIG"
+      },
+      {
+        "opinions": [
+          {
+            "evidence_anchors": [
+              "SRC-001"
+            ],
+            "source_review_ids": [
+              "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper violates double-blind review policies by explicitly listing author names and institutional affiliations in the header.",
+            "suggestions": [
+              "Remove all author names and institutional affiliations from the header and replace them with 'Anonymous Authors' and 'Paper under double-blind review' to comply with ICLR submission guidelines."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-012"
+            ],
+            "source_review_ids": [
+              "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper lacks a dedicated 'Broader Impact' or 'Ethical Considerations' section, which is expected for ICLR submissions.",
+            "suggestions": [
+              "Add a concise 'Broader Impact' section discussing the societal implications of the work, including potential benefits (e.g., improved image generation for creative tools) and risks (e.g., misuse for generating misleading content)."
+            ]
+          },
+          {
+            "evidence_anchors": [
+              "SRC-007",
+              "SRC-011"
+            ],
+            "source_review_ids": [
+              "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The datasets used (MNIST, ImageNet, LSUN) are standard public benchmarks without personally identifiable information (PII), and their use appears to comply with standard research licensing terms.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-003"
+            ],
+            "source_review_ids": [
+              "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "The paper does not raise significant ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on general image modeling without specific applications to sensitive domains.",
+            "suggestions": []
+          },
+          {
+            "evidence_anchors": [
+              "SRC-004"
+            ],
+            "source_review_ids": [
+              "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8"
+            ],
+            "source_roles": [
+              "POL"
+            ],
+            "statement": "There is no evidence of plagiarism or dual submission; the work builds on prior research (e.g., VAEs, PixelCNNs) with proper citations.",
+            "suggestions": []
+          }
+        ],
+        "role": "POL"
+      }
+    ],
+    "source_anchors": {
+      "SRC-001": "SRC-001 | chars=[0,2000) | type=text | text=# PIXELVAE: A LATENT VARIABLE MODEL FOR NATURAL IMAGES Ishaan Gulrajani University of Montreal Kundan Kumar University o",
+      "SRC-002": "SRC-002 | chars=[2000,4000) | type=text | text=del the output pixels as conditionally independent given the latent variables. The resulting model learns a useful laten",
+      "SRC-003": "SRC-003 | chars=[4000,6000) | type=text | text=el latent featuremaps. - On binarized MNIST, we show that PixelVAE: (1) achieves state-of-the-art performance, (2) can p",
+      "SRC-004": "SRC-004 | chars=[6000,8000) | type=text | text=e producing sharp samples. The concept of normalizing flows for stochastic gradient variational inference (Rezende & Moh",
+      "SRC-005": "SRC-005 | chars=[8000,10000) | type=text | text=ting sentences. # 3 PIxELVAE MODEL Like a VAE, our model jointly trains an \"encoder\" inference network, which maps an im",
+      "SRC-006": "SRC-006 | chars=[10000,12000) | type=text | text=d through each level. In convolutional architectures, the intermediate latent variables are typically organized into fea",
+      "SRC-007": "SRC-007 | chars=[12000,14000) | type=text | text=odel (using 1000 importance samples per datapoint) and find it achieves state of the art performance. # 4.1.1 NUMBER OF",
+      "SRC-008": "SRC-008 | chars=[14000,16000) | type=text | text=since long-range dependencies We can see that adding a single PixelCNN layer has a dramatic impact on the NLL bound of P",
+      "SRC-009": "SRC-009 | chars=[16000,18000) | type=text | text=l interactions between pixels which are at most 2 pixels away from each other (since our masked convolution filter size",
+      "SRC-010": "SRC-010 | chars=[18000,20000) | type=text | text=tion. Finally, samples with varied top-level latent variables have diverse room geometry. ![](images/7892392b58074108cc8",
+      "SRC-011": "SRC-011 | chars=[20000,22000) | type=text | text=ture to the model in section 4.2) of comparable size to the models in van den Oord et al. (2016a;b) on 64x64 ImageNet in",
+      "SRC-012": "SRC-012 | chars=[22000,24000) | type=text | text=Nuance Foundation, NSERC, Calcul Quebec, Compute Canada, CIFAR, MEC Project TRA2014-57088-C2-1-R, SGR project 2014-SGR-1"
+    },
+    "source_review_ids_by_role": {
+      "CLAR": "186cc2f297353448239143eb5c3ca9fd6332a1604abec6cfe1180dbbfb338e8c",
+      "ORIG": "a9f5bae2ffd935d99cd52c32c1db3d48edbb1c1f9e0193f442a78d2e42ce8308",
+      "POL": "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8",
+      "QUAL": "7a8c407ef380383a5e41445052f9bafc99fea5cd01dbaa9b46e8ca1dc1c215f1",
+      "SIGN": "aea0e689e9f69b5f092686827be6dec061f4800eee034cb00562f859f9824715"
+    }
+  }
+}

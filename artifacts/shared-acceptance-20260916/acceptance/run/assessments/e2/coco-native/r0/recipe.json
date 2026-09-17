@@ -1,0 +1,18 @@
+{
+  "candidate": {
+    "candidate_id": "coco-native",
+    "lineage": [],
+    "parent_id": null,
+    "program_sha256": null,
+    "round": 0,
+    "seed": null,
+    "seed_kind": "coco_native"
+  },
+  "key": "coco-native",
+  "kind": "coco_native",
+  "memory_enabled": false,
+  "paper_ids": [
+    "-EHqoysUYLx"
+  ],
+  "split": "static"
+}

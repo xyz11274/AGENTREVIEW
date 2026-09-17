@@ -1,0 +1,147 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "a0f7c8d59f51a26512d6d8335d9fbad009f0543b245cb88a5195c8bc3376a848",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/program.py",
+    "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+    "program_version": "candidate-0001",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "ORIG",
+    "seed_kind": "evolved",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "59dac52a69936703a658de69d0f04b5152f0bf7c689d0dd70b48cfc22957a522",
+        "review_sha256": "4bda9a0f6794de157f3d33e7cae7af2c8d65a2dcf7697e2861dff1212d815c08"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "a0f7c8d59f51a26512d6d8335d9fbad009f0543b245cb88a5195c8bc3376a848",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+  },
+  "completion_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "candidate-0001",
+      "item_id": "3419cf6291f148cf9856beb6d5b53bdee6c5bb3fd0b335944e1f0c9f29346dba",
+      "payload": {
+        "content": "When reviewing papers that do not introduce new algorithms (ORIG-MTH weakness), assess originality primarily through novel problem formulations (ORIG-PROB) and empirical insights (ORIG-ANL). A key strength is identifying previously unaddressed trade-offs or limitations in existing architectures (ORIG-NEG). However, originality is weakened if experimental setups are limited to simple benchmarks (e.g., MNIST) without validation on complex datasets (ORIG-EXP weakness). Ensure that the combination of existing techniques (ORIG-COM) is well-motivated by the intersection of distinct research lines. For empirical-only papers, the value lies in the depth of the insight provided about known methods rather than the novelty of the method itself.",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "ORIG",
+        "topic": "Heuristics for evaluating originality in empirical studies of existing methods"
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "59dac52a69936703a658de69d0f04b5152f0bf7c689d0dd70b48cfc22957a522"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/program.py",
+  "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+  "program_version": "candidate-0001",
+  "role": "ORIG",
+  "seed_kind": "evolved",
+  "snapshot": {
+    "collections": {
+      "research_v2_vector": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "daf1bccd336c858e7f5d8c4b6617277b53de40e86795af6c1664623fa387f4e6"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "bca3e1b33e15a53aa8e1bfc9a7c1f7f8e0db9b89c842a6ba6c47aeebbd3a19ef",
+            "id": "daf1bccd336c858e7f5d8c4b6617277b53de40e86795af6c1664623fa387f4e6",
+            "metadata": {
+              "role": "ORIG",
+              "topic": "Assessing Originality in Non-Algorithmic Papers"
+            },
+            "text": "Evaluate originality via novel problem formulations and empirical insights rather than new algorithms. Identify previously unaddressed trade-offs or limitations in existing architectures as a key strength. Ensure combinations of existing techniques are well-motivated by the intersection of distinct research lines. For empirical-only papers, prioritize the depth of insight into known methods over method novelty. Flag limited experimental setups (e.g., simple benchmarks without complex dataset validation) as a weakness."
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_vector"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "daf1bccd336c858e7f5d8c4b6617277b53de40e86795af6c1664623fa387f4e6"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "116cb54d464b6720623d45141f1a91b37062d52af2213837ae5c01a57f96db06",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "59dac52a69936703a658de69d0f04b5152f0bf7c689d0dd70b48cfc22957a522"
+  ]
+}

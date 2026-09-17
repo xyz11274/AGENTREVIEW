@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"topic\": \"POL Review Heuristics\",\n  \"content\": \"1. Anonymity (POL-ANO): Verify explicit double-blind markers (e.g., 'Anonymous authors', 'Paper under double-blind review') and scan for self-identifying text, acknowledgments, or URLs. 2. Data Privacy (POL-DAT): Assess datasets for PII; standard public benchmarks (e.g., MNIST) are generally compliant, but sensitive data requires explicit consent and anonymization checks. 3. Broader Impact (POL-IMP): Check for dedicated sections on societal impact, especially for security-related topics like adversarial robustness; flag missing or boilerplate statements as weaknesses. 4. Ethics (POL-ETH): Identify dual-use potential (e.g., attack/defense trade-offs) and ensure authors discuss potential harms or responsible deployment, even for benign tasks. 5. Plagiarism (POL-PLG): Verify proper citation of prior work and originality of empirical findings; look for evidence of dual submission or uncredited reuse.\",\n  \"reviewer_name\": \"POL Specialist\",\n  \"reviewer_dimension\": \"POL\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789576775,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a15a40b8743a845c",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 243,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1931,
+      "prompt_tokens_details": null,
+      "total_tokens": 2174
+    }
+  },
+  "raw_model_output": "{\n  \"topic\": \"POL Review Heuristics\",\n  \"content\": \"1. Anonymity (POL-ANO): Verify explicit double-blind markers (e.g., 'Anonymous authors', 'Paper under double-blind review') and scan for self-identifying text, acknowledgments, or URLs. 2. Data Privacy (POL-DAT): Assess datasets for PII; standard public benchmarks (e.g., MNIST) are generally compliant, but sensitive data requires explicit consent and anonymization checks. 3. Broader Impact (POL-IMP): Check for dedicated sections on societal impact, especially for security-related topics like adversarial robustness; flag missing or boilerplate statements as weaknesses. 4. Ethics (POL-ETH): Identify dual-use potential (e.g., attack/defense trade-offs) and ensure authors discuss potential harms or responsible deployment, even for benign tasks. 5. Plagiarism (POL-PLG): Verify proper citation of prior work and originality of empirical findings; look for evidence of dual submission or uncredited reuse.\",\n  \"reviewer_name\": \"POL Specialist\",\n  \"reviewer_dimension\": \"POL\"\n}",
+  "tokens": {
+    "input_tokens": 1931,
+    "max_model_len": 65536
+  }
+}

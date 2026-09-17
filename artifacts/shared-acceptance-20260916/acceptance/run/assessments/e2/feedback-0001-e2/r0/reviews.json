@@ -1,0 +1,14 @@
+{
+  "paper_ids": [
+    "S1EzRgb0W"
+  ],
+  "partition": "rotating",
+  "protocol": "research-v2-coco-review-manifest-v1",
+  "records": [
+    {
+      "paper_id": "S1EzRgb0W",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/feedback-0001-e2/r0/final_reviews/feedback-0001-e2/S1EzRgb0W.json",
+      "sha256": "ab3e6fe03d3362741e0c2e40cacbba990acab829b9edf3ee0eb6c9c50b9b6289"
+    }
+  ]
+}

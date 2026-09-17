@@ -1,0 +1,31 @@
+{
+  "checks": [
+    {
+      "opinion_count": 31,
+      "paper_id": "-EHqoysUYLx",
+      "raw_coverage": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sentence_count": 31
+    }
+  ],
+  "stage": "split",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/coco/cache/split/06d9a330c3136a795932d9d03402705f54215a1fb3d7be477c6545caa0ff4289.audit.json",
+      "sha256": "5816ccd5af832b448835ec8113398c0a3b253068a8df644b91b53b97b544103e"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/coco/cache/split/3d1320f4a1c4971c27181a5a8cc2991471b7acd28c3568f89ddc96541218f3c6.audit.json",
+      "sha256": "2ae3df8f5af4e101ee526c46fdabb7d42f716d20431c832d773ea9e6b3e270a0"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/coco/cache/split/bb200a1cf1800e4a3af451abfae7cb8ac2921d68b860e5d89a13e58e29dde11c.audit.json",
+      "sha256": "638a094c61315b46e5d85943e486de94051dfd366b879e7ccba2ea23be0f1758"
+    }
+  ],
+  "unhandled_failures": 0
+}

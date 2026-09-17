@@ -30,6 +30,7 @@ class PersistentCompletionClient:
 
     def complete(self, messages, *, max_tokens, component, response_format=None):
         identity = {"messages": messages, "max_tokens": max_tokens, "component": component,
+                    "completion_contract": "complete-stop-v1",
                     "model": self.identity, "response_format": response_format,
                     "max_attempts": self.max_attempts, "input_max_tokens": self.input_max_tokens}
         directory = self.root / value_sha256(identity)
@@ -57,21 +58,26 @@ class PersistentCompletionClient:
                     continue
                 atomic_write_json(reserve, {"attempt": attempt, "request_id": directory.name})
                 try:
+                    if type(max_tokens) is not int or max_tokens <= 0:
+                        raise ValueError("Output budget requires a positive integer")
                     tokens = self.client.count_chat_tokens(messages)
                     if tokens["input_tokens"] <= self.input_max_tokens and tokens["input_tokens"] + max_tokens <= tokens["max_model_len"]:
                         pass
                     else:
-                        raise ValueError("Complete request exceeds the frozen input or model token budget")
+                        raise ValueError(f"Complete request exceeds the frozen input or model token budget: input={tokens['input_tokens']}, output={max_tokens}, input_limit={self.input_max_tokens}, context={tokens['max_model_len']}")
                     response = complete_with_response_format(self.client, messages, max_tokens=max_tokens,
                                                              component=component, response_format=response_format)
                     if isinstance(response, str) and response.strip():
-                        atomic_write_json(result_path, {"raw_model_output": response, "attempt": attempt, "tokens": tokens})
+                        atomic_write_json(result_path, {"raw_model_output": response, "attempt": attempt, "tokens": tokens,
+                                                       "completion": getattr(self.client, "last_completion", None)})
                         return response
                     raise ValueError("Completion requires nonempty text")
                 except Exception as exc:
                     status = getattr(exc, "status_code", None)
                     transient = isinstance(exc, (TimeoutError, ConnectionError)) or status in {408, 429, 500, 502, 503, 504} or type(exc).__name__ in {"APITimeoutError", "APIConnectionError"}
                     error = {"type": type(exc).__name__, "message": str(exc), "transient": transient}
+                    if getattr(exc, "completion", None) is not None:
+                        error["completion"] = exc.completion
                     error["fingerprint"] = value_sha256({"type": error["type"], "message": error["message"]})
                     atomic_write_json(error_path, error)
                     errors.append(error)

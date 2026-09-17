@@ -1,0 +1,11 @@
+{
+  "method": "Exact IDs, normalized titles, content and normalized-content hashes; title-derived family IDs. No claim of exhaustive cross-publication family linkage or complete historical exposure audit.",
+  "scope": "development partition integrity only",
+  "split_manifest_sha256": {
+    "build": "6cb2383cc9ee782897397346d7deb2becf1f95816d82506cba206a2632fc68e2",
+    "rotating": "b83489d80e03cf08352db5250a3b88c3493f88ac188bf17d02df777b93de6518",
+    "sealed_test": "69bd711252bf61a2503e95f64f6512791d62b320ed554e924e86f01ace012ce1",
+    "static": "9865532404bb343109c00445cba1de03abe8b36f598f9870b4374cca5201fb8b"
+  },
+  "status": "complete"
+}

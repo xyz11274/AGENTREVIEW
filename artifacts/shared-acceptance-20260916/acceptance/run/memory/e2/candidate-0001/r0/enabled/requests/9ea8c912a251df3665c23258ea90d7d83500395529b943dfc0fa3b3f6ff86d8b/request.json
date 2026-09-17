@@ -1,0 +1,61 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a specialist reviewer for the ORIG dimension of a machine learning paper review. Your expertise focus is originality in problem setup, method, analysis, experiments, and creative combinations. You must review strictly according to the rubric below and stay centered on this dimension.\n\n## Official Rubric Section\n4. ORIG (Originality): Does the work provide new insights, deepen understanding, or highlight important properties of existing methods? Is it clear how this work differs from previous contributions, with relevant citations provided? Does the work introduce novel tasks or methods that advance the field? Does this work offer a novel combination of existing techniques, and is the reasoning behind this combination well-articulated? As the questions above indicates, originality does not necessarily require introducing an entirely new method. Rather, a work that provides novel insights by evaluating existing methods, or demonstrates improved efficiency, fairness, etc. is also equally valuable.\n● ORIG-PROB (Novel Problem Formulation): Comments on the introduction of a new problem, task, or dataset. Includes innovative problem definitions that highlight previously unaddressed challenges.\n\n    ○ Strength: Highlights creative and meaningful new problem formulations or datasets that open new avenues for research.\n    ○ Weakness: Notes that the problem is a minor variation of existing tasks or lacks clear motivation.\n● ORIG-MTH (Novel Methodology or Algorithm): Assesses whether the paper introduces a genuinely new algorithmic approach or architectural design rather than a minor tweak of existing methods.\n\n    ○ Strength: Recognises innovative algorithmic designs with clear conceptual advances.\n    ○ Weakness: Points out that the method is a straightforward modification or re-implementation of existing techniques.\n● ORIG-ANL (Novel Analysis or Insights): Pertains to original theoretical insights or analyses that deepen understanding of existing methods or phenomena.\n\n    ○ Strength: Notes insightful analysis that sheds new light on known methods or uncovers unexpected behaviours.\n    ○ Weakness: Suggests that the analysis is trivial, already known, or does not yield meaningful insights.\n● ORIG-EXP (Novel Experimental Setup or Data): Evaluates whether the paper proposes new experimental setups, benchmarks, evaluation protocols or collects new datasets.\n\n    ○ Strength: Praises introduction of meaningful new datasets, benchmarks or evaluation protocols.\n    ○ Weakness: Notes that the experimental setup is derivative or does not add value beyond existing benchmarks.\n● ORIG-COM (Creative Combination of Existing Methods): Considers whether the paper combines well-known techniques in an original way and whether the rationale behind the combination is compelling.\n\n    ○ Strength: Recognises innovative synergies or architectures that combine methods in a way that yields new capabilities.\n    ○ Weakness: Suggests that the combination is superficial or lacks a clear justification for being novel.\n● ORIG-NEG (Negative Results or Critical Assessments): Covers papers that provide critical evaluations, ablations or negative results showing limitations of existing methods.\n\n    ○ Strength: Commends thoughtful critical analysis or the presentation of negative results that challenge assumptions.\n    ○ Weakness: Notes superficial or poorly justified criticism, or negative results that lack rigour.\n\n## Reviewing Instructions\n- Evaluate the paper only through the ORIG lens while grounding every claim in the Frozen Paper.\n- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n- Be rigorous, evidence-based, and constructive.\n- Explicitly comment on the listed sub-dimensions from the rubric.\n- Base experiments and claims on evidence present in the paper.\n- Return only the final review, excluding private reasoning, analysis, and <think> tags.\n- Cite original-paper evidence anchors for every major judgment.\n- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.\n- Use SRC-<digits>(page=<digits>) with the numeric ID and page from one listed token.\n- Use numeric Source Anchors present in the input list.\nWrite your review in the following format:\n```\nReviewer dimension: ORIG\nPaper summary: ...\n\nDimension score (1-10): ...\nConfidence (1-5): ...\n\nOpinions:\n- subcategory: <one rubric subcategory code>\n  polarity: strength | weakness | neutral\n  claim: <one atomic review opinion>\n  evidence_anchors: [<copy allowed numeric Source Anchor token>]\n  confidence: <1-5>\n  actionable_suggestion: <specific suggestion or N/A>\n- subcategory: ...\n  polarity: ...\n  claim: ...\n  evidence_anchors: [...]\n  confidence: ...\n  actionable_suggestion: ...\n\nKey questions for the authors:\n- ...\n\nRecommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject\n```\n",
+      "role": "system"
+    },
+    {
+      "content": "Extract concise, role-specific review heuristics from the provided text. Focus on actionable patterns, common pitfalls, and best practices relevant to the reviewer dimension. Do not include paper-specific facts or prose. Output a JSON object with keys: 'topic', 'content'.\n\nText:\nSOURCE REVIEW ID: 7fb04c801e3b69e973e1f02934d843d5385a1d1e47d9ab6b16c6f77a4142f2c6\nROLE: ORIG\n\nCOMPLETE SPECIALIST REVIEW:\n```\nReviewer dimension: ORIG\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in neural networks. It compares Standard CNNs (StdCNNs) with several rotation-equivariant architectures, including Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet). The authors claim to be the first to study the vulnerability of rotation-equivariant networks to pixel-wise perturbations. Experiments are conducted on the MNIST dataset, analyzing accuracy under rotation augmentation and adversarial attacks. The key finding is that while equivariant networks are more robust to rotations, they become more vulnerable to pixel-wise attacks as the range of rotation robustness increases, suggesting a trade-off between these two types of robustness.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper identifies a meaningful and previously under-explored problem: the potential trade-off between geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or more nuanced.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Extend experiments to CIFAR-10 or other non-trivial datasets to validate the generality of the observed trade-off.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of equivariant networks and adversarial robustness evaluation is a logical and well-motivated combination, given the separate lines of research on symmetry in neural networks and adversarial robustness.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: strength\n  claim: The paper effectively presents a critical assessment of the assumption that equivariance is universally beneficial, showing that it can come at the cost of robustness to other types of perturbations.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was the study limited to MNIST? Have you considered or attempted experiments on more complex datasets like CIFAR-10, where the interaction between geometric and pixel-wise robustness might be more complex?\n- The paper mentions that for small rotations, GCNNs are more robust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```\n\nThe KnowledgeItem must conform to this schema:\n{\"type\": \"object\", \"properties\": {\"topic\": {\"type\": \"string\"}, \"content\": {\"type\": \"string\"}, \"reviewer_name\": {\"type\": \"string\"}, \"reviewer_dimension\": {\"type\": \"string\"}}, \"required\": [\"topic\", \"content\", \"reviewer_name\", \"reviewer_dimension\"], \"additionalProperties\": false}\n\nOutput ONLY a valid JSON object matching the schema fields. No explanation.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": {
+    "json_schema": {
+      "name": "KnowledgeItem",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "reviewer_dimension": {
+            "type": "string"
+          },
+          "reviewer_name": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "content",
+          "reviewer_name",
+          "reviewer_dimension"
+        ],
+        "type": "object"
+      },
+      "strict": true
+    },
+    "type": "json_schema"
+  }
+}

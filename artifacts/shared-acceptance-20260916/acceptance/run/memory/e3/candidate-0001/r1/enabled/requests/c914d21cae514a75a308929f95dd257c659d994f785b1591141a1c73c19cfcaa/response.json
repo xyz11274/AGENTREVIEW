@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"topic\": \"SIGN Review Heuristics\",\n  \"content\": \"When evaluating Significance, prioritize the breadth of the problem addressed (SIGN-BRD) and the magnitude of improvement over state-of-the-art (SIGN-SOT). A key pitfall is accepting empirical analyses on simple, low-dimensional benchmarks (e.g., MNIST) as sufficient evidence for domain impact (SIGN-DOM); reviewers should demand validation on complex, real-world datasets to ensure generalizability. Distinguish between diagnostic observations of existing architectures and the proposal of new SOTA methods; the latter is required for high significance scores. Furthermore, assess real-world and societal impact (SIGN-IMP) by checking if the paper discusses practical deployment scenarios, safety-critical applications, or mitigation strategies for identified vulnerabilities, rather than just theoretical trade-offs.\",\n  \"reviewer_name\": \"SIGN\",\n  \"reviewer_dimension\": \"SIGN\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789577554,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-9ee6c16afafd6660",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 190,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1737,
+      "prompt_tokens_details": null,
+      "total_tokens": 1927
+    }
+  },
+  "raw_model_output": "{\n  \"topic\": \"SIGN Review Heuristics\",\n  \"content\": \"When evaluating Significance, prioritize the breadth of the problem addressed (SIGN-BRD) and the magnitude of improvement over state-of-the-art (SIGN-SOT). A key pitfall is accepting empirical analyses on simple, low-dimensional benchmarks (e.g., MNIST) as sufficient evidence for domain impact (SIGN-DOM); reviewers should demand validation on complex, real-world datasets to ensure generalizability. Distinguish between diagnostic observations of existing architectures and the proposal of new SOTA methods; the latter is required for high significance scores. Furthermore, assess real-world and societal impact (SIGN-IMP) by checking if the paper discusses practical deployment scenarios, safety-critical applications, or mitigation strategies for identified vulnerabilities, rather than just theoretical trade-offs.\",\n  \"reviewer_name\": \"SIGN\",\n  \"reviewer_dimension\": \"SIGN\"\n}",
+  "tokens": {
+    "input_tokens": 1737,
+    "max_model_len": 65536
+  }
+}

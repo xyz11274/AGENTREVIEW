@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T21:30:56.936658+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "b04e6f1c2891befb96811f9cbef22358397dfcb41161ea8f4ec0a6f41fa4d7d6",
+    "request_sha256": "a06b76a06a929f3b68897ebceb645ee7fb75d77afe95595fd699386b91cee9b2",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "ff710a3c66bb232b344f99963a685b44c8baa192aba131e95f6af6f39611d4d4",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "BJKYvt5lg",
+  "program_version": "candidate-0003",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper introduces PixelVAE, a latent variable model for natural images that combines the global structure modeling of Variational Autoencoders (VAEs) with the fine-detail capture of PixelCNNs by using an autoregressive PixelCNN decoder. The authors demonstrate that this architecture achieves state-of-the-art performance on binarized MNIST, requires fewer computationally expensive autoregressive layers than standard PixelCNNs, and learns more compressed latent representations. Extensions to a hierarchical model show competitive performance on 64x64 ImageNet and high-quality sample generation on the LSUN bedrooms dataset.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a fundamental tension in generative modeling (global structure vs. local detail) that is broadly relevant to the deep learning community, offering a paradigm that combines latent variable inference with autoregressive decoding.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates significant domain impact in computer vision by effectively modeling complex image distributions, as evidenced by high-quality sample generation on the LSUN bedrooms dataset and competitive log-likelihood on 64x64 ImageNet.\n  evidence_anchors: [SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The model achieves state-of-the-art performance on binarized MNIST and offers a substantial efficiency improvement by requiring fewer autoregressive layers than PixelCNN to achieve comparable or better NLL, which is a significant practical advancement.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The paper lacks a discussion on the real-world societal impact, ethical considerations, or practical deployment implications of the model, focusing primarily on technical performance metrics.\n  evidence_anchors: [SRC-012]\n  confidence: 5\n  actionable_suggestion: Add a section discussing potential applications, limitations in real-world deployment, and any ethical considerations related to image generation.\n\nKey questions for the authors:\n- How does the computational cost of PixelVAE compare to other state-of-the-art models like GANs or later VAE variants in terms of training and inference time?\n- What are the potential downstream applications of the compressed latent representations learned by PixelVAE, and have any preliminary experiments been conducted?\n- Are there any known limitations or failure modes of the model when applied to more diverse or high-resolution datasets beyond those tested?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "f16e372d14b7e47c74c3750162ea821ead9f516476b17ebe1a7c91f6e60ec733",
+      "prompt_sha256": "a06b76a06a929f3b68897ebceb645ee7fb75d77afe95595fd699386b91cee9b2"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Significance & Impact (SIGN)**\n\n**1. Validate Domain Relevance and Scope**\n*   **Reject Low-Dimensional Benchmarks:** Do not accept validation solely on simple datasets (e.g., MNIST, CelebA) as sufficient for establishing domain impact. Explicitly require extension to complex, high-stakes domains (e.g., CIFAR-10, ImageNet, medical imaging, autonomous driving) to demonstrate practical value.\n*   **Verify Fundamental Tension:** Ensure the identified problem (e.g., geometric robustness vs. adversarial vulnerability) is a community-wide challenge, not a niche artifact.\n\n**2. Demand Rigorous Quantitative Validation**\n*   **No Unsupported Claims:** Reject qualitative assertions of \"intuitiveness,\" \"interpretability,\" or \"effectiveness\" without rigorous quantitative backing.\n*   **Baseline Comparisons:** Require empirical comparisons against established SOTA baselines (e.g., LIME, SHAP, Grad-CAM, or relevant VAE/VAE-VAE variants). If the paper proposes a new method, it must be benchmarked against current state-of-the-art to demonstrate meaningful advancement.\n\n**3. Distinguish Diagnostic vs. Methodological Contributions**\n*   **SOTA Scoring:** Do not award State-of-the-Art (SOTA) scores for purely analytical or diagnostic insights that do not propose new SOTA methods.\n*   **Positioning:** Ensure the contribution is clearly positioned against current SOTA methods. If the work is primarily analytical, evaluate its significance based on the depth of insight rather than performance metrics, but flag the lack of methodological novelty.\n\n**4. Assess Real-World Impact and Ethics**\n*   **Deployment Implications:** Mandate discussion of real-world deployment implications, particularly for safety-critical systems. Flag purely analytical papers lacking this context as having limited practical impact.\n*   **Societal & Ethical Risks:** Explicitly assess omissions regarding:\n    *   Potential for misleading outputs or explanations.\n    *   Fairness across demographic groups.\n    *   Environmental costs (e.g., training auxiliary models).\n    *   Mitigation strategies for identified risks.\n\n**Actionable Checklist for Reviewers:**\n1.  Does the paper validate on complex, high-stakes datasets? If not, request extension or limit scope claims.\n2.  Are all performance/quality claims supported by quantitative comparisons against SOTA baselines?\n3.  Is the contribution clearly distinguished as methodological (SOTA potential) or analytical (insight potential)?\n4.  Are real-world deployment risks, ethical considerations, and societal impacts explicitly discussed?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise, actionable, and strictly grounded in the paper.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "3af2efe217252938c56799e88a3486a2a1c6bb6841480f00da702ded397255c5",
+              "role": "SIGN",
+              "score": 0.3784061120562048
+            },
+            {
+              "id": "947eec344db0b2dcf6f3f942b7e412847478eed1de08bc255607bf994cf74dd2",
+              "role": "SIGN",
+              "score": 0.3586866443710167
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Significance & Impact (SIGN)**\n\n**1. Validate Domain Relevance and Scope**\n*   **Reject Low-Dimensional Benchmarks:** Do not accept validation solely on simple datasets (e.g., MNIST, CelebA) as sufficient for establishing domain impact. Explicitly require extension to complex, high-stakes domains (e.g., CIFAR-10, ImageNet, medical imaging, autonomous driving) to demonstrate practical value.\n*   **Verify Fundamental Tension:** Ensure the identified problem (e.g., geometric robustness vs. adversarial vulnerability) is a community-wide challenge, not a niche artifact.\n\n**2. Demand Rigorous Quantitative Validation**\n*   **No Unsupported Claims:** Reject qualitative assertions of \"intuitiveness,\" \"interpretability,\" or \"effectiveness\" without rigorous quantitative backing.\n*   **Baseline Comparisons:** Require empirical comparisons against established SOTA baselines (e.g., LIME, SHAP, Grad-CAM, or relevant VAE/VAE-VAE variants). If the paper proposes a new method, it must be benchmarked against current state-of-the-art to demonstrate meaningful advancement.\n\n**3. Distinguish Diagnostic vs. Methodological Contributions**\n*   **SOTA Scoring:** Do not award State-of-the-Art (SOTA) scores for purely analytical or diagnostic insights that do not propose new SOTA methods.\n*   **Positioning:** Ensure the contribution is clearly positioned against current SOTA methods. If the work is primarily analytical, evaluate its significance based on the depth of insight rather than performance metrics, but flag the lack of methodological novelty.\n\n**4. Assess Real-World Impact and Ethics**\n*   **Deployment Implications:** Mandate discussion of real-world deployment implications, particularly for safety-critical systems. Flag purely analytical papers lacking this context as having limited practical impact.\n*   **Societal & Ethical Risks:** Explicitly assess omissions regarding:\n    *   Potential for misleading outputs or explanations.\n    *   Fairness across demographic groups.\n    *   Environmental costs (e.g., training auxiliary models).\n    *   Mitigation strategies for identified risks.\n\n**Actionable Checklist for Reviewers:**\n1.  Does the paper validate on complex, high-stakes datasets? If not, request extension or limit scope claims.\n2.  Are all performance/quality claims supported by quantitative comparisons against SOTA baselines?\n3.  Is the contribution clearly distinguished as methodological (SOTA potential) or analytical (insight potential)?\n4.  Are real-world deployment risks, ethical considerations, and societal impacts explicitly discussed?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+      "program_version": "candidate-0003",
+      "query": {
+        "query_text": "PixelVAE: A Latent Variable Model for Natural Images",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 2709,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 12.643499162048101,
+        "prompt_chars": 7707,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "ff710a3c66bb232b344f99963a685b44c8baa192aba131e95f6af6f39611d4d4"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "3b2eafb22549747b95a3b1cd724e5c2cd3ad233c287b84c83532d4406f229ec6",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: The paper introduces PixelVAE, a latent variable model for natural images that combines the global structure modeling of Variational Autoencoders (VAEs) with the fine-detail capture of PixelCNNs by using an autoregressive PixelCNN decoder. The authors demonstrate that this architecture achieves state-of-the-art performance on binarized MNIST, requires fewer computationally expensive autoregressive layers than standard PixelCNNs, and learns more compressed latent representations. Extensions to a hierarchical model show competitive performance on 64x64 ImageNet and high-quality sample generation on the LSUN bedrooms dataset.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a fundamental tension in generative modeling (global structure vs. local detail) that is broadly relevant to the deep learning community, offering a paradigm that combines latent variable inference with autoregressive decoding.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates significant domain impact in computer vision by effectively modeling complex image distributions, as evidenced by high-quality sample generation on the LSUN bedrooms dataset and competitive log-likelihood on 64x64 ImageNet.\n  evidence_anchors: [SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The model achieves state-of-the-art performance on binarized MNIST and offers a substantial efficiency improvement by requiring fewer autoregressive layers than PixelCNN to achieve comparable or better NLL, which is a significant practical advancement.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The paper lacks a discussion on the real-world societal impact, ethical considerations, or practical deployment implications of the model, focusing primarily on technical performance metrics.\n  evidence_anchors: [SRC-012]\n  confidence: 5\n  actionable_suggestion: Add a section discussing potential applications, limitations in real-world deployment, and any ethical considerations related to image generation.\n\nKey questions for the authors:\n- How does the computational cost of PixelVAE compare to other state-of-the-art models like GANs or later VAE variants in terms of training and inference time?\n- What are the potential downstream applications of the compressed latent representations learned by PixelVAE, and have any preliminary experiments been conducted?\n- Are there any known limitations or failure modes of the model when applied to more diverse or high-resolution datasets beyond those tested?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "candidate-0003",
+  "schema_version": "research-core-v2-artifact-v1"
+}

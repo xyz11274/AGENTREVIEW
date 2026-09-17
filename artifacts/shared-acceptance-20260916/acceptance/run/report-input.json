@@ -1,0 +1,301 @@
+{
+  "protocol": "research-v2-experiment-report-input-v1",
+  "scopes": [
+    {
+      "cohort_id": "43bebf9811b0829668692f2eea77fb05477b6387f3ac32d8275c7d5e1bb8d703",
+      "evaluation_epoch": 3,
+      "papers": [
+        {
+          "paper_id": "-EHqoysUYLx",
+          "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses"
+        }
+      ],
+      "partition": "static",
+      "purpose": "selection",
+      "run_id": "shared-memory-acceptance-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "variants": [
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/coco/assessment.json",
+            "sha256": "0720973d67db3c069d03bf9870fc9640fa77877de943713842b92e9aa585a7f2"
+          },
+          "candidate_id": "candidate-0001",
+          "failure": null,
+          "kind": "candidate",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/final_reviews/candidate-0001/-EHqoysUYLx.json",
+                "sha256": "1c384dd9d5917b20983be325bfb28525a611e53795d4d467658e2921132815af"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": "seed-vector_search",
+          "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+          "role_diagnostics": [],
+          "round": 1,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "candidate-0001"
+        },
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/coco-native/r0/coco/assessment.json",
+            "sha256": "f35953e8b86cf35752ede4606dff84a2074d6d37cf695d85e3c9bb1c0be8a1ce"
+          },
+          "candidate_id": "coco-native",
+          "failure": null,
+          "kind": "coco_native",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/coco-native/r0/native/-EHqoysUYLx.json",
+                "sha256": "d3000eb3a3a6bdb82a0f7705ed742aba6e7beb390395ffbf239978ee8bd0c852"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": null,
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": null,
+          "status": "complete",
+          "variant_id": "coco-native"
+        },
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/coco/assessment.json",
+            "sha256": "3e13b0565d869f6d46bd930af62e7052388854bb68a1a061861f27e690448fef"
+          },
+          "candidate_id": "seed-vector_search",
+          "failure": null,
+          "kind": "seed",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/final_reviews/seed-vector_search/-EHqoysUYLx.json",
+                "sha256": "157f6fcbff32de6c9a69590dba23cdb105715b64b97ed3f508399e9f2b14640e"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "seed-vector_search"
+        },
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/coco/assessment.json",
+            "sha256": "0720973d67db3c069d03bf9870fc9640fa77877de943713842b92e9aa585a7f2"
+          },
+          "candidate_id": "candidate-0001",
+          "failure": null,
+          "kind": "champion",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/final_reviews/candidate-0001/-EHqoysUYLx.json",
+                "sha256": "1c384dd9d5917b20983be325bfb28525a611e53795d4d467658e2921132815af"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": "seed-vector_search",
+          "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+          "role_diagnostics": [],
+          "round": 1,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "champion"
+        }
+      ]
+    },
+    {
+      "cohort_id": "2af5361fed631aeb0184966b536d4ef51b4929aa782fec30a7c558b77191c581",
+      "evaluation_epoch": 2,
+      "papers": [
+        {
+          "paper_id": "S1EzRgb0W",
+          "title": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples"
+        }
+      ],
+      "partition": "rotating",
+      "purpose": "reflection",
+      "run_id": "shared-memory-acceptance-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "variants": [
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/feedback-0001-e2/r0/coco/assessment.json",
+            "sha256": "2cfcd7d39682e405ad772447350b6639c059f53737d14c23f9acc05229ee4528"
+          },
+          "candidate_id": "feedback-0001-e2",
+          "failure": null,
+          "kind": "candidate",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "S1EzRgb0W",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/feedback-0001-e2/r0/final_reviews/feedback-0001-e2/S1EzRgb0W.json",
+                "sha256": "ab3e6fe03d3362741e0c2e40cacbba990acab829b9edf3ee0eb6c9c50b9b6289"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "feedback-0001-e2"
+        }
+      ]
+    },
+    {
+      "cohort_id": "43bebf9811b0829668692f2eea77fb05477b6387f3ac32d8275c7d5e1bb8d703",
+      "evaluation_epoch": 1,
+      "papers": [
+        {
+          "paper_id": "-EHqoysUYLx",
+          "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses"
+        }
+      ],
+      "partition": "static",
+      "purpose": "selection",
+      "run_id": "shared-memory-acceptance-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "variants": [
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e1/seed-vector_search/r0/coco/assessment.json",
+            "sha256": "bf0b5fce751a752a07bde4fec7bdf23a968cf98961c5f7902809a4830ffb6edb"
+          },
+          "candidate_id": "seed-vector_search",
+          "failure": null,
+          "kind": "seed",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e1/seed-vector_search/r0/final_reviews/seed-vector_search/-EHqoysUYLx.json",
+                "sha256": "6c642377117c1244f5d68c910587117bec96933fe0ca0c9ccef91350c393c6f9"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "seed-vector_search"
+        }
+      ]
+    },
+    {
+      "cohort_id": "43bebf9811b0829668692f2eea77fb05477b6387f3ac32d8275c7d5e1bb8d703",
+      "evaluation_epoch": 2,
+      "papers": [
+        {
+          "paper_id": "-EHqoysUYLx",
+          "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses"
+        }
+      ],
+      "partition": "static",
+      "purpose": "selection",
+      "run_id": "shared-memory-acceptance-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "variants": [
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/coco/assessment.json",
+            "sha256": "80aabd8b4a59acbd39083e9c9c15b18109bc6a693b0b07dfd1079657a9d2fdda"
+          },
+          "candidate_id": "coco-native",
+          "failure": null,
+          "kind": "coco_native",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/coco-native/r0/native/-EHqoysUYLx.json",
+                "sha256": "02f98f9e01b846dfbb8e4540d9cb763bd972f1c116b195be6caf00679027a976"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": null,
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": null,
+          "status": "complete",
+          "variant_id": "coco-native"
+        },
+        {
+          "assessment": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/seed-vector_search/r0/coco/assessment.json",
+            "sha256": "b7b9d0c0d4958a6278093741600b78d975bf63e613bd63d9a8a7a989f4715a16"
+          },
+          "candidate_id": "seed-vector_search",
+          "failure": null,
+          "kind": "seed",
+          "matched_seed": null,
+          "paper_outcomes": [
+            {
+              "paper_id": "-EHqoysUYLx",
+              "review": {
+                "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e2/seed-vector_search/r0/final_reviews/seed-vector_search/-EHqoysUYLx.json",
+                "sha256": "18cffdf76e2b36f435f0b576f418924cf56dfd2df1aefcc00d4b59f357489753"
+              },
+              "status": "not_scored"
+            }
+          ],
+          "parent_id": null,
+          "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+          "role_diagnostics": [],
+          "round": 0,
+          "seed": "vector_search",
+          "status": "complete",
+          "variant_id": "seed-vector_search"
+        }
+      ]
+    }
+  ]
+}

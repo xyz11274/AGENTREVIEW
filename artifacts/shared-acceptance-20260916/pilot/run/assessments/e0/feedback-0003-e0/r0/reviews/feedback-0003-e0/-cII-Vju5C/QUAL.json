@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T21:04:02.005073+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "5eb7591f4e6fe1bdb993470f685d9e1b95be444ba59ab0ad3cecf6dd2338f156",
+    "request_sha256": "573023997defe21a116b269ad85f0df6be58db2824362fcef44dcfd72d898e36",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-cII-Vju5C",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes the gradients of components within a layer (e.g., convolutional filters) using the SVD of the gradient matrix before the update step. The authors hypothesize this prevents co-learning of similar representations, leading to faster convergence and better robustness to over-parameterization. Experiments on CIFAR-10 and ImageNet show significant speed-ups and accuracy improvements over standard SGDM with naive hyperparameters, though it underperforms SGDM when using SGDM-tuned hyperparameters.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The mathematical formulation of the orthogonalization step is technically sound, correctly identifying the nearest orthonormal matrix via the SVD of the gradient matrix.\n  evidence_anchors: [SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation lacks comparisons against modern state-of-the-art optimizers (e.g., Adam, LAMB, or other advanced first-order methods), limiting the assessment of the method's practical utility in contemporary deep learning workflows.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 4\n  actionable_suggestion: Include comparisons with at least one modern adaptive optimizer (e.g., AdamW) to demonstrate if the speed-up persists against more sophisticated baselines than SGDM.\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: While standard errors are reported for CIFAR-10 results, the ImageNet and Barlow Twins experiments appear to rely on single runs or lack explicit variance reporting, weakening the statistical rigor of the claims regarding large-scale performance.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs for the ImageNet and Barlow Twins experiments to ensure statistical significance.\n- subcategory: QUAL-REP\n  polarity: strength\n  claim: The authors provide code links for both the optimizer implementation and the experiments, and specify key hyperparameters (learning rate, momentum, weight decay) in the text, facilitating reproducibility.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited to SGDM and the original ResNet hyperparameters; the paper does not sufficiently compare against other methods that address feature redundancy or diversity (e.g., orthogonal weight constraints, or other diversity-promoting regularizers).\n  evidence_anchors: [SRC-002, SRC-007]\n  confidence: 4\n  actionable_suggestion: Discuss and compare against other techniques that aim to diversify learned representations or enforce orthogonality in weights/gradients to better position the contribution.\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The paper acknowledges that the method fails to match SGDM performance when using SGDM-tuned hyperparameters (Table 2), but does not provide a thorough ablation or analysis on why the orthogonalization interferes with the specific learning rate schedule or weight decay settings used in the tuned baseline.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Provide a more detailed analysis of the interaction between orthogonalization and specific hyperparameters (e.g., learning rate decay) to explain the performance gap in Table 2.\n\nKey questions for the authors:\n- How does Orthogonal-SGDM compare to modern adaptive optimizers like Adam or LAMB in terms of convergence speed and final accuracy?\n- Can you provide statistical variance (mean ± std) for the ImageNet and Barlow Twins results to confirm the significance of the reported improvements?\n- Why does the method underperform SGDM when using the hyperparameters tuned for SGDM (Table 2), and is there a specific hyperparameter adjustment that could close this gap?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "76cf223bc83ff2cd4b9603c9872c1f77190cd71fb2e7d2b1aa7a389d470c08d0",
+      "prompt_sha256": "573023997defe21a116b269ad85f0df6be58db2824362fcef44dcfd72d898e36"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: QUAL Dimension**\n\n**1. Statistical Rigor & Reporting (QUAL-STA)**\n*   **Issue:** Single-point estimates without variance reporting undermine claims of robustness or significance. Small sample sizes (e.g., n<100) are insufficient for generalizable conclusions.\n*   **Action:** Require mean ± standard deviation over multiple independent runs (≥5 seeds). Mandate confidence intervals and statistical significance tests for all key comparisons. Explicitly flag small sample sizes as a limitation.\n\n**2. Baseline Comparisons (QUAL-CMP)**\n*   **Issue:** Omitting established state-of-the-art methods or relevant architectural variants prevents valid assessment of novelty and performance.\n*   **Action:** Demand comparisons against at least two standard baselines (e.g., LIME, SHAP, Grad-CAM for explanations; Steerable CNNs for equivariance). Evaluate on multiple metrics (fidelity, cost, accuracy) to provide a holistic view.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Issue:** Missing hyperparameters, optimizer settings, and code prevent independent verification.\n*   **Action:** Require a detailed appendix listing all hyperparameters, random seeds, and architecture specs. Public code release is strongly recommended for complex methods.\n\n**4. Generalizability & Scope (QUAL-EXP)**\n*   **Issue:** Restricting evaluation to low-dimensional or single datasets (e.g., MNIST) limits the validity of claims about inherent architectural properties.\n*   **Action:** Suggest expanding experiments to higher-dimensional or more complex datasets (e.g., CIFAR-10, ImageNet subsets) to verify if findings persist beyond specific artifacts.\n\n**5. Methodological Grounding (QUAL-MET)**\n*   **Issue:** Definitions may be circular or lack causal validation (e.g., \"explanation\" defined only by error correction).\n*   **Action:** Request empirical validation that the proposed method aligns with ground-truth causal features or human judgment, not just minimal perturbations.\n\n**Key Review Questions:**\n1.  Are results statistically significant across multiple seeds?\n2.  How does the method compare to standard baselines in both performance and computational cost?\n3.  Do findings hold on datasets more complex than the primary evaluation set?\n4.  Is the core claim (e.g., causality, robustness) validated beyond the proposed metric?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "d7c5f5ace67ebeb18f099a86339db0ed6e72325a50253a2f34abfcbe9aa8093c",
+              "role": "QUAL",
+              "score": 0.383838685267729
+            },
+            {
+              "id": "c49d0345b327c19473cfb54d42243aca4ca18c25c3f0dd9d55e3f0e8beb21f0d",
+              "role": "QUAL",
+              "score": 0.3738956778056709
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: QUAL Dimension**\n\n**1. Statistical Rigor & Reporting (QUAL-STA)**\n*   **Issue:** Single-point estimates without variance reporting undermine claims of robustness or significance. Small sample sizes (e.g., n<100) are insufficient for generalizable conclusions.\n*   **Action:** Require mean ± standard deviation over multiple independent runs (≥5 seeds). Mandate confidence intervals and statistical significance tests for all key comparisons. Explicitly flag small sample sizes as a limitation.\n\n**2. Baseline Comparisons (QUAL-CMP)**\n*   **Issue:** Omitting established state-of-the-art methods or relevant architectural variants prevents valid assessment of novelty and performance.\n*   **Action:** Demand comparisons against at least two standard baselines (e.g., LIME, SHAP, Grad-CAM for explanations; Steerable CNNs for equivariance). Evaluate on multiple metrics (fidelity, cost, accuracy) to provide a holistic view.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Issue:** Missing hyperparameters, optimizer settings, and code prevent independent verification.\n*   **Action:** Require a detailed appendix listing all hyperparameters, random seeds, and architecture specs. Public code release is strongly recommended for complex methods.\n\n**4. Generalizability & Scope (QUAL-EXP)**\n*   **Issue:** Restricting evaluation to low-dimensional or single datasets (e.g., MNIST) limits the validity of claims about inherent architectural properties.\n*   **Action:** Suggest expanding experiments to higher-dimensional or more complex datasets (e.g., CIFAR-10, ImageNet subsets) to verify if findings persist beyond specific artifacts.\n\n**5. Methodological Grounding (QUAL-MET)**\n*   **Issue:** Definitions may be circular or lack causal validation (e.g., \"explanation\" defined only by error correction).\n*   **Action:** Request empirical validation that the proposed method aligns with ground-truth causal features or human judgment, not just minimal perturbations.\n\n**Key Review Questions:**\n1.  Are results statistically significant across multiple seeds?\n2.  How does the method compare to standard baselines in both performance and computational cost?\n3.  Do findings hold on datasets more complex than the primary evaluation set?\n4.  Is the core claim (e.g., causality, robustness) validated beyond the proposed metric?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Orthogonalising gradients to speedup neural network optimisation",
+        "reviewer_dimension": "QUAL"
+      },
+      "resources": {
+        "completion_chars": 2461,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 12.28584860265255,
+        "prompt_chars": 11765,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "95bc91307c2521322847c953c82c927a2411d85ec2f45a281b5dfd38a48983ab",
+  "review_text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes the gradients of components within a layer (e.g., convolutional filters) using the SVD of the gradient matrix before the update step. The authors hypothesize this prevents co-learning of similar representations, leading to faster convergence and better robustness to over-parameterization. Experiments on CIFAR-10 and ImageNet show significant speed-ups and accuracy improvements over standard SGDM with naive hyperparameters, though it underperforms SGDM when using SGDM-tuned hyperparameters.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The mathematical formulation of the orthogonalization step is technically sound, correctly identifying the nearest orthonormal matrix via the SVD of the gradient matrix.\n  evidence_anchors: [SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation lacks comparisons against modern state-of-the-art optimizers (e.g., Adam, LAMB, or other advanced first-order methods), limiting the assessment of the method's practical utility in contemporary deep learning workflows.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 4\n  actionable_suggestion: Include comparisons with at least one modern adaptive optimizer (e.g., AdamW) to demonstrate if the speed-up persists against more sophisticated baselines than SGDM.\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: While standard errors are reported for CIFAR-10 results, the ImageNet and Barlow Twins experiments appear to rely on single runs or lack explicit variance reporting, weakening the statistical rigor of the claims regarding large-scale performance.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs for the ImageNet and Barlow Twins experiments to ensure statistical significance.\n- subcategory: QUAL-REP\n  polarity: strength\n  claim: The authors provide code links for both the optimizer implementation and the experiments, and specify key hyperparameters (learning rate, momentum, weight decay) in the text, facilitating reproducibility.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited to SGDM and the original ResNet hyperparameters; the paper does not sufficiently compare against other methods that address feature redundancy or diversity (e.g., orthogonal weight constraints, or other diversity-promoting regularizers).\n  evidence_anchors: [SRC-002, SRC-007]\n  confidence: 4\n  actionable_suggestion: Discuss and compare against other techniques that aim to diversify learned representations or enforce orthogonality in weights/gradients to better position the contribution.\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The paper acknowledges that the method fails to match SGDM performance when using SGDM-tuned hyperparameters (Table 2), but does not provide a thorough ablation or analysis on why the orthogonalization interferes with the specific learning rate schedule or weight decay settings used in the tuned baseline.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Provide a more detailed analysis of the interaction between orthogonalization and specific hyperparameters (e.g., learning rate decay) to explain the performance gap in Table 2.\n\nKey questions for the authors:\n- How does Orthogonal-SGDM compare to modern adaptive optimizers like Adam or LAMB in terms of convergence speed and final accuracy?\n- Can you provide statistical variance (mean ± std) for the ImageNet and Barlow Twins results to confirm the significance of the reported improvements?\n- Why does the method underperform SGDM when using the hyperparameters tuned for SGDM (Table 2), and is there a specific hyperparameter adjustment that could close this gap?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer QUAL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+    "task_id": "QUAL"
+  },
+  "role": "QUAL",
+  "run_id": "feedback-0003-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

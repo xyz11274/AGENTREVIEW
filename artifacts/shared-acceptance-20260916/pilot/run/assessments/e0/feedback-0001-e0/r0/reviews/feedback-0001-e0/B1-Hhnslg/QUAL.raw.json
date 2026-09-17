@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T19:42:36.003172+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "543c0a893cf085cf8cc2a770b4d59f755c2456919c12134817b0679203b69530",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot classification that represents each class by the mean of its support set embeddings (prototypes) and classifies queries via softmax over Euclidean distances to these prototypes. The method is trained using episodic training to mimic the few-shot test setting. The authors demonstrate the method's effectiveness on Omniglot and miniImageNet for few-shot learning and on CUB-200 for zero-shot learning, claiming competitive or state-of-the-art performance with a simpler and more scalable architecture compared to matching networks.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is mathematically well-formulated, with a clear derivation showing the equivalence of the Euclidean distance-based softmax to a linear classifier, which provides theoretical insight into the model's behavior.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation lacks statistical rigor, as results are reported as single-point accuracies without confidence intervals, standard deviations, or significance tests, making it difficult to assess the reliability of the reported improvements.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Report mean accuracy and standard deviation over multiple random seeds or episodes for all experiments to validate statistical significance.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper provides insufficient implementation details for reproducibility, omitting critical hyperparameters such as learning rate, optimizer type, weight decay, and number of training episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Include a detailed appendix or supplementary material listing all hyperparameters, training procedures, and code availability to facilitate reproduction.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper compares against relevant and recent baselines, including Matching Networks, Neural Statistician, and other few-shot/zero-shot learning methods, providing a fair assessment of the proposed method's performance.\n  evidence_anchors: [SRC-009, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: neutral\n  claim: The choice of datasets (Omniglot, miniImageNet, CUB-200) is appropriate for the few-shot and zero-shot learning tasks, covering both synthetic and real-world data.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: Consider adding experiments on additional datasets (e.g., FGVCAircraft, Stanford Cars) to further validate generalizability.\n\nKey questions for the authors:\n- Can you provide the standard deviation or confidence intervals for the reported accuracies on Omniglot and miniImageNet?\n- What specific hyperparameters (learning rate, optimizer, weight decay) were used for training the prototypical networks?\n- Is the code for the prototypical networks implementation publicly available?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "44ebd1ff34d0c435dcda971c7298d596b88c77e75fe68ab637c865705f5f734d",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "646286e12df522e2c2dfcd291c8ff9e7d89823d73da4620a434bbb3dbd89a4b1"
+  },
+  "review_plan_identity_sha256": "9a8a52266ed7224426e2f043c42bf4449de87686eed48bac3507719d332d9b85",
+  "role": "QUAL",
+  "run_id": "feedback-0001-e0"
+}

@@ -1,0 +1,27 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/static/references.json",
+          "sha256": "32f9b5ec9e06c62ca7824cabce9363b2d916b0c75fbc0dad9e356d296428c6e5"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/static/papers/-EHqoysUYLx.json",
+          "sha256": "8935e96699560afe8785ba382f2d8d017ee04897a0a958b4df4eac862348f6d7"
+        }
+      },
+      "content_sha256": "b205f7406d6a6521d8fba511fb897182e9e5571b21b90f6582b5ee11d7f75f23",
+      "normalized_content_sha256": "ac2137686c3caee340dc0e6dc934b353bb436dcef28f23e1b63ecd358c3db255",
+      "paper_id": "-EHqoysUYLx",
+      "source_partition": "static",
+      "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses",
+      "version_ids": [
+        "-EHqoysUYLx"
+      ],
+      "work_family": "coco-title-13349fb631e78c513f5440f7046f3978c6650f21c27cd4855e1ae6cffa569058"
+    }
+  ],
+  "split": "static"
+}

@@ -329,10 +329,20 @@ class SandboxSession:
                 "ok": False,
                 "error": f"{type(exc).__name__}: {exc}",
             }
+            # A candidate may catch the worker-side exception. Fail at the host
+            # boundary as well, and poison this session so no fallback snapshot
+            # or subsequent operation can publish state after a tool failure.
+            self._tool_failure = SandboxError(response["error"])
+            if getattr(exc, "failure_category", None):
+                self._tool_failure.failure_category = exc.failure_category
+            self._send(response)
+            raise self._tool_failure from exc
         self._send(response)
 
     def _command(self, name: str, **payload):
         with self._lock:
+            if getattr(self, "_tool_failure", None) is not None:
+                raise self._tool_failure
             self._command_id += 1
             command_id = self._command_id
             self._send(

@@ -1,0 +1,1708 @@
+{
+  "assessments": {
+    "candidate-0001": {
+      "Paper.": 3.2,
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/coco/assessment.json",
+        "sha256": "0720973d67db3c069d03bf9870fc9640fa77877de943713842b92e9aa585a7f2"
+      },
+      "candidate_id": "candidate-0001",
+      "epoch": 3,
+      "generation_requests": [
+        {
+          "component": "specialist_review:SIGN",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/13730cafd316c4a0290142f6d657e03f1a766a5d587c5193bedfbb61c5a47c52/response.json",
+            "sha256": "376fca7c768353e0046bac37c6c69ce3d7d76ad56ccbc16e0737b32928e093d9"
+          },
+          "tokens": {
+            "input_tokens": 20863,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 916,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20863,
+            "prompt_tokens_details": null,
+            "total_tokens": 21779
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/288838ec980f4fab8bd76c2bca6f9d26f5702c001b29f3e4bbb02059dbe2e878/response.json",
+            "sha256": "1c4cdb7e8cfd4d150abbe1bf804b2a14ae5d3e63be671afaad347173dbd9f90c"
+          },
+          "tokens": {
+            "input_tokens": 1426,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 51,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1426,
+            "prompt_tokens_details": null,
+            "total_tokens": 1477
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/3f02fd96cccb3eb956a52fbef3cb80c06f9b2249f801cb2111ed75d22be87505/response.json",
+            "sha256": "0871e127a6b444dd2926c2943268d9b5c7b1696bd09abcd24b220660292fee39"
+          },
+          "tokens": {
+            "input_tokens": 1349,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 41,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1349,
+            "prompt_tokens_details": null,
+            "total_tokens": 1390
+          }
+        },
+        {
+          "component": "specialist_review:QUAL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/4b5493fc08dc3a41faeeba55c599f6e64745f6b565337eb96c161de6f7d6e7f5/response.json",
+            "sha256": "f62ac70f4a078fbc8e492055a7ed3c5783c8c80742c962814d353e68accf355a"
+          },
+          "tokens": {
+            "input_tokens": 20952,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 868,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20952,
+            "prompt_tokens_details": null,
+            "total_tokens": 21820
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/597f0cb6f1823ea9b6b80be9c0d55cdb39d7518240f1303027720087ab05274e/response.json",
+            "sha256": "392e0080805bdef59e5d0aa8422fce1d577eae0ac9d2485a49c0d9f0f696e218"
+          },
+          "tokens": {
+            "input_tokens": 1347,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 67,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1347,
+            "prompt_tokens_details": null,
+            "total_tokens": 1414
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/6a5092abbdbbcd05399d99d535040a3bf1a81aefdaf6afa11845c129ac41a3de/response.json",
+            "sha256": "211435434b765be0a63de7d9b3577b1a33df618737a6e354b42e284d3e625c65"
+          },
+          "tokens": {
+            "input_tokens": 1265,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 46,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1265,
+            "prompt_tokens_details": null,
+            "total_tokens": 1311
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/758689a38e1a3d9fd726673896406f970d10253b6e1687b82304eb0ac9418145/response.json",
+            "sha256": "716e61cc443280aa99ad7607d48f86991fefa7dae3198552237a3f061adc07e4"
+          },
+          "tokens": {
+            "input_tokens": 1202,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 62,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1202,
+            "prompt_tokens_details": null,
+            "total_tokens": 1264
+          }
+        },
+        {
+          "component": "specialist_review:POL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/83910bb8b4c7b6ed3c9b546a75285b6c0e5126230c2c01938b105cf1e5bce808/response.json",
+            "sha256": "f19632c020e17aaade5bd7edd4b79619b0e82a526ede9a087a3163d94136b81c"
+          },
+          "tokens": {
+            "input_tokens": 20935,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 850,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20935,
+            "prompt_tokens_details": null,
+            "total_tokens": 21785
+          }
+        },
+        {
+          "component": "meta_synthesis",
+          "output_budget": 16384,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/9fc2d9a52ed77f1b0224e934e4e5ca4e2446239e737660e0804d5ff82a4139eb/response.json",
+            "sha256": "15a263aad879c35716a4bdb896eca808a0463289c831fbd4d283f65cbc6a7940"
+          },
+          "tokens": {
+            "input_tokens": 24909,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 3602,
+            "completion_tokens_details": null,
+            "prompt_tokens": 24909,
+            "prompt_tokens_details": null,
+            "total_tokens": 28511
+          }
+        },
+        {
+          "component": "specialist_review:CLAR",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/b0c659d9b277e10f41da82ee052ea8b05863aa6a57d910995613613eb6821ab6/response.json",
+            "sha256": "c2fed213b49d75ec51c2af594d4edde70d790c4765fad2952b9dc8cd04dbd1f2"
+          },
+          "tokens": {
+            "input_tokens": 20816,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 1080,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20816,
+            "prompt_tokens_details": null,
+            "total_tokens": 21896
+          }
+        },
+        {
+          "component": "specialist_review:ORIG",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/candidate-0001/r1/review-requests/e9be8bbca0f9a902672eea2a3882e5cff21c2a4244e96dc3740cfb94f500131c/response.json",
+            "sha256": "e08e5dc141e623416e51e828290dff344631c7768edfb512111310c9aba696b4"
+          },
+          "tokens": {
+            "input_tokens": 21001,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 768,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21001,
+            "prompt_tokens_details": null,
+            "total_tokens": 21769
+          }
+        }
+      ],
+      "memory_build_requests": [
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/1d30784f5afbb1968293af3ddb480f64a288ac1869b12a25d54096936f2fd1bf/response.json",
+            "sha256": "5ad6550bf25ff21036531eb6614c17d51e03ebcb6f919b32dc376b21f7fc9c18"
+          },
+          "tokens": {
+            "input_tokens": 246,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 138,
+            "completion_tokens_details": null,
+            "prompt_tokens": 246,
+            "prompt_tokens_details": null,
+            "total_tokens": 384
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/4c7d0b24b713e9da3eaf719fd4b8934857459e398297e820f2d73af53e78da4c/response.json",
+            "sha256": "354923520c3b6e3a7f60c4900ba04e30567e84cd5ca3ae3d883e3a68623f3236"
+          },
+          "tokens": {
+            "input_tokens": 2165,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 201,
+            "completion_tokens_details": null,
+            "prompt_tokens": 2165,
+            "prompt_tokens_details": null,
+            "total_tokens": 2366
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/69c276373428399aab433cc930ce612608d9cae886e89c2fe8a8e0f5bc721d1c/response.json",
+            "sha256": "13dfa616ebcbd485f8a89587eee7542634eaed2a6cdd6fb76dee894f7975556d"
+          },
+          "tokens": {
+            "input_tokens": 1985,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 188,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1985,
+            "prompt_tokens_details": null,
+            "total_tokens": 2173
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8233b7081a4009cfcf41d1a8d9149101138b15f7bcb9a1ff09122aba78051414/response.json",
+            "sha256": "98b35cb15bfbfd7e96e464301b0d8308c355e2ab3b0792911b71cb9386ea9303"
+          },
+          "tokens": {
+            "input_tokens": 2033,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 222,
+            "completion_tokens_details": null,
+            "prompt_tokens": 2033,
+            "prompt_tokens_details": null,
+            "total_tokens": 2255
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8b7cbcbb6042c0cf3a9be6ae2782c67c4b9eeb29b27162f7277d5d75e3053ed4/response.json",
+            "sha256": "399a4ee90d2ad0dffedbad5500eb29144ba9c67e465de75d1b2976055a28f61b"
+          },
+          "tokens": {
+            "input_tokens": 282,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 120,
+            "completion_tokens_details": null,
+            "prompt_tokens": 282,
+            "prompt_tokens_details": null,
+            "total_tokens": 402
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8f13f4ea182b6f1d8846736ca8aa11fe39a3bb7a077f969f6b73aff05c211e79/response.json",
+            "sha256": "d47a3b1eedf8b2649040003aa9dbabf23f0cfc0ace6dda08649f9ddf251b1c05"
+          },
+          "tokens": {
+            "input_tokens": 248,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 130,
+            "completion_tokens_details": null,
+            "prompt_tokens": 248,
+            "prompt_tokens_details": null,
+            "total_tokens": 378
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/c914d21cae514a75a308929f95dd257c659d994f785b1591141a1c73c19cfcaa/response.json",
+            "sha256": "83c43dff5edf96bfae1d7432f05a18c3518fc309da6189c1df347d807b64a9a6"
+          },
+          "tokens": {
+            "input_tokens": 1737,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 190,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1737,
+            "prompt_tokens_details": null,
+            "total_tokens": 1927
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/f1235180c122fccda6a5cf452557a44cef233b165377bd3ea122761adc5a6188/response.json",
+            "sha256": "bb197e8669ffd5eaf284dd8a7756a1a5ea4a073fc7a19e328535487f709ae22c"
+          },
+          "tokens": {
+            "input_tokens": 249,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 114,
+            "completion_tokens_details": null,
+            "prompt_tokens": 249,
+            "prompt_tokens_details": null,
+            "total_tokens": 363
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/fe3392615fc63fa4f9bc4894d97f8203642a98a5a07e64736dc13edee4381b8d/response.json",
+            "sha256": "14408eea666c831d1807dbc6e9c46d42cf9d7754f65f4763a6f28210b20ee5f0"
+          },
+          "tokens": {
+            "input_tokens": 277,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 145,
+            "completion_tokens_details": null,
+            "prompt_tokens": 277,
+            "prompt_tokens_details": null,
+            "total_tokens": 422
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/ff94055c27d4419bd5c339408b4dfde286bedc493166dd9983365028cca75559/response.json",
+            "sha256": "b3ee752bea6db979ef22e71b132c77733d2df97e5750d48c20f9a0821d2eac96"
+          },
+          "tokens": {
+            "input_tokens": 1940,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 224,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1940,
+            "prompt_tokens_details": null,
+            "total_tokens": 2164
+          }
+        }
+      ],
+      "roles": {
+        "CLAR": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            829
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/CLAR.json",
+            "sha256": "5b8a2cc79e65b1f7c47ff6c6a580b1782d5e9b5a4638230448ca89ab95c14f4a"
+          }
+        },
+        "ORIG": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            608
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/ORIG.json",
+            "sha256": "8ed52b66854830c1afeb8d806378176271d251f5e8602085ac6f2411102911e2"
+          }
+        },
+        "POL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            711
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/POL.json",
+            "sha256": "ac3cde690b92402188caafeae6067baf76882f1a8b04509badaf2e4313481d31"
+          }
+        },
+        "QUAL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            778
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/QUAL.json",
+            "sha256": "9392875767acf01fa389a7271f9f45c1ba4d9dcf275a2e554f115663011cdb27"
+          }
+        },
+        "SIGN": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            776
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/SIGN.json",
+            "sha256": "6af7a8bbb320cceb29d41b35d36842730d6b6ea69a4fa97820b46a2dcbfb4476"
+          }
+        }
+      },
+      "stages": {
+        "classify": {
+          "checks": [
+            {
+              "classified_count": 39,
+              "opinion_count": 39,
+              "original_na_normalizations": 0,
+              "paper_id": "-EHqoysUYLx"
+            }
+          ],
+          "complete_tasks": 39
+        },
+        "evaluation": {
+          "checks": [
+            {
+              "completed_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ],
+              "paper_id": "-EHqoysUYLx",
+              "paper_judge_complete": true,
+              "required_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ]
+            }
+          ],
+          "complete_tasks": 10
+        },
+        "split": {
+          "checks": [
+            {
+              "opinion_count": 39,
+              "paper_id": "-EHqoysUYLx",
+              "raw_coverage": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "sentence_count": 39
+            }
+          ],
+          "complete_tasks": 3
+        }
+      }
+    },
+    "coco-native": {
+      "Paper.": 3.0,
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/coco-native/r0/coco/assessment.json",
+        "sha256": "f35953e8b86cf35752ede4606dff84a2074d6d37cf695d85e3c9bb1c0be8a1ce"
+      },
+      "candidate_id": "coco-native",
+      "epoch": 3,
+      "generation_requests": [
+        {
+          "component": "coco-native:coco-native:-EHqoysUYLx",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/coco-native/r0/review-requests/de7289914bc5f44005c7e87c60881311d2830371c8438d9c85e9a364a2a014a9/response.json",
+            "sha256": "ede62960e97092a6725e7912f9e2003419423e47bcea741897f40a7d6534a3fb"
+          },
+          "tokens": {
+            "input_tokens": 19547,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 933,
+            "completion_tokens_details": null,
+            "prompt_tokens": 19547,
+            "prompt_tokens_details": null,
+            "total_tokens": 20480
+          }
+        }
+      ],
+      "memory_build_requests": [],
+      "roles": {},
+      "stages": {
+        "classify": {
+          "checks": [
+            {
+              "classified_count": 17,
+              "opinion_count": 17,
+              "original_na_normalizations": 1,
+              "paper_id": "-EHqoysUYLx"
+            }
+          ],
+          "complete_tasks": 18
+        },
+        "evaluation": {
+          "checks": [
+            {
+              "completed_categories": [
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-MTH",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ],
+              "paper_id": "-EHqoysUYLx",
+              "paper_judge_complete": true,
+              "required_categories": [
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-MTH",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ]
+            }
+          ],
+          "complete_tasks": 9
+        },
+        "split": {
+          "checks": [
+            {
+              "opinion_count": 17,
+              "paper_id": "-EHqoysUYLx",
+              "raw_coverage": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "sentence_count": 17
+            }
+          ],
+          "complete_tasks": 3
+        }
+      }
+    },
+    "development-final-champion": {
+      "Paper.": 3.2,
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/coco/assessment.json",
+        "sha256": "8d529ec3f8100de27ab90c3846efd8ed9953bd2a30889d9b4824aa9003ea45ac"
+      },
+      "candidate_id": "development-final-champion",
+      "epoch": 3,
+      "generation_requests": [
+        {
+          "component": "specialist_review:SIGN",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/13730cafd316c4a0290142f6d657e03f1a766a5d587c5193bedfbb61c5a47c52/response.json",
+            "sha256": "c52973319d3a552a58845a00acb7cfbfbdc7974b7a1b70cc55d40416a2df7c8b"
+          },
+          "tokens": {
+            "input_tokens": 20863,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 916,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20863,
+            "prompt_tokens_details": null,
+            "total_tokens": 21779
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/288838ec980f4fab8bd76c2bca6f9d26f5702c001b29f3e4bbb02059dbe2e878/response.json",
+            "sha256": "aa24b0a4b57adb25343fbdbab1d8a6d77d2a41284aa165b2e18d9006dd70b6b1"
+          },
+          "tokens": {
+            "input_tokens": 1426,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 51,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1426,
+            "prompt_tokens_details": null,
+            "total_tokens": 1477
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/3f02fd96cccb3eb956a52fbef3cb80c06f9b2249f801cb2111ed75d22be87505/response.json",
+            "sha256": "d000c1bc080212a9f01520a5bf0fd6390b4220c21fcbb4a10351ad111ada0c34"
+          },
+          "tokens": {
+            "input_tokens": 1349,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 41,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1349,
+            "prompt_tokens_details": null,
+            "total_tokens": 1390
+          }
+        },
+        {
+          "component": "specialist_review:QUAL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/4b5493fc08dc3a41faeeba55c599f6e64745f6b565337eb96c161de6f7d6e7f5/response.json",
+            "sha256": "0bdb25f9be25d549be66ddf71d37d37873026e425371ebf30ca6da8894b3d4c5"
+          },
+          "tokens": {
+            "input_tokens": 20952,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 868,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20952,
+            "prompt_tokens_details": null,
+            "total_tokens": 21820
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/597f0cb6f1823ea9b6b80be9c0d55cdb39d7518240f1303027720087ab05274e/response.json",
+            "sha256": "0096e676e8f150ef090205fe3cf5a27482ae09971dc69d94334da0aa078adb4c"
+          },
+          "tokens": {
+            "input_tokens": 1347,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 67,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1347,
+            "prompt_tokens_details": null,
+            "total_tokens": 1414
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/6a5092abbdbbcd05399d99d535040a3bf1a81aefdaf6afa11845c129ac41a3de/response.json",
+            "sha256": "e7ceaa0223fc765d2c2ebb14a2d94128d572ab1fb7dc3773205d5d8fa94617e3"
+          },
+          "tokens": {
+            "input_tokens": 1265,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 46,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1265,
+            "prompt_tokens_details": null,
+            "total_tokens": 1311
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/758689a38e1a3d9fd726673896406f970d10253b6e1687b82304eb0ac9418145/response.json",
+            "sha256": "f210e14a62e74fa274a6245e0f827c2999817efef115a86c9bbb8db38f9a2d96"
+          },
+          "tokens": {
+            "input_tokens": 1202,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 62,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1202,
+            "prompt_tokens_details": null,
+            "total_tokens": 1264
+          }
+        },
+        {
+          "component": "specialist_review:POL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/83910bb8b4c7b6ed3c9b546a75285b6c0e5126230c2c01938b105cf1e5bce808/response.json",
+            "sha256": "dcaa3ab30c0a2053e4132babc2003435111a82ec2f79768491147152a6cd5f28"
+          },
+          "tokens": {
+            "input_tokens": 20935,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 850,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20935,
+            "prompt_tokens_details": null,
+            "total_tokens": 21785
+          }
+        },
+        {
+          "component": "meta_synthesis",
+          "output_budget": 16384,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/9fc2d9a52ed77f1b0224e934e4e5ca4e2446239e737660e0804d5ff82a4139eb/response.json",
+            "sha256": "7e552fac0f366e3c1be367e32b52e29a116b13ca4efeec399d1f35a188f77a67"
+          },
+          "tokens": {
+            "input_tokens": 24909,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 3602,
+            "completion_tokens_details": null,
+            "prompt_tokens": 24909,
+            "prompt_tokens_details": null,
+            "total_tokens": 28511
+          }
+        },
+        {
+          "component": "specialist_review:CLAR",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/b0c659d9b277e10f41da82ee052ea8b05863aa6a57d910995613613eb6821ab6/response.json",
+            "sha256": "146ed56fe580c620d46aa9adc8f68b86baf9c39b2216a4325e0e27c6a6f988b1"
+          },
+          "tokens": {
+            "input_tokens": 20816,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 1080,
+            "completion_tokens_details": null,
+            "prompt_tokens": 20816,
+            "prompt_tokens_details": null,
+            "total_tokens": 21896
+          }
+        },
+        {
+          "component": "specialist_review:ORIG",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/development-final-champion/r1/review-requests/e9be8bbca0f9a902672eea2a3882e5cff21c2a4244e96dc3740cfb94f500131c/response.json",
+            "sha256": "9e695bc0ec30ccd1b2074269587a41346d294de3b902277d469a2f426eb5124c"
+          },
+          "tokens": {
+            "input_tokens": 21001,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 768,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21001,
+            "prompt_tokens_details": null,
+            "total_tokens": 21769
+          }
+        }
+      ],
+      "memory_build_requests": [
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/1d30784f5afbb1968293af3ddb480f64a288ac1869b12a25d54096936f2fd1bf/response.json",
+            "sha256": "5ad6550bf25ff21036531eb6614c17d51e03ebcb6f919b32dc376b21f7fc9c18"
+          },
+          "tokens": {
+            "input_tokens": 246,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 138,
+            "completion_tokens_details": null,
+            "prompt_tokens": 246,
+            "prompt_tokens_details": null,
+            "total_tokens": 384
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/4c7d0b24b713e9da3eaf719fd4b8934857459e398297e820f2d73af53e78da4c/response.json",
+            "sha256": "354923520c3b6e3a7f60c4900ba04e30567e84cd5ca3ae3d883e3a68623f3236"
+          },
+          "tokens": {
+            "input_tokens": 2165,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 201,
+            "completion_tokens_details": null,
+            "prompt_tokens": 2165,
+            "prompt_tokens_details": null,
+            "total_tokens": 2366
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/69c276373428399aab433cc930ce612608d9cae886e89c2fe8a8e0f5bc721d1c/response.json",
+            "sha256": "13dfa616ebcbd485f8a89587eee7542634eaed2a6cdd6fb76dee894f7975556d"
+          },
+          "tokens": {
+            "input_tokens": 1985,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 188,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1985,
+            "prompt_tokens_details": null,
+            "total_tokens": 2173
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8233b7081a4009cfcf41d1a8d9149101138b15f7bcb9a1ff09122aba78051414/response.json",
+            "sha256": "98b35cb15bfbfd7e96e464301b0d8308c355e2ab3b0792911b71cb9386ea9303"
+          },
+          "tokens": {
+            "input_tokens": 2033,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 222,
+            "completion_tokens_details": null,
+            "prompt_tokens": 2033,
+            "prompt_tokens_details": null,
+            "total_tokens": 2255
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8b7cbcbb6042c0cf3a9be6ae2782c67c4b9eeb29b27162f7277d5d75e3053ed4/response.json",
+            "sha256": "399a4ee90d2ad0dffedbad5500eb29144ba9c67e465de75d1b2976055a28f61b"
+          },
+          "tokens": {
+            "input_tokens": 282,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 120,
+            "completion_tokens_details": null,
+            "prompt_tokens": 282,
+            "prompt_tokens_details": null,
+            "total_tokens": 402
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/8f13f4ea182b6f1d8846736ca8aa11fe39a3bb7a077f969f6b73aff05c211e79/response.json",
+            "sha256": "d47a3b1eedf8b2649040003aa9dbabf23f0cfc0ace6dda08649f9ddf251b1c05"
+          },
+          "tokens": {
+            "input_tokens": 248,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 130,
+            "completion_tokens_details": null,
+            "prompt_tokens": 248,
+            "prompt_tokens_details": null,
+            "total_tokens": 378
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/c914d21cae514a75a308929f95dd257c659d994f785b1591141a1c73c19cfcaa/response.json",
+            "sha256": "83c43dff5edf96bfae1d7432f05a18c3518fc309da6189c1df347d807b64a9a6"
+          },
+          "tokens": {
+            "input_tokens": 1737,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 190,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1737,
+            "prompt_tokens_details": null,
+            "total_tokens": 1927
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/f1235180c122fccda6a5cf452557a44cef233b165377bd3ea122761adc5a6188/response.json",
+            "sha256": "bb197e8669ffd5eaf284dd8a7756a1a5ea4a073fc7a19e328535487f709ae22c"
+          },
+          "tokens": {
+            "input_tokens": 249,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 114,
+            "completion_tokens_details": null,
+            "prompt_tokens": 249,
+            "prompt_tokens_details": null,
+            "total_tokens": 363
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/fe3392615fc63fa4f9bc4894d97f8203642a98a5a07e64736dc13edee4381b8d/response.json",
+            "sha256": "14408eea666c831d1807dbc6e9c46d42cf9d7754f65f4763a6f28210b20ee5f0"
+          },
+          "tokens": {
+            "input_tokens": 277,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 145,
+            "completion_tokens_details": null,
+            "prompt_tokens": 277,
+            "prompt_tokens_details": null,
+            "total_tokens": 422
+          }
+        },
+        {
+          "component": "memory_build",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/requests/ff94055c27d4419bd5c339408b4dfde286bedc493166dd9983365028cca75559/response.json",
+            "sha256": "b3ee752bea6db979ef22e71b132c77733d2df97e5750d48c20f9a0821d2eac96"
+          },
+          "tokens": {
+            "input_tokens": 1940,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 224,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1940,
+            "prompt_tokens_details": null,
+            "total_tokens": 2164
+          }
+        }
+      ],
+      "roles": {
+        "CLAR": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            829
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/CLAR.json",
+            "sha256": "5b8a2cc79e65b1f7c47ff6c6a580b1782d5e9b5a4638230448ca89ab95c14f4a"
+          }
+        },
+        "ORIG": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            608
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/ORIG.json",
+            "sha256": "8ed52b66854830c1afeb8d806378176271d251f5e8602085ac6f2411102911e2"
+          }
+        },
+        "POL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            711
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/POL.json",
+            "sha256": "ac3cde690b92402188caafeae6067baf76882f1a8b04509badaf2e4313481d31"
+          }
+        },
+        "QUAL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            778
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/QUAL.json",
+            "sha256": "9392875767acf01fa389a7271f9f45c1ba4d9dcf275a2e554f115663011cdb27"
+          }
+        },
+        "SIGN": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 1,
+          "retrieved_context_chars": [
+            776
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/candidate-0001/r1/enabled/SIGN.json",
+            "sha256": "6af7a8bbb320cceb29d41b35d36842730d6b6ea69a4fa97820b46a2dcbfb4476"
+          }
+        }
+      },
+      "stages": {
+        "classify": {
+          "checks": [
+            {
+              "classified_count": 39,
+              "opinion_count": 39,
+              "original_na_normalizations": 0,
+              "paper_id": "-EHqoysUYLx"
+            }
+          ],
+          "complete_tasks": 39
+        },
+        "evaluation": {
+          "checks": [
+            {
+              "completed_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ],
+              "paper_id": "-EHqoysUYLx",
+              "paper_judge_complete": true,
+              "required_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ]
+            }
+          ],
+          "complete_tasks": 10
+        },
+        "split": {
+          "checks": [
+            {
+              "opinion_count": 39,
+              "paper_id": "-EHqoysUYLx",
+              "raw_coverage": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "sentence_count": 39
+            }
+          ],
+          "complete_tasks": 3
+        }
+      }
+    },
+    "seed-vector_search": {
+      "Paper.": 2.6,
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/coco/assessment.json",
+        "sha256": "3e13b0565d869f6d46bd930af62e7052388854bb68a1a061861f27e690448fef"
+      },
+      "candidate_id": "seed-vector_search",
+      "epoch": 3,
+      "generation_requests": [
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/02bf96340df5bc8793b2bf7448092c32dbbc78777887ed7fcbbb09630e638253/response.json",
+            "sha256": "948de94ac9b201846dbe3dee832f332e8d028a156d9dcdaebb00d3e31a2a67b8"
+          },
+          "tokens": {
+            "input_tokens": 1314,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 36,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1314,
+            "prompt_tokens_details": null,
+            "total_tokens": 1350
+          }
+        },
+        {
+          "component": "specialist_review:POL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/0da5ef8a8d45bad24d14a1ddff653bc900658c0d419915cfb8bdc6a857663553/response.json",
+            "sha256": "17fe7ef7a9b674276011e8fa16fa61b65adeef94eed3f1e29808d96ef0446369"
+          },
+          "tokens": {
+            "input_tokens": 21710,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 726,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21710,
+            "prompt_tokens_details": null,
+            "total_tokens": 22436
+          }
+        },
+        {
+          "component": "specialist_review:ORIG",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/12d02578c7fb19a0529b6745dbc693c8cc3bd6568d61cb6c99e021193304a304/response.json",
+            "sha256": "ccd2e004ec1c45c3314305c95f55ca6db88e4e98f8aa4bbd4559f8a02ab8504b"
+          },
+          "tokens": {
+            "input_tokens": 21990,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 685,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21990,
+            "prompt_tokens_details": null,
+            "total_tokens": 22675
+          }
+        },
+        {
+          "component": "meta_synthesis",
+          "output_budget": 16384,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/1a14525e80b16c41cd440c598e5fb9670f55a497e6c6b577cf2c4ed3ddf282e9/response.json",
+            "sha256": "af2d163badd2bb9ce7214beae98509fd5dffe203fa2ac3c733ef7e98791910a9"
+          },
+          "tokens": {
+            "input_tokens": 24485,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 2935,
+            "completion_tokens_details": null,
+            "prompt_tokens": 24485,
+            "prompt_tokens_details": null,
+            "total_tokens": 27420
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/2ff96aec8adab4bb301d5528f1fc3c1bded3ef91f0179093ffda5b226e78cf9e/response.json",
+            "sha256": "eb59537646733519f386b8a0fb913959edfe4ab44cafb81c386eb048269aac8b"
+          },
+          "tokens": {
+            "input_tokens": 1230,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 36,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1230,
+            "prompt_tokens_details": null,
+            "total_tokens": 1266
+          }
+        },
+        {
+          "component": "specialist_review:QUAL",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/69b31ba755fc0e3ca26cd3f0b72b7e874c8ef137a1b156adf1350784e9825edb/response.json",
+            "sha256": "75298bdabf05f5bdd82ea05d08b85f2d55e2daa28a53cc736d27b5392c55ef14"
+          },
+          "tokens": {
+            "input_tokens": 21826,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 935,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21826,
+            "prompt_tokens_details": null,
+            "total_tokens": 22761
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/70034cbdf16bd478aac6c1a5f6fb38c45d12d95670f62b621f249ff9a21c6c8e/response.json",
+            "sha256": "16ac6314291df7456f100c9e7b176cddafe1b8365746c45de4febfb09d013417"
+          },
+          "tokens": {
+            "input_tokens": 1312,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 36,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1312,
+            "prompt_tokens_details": null,
+            "total_tokens": 1348
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/9a62a32f66e3f0f0915911547be34485a01729892377fd09f016299994188e4c/response.json",
+            "sha256": "3d88800855fd67ae41f86f7f1dbe92665b28a1fa9b89a39e8783e3bb99355a7a"
+          },
+          "tokens": {
+            "input_tokens": 1167,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 37,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1167,
+            "prompt_tokens_details": null,
+            "total_tokens": 1204
+          }
+        },
+        {
+          "component": "specialist_review:CLAR",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/acfd1458f61b4f69e635621893013234432ba16169c346635c80c1e4d185f1ab/response.json",
+            "sha256": "981467c345385e6877020f600e9b4ac39f624e64d8062f122cd6458ffab4c3fe"
+          },
+          "tokens": {
+            "input_tokens": 21859,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 1091,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21859,
+            "prompt_tokens_details": null,
+            "total_tokens": 22950
+          }
+        },
+        {
+          "component": "specialist_review:SIGN",
+          "output_budget": 8192,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/c00a2974e8bc559c87b1af7def088e806a11b2cab060bced7377f1b8e7c3f74d/response.json",
+            "sha256": "c1ab0a80843f3af9dd85bebc6da1b4912452edca464b3b7657dd2a1b754652ce"
+          },
+          "tokens": {
+            "input_tokens": 21497,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 621,
+            "completion_tokens_details": null,
+            "prompt_tokens": 21497,
+            "prompt_tokens_details": null,
+            "total_tokens": 22118
+          }
+        },
+        {
+          "component": "memory_summarizer",
+          "output_budget": 4096,
+          "response": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/review-requests/c2f7b071846dca31bc077db155283257c79616a53c4e7c5547cfda7f8b723f56/response.json",
+            "sha256": "4bef11331e25d27fa8bc4f8b2ed485e0fafed86d9591dcde85a2ee1219f7ba8f"
+          },
+          "tokens": {
+            "input_tokens": 1391,
+            "max_model_len": 65536
+          },
+          "usage": {
+            "completion_tokens": 37,
+            "completion_tokens_details": null,
+            "prompt_tokens": 1391,
+            "prompt_tokens_details": null,
+            "total_tokens": 1428
+          }
+        }
+      ],
+      "memory_build_requests": [],
+      "roles": {
+        "CLAR": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 4,
+          "retrieved_context_chars": [
+            4326
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/seed-vector_search/r0/enabled/CLAR.json",
+            "sha256": "16e5b0bd8533992077332f1f87f3b04ff1c8c74d51074ca0b13637ee4fb572ca"
+          }
+        },
+        "ORIG": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 4,
+          "retrieved_context_chars": [
+            4292
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/seed-vector_search/r0/enabled/ORIG.json",
+            "sha256": "48e2f3af50a4e76058f0fbe2d1ec774d6c6125241dd5060dde8c0fd3051af8a7"
+          }
+        },
+        "POL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 3,
+          "retrieved_context_chars": [
+            3650
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/seed-vector_search/r0/enabled/POL.json",
+            "sha256": "e06c06ce95d2c436e5c979b18dffbeb5e4a285e6bc5ab7eb16fbe37ac82bf5d1"
+          }
+        },
+        "QUAL": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 4,
+          "retrieved_context_chars": [
+            4204
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/seed-vector_search/r0/enabled/QUAL.json",
+            "sha256": "9e271f86347b21fb67857ff0110ffe9def0ce76d41ad67e4d480243630b8d33e"
+          }
+        },
+        "SIGN": {
+          "embedding_dimension": 4096,
+          "embedding_identity": {
+            "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+            "model": "Qwen/Qwen3-Embedding-8B",
+            "provider": "qwen3_embedding",
+            "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+          },
+          "records": 3,
+          "retrieved_context_chars": [
+            3100
+          ],
+          "snapshot": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/memory/e3/seed-vector_search/r0/enabled/SIGN.json",
+            "sha256": "8ef8e371d1a65b46b982d01d93db1c8f1f958deaa3b8d3d1aafb6bd300a21458"
+          }
+        }
+      },
+      "stages": {
+        "classify": {
+          "checks": [
+            {
+              "classified_count": 31,
+              "opinion_count": 31,
+              "original_na_normalizations": 0,
+              "paper_id": "-EHqoysUYLx"
+            }
+          ],
+          "complete_tasks": 31
+        },
+        "evaluation": {
+          "checks": [
+            {
+              "completed_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ],
+              "paper_id": "-EHqoysUYLx",
+              "paper_judge_complete": true,
+              "required_categories": [
+                "CLAR-FIG",
+                "CLAR-NOT",
+                "CLAR-WRT",
+                "ORIG-ANL",
+                "ORIG-PROB",
+                "QUAL-CMP",
+                "QUAL-EXP",
+                "QUAL-MET",
+                "SIGN-BRD"
+              ]
+            }
+          ],
+          "complete_tasks": 10
+        },
+        "split": {
+          "checks": [
+            {
+              "opinion_count": 31,
+              "paper_id": "-EHqoysUYLx",
+              "raw_coverage": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "sentence_count": 31
+            }
+          ],
+          "complete_tasks": 3
+        }
+      }
+    }
+  },
+  "champion": "candidate-0001",
+  "children": {
+    "candidate-0001": {
+      "fixed_policy_preserved": true,
+      "parent_program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/programs/seed-vector_search/program.py",
+        "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/program.py",
+        "sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+      },
+      "revision": 1
+    }
+  },
+  "claim_scope": "Real execution acceptance on exposed development data; not generalization evidence",
+  "evaluation_epoch": 3,
+  "repair_budget": {
+    "limit": 5,
+    "used": 4
+  },
+  "runtime": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_experiment.py",
+      "sha256": "213a1b788be0a3f3083f70f3e36056300b29e1b37c523d857d55534a2804164e"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_evolution.py",
+      "sha256": "dc9fae4900df3b6d4e7fa88a2786ac8f39e193762c6538e695f18d0d7328da62"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/experiment_requests.py",
+      "sha256": "9d413d593c0b6dbfa529b4f05ef417c16c4cee9c04c6fe8f55c8eae16bcc0bb2"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/memory.py",
+      "sha256": "62b6507d78b5253b38b63cb06083c82198153064ba2e0107e6d645ed7354e598"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review.py",
+      "sha256": "87bc7f031cbe4644b3d615ffc6609ab3b864cdccd0b165008abbd54894599596"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review_preparation.py",
+      "sha256": "da14d4d4fa97f5d060749d97f53dc86f6c606b2dfdf6d9e1da43d66a318cdb03"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/meta.py",
+      "sha256": "87aa060d0f8672f5147438c379cc6c3dd01e5f436301f8ea53d6edd97cf7e7b5"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco.py",
+      "sha256": "d4ded38bc9895f8831ce202ed46e6cb7945ea8d214a0513f6697a0f829c98505"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco_worker.py",
+      "sha256": "fb3892210102cf53132c660e73b863ed3b1ceacb0c0b07fecc0720b15bc54963"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/experiment_protocol.py",
+      "sha256": "d76946094b461d475d007da5dbc202927795da69d1b5645728a77328de4447cf"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/program_checks.py",
+      "sha256": "b0040f7c959739ce17abcb21681bbd001e2956ceef09b3e77882e0ac56a61d7a"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/coco_native.py",
+      "sha256": "558f0b811a0e6b81293053bb659dbd645273e283806cac9fd92d32ead335e5bc"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/data.py",
+      "sha256": "8b37268f17ed4804de7b63937032f898e94cbd9eb267011591d8b01d95446b99"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/llm.py",
+      "sha256": "a9e807e5034172a7414ebd16b711e7cee16304b499a98a5ec90aa807e4218f7f"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/config.py",
+      "sha256": "a6d2b75b05093fdba68fcb966f275784d86a667b7f3372f6b77e34910ad57c1a"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/constants.py",
+      "sha256": "fdfa6d53c2b8cfd45d8968ab52889fcb910e3a1ab8ef48849ab3d02c49c580bf"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/coco_integrity.py",
+      "sha256": "85ec9d628132b5807063b4e951dd3831de5ad393d6109aaa4ccd78f7d95e246f"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_identity.py",
+      "sha256": "bab51f6bd7cac8a8bf63c8e19d75446091730e8c61ce4730be3a76aed1d0e478"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/paper_context.py",
+      "sha256": "5d1e26b9046b305aa455ac0adb89d4cfa1ff67a3aa4829702adb5c3da82dbe90"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/source_map.py",
+      "sha256": "ce9e9dba468289f198d63895aaaaa4192c0a24b1618f031ee3700f8434fc74ba"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/__init__.py",
+      "sha256": "e8be309af3f0cc8dbaaad46506b2942d11a1997fea5a99d87895a491a0c017c8"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox.py",
+      "sha256": "f4551a5f785f9d4ae801c8bc506e8bb5c04ffb779589578f6dbe0a69bad31b6f"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py",
+      "sha256": "3b6c96ed9fbbd357b8d2f7873036f935b13ac5d906071e155c57c952c4dd16c6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/task_agent.py",
+      "sha256": "60585e95f240cb6878bc76c12e5c359b4aae3ecdb48d38a025cb7600a4cd0667"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/tasks.py",
+      "sha256": "2f1fa7b58c64bdd1c5165af32c534d6b81af6146f33074ec187074930553a30c"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/toolkit.py",
+      "sha256": "afa85c57595e9e31e8547a171a8b0f53b68a95363851bf70ad1f6ed245745e54"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/memory_evolution/embedding_adapter.py",
+      "sha256": "733dbe6b89a5d94a97e984a0aeea8ea3bd334592d2240e834811530a5df06018"
+    }
+  ],
+  "status": "complete"
+}

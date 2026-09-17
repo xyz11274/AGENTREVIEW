@@ -1,0 +1,373 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": null,
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-vector_search/program.py",
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+    "program_version": "seed-vector_search",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "ORIG",
+    "seed_kind": "vector_search",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "2550a3d386b715ebea919f8b3b0735ab39c6394c319bbcc31cc847e8c95e2cd0",
+        "review_sha256": "1c99e77d73c90faebd9f7dded9b49bbba618c71beb488205e470e3aa3312ec97"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 1,
+        "review_id": "779d95c213877abc1a41de2fc9fc3e39e4dff34d3baa2e0f11ce48b8f8352be3",
+        "review_sha256": "e9f5bd2b2301a0894ec623ae3a44a01bcb8486cc8c1ef34cd520a20e74de2438"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 2,
+        "review_id": "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3",
+        "review_sha256": "c0225121c85231160f9ce6dea6e3aa5d316bbe3f4cfd30aedb119b7b9fe1b822"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 3,
+        "review_id": "10148fcb7d4e2538c4746c6017dfdb71ab23183a305c9ff550e702c496069293",
+        "review_sha256": "ebe321e6511735a8235dc06512fdabf368e2c97cd971d01032fa2aa7c8abdfc8"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "seed-vector_search",
+      "item_id": "f4036a7774b6fbbcdf7cf5179fadcc5284f0683779128de5c5b6ad5fc2a3e121",
+      "payload": {
+        "content": "```\nReviewer dimension: ORIG\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in neural networks. It compares Standard CNNs (StdCNNs) with several rotation-equivariant architectures, including Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet). The authors claim to be the first to study the vulnerability of rotation-equivariant networks to pixel-wise perturbations. Experiments are conducted on the MNIST dataset, analyzing accuracy under rotation augmentation and adversarial attacks. The key finding is that while equivariant networks are more robust to rotations, they become more vulnerable to pixel-wise attacks as the range of rotation robustness increases, suggesting a trade-off between these two types of robustness.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper identifies a meaningful and previously under-explored problem: the potential trade-off between geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or more nuanced.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Extend experiments to CIFAR-10 or other non-trivial datasets to validate the generality of the observed trade-off.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of equivariant networks and adversarial robustness evaluation is a logical and well-motivated combination, given the separate lines of research on symmetry in neural networks and adversarial robustness.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: strength\n  claim: The paper effectively presents a critical assessment of the assumption that equivariance is universally beneficial, showing that it can come at the cost of robustness to other types of perturbations.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was the study limited to MNIST? Have you considered or attempted experiments on more complex datasets like CIFAR-10, where the interaction between geometric and pixel-wise robustness might be more complex?\n- The paper mentions that for small rotations, GCNNs are more robust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "Reviewer ORIG",
+        "topic": ""
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "2550a3d386b715ebea919f8b3b0735ab39c6394c319bbcc31cc847e8c95e2cd0"
+      ]
+    },
+    {
+      "derivation_version": "seed-vector_search",
+      "item_id": "cf42a389bd20a32a8484dc94f4e2b743fbdd0ab256b1a4775574b4c63d4e310c",
+      "payload": {
+        "content": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by generating visually interpretable perturbations. The approach uses a generative model (VAE or VAE-GAN) to encode a misclassified image into a latent space, then applies gradient descent to find a small latent perturbation that, when decoded and combined with the original image via a difference target propagation-style correction, results in correct classification. The paper evaluates this on MNIST and CelebA, analyzing the impact of latent space dimensionality and comparing LSE generation success rates against \"Latent Adversarial Examples\" (LAE).\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper introduces a meaningful new problem formulation by reframing the explanation of classifier errors as the generation of \"sympathetic\" perturbations that correct misclassifications, distinct from adversarial attacks.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The methodology is a straightforward combination of existing techniques (gradient descent on latent space, VAEs, and Difference Target Propagation) without significant algorithmic novelty beyond the specific application to error explanation.\n  evidence_anchors: [SRC-003, SRC-010]\n  confidence: 4\n  actionable_suggestion: The authors should more explicitly discuss why this specific combination of gradient descent in latent space and DTP correction is superior to other potential optimization strategies for this task.\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The analysis of the relationship between latent space dimensionality and the success rate of generating LSEs versus LAEs provides useful insights into the geometry of the latent space and the difficulty of navigating class boundaries.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: neutral\n  claim: The experimental setup uses standard datasets (MNIST, CelebA) and standard generative models (VAE, VAE-GAN), which is appropriate for a proof-of-concept but does not introduce new benchmarks or datasets.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The combination of adversarial example concepts, generative modeling, and Difference Target Propagation is presented with a clear rationale: to constrain the search for perturbations to the manifold of natural images to ensure interpretability.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: neutral\n  claim: The paper acknowledges limitations, such as the method's failure to generate LSEs for certain classes (e.g., '1' in MNIST) and its dependence on the trait in CelebA, but does not provide a deep critical assessment of why these failures occur beyond local minima and annotation ambiguity.\n  evidence_anchors: [SRC-005, SRC-011]\n  confidence: 3\n  actionable_suggestion: A more rigorous analysis of the failure cases, perhaps linking them to specific properties of the generative model or the classifier's decision boundary, would strengthen the contribution.\n\nKey questions for the authors:\n- How does the method perform on more complex datasets like ImageNet, where the latent space of a VAE might be less effective at capturing high-level semantic features?\n- Is the \"sympathetic\" perturbation always semantically meaningful, or can it sometimes introduce artifacts that are visually plausible but semantically incorrect?\n- How does the choice of generative model (VAE vs. GAN vs. VAE-GAN) affect the quality and interpretability of the generated explanations?\n\nRecommendation: Weak Accept\n```",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "Reviewer ORIG",
+        "topic": ""
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "779d95c213877abc1a41de2fc9fc3e39e4dff34d3baa2e0f11ce48b8f8352be3"
+      ]
+    },
+    {
+      "derivation_version": "seed-vector_search",
+      "item_id": "206880f8e73db9c7e7039edb538f5dcbb86201853c982a446aee075f673f769a",
+      "payload": {
+        "content": "```\nReviewer dimension: ORIG\nPaper summary: The paper investigates the mechanism by which non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam avoid representational collapse. By building on the DirectPred framework, the authors derive analytical expressions for representational learning dynamics in linear networks within the eigenspace of the embedding covariance matrix. They demonstrate that the asymmetric loss with a predictor network and stop-gradient induces an implicit variance regularization, driving eigenvalues toward unity. Based on this insight, they propose an \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the exponential moving average (EMA) target network while maintaining or improving performance on CIFAR-10 and STL-10.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel and insightful theoretical analysis by reformulating the BYOL/SimSiam loss in the eigenspace of the representation covariance matrix, revealing the implicit variance regularization mechanism that prevents collapse.\n  evidence_anchors: [SRC-003, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The introduction of the \"isotropic loss\" function is a methodological contribution that directly addresses the identified limitation of slow convergence for small eigenvalues in standard non-contrastive losses.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The work creatively combines the DirectPred predictor formulation with eigenspace analysis to bridge the conceptual gap between asymmetric loss architectures (BYOL/SimSiam) and explicit covariance regularization methods (VICReg/Barlow Twins).\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: neutral\n  claim: The experimental setup uses standard benchmarks (CIFAR-10, STL-10) and architectures (VGG11), but the specific evaluation protocol of comparing performance with and without EMA target networks provides a meaningful test of the theoretical claims regarding learning dynamics.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Consider including additional datasets or larger scale experiments to further validate the robustness of the isotropic loss beyond small-scale benchmarks.\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation focuses on understanding the existing mechanism of collapse prevention in non-contrastive SSL rather than introducing a new task, which is appropriate for a theoretical analysis paper.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does the isotropic loss perform on larger datasets like ImageNet, and does the benefit of removing EMA persist at scale?\n- Are there any theoretical guarantees for the isotropic loss in the nonlinear regime beyond the NTK approximation?\n\nRecommendation: Accept\n```",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "Reviewer ORIG",
+        "topic": ""
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3"
+      ]
+    },
+    {
+      "derivation_version": "seed-vector_search",
+      "item_id": "a99a321188ebfb60a7b6b97c5782d9f77631a450b0734765d91d66be463b2113",
+      "payload": {
+        "content": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to the creation of \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" that generates diversity through data permutation rather than random subsampling or feature selection. The authors demonstrate this on a toy example and compare performance against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The paper introduces a genuinely novel algorithmic approach by repurposing a complexity measure (ETC) from time-series analysis as a splitting criterion for decision trees, which is a distinct conceptual advance over standard impurity measures.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: weakness\n  claim: The problem formulation of \"Permutation Decision Trees\" is a minor variation of existing ensemble methods; the core task remains standard classification, and the motivation for order-dependence in tabular data is not strongly established beyond a toy example.\n  evidence_anchors: [SRC-002, SRC-006]\n  confidence: 4\n  actionable_suggestion: Provide a more rigorous theoretical or empirical justification for why order-dependence is a critical factor in the specific domains where this method is intended to be applied, rather than relying on general psychological effects.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is derivative, relying on standard UCI datasets and a single toy example, without introducing new benchmarks or evaluation protocols that specifically test the claimed order-sensitivity in realistic scenarios.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Design experiments on time-series or sequential data where order is explicitly known to matter, to validate the core premise of the method.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of the method's performance is superficial; the paper acknowledges that the proposed method underperforms Random Forest on most datasets but does not provide a deep analysis of why the structural impurity measure fails to translate into better predictive power in these cases.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an ablation study or error analysis to understand the conditions under which ETC-based splitting is beneficial versus detrimental compared to entropy-based splitting.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of ETC with decision trees is a creative application of an existing technique, but the rationale for why this combination should lead to improved generalization (beyond just capturing order) is not fully articulated.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 3\n  actionable_suggestion: Clarify the theoretical link between structural impurity and model generalization, especially in the absence of a clear i.i.d. violation in the test datasets used.\n\nKey questions for the authors:\n- How does the method perform on datasets where the order of instances is explicitly random or irrelevant, to isolate the effect of the ETC measure from the effect of permutation?\n- What is the computational cost of calculating ETC for large datasets compared to standard impurity measures, and does this impact the scalability of the Permutation Decision Forest?\n- Can the authors provide a theoretical bound or explanation for when ETC gain would be a better proxy for information gain than Shannon entropy?\n\nRecommendation: Weak Reject\n```",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "Reviewer ORIG",
+        "topic": ""
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "10148fcb7d4e2538c4746c6017dfdb71ab23183a305c9ff550e702c496069293"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-vector_search/program.py",
+  "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+  "program_version": "seed-vector_search",
+  "role": "ORIG",
+  "seed_kind": "vector_search",
+  "snapshot": {
+    "collections": {
+      "research_v2_vector": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "0e061a5ef5c86279514808d86865daea6e0e7f9de79132968500458a55629002",
+          "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+          "1da1500b44463d7e1fa9f208d55b800463b67c9bed224350a89483bec7d72cbc",
+          "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+          "25c473e3c8ba7a53562131e53530fa90ae1fdd47ae28784dbec294d9c3353efb",
+          "415b09e98281b1290b38b1ffa87b040e3c175ca613088637f3fda18c2d5264eb",
+          "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+          "6b96b95278dc97aaa7a52bb6b51a9b907475b1d5d5107dc8cd377f72c92f6a8c",
+          "6bd484635fc40939cef46d34db5d68d7ee0ed635a71ae189a62a291f4e1e1f9f",
+          "8b30091e3e46910a5a8b9e9186d32b5a99e11612cf4dd59df041ba611195208e",
+          "9012a66c75b94c2c8d6770cd8caa371d17e34c6ac2448af69ccacbb2e0713dcb",
+          "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6",
+          "d4b7443bd320479835a26aea800ebadbe50f4b4f8b5b17b3ca66e7a830038856",
+          "dadcfdef4a20d68ef7ce5d851a6998fbee95ddadf93c07a818011cb28649d4cd",
+          "f13ebf7d9ebf51c5daef6dc04b86810da4cc4333851227ac7c48bd86009dead8"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "ec30fb562c63786f1d9ea196aa900d033e9fd164aeacc50c0b0d2196f7c7d18d",
+            "id": "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: ORIG\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in neural networks. It compares Standard CNNs (StdCNNs) with several rotation-equivariant architectures, including Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet). The authors claim to be the first to study the vulnerability of rotation-equivariant networks to pixel-wise perturbations. Experiments are conducted on the MNIST dataset, analyzing accuracy under rotation augmentation and adversarial attacks. The key finding is that while equivariant networks are more robust to rotations, they become more vulnerable to pixel-wise attacks as the range of rotation robustness increases, suggesting a trade-off between these two types of robustness.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper identifies a meaningful and previously under-explored problem: the potential trade-off"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "716386089a447378e0a51d33d99a812674f5197f78d51a5ae8d86a22b47dbec3",
+            "id": "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "between geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "0a817a7b61144d6e2dccd9ebddce71e1198c2b7a540cda3f3200db2edd38e51d",
+            "id": "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "more nuanced.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Extend experiments to CIFAR-10 or other non-trivial datasets to validate the generality of the observed trade-off.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of equivariant networks and adversarial robustness evaluation is a logical and well-motivated combination, given the separate lines of research on symmetry in neural networks and adversarial robustness.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: strength\n  claim: The paper effectively presents a critical assessment of the assumption that equivariance is universally beneficial, showing that it can come at the cost of robustness to other types of perturbations.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was the study limited to MNIST? Have you considered or attempted experiments on more complex datasets like CIFAR-10, where the interaction between geometric and pixel-wise robustness might be more complex?\n- The paper mentions that for small rotations, GCNNs are more"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "1219e4528a81cd070e113af84d0556a3a5aaeb9545c714266080b4c043abef8d",
+            "id": "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "robust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "e1d377032b3a587c118f731c0a5ca53721f75c39c037a5196f325aacab979146",
+            "id": "9012a66c75b94c2c8d6770cd8caa371d17e34c6ac2448af69ccacbb2e0713dcb",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by generating visually interpretable perturbations. The approach uses a generative model (VAE or VAE-GAN) to encode a misclassified image into a latent space, then applies gradient descent to find a small latent perturbation that, when decoded and combined with the original image via a difference target propagation-style correction, results in correct classification. The paper evaluates this on MNIST and CelebA, analyzing the impact of latent space dimensionality and comparing LSE generation success rates against \"Latent Adversarial Examples\" (LAE).\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper introduces a meaningful new problem formulation by reframing the explanation of classifier errors as the generation of \"sympathetic\" perturbations that correct misclassifications, distinct from adversarial attacks.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The methodolog"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "ea27ec3b18a90d2640bb45cc9564ad12b27b74d01bf6ffb576b8fa0ee4d17383",
+            "id": "25c473e3c8ba7a53562131e53530fa90ae1fdd47ae28784dbec294d9c3353efb",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "y is a straightforward combination of existing techniques (gradient descent on latent space, VAEs, and Difference Target Propagation) without significant algorithmic novelty beyond the specific application to error explanation.\n  evidence_anchors: [SRC-003, SRC-010]\n  confidence: 4\n  actionable_suggestion: The authors should more explicitly discuss why this specific combination of gradient descent in latent space and DTP correction is superior to other potential optimization strategies for this task.\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The analysis of the relationship between latent space dimensionality and the success rate of generating LSEs versus LAEs provides useful insights into the geometry of the latent space and the difficulty of navigating class boundaries.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: neutral\n  claim: The experimental setup uses standard datasets (MNIST, CelebA) and standard generative models (VAE, VAE-GAN), which is appropriate for a proof-of-concept but does not introduce new benchmarks or datasets.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 4\n  actionable_sugge"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "a2a427bd5715d457be2b08c55b64c06a6abe74683da31a110f441793da14391f",
+            "id": "8b30091e3e46910a5a8b9e9186d32b5a99e11612cf4dd59df041ba611195208e",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "stion: N/A\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The combination of adversarial example concepts, generative modeling, and Difference Target Propagation is presented with a clear rationale: to constrain the search for perturbations to the manifold of natural images to ensure interpretability.\n  evidence_anchors: [SRC-001, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: neutral\n  claim: The paper acknowledges limitations, such as the method's failure to generate LSEs for certain classes (e.g., '1' in MNIST) and its dependence on the trait in CelebA, but does not provide a deep critical assessment of why these failures occur beyond local minima and annotation ambiguity.\n  evidence_anchors: [SRC-005, SRC-011]\n  confidence: 3\n  actionable_suggestion: A more rigorous analysis of the failure cases, perhaps linking them to specific properties of the generative model or the classifier's decision boundary, would strengthen the contribution.\n\nKey questions for the authors:\n- How does the method perform on more complex datasets like ImageNet, where the latent space of a VAE might be less effective at capturing high-level semantic featu"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "111cb60e00d6c8c3926a837b36bb76d311747b2da86fa6c1a8ec5b30be58c16b",
+            "id": "dadcfdef4a20d68ef7ce5d851a6998fbee95ddadf93c07a818011cb28649d4cd",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "res?\n- Is the \"sympathetic\" perturbation always semantically meaningful, or can it sometimes introduce artifacts that are visually plausible but semantically incorrect?\n- How does the choice of generative model (VAE vs. GAN vs. VAE-GAN) affect the quality and interpretability of the generated explanations?\n\nRecommendation: Weak Accept\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "b0db72a010efa871c68514fa98b034cf227d53098e273a7e69bf7e3016f11cc4",
+            "id": "f13ebf7d9ebf51c5daef6dc04b86810da4cc4333851227ac7c48bd86009dead8",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: ORIG\nPaper summary: The paper investigates the mechanism by which non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam avoid representational collapse. By building on the DirectPred framework, the authors derive analytical expressions for representational learning dynamics in linear networks within the eigenspace of the embedding covariance matrix. They demonstrate that the asymmetric loss with a predictor network and stop-gradient induces an implicit variance regularization, driving eigenvalues toward unity. Based on this insight, they propose an \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the exponential moving average (EMA) target network while maintaining or improving performance on CIFAR-10 and STL-10.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel and insightful theoretical analysis by reformulating the BYOL/SimSiam loss in the eigenspace of the representation covariance matrix, revealing the implicit variance regularization mechanism that prevents collapse.\n  evidence_anchors: [SRC-003, S"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "d20264b2d78d5d62f19f8ae224ba02349a6ffabbbfae0649f5f0c868a80eec15",
+            "id": "6bd484635fc40939cef46d34db5d68d7ee0ed635a71ae189a62a291f4e1e1f9f",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "RC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The introduction of the \"isotropic loss\" function is a methodological contribution that directly addresses the identified limitation of slow convergence for small eigenvalues in standard non-contrastive losses.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-COM\n  polarity: strength\n  claim: The work creatively combines the DirectPred predictor formulation with eigenspace analysis to bridge the conceptual gap between asymmetric loss architectures (BYOL/SimSiam) and explicit covariance regularization methods (VICReg/Barlow Twins).\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: neutral\n  claim: The experimental setup uses standard benchmarks (CIFAR-10, STL-10) and architectures (VGG11), but the specific evaluation protocol of comparing performance with and without EMA target networks provides a meaningful test of the theoretical claims regarding learning dynamics.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Consider including addition"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "ebf849c47a4b7c861f5fff28d5d87576abae302bdcdaefb89899a8459bc2538e",
+            "id": "0e061a5ef5c86279514808d86865daea6e0e7f9de79132968500458a55629002",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "al datasets or larger scale experiments to further validate the robustness of the isotropic loss beyond small-scale benchmarks.\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation focuses on understanding the existing mechanism of collapse prevention in non-contrastive SSL rather than introducing a new task, which is appropriate for a theoretical analysis paper.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does the isotropic loss perform on larger datasets like ImageNet, and does the benefit of removing EMA persist at scale?\n- Are there any theoretical guarantees for the isotropic loss in the nonlinear regime beyond the NTK approximation?\n\nRecommendation: Accept\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "1b0b5b041d1cbfc7b3360f912397dc799c559df9edc126e2880dd1d2c4dd7fb3",
+            "id": "415b09e98281b1290b38b1ffa87b040e3c175ca613088637f3fda18c2d5264eb",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to the creation of \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" that generates diversity through data permutation rather than random subsampling or feature selection. The authors demonstrate this on a toy example and compare performance against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The paper introduces a genuinely novel algorithmic approach by repurposing a complexity measure (ETC) from time-series analysis as a splitting criterion for decision trees, which is a distinct conceptual advance over standard impurity measures.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: weakness\n  claim: The problem formulation of \"Permutation Decision Trees\" is a minor variation of existing ensemble methods; the core task remains s"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "276d4a4c96f4a5f00053bc3d18928e99d9f431f18c554b2036e218f95baab527",
+            "id": "1da1500b44463d7e1fa9f208d55b800463b67c9bed224350a89483bec7d72cbc",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "tandard classification, and the motivation for order-dependence in tabular data is not strongly established beyond a toy example.\n  evidence_anchors: [SRC-002, SRC-006]\n  confidence: 4\n  actionable_suggestion: Provide a more rigorous theoretical or empirical justification for why order-dependence is a critical factor in the specific domains where this method is intended to be applied, rather than relying on general psychological effects.\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is derivative, relying on standard UCI datasets and a single toy example, without introducing new benchmarks or evaluation protocols that specifically test the claimed order-sensitivity in realistic scenarios.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Design experiments on time-series or sequential data where order is explicitly known to matter, to validate the core premise of the method.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The analysis of the method's performance is superficial; the paper acknowledges that the proposed method underperforms Random Forest on most datasets but does not provide a deep analysis of why the"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "a9394057224069a274d47c328cf5acb65a9325ffbc5d09c5ce9e42a398db941a",
+            "id": "d4b7443bd320479835a26aea800ebadbe50f4b4f8b5b17b3ca66e7a830038856",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "structural impurity measure fails to translate into better predictive power in these cases.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include an ablation study or error analysis to understand the conditions under which ETC-based splitting is beneficial versus detrimental compared to entropy-based splitting.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of ETC with decision trees is a creative application of an existing technique, but the rationale for why this combination should lead to improved generalization (beyond just capturing order) is not fully articulated.\n  evidence_anchors: [SRC-003, SRC-008]\n  confidence: 3\n  actionable_suggestion: Clarify the theoretical link between structural impurity and model generalization, especially in the absence of a clear i.i.d. violation in the test datasets used.\n\nKey questions for the authors:\n- How does the method perform on datasets where the order of instances is explicitly random or irrelevant, to isolate the effect of the ETC measure from the effect of permutation?\n- What is the computational cost of calculating ETC for large datasets compared to standard impurity measures,"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "2a2a9179098dfd9d616752ba3dff62a677cb950ee92a05c63c063835bce0d45f",
+            "id": "6b96b95278dc97aaa7a52bb6b51a9b907475b1d5d5107dc8cd377f72c92f6a8c",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "and does this impact the scalability of the Permutation Decision Forest?\n- Can the authors provide a theoretical bound or explanation for when ETC gain would be a better proxy for information gain than Shannon entropy?\n\nRecommendation: Weak Reject\n```"
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_vector"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "0e061a5ef5c86279514808d86865daea6e0e7f9de79132968500458a55629002",
+          "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+          "1da1500b44463d7e1fa9f208d55b800463b67c9bed224350a89483bec7d72cbc",
+          "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+          "25c473e3c8ba7a53562131e53530fa90ae1fdd47ae28784dbec294d9c3353efb",
+          "415b09e98281b1290b38b1ffa87b040e3c175ca613088637f3fda18c2d5264eb",
+          "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+          "6b96b95278dc97aaa7a52bb6b51a9b907475b1d5d5107dc8cd377f72c92f6a8c",
+          "6bd484635fc40939cef46d34db5d68d7ee0ed635a71ae189a62a291f4e1e1f9f",
+          "8b30091e3e46910a5a8b9e9186d32b5a99e11612cf4dd59df041ba611195208e",
+          "9012a66c75b94c2c8d6770cd8caa371d17e34c6ac2448af69ccacbb2e0713dcb",
+          "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6",
+          "d4b7443bd320479835a26aea800ebadbe50f4b4f8b5b17b3ca66e7a830038856",
+          "dadcfdef4a20d68ef7ce5d851a6998fbee95ddadf93c07a818011cb28649d4cd",
+          "f13ebf7d9ebf51c5daef6dc04b86810da4cc4333851227ac7c48bd86009dead8"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "67e4d62651ea3b4c100ed08779d1e7e660f7593d0fd786a5f29fc75016855507",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "2550a3d386b715ebea919f8b3b0735ab39c6394c319bbcc31cc847e8c95e2cd0",
+    "779d95c213877abc1a41de2fc9fc3e39e4dff34d3baa2e0f11ce48b8f8352be3",
+    "8d2b18ccc127e60b77307ddba67d3fbb97f43fe9ac5828a4eb3ac97ba42b41c3",
+    "10148fcb7d4e2538c4746c6017dfdb71ab23183a305c9ff550e702c496069293"
+  ]
+}

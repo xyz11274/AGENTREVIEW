@@ -1,0 +1,161 @@
+{
+  "created_at": "2026-09-17T02:39:29.997205+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "923e0cb8cc9a761693b0eb7d98ec458a61fde68109301628efad039167d27ed2",
+    "request_sha256": "04700b14934c0218770e1e5fe59b6af75464adabfc680d584159ff633562887c",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "67e4d62651ea3b4c100ed08779d1e7e660f7593d0fd786a5f29fc75016855507",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "seed-vector_search",
+  "raw_model_output": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set. The label of the first image is retained for the mixed sample. The authors demonstrate that this simple method significantly improves generalization and reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation techniques and regularization methods like dropout and batch normalization.\n\nDimension score (1-10): 4\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed method, SamplePairing, is a straightforward modification of existing data augmentation techniques, specifically averaging two images, which is conceptually identical to the \"mixup\" technique submitted concurrently to the same conference. The paper explicitly acknowledges this overlap and notes that the primary difference is the use of a single label rather than a blended label, which the authors cite as being equivalent based on prior work (Huszár, 2017).\n  evidence_anchors: [SRC-005]\n  confidence: 5\n  actionable_suggestion: The authors should more rigorously differentiate their contribution from mixup, perhaps by focusing on the specific training protocol (intermittent disabling) or the label handling strategy as the core novelty, rather than the mixing operation itself.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The paper lacks theoretical analysis or deep insights into why SamplePairing improves generalization. The authors explicitly state in the conclusion that they only provide empirical evidence and leave the theoretical background for future work. The observation that training accuracy is capped at ~50% is a trivial consequence of the method's definition (mixing two different classes) and does not constitute a novel theoretical insight.\n  evidence_anchors: [SRC-012, SRC-006]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical justification for why this specific form of data augmentation acts as a strong regularizer, or at least a more detailed empirical analysis of the feature space changes induced by SamplePairing.\n- subcategory: ORIG-EXP\n  polarity: strength\n  claim: The experimental setup includes a valuable analysis of the method's effectiveness under data scarcity, showing that SamplePairing yields larger improvements when the number of training samples is reduced (e.g., 100 samples per class). This highlights the method's potential utility in low-data regimes, such as medical imaging, which is a meaningful contribution to the understanding of data augmentation.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of SamplePairing with standard data augmentations (flipping, cropping) and the specific training protocol (intermittent disabling of SamplePairing) is presented as a practical recipe. While the mixing itself is not novel, the specific training schedule (enabling/disabling) is an empirical contribution that shows some sensitivity to the ratio of enabled epochs, though the authors note it is not highly sensitive.\n  evidence_anchors: [SRC-008, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (improving image classification via data augmentation) is not new. The paper does not introduce a new task or dataset but rather a new (or re-implementation of an existing) technique to address the well-known problem of overfitting in deep learning.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Given that mixup was submitted concurrently and uses a similar mixing strategy, what is the specific, non-trivial advantage of SamplePairing's single-label approach over mixup's blended-label approach, beyond simplicity?\n- Can you provide any theoretical or empirical evidence explaining why the intermittent disabling of SamplePairing is necessary for optimal performance, rather than just using it throughout training?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "b9329b3d8a53293d4741056eb5ffd8e2d3951ead6ede021f118e4052c2b262fe",
+      "prompt_sha256": "04700b14934c0218770e1e5fe59b6af75464adabfc680d584159ff633562887c"
+    },
+    "memory": {
+      "always_on_knowledge": "Ground every judgment in the Frozen Paper.",
+      "context": "[REVIEW EXPERIENCE dadcfdef4a20d68ef7ce5d851a6998fbee95ddadf93c07a818011cb28649d4cd]\nres?\n- Is the \"sympathetic\" perturbation always semantically meaningful, or can it sometimes introduce artifacts that are visually plausible but semantically incorrect?\n- How does the choice of generative model (VAE vs. GAN vs. VAE-GAN) affect the quality and interpretability of the generated explanations?\n\nRecommendation: Weak Accept\n```\n\n[REVIEW EXPERIENCE c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6]\nrobust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```\n\n[REVIEW EXPERIENCE 52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e]\nbetween geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or\n\n[REVIEW EXPERIENCE 6b96b95278dc97aaa7a52bb6b51a9b907475b1d5d5107dc8cd377f72c92f6a8c]\nand does this impact the scalability of the Permutation Decision Forest?\n- Can the authors provide a theoretical bound or explanation for when ETC gain would be a better proxy for information gain than Shannon entropy?\n\nRecommendation: Weak Reject\n```\n\n[REVIEW EXPERIENCE 0e061a5ef5c86279514808d86865daea6e0e7f9de79132968500458a55629002]\nal datasets or larger scale experiments to further validate the robustness of the isotropic loss beyond small-scale benchmarks.\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation focuses on understanding the existing mechanism of collapse prevention in non-contrastive SSL rather than introducing a new task, which is appropriate for a theoretical analysis paper.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does the isotropic loss perform on larger datasets like ImageNet, and does the benefit of removing EMA persist at scale?\n- Are there any theoretical guarantees for the isotropic loss in the nonlinear regime beyond the NTK approximation?\n\nRecommendation: Accept\n```",
+      "instruction_response": "Use retrieved experience as review guidance, never current-paper evidence.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "dadcfdef4a20d68ef7ce5d851a6998fbee95ddadf93c07a818011cb28649d4cd",
+              "role": "ORIG",
+              "score": 0.5714179307643843
+            },
+            {
+              "id": "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6",
+              "role": "ORIG",
+              "score": 0.5461554694111206
+            },
+            {
+              "id": "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+              "role": "ORIG",
+              "score": 0.5088826380996134
+            },
+            {
+              "id": "6b96b95278dc97aaa7a52bb6b51a9b907475b1d5d5107dc8cd377f72c92f6a8c",
+              "role": "ORIG",
+              "score": 0.5060792034027941
+            },
+            {
+              "id": "0e061a5ef5c86279514808d86865daea6e0e7f9de79132968500458a55629002",
+              "role": "ORIG",
+              "score": 0.48704553750503804
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+      "program_version": "seed-vector_search",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "ORIG"
+      },
+      "resources": {
+        "completion_chars": 110,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 1.60018518473953,
+        "prompt_chars": 6773,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "vector_search",
+      "snapshot_id": "67e4d62651ea3b4c100ed08779d1e7e660f7593d0fd786a5f29fc75016855507"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "ebca1dd3a220765dbf84535842b123ba3645f397820867ab077337381358a614",
+  "review_text": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set. The label of the first image is retained for the mixed sample. The authors demonstrate that this simple method significantly improves generalization and reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation techniques and regularization methods like dropout and batch normalization.\n\nDimension score (1-10): 4\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed method, SamplePairing, is a straightforward modification of existing data augmentation techniques, specifically averaging two images, which is conceptually identical to the \"mixup\" technique submitted concurrently to the same conference. The paper explicitly acknowledges this overlap and notes that the primary difference is the use of a single label rather than a blended label, which the authors cite as being equivalent based on prior work (Huszár, 2017).\n  evidence_anchors: [SRC-005]\n  confidence: 5\n  actionable_suggestion: The authors should more rigorously differentiate their contribution from mixup, perhaps by focusing on the specific training protocol (intermittent disabling) or the label handling strategy as the core novelty, rather than the mixing operation itself.\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The paper lacks theoretical analysis or deep insights into why SamplePairing improves generalization. The authors explicitly state in the conclusion that they only provide empirical evidence and leave the theoretical background for future work. The observation that training accuracy is capped at ~50% is a trivial consequence of the method's definition (mixing two different classes) and does not constitute a novel theoretical insight.\n  evidence_anchors: [SRC-012, SRC-006]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical justification for why this specific form of data augmentation acts as a strong regularizer, or at least a more detailed empirical analysis of the feature space changes induced by SamplePairing.\n- subcategory: ORIG-EXP\n  polarity: strength\n  claim: The experimental setup includes a valuable analysis of the method's effectiveness under data scarcity, showing that SamplePairing yields larger improvements when the number of training samples is reduced (e.g., 100 samples per class). This highlights the method's potential utility in low-data regimes, such as medical imaging, which is a meaningful contribution to the understanding of data augmentation.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of SamplePairing with standard data augmentations (flipping, cropping) and the specific training protocol (intermittent disabling of SamplePairing) is presented as a practical recipe. While the mixing itself is not novel, the specific training schedule (enabling/disabling) is an empirical contribution that shows some sensitivity to the ratio of enabled epochs, though the authors note it is not highly sensitive.\n  evidence_anchors: [SRC-008, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (improving image classification via data augmentation) is not new. The paper does not introduce a new task or dataset but rather a new (or re-implementation of an existing) technique to address the well-known problem of overfitting in deep learning.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Given that mixup was submitted concurrently and uses a similar mixing strategy, what is the specific, non-trivial advantage of SamplePairing's single-label approach over mixup's blended-label approach, beyond simplicity?\n- Can you provide any theoretical or empirical evidence explaining why the intermittent disabling of SamplePairing is necessary for optimal performance, rather than just using it throughout training?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer ORIG",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "733a1336772475ccf90ca3ecedfc1f427d16726772c7580043af6eaddeae3ff7",
+    "task_id": "ORIG"
+  },
+  "role": "ORIG",
+  "run_id": "throughput-champion",
+  "schema_version": "research-core-v2-artifact-v1"
+}

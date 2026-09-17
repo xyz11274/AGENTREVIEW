@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T20:04:13.527121+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "80b78a2ca9f395e8402cd169d9c31b98190c3f011fd58ea30c9746af00b19d9f",
+    "request_sha256": "db12526dfaa41816b6df165309a46ad025edddb23ec9f339a440e725bb7983aa",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that creates new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors report significant improvements in validation accuracy on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as a simple, orthogonal regularizer that is integrated into the training loop with intermittent disabling and a final fine-tuning phase.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is technically sound and well-formulated; the simple averaging of two images with a single label is a valid regularization strategy that is correctly implemented and logically consistent with the observed training dynamics (e.g., the theoretical upper bound on training accuracy during the pairing phase).\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: strength\n  claim: The experimental design is comprehensive, covering multiple standard benchmarks (ILSVRC, CIFAR-10/100, SVHN) and including a valuable ablation study on the effect of training set size, which directly supports the claim that the method is most beneficial for data-limited scenarios.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper lacks statistical rigor; all reported results are single-point estimates without variance, standard deviation, or confidence intervals, making it impossible to determine if the observed improvements are statistically significant or due to random initialization.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: Report mean ± standard deviation over at least 5 independent runs with different random seeds for all key comparisons, and include statistical significance tests.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Reproducibility is hindered by the absence of code availability and incomplete hyperparameter details; while batch sizes and optimizers are mentioned, critical details such as learning rate schedules, weight decay, exact number of epochs, and random seeds are not provided.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Provide a public code repository and a detailed appendix listing all hyperparameters, learning rate schedules, and hardware specifications to enable independent verification.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited; while the paper discusses SMOTE and a concurrent mixup submission, it does not provide direct empirical comparisons against other standard data augmentation techniques (e.g., Cutout, AutoAugment) or recent state-of-the-art methods to contextualize the magnitude of the improvement.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: Include direct empirical comparisons against at least two other widely-used data augmentation or regularization techniques to better position the contribution relative to the state-of-the-art.\n\nKey questions for the authors:\n- What is the variance in performance across multiple random seeds, and are the reported improvements statistically significant?\n- Can you provide all hyperparameters, learning rate schedules, and code to ensure full reproducibility of the results?\n- How do the results compare to other standard data augmentation techniques (e.g., Cutout, AutoAugment) on the same datasets?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "95fd5bf8b872000dcda049cd1a01fc5753ba8b3b5c1dfb01be0a11c60ac867e8",
+      "prompt_sha256": "db12526dfaa41816b6df165309a46ad025edddb23ec9f339a440e725bb7983aa"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Data Augmentation & Image Classification**\n\nBased on the provided review experiences, the following quality (QUAL) criteria should be applied when evaluating papers on data augmentation for image classification. These guidelines focus on methodological rigor, statistical validity, and comparative completeness.\n\n**1. Statistical Rigor and Variance Reporting (QUAL-STA)**\n*   **Issue:** Single-run results or single-point estimates without variance reporting undermine the validity of performance claims. Observed gains may be due to random initialization rather than the proposed method.\n*   **Guidance:** Require authors to report mean ± standard deviation over multiple independent runs (minimum 5 seeds). Include statistical significance tests for all key comparisons. If sample sizes are small (e.g., <100), explicitly flag the lack of robustness and request confidence intervals.\n\n**2. Generalizability and Dataset Scope (QUAL-EXP)**\n*   **Issue:** Evaluation restricted to low-dimensional or simple datasets (e.g., MNIST) limits the generalizability of findings. It is unclear if results hold in complex feature spaces.\n*   **Guidance:** Critique the scope of evaluation. If the paper relies solely on simple datasets, request expansion to higher-dimensional benchmarks (e.g., CIFAR-10, ImageNet subsets) to verify that the augmentation strategy’s benefits persist in realistic scenarios.\n\n**3. Baseline Comparison and State-of-the-Art Context (QUAL-CMP)**\n*   **Issue:** Omission of recent state-of-the-art methods or relevant architectural variants weakens the contribution. Comparisons may be incomplete if only standard baselines are used.\n*   **Guidance:** Ensure the paper compares against current SOTA methods and relevant architectural alternatives (e.g., equivariant networks, steerable CNNs, or other augmentation techniques). If cited but not evaluated, request direct comparison or a detailed discussion of why they are excluded.\n\n**4. Reproducibility and Implementation Details (QUAL-REP)**\n*   **Issue:** Missing hyperparameters, optimizer settings, batch sizes, epochs, or code availability hinder independent verification.\n*   **Guidance:** Mandate a detailed appendix with all hyperparameters, random seeds, and hardware specifications. Public code release is strongly recommended. If code is absent, request a comprehensive reproducibility checklist.\n\n**5. Methodological Clarity and Causal Grounding (QUAL-MET)**\n*   **Issue:** Claims about the mechanism of improvement (e.g., \"robustness\" or \"explanation\") may lack theoretical or empirical grounding. Definitions may be circular or not aligned with causal features.\n*   **Guidance:** Verify that the experimental design isolates the specific variable of interest (e.g., augmentation type). If the paper claims a causal or explanatory benefit, require empirical validation (e.g., correlation with saliency maps, human judgment, or ablation studies) to prove the method reflects true underlying features rather than artifacts.\n\n**Key Questions for Authors:**\n1.  What is the variance in performance across multiple random seeds?\n2.  Do preliminary results on more complex datasets support the generalizability of the findings?\n3.  How do the results compare to recent SOTA augmentation or robustness methods?\n4.  Can you provide all hyperparameters and code to ensure reproducibility?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "c49d0345b327c19473cfb54d42243aca4ca18c25c3f0dd9d55e3f0e8beb21f0d",
+              "role": "QUAL",
+              "score": 0.40090356063683474
+            },
+            {
+              "id": "d7c5f5ace67ebeb18f099a86339db0ed6e72325a50253a2f34abfcbe9aa8093c",
+              "role": "QUAL",
+              "score": 0.38304208512895604
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Data Augmentation & Image Classification**\n\nBased on the provided review experiences, the following quality (QUAL) criteria should be applied when evaluating papers on data augmentation for image classification. These guidelines focus on methodological rigor, statistical validity, and comparative completeness.\n\n**1. Statistical Rigor and Variance Reporting (QUAL-STA)**\n*   **Issue:** Single-run results or single-point estimates without variance reporting undermine the validity of performance claims. Observed gains may be due to random initialization rather than the proposed method.\n*   **Guidance:** Require authors to report mean ± standard deviation over multiple independent runs (minimum 5 seeds). Include statistical significance tests for all key comparisons. If sample sizes are small (e.g., <100), explicitly flag the lack of robustness and request confidence intervals.\n\n**2. Generalizability and Dataset Scope (QUAL-EXP)**\n*   **Issue:** Evaluation restricted to low-dimensional or simple datasets (e.g., MNIST) limits the generalizability of findings. It is unclear if results hold in complex feature spaces.\n*   **Guidance:** Critique the scope of evaluation. If the paper relies solely on simple datasets, request expansion to higher-dimensional benchmarks (e.g., CIFAR-10, ImageNet subsets) to verify that the augmentation strategy’s benefits persist in realistic scenarios.\n\n**3. Baseline Comparison and State-of-the-Art Context (QUAL-CMP)**\n*   **Issue:** Omission of recent state-of-the-art methods or relevant architectural variants weakens the contribution. Comparisons may be incomplete if only standard baselines are used.\n*   **Guidance:** Ensure the paper compares against current SOTA methods and relevant architectural alternatives (e.g., equivariant networks, steerable CNNs, or other augmentation techniques). If cited but not evaluated, request direct comparison or a detailed discussion of why they are excluded.\n\n**4. Reproducibility and Implementation Details (QUAL-REP)**\n*   **Issue:** Missing hyperparameters, optimizer settings, batch sizes, epochs, or code availability hinder independent verification.\n*   **Guidance:** Mandate a detailed appendix with all hyperparameters, random seeds, and hardware specifications. Public code release is strongly recommended. If code is absent, request a comprehensive reproducibility checklist.\n\n**5. Methodological Clarity and Causal Grounding (QUAL-MET)**\n*   **Issue:** Claims about the mechanism of improvement (e.g., \"robustness\" or \"explanation\") may lack theoretical or empirical grounding. Definitions may be circular or not aligned with causal features.\n*   **Guidance:** Verify that the experimental design isolates the specific variable of interest (e.g., augmentation type). If the paper claims a causal or explanatory benefit, require empirical validation (e.g., correlation with saliency maps, human judgment, or ablation studies) to prove the method reflects true underlying features rather than artifacts.\n\n**Key Questions for Authors:**\n1.  What is the variance in performance across multiple random seeds?\n2.  Do preliminary results on more complex datasets support the generalizability of the findings?\n3.  How do the results compare to recent SOTA augmentation or robustness methods?\n4.  Can you provide all hyperparameters and code to ensure reproducibility?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "QUAL"
+      },
+      "resources": {
+        "completion_chars": 3503,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 15.940959019586444,
+        "prompt_chars": 12355,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "459a0fdb7e91e8264a405356451b9168fb6b668403026b27fc18e74d6d82b878",
+  "review_text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that creates new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors report significant improvements in validation accuracy on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as a simple, orthogonal regularizer that is integrated into the training loop with intermittent disabling and a final fine-tuning phase.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is technically sound and well-formulated; the simple averaging of two images with a single label is a valid regularization strategy that is correctly implemented and logically consistent with the observed training dynamics (e.g., the theoretical upper bound on training accuracy during the pairing phase).\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: strength\n  claim: The experimental design is comprehensive, covering multiple standard benchmarks (ILSVRC, CIFAR-10/100, SVHN) and including a valuable ablation study on the effect of training set size, which directly supports the claim that the method is most beneficial for data-limited scenarios.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper lacks statistical rigor; all reported results are single-point estimates without variance, standard deviation, or confidence intervals, making it impossible to determine if the observed improvements are statistically significant or due to random initialization.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: Report mean ± standard deviation over at least 5 independent runs with different random seeds for all key comparisons, and include statistical significance tests.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Reproducibility is hindered by the absence of code availability and incomplete hyperparameter details; while batch sizes and optimizers are mentioned, critical details such as learning rate schedules, weight decay, exact number of epochs, and random seeds are not provided.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Provide a public code repository and a detailed appendix listing all hyperparameters, learning rate schedules, and hardware specifications to enable independent verification.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited; while the paper discusses SMOTE and a concurrent mixup submission, it does not provide direct empirical comparisons against other standard data augmentation techniques (e.g., Cutout, AutoAugment) or recent state-of-the-art methods to contextualize the magnitude of the improvement.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: Include direct empirical comparisons against at least two other widely-used data augmentation or regularization techniques to better position the contribution relative to the state-of-the-art.\n\nKey questions for the authors:\n- What is the variance in performance across multiple random seeds, and are the reported improvements statistically significant?\n- Can you provide all hyperparameters, learning rate schedules, and code to ensure full reproducibility of the results?\n- How do the results compare to other standard data augmentation techniques (e.g., Cutout, AutoAugment) on the same datasets?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer QUAL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+    "task_id": "QUAL"
+  },
+  "role": "QUAL",
+  "run_id": "candidate-0001",
+  "schema_version": "research-core-v2-artifact-v1"
+}

@@ -1,0 +1,165 @@
+{
+  "checks": [
+    {
+      "completed_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-MTH",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "-EHqoysUYLx",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-MTH",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    },
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "SJn0sLgRb",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    },
+    {
+      "completed_categories": [
+        "ORIG-COM",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ],
+      "paper_id": "BJKYvt5lg",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "ORIG-COM",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ]
+    }
+  ],
+  "stage": "evaluation",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/06e9beee10339bff195ab25e75a23898f98024fa41b15a69e228459ea9177c5f.audit.json",
+      "sha256": "7d8aa0cc0f9b5617020c393b39d446b612b03f700d2540e9312428b570e03e90"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/0b97775507e6e247355d31b32bc220cd157b5b4756983b9a7079923c4a965de7.audit.json",
+      "sha256": "feed5717b4298ff0c701b77b19aaf0dd6294f7569d0862c323fbfba9a9964456"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/0e2146652a27725098f7c26b994307b8de9821ead08acf1f1587357f360d13eb.audit.json",
+      "sha256": "4584638ea626d0f5a1d1c3dcb26baf9ea6235765d9852370dad45d27bd03f3d7"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/0e5504a616fc0d3deab787a9d115b49bd2c691938acdd35f8220a57a262649c3.audit.json",
+      "sha256": "c08ae085d34978fb7ae7eb93dacdb3077c680ce0398917b4d28de133194cc68f"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/19516f0583774f020d4cd6cad694f53e184663bc27d18274466d2c355df0c4dc.audit.json",
+      "sha256": "aa360d303785e952d639d0028d0152e3e9121e0ebaf8cc6fe725ce3c619fdeb0"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/1b5ce25612d3161feff827627ba5f86889cc12334196d1576bc7781403b1f961.audit.json",
+      "sha256": "299030d160ee2b23e5c58d91083bb01902a0ef46ee23a2b4bb4d1b3a8c158bf6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/3096a4fb517beaeb21638e2ac6afd14c82025b546de4bae824e35935c6f93d35.audit.json",
+      "sha256": "005b9d5399bb1408b7284e4e72a00fd279f76ef4368793bd41dbcf951eae9473"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/395a1e57cd89704ce672249b3bd6355c7d19a66b5217579b210b3ae4ad83434d.audit.json",
+      "sha256": "72d0123797dfda51f873761b97caba9b1e0c07e9ff34d8190b193f7a85900c65"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/486b4977aa642cbd8ee8f8c38f2327c5ce36379429011a924982c9dbec23b0b1.audit.json",
+      "sha256": "df92d8872d383e5846d22ada48c3bf93be14474783f0d6a2c0704d63182bc1e5"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/5210380d68cf782946635d1c939a808fd3242cc2ad9eb6259bc4a2f4bfb6df87.audit.json",
+      "sha256": "b275b9e4624b531b4583413cb70880bb4635b3ea6757306928db9ab03315a1b4"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/5da743c2703ca43c9f83a21c1ed61051e23c98a9ec34df8b279758ded612b936.audit.json",
+      "sha256": "78c01ddaa2175bddfb4e2611d6f4b7f7edbcfc28c22790c1a1fa0c48ced29658"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/65fe62b1a01b858f46dc01ab0fe245b4536fa7b7c05fd8257d8809a2eca07823.audit.json",
+      "sha256": "7e2eccf3a12ada80d591c2f177ea80d68da5ae0ba0391f2fdb7e946c64eb4065"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/69b810c896fea054a2a24fef2a4d988ff255196f4c872ab950576111c0fd2862.audit.json",
+      "sha256": "7227c59a9866a215340d5f9ffacdab66c4148242bda570f14b419433ac1726c1"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/8c24b5da405b206e3ef03e16d4e8f254de040fa1513cf95e006bbfa53c539c3c.audit.json",
+      "sha256": "5992f894bf8547f2e1e9c28c6769b267ab1f8b7b9f144c2bfaae5c146185e837"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/8d18d6aaa4540b407d4b431aaa7d499ab369954d050add7af557379e288825ee.audit.json",
+      "sha256": "8a620e282d03f28284d7d517647db391104c664d144ddbe4b7ae45d99f1f9bef"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/8f7df3d5ba2d48b88d1eb2b8a401456fa099146be692a61a47716d5ebfcd592d.audit.json",
+      "sha256": "b4e3cbef32382301e4734c65db4e28ee02ffd4ef83ab08af56068c8949201d6b"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/b230b1258589c89de0c2ca110f12e2af9b6d1ab5293d583970dd93aebaa218d9.audit.json",
+      "sha256": "f0c546903aa2d4f3ffb001e7729e4c0753c2107ed88b26bf2ae11bf24a1047eb"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/d14a6b23ccee2f111809b87b9a4d78df1b46f27543849d37bd30a28803e54ac9.audit.json",
+      "sha256": "000776d1d6555e0bd9687f30c10733000ab828eb477e2e539e1aa9da219e804d"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/d7015b2ce58219f3da5a18f3d75c952c6852d93d12a599677765b4b3b4804d2a.audit.json",
+      "sha256": "327f986f7de4460610038f2333e1e780882741ed9468ad2f1d5419d8cc1a6c78"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/dfcbd741610239f3c0a296995dd00193c5295f7346616970d5aaffd3e7b7c585.audit.json",
+      "sha256": "b8637e6332ca3ee33501fdbf7dfed2e87fcc049acc13781704e2bfdbdef63e51"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/ea7424f904a72c40b6ce114e3d92155220a548b3b74a71c25a629081ccaa79e0.audit.json",
+      "sha256": "66eb50ce2c14d6afe6f1840661cf661dad222e8e39ef4988c6ca4b2ca9dd04c6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/f2475c0febffb4f074acf901af0aee53e8f98ea5e0c7a7e98312640dc60ebed2.audit.json",
+      "sha256": "437001d25ac62073fa6bfeeb8bd313567a4ba0a222276c5a351e246dc7dee5a6"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/candidate-0003/r0/coco/cache/judge/f3b272a45f6526e8a5ac9e33b913d33e8579dd5b9d829e7ab49108bf595beb7b.audit.json",
+      "sha256": "e0895a0dbbb72abc67f2ee7712f68398ed5e16db1421bb384efdc682bfb81aac"
+    }
+  ],
+  "unhandled_failures": 0
+}

@@ -161,6 +161,24 @@ class SharedMemoryContractTest(unittest.TestCase):
             self.prepare("vector_search", snapshot, client, role="QUAL")
         self.assertEqual(client.calls, [])
 
+    def test_each_paper_reads_a_fresh_copy_even_when_read_mutates_memory(self):
+        code = seed_program_path("vector_search").read_text()
+        code = code.replace('    def read(self, query: Query) -> str:\n',
+            '    def read(self, query: Query) -> str:\n'
+            '        previous = "READ_MUTATION" in self.seen\n'
+            '        self.seen.add("READ_MUTATION")\n'
+            '        return "dirty" if previous else "fresh"\n')
+        program = self.root / "mutating_read.py"
+        program.write_text(code)
+        snapshot = self.snapshot("vector_search", "QUAL", program=program)
+        before = snapshot.read_bytes()
+        for _ in range(2):
+            result = retrieve_memory(paper=self.paper, role="QUAL", program_path=program, snapshot_path=snapshot,
+                embedding_identity=self.embedding, completion_client=MemoryCompletion(), require_bubblewrap=False,
+                memory_runtime={**self.runtime, "query_mode": "deterministic"})
+            self.assertEqual(result["context"], "fresh")
+            self.assertEqual(snapshot.read_bytes(), before)
+
     def test_generated_knowledge_item_uses_the_host_role_identity(self):
         client = MemoryCompletion(generated_role="CLAR")
         snapshot = self.snapshot("experience_learner", "QUAL", client=client)

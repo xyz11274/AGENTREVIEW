@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Significance (SIGN)**\n\n**1. State-of-the-Art (SOT) Validation**\n*   **Benchmark Scale:** Do not accept SOTA claims based solely on small-scale or low-dimensional datasets (e.g., MNIST, CIFAR-10, STL-10) or small backbones (e.g., VGG11). Require validation on standard, large-scale benchmarks (e.g., ImageNet) to ensure generalizability.\n*   **Quantitative Comparison:** The paper must provide rigorous quantitative comparisons against established baselines. If the method is a diagnostic or theoretical analysis, explicitly state that it does not claim SOTA performance; otherwise, demand proof of superiority over current leaders.\n*   **Performance Gains:** Scrutinize the magnitude of improvements. Modest, inconsistent, or negative results on key metrics undermine SOTA claims. If a new method underperforms standard baselines (e.g., Random Forest), require a clear definition of the specific niche where it is superior or a revision of the algorithm.\n\n**2. Domain Impact (DOM)**\n*   **Generalizability:** Assess whether the proposed method applies to complex, real-world tasks. Limitations to simple benchmarks restrict domain impact. Request experiments on more complex datasets (e.g., medical imaging, autonomous driving scenarios) to demonstrate practical utility.\n*   **Claim-Evidence Alignment:** Ensure experimental evidence supports all domain-specific claims. For instance, if a method claims to handle temporal or ordered data, it must be tested on time-series or sequence data, not just static tabular data.\n*   **Practical Simplification:** Acknowledge practical benefits such as reduced hyperparameter tuning, computational overhead, or architectural simplification (e.g., removing EMA networks) as valid domain contributions, provided they are empirically validated.\n\n**3. Broader Research Impact (BRD)**\n*   **Fundamental Questions:** Evaluate if the work addresses fundamental theoretical questions or reconciles distinct method families. Theoretical insights that clarify learning dynamics or implicit regularization have high broader impact, even if empirical gains are modest.\n*   **Conceptual Novelty:** Distinguish between conceptually interesting ideas and proven utility. If a novel metric or approach (e.g., compression-based impurity) is proposed, require theoretical analysis or specific non-i.i.d. scenario validation to justify its broader relevance.\n\n**4. Societal and Practical Impact (IMP)**\n*   **Deployment Considerations:** Assess the discussion of real-world deployment factors, including computational cost, robustness to distribution shifts, and safety-critical implications.\n*   **Societal Scope:** While not always mandatory for theoretical papers, note the absence of discussions on fairness, environmental impact, or societal risks. For applied methods, require analysis of how the work affects high-stakes domains (e.g., explainability in medical AI).\n*   **Mitigation Strategies:** If the paper identifies vulnerabilities or trade-offs (e.g., robustness vs. equivariance), it should offer mitigation strategies or discuss implications for safety-critical applications to enhance impact.\n\n**Key Review Questions:**\n*   Does the SOTA claim hold on large-scale, standard benchmarks?\n*   Is the domain impact supported by experiments on complex, real-world data?\n*   Are the broader theoretical contributions clearly articulated and distinct from empirical results?\n*   Are practical deployment costs and societal implications adequately addressed?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789587803,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-bf982026980cf130",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 706,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2960,
+      "prompt_tokens_details": null,
+      "total_tokens": 3666
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Significance (SIGN)**\n\n**1. State-of-the-Art (SOT) Validation**\n*   **Benchmark Scale:** Do not accept SOTA claims based solely on small-scale or low-dimensional datasets (e.g., MNIST, CIFAR-10, STL-10) or small backbones (e.g., VGG11). Require validation on standard, large-scale benchmarks (e.g., ImageNet) to ensure generalizability.\n*   **Quantitative Comparison:** The paper must provide rigorous quantitative comparisons against established baselines. If the method is a diagnostic or theoretical analysis, explicitly state that it does not claim SOTA performance; otherwise, demand proof of superiority over current leaders.\n*   **Performance Gains:** Scrutinize the magnitude of improvements. Modest, inconsistent, or negative results on key metrics undermine SOTA claims. If a new method underperforms standard baselines (e.g., Random Forest), require a clear definition of the specific niche where it is superior or a revision of the algorithm.\n\n**2. Domain Impact (DOM)**\n*   **Generalizability:** Assess whether the proposed method applies to complex, real-world tasks. Limitations to simple benchmarks restrict domain impact. Request experiments on more complex datasets (e.g., medical imaging, autonomous driving scenarios) to demonstrate practical utility.\n*   **Claim-Evidence Alignment:** Ensure experimental evidence supports all domain-specific claims. For instance, if a method claims to handle temporal or ordered data, it must be tested on time-series or sequence data, not just static tabular data.\n*   **Practical Simplification:** Acknowledge practical benefits such as reduced hyperparameter tuning, computational overhead, or architectural simplification (e.g., removing EMA networks) as valid domain contributions, provided they are empirically validated.\n\n**3. Broader Research Impact (BRD)**\n*   **Fundamental Questions:** Evaluate if the work addresses fundamental theoretical questions or reconciles distinct method families. Theoretical insights that clarify learning dynamics or implicit regularization have high broader impact, even if empirical gains are modest.\n*   **Conceptual Novelty:** Distinguish between conceptually interesting ideas and proven utility. If a novel metric or approach (e.g., compression-based impurity) is proposed, require theoretical analysis or specific non-i.i.d. scenario validation to justify its broader relevance.\n\n**4. Societal and Practical Impact (IMP)**\n*   **Deployment Considerations:** Assess the discussion of real-world deployment factors, including computational cost, robustness to distribution shifts, and safety-critical implications.\n*   **Societal Scope:** While not always mandatory for theoretical papers, note the absence of discussions on fairness, environmental impact, or societal risks. For applied methods, require analysis of how the work affects high-stakes domains (e.g., explainability in medical AI).\n*   **Mitigation Strategies:** If the paper identifies vulnerabilities or trade-offs (e.g., robustness vs. equivariance), it should offer mitigation strategies or discuss implications for safety-critical applications to enhance impact.\n\n**Key Review Questions:**\n*   Does the SOTA claim hold on large-scale, standard benchmarks?\n*   Is the domain impact supported by experiments on complex, real-world data?\n*   Are the broader theoretical contributions clearly articulated and distinct from empirical results?\n*   Are practical deployment costs and societal implications adequately addressed?",
+  "tokens": {
+    "input_tokens": 2960,
+    "max_model_len": 65536
+  }
+}

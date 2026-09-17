@@ -1,0 +1,177 @@
+{
+  "status": {
+    "diagnostic_scored_papers_per_hour": 29.71216823452862,
+    "ended": 1789615288.8373828,
+    "failed_scores": 0,
+    "failure_rate": 0,
+    "paper_scores": {
+      "-EHqoysUYLx": 3.2,
+      "SJn0sLgRb": 3.6
+    },
+    "pid": 2886616,
+    "result": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/judge-batch4096/result.json",
+      "sha256": "3a4bbddf9474995cbfcbf6a4712b072e2c06c4f3091aad8cbbeb2c30cd58e1d6"
+    },
+    "scope": "original Judge replay; fixed complete reviews, Split and Classify; no pool admission",
+    "scored_papers": 2,
+    "seconds": 242.32496070861816,
+    "started": 1789615046.5124178,
+    "status": "complete",
+    "valid_full_flow_reviews": 0
+  },
+  "stages": {
+    "_model_identity": {
+      "completed": 4,
+      "failed": 0,
+      "sum_seconds": 31.979956775903702,
+      "max_seconds": 17.355462733656168,
+      "durations": [
+        2.2891142880544066,
+        6.5070116287097335,
+        5.828368125483394,
+        17.355462733656168
+      ]
+    },
+    "_validate_config": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 32.190318554639816,
+      "max_seconds": 32.190318554639816,
+      "durations": [
+        32.190318554639816
+      ]
+    },
+    "coco_cpu_full_text_metrics": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 8.077783590182662,
+      "max_seconds": 8.077783590182662,
+      "durations": [
+        8.077783590182662
+      ]
+    },
+    "coco_model_request": {
+      "completed": 16,
+      "failed": 0,
+      "sum_seconds": 1437.8039100766182,
+      "max_seconds": 130.43532010819763,
+      "durations": [
+        45.87139909248799,
+        57.82845935411751,
+        61.06565535347909,
+        65.91092813853174,
+        77.35719709191471,
+        90.98732834402472,
+        95.14130203891546,
+        95.48820380493999,
+        108.60573953203857,
+        111.80784798506647,
+        119.58936643972993,
+        123.21907171513885,
+        129.87851295247674,
+        130.43532010819763,
+        54.59822125732899,
+        70.0193568682298
+      ]
+    },
+    "coco_category_judge": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 130.90472465287894,
+      "max_seconds": 130.90472465287894,
+      "durations": [
+        130.90472465287894
+      ]
+    },
+    "coco_paper_judge": {
+      "completed": 1,
+      "failed": 0,
+      "sum_seconds": 70.14956081751734,
+      "max_seconds": 70.14956081751734,
+      "durations": [
+        70.14956081751734
+      ]
+    }
+  },
+  "services": {
+    "18001": {
+      "observed": true,
+      "sample_count": 226,
+      "seconds": 241.78371047973633,
+      "running_max": 8.0,
+      "waiting_max": 12.0,
+      "kv_cache_peak_fraction": 0.17713004484304928,
+      "running_seconds": 193.07908987998962,
+      "waiting_seconds": 86.8608169555664,
+      "prefix_cache_token_hit_fraction": null,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 0.0,
+        "prefix_cache_hits_total": 0.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 62727.0,
+        "generation_tokens_total": 28855.0,
+        "request_success_total:stop": 15.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    },
+    "13099": {
+      "observed": true,
+      "sample_count": 226,
+      "seconds": 241.78371047973633,
+      "running_max": 0.0,
+      "waiting_max": 0.0,
+      "kv_cache_peak_fraction": 0.0,
+      "running_seconds": 0,
+      "waiting_seconds": 0,
+      "prefix_cache_token_hit_fraction": null,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 0.0,
+        "prefix_cache_hits_total": 0.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 0.0,
+        "generation_tokens_total": 0.0,
+        "request_success_total:stop": 0.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    },
+    "13098": {
+      "observed": true,
+      "sample_count": 226,
+      "seconds": 241.78371047973633,
+      "running_max": 0.0,
+      "waiting_max": 0.0,
+      "kv_cache_peak_fraction": 0.0,
+      "running_seconds": 0,
+      "waiting_seconds": 0,
+      "prefix_cache_token_hit_fraction": null,
+      "counter_deltas": {
+        "prefix_cache_queries_total": 0.0,
+        "prefix_cache_hits_total": 0.0,
+        "num_preemptions_total": 0.0,
+        "prompt_tokens_total": 0.0,
+        "generation_tokens_total": 0.0,
+        "request_success_total:stop": 0.0,
+        "request_success_total:length": 0.0,
+        "request_success_total:abort": 0.0,
+        "request_success_total:error": 0.0,
+        "request_success_total:repetition": 0.0
+      }
+    }
+  },
+  "admission_wait_seconds_sum": 0.010238748975098133,
+  "admission_wait_seconds_max": 0.003209410235285759,
+  "embedding_actual_loads": 0,
+  "embedding_uncached_texts": 0,
+  "notes": [
+    "Stage sums include concurrent/nested work and must not be added to infer wall time.",
+    "Gauge occupancy measures service activity; completed full-flow reviews require complete validated assessment receipts.",
+    "Diagnostic Judge replays are excluded from effective full-flow review throughput."
+  ]
+}

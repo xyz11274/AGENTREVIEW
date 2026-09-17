@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Avoid overloading symbols (e.g., using the same variable for different concepts like input images and rotation angles).\n*   **Resolve Inconsistencies:** Check for conflicting definitions in loss functions or core equations. If notation varies between sections (e.g., $CE(c(x'), y)$ vs. $CE(x', y)$), standardize it or explicitly define the function to include all components.\n*   **Distinguish Concepts:** Clearly differentiate between similar but distinct concepts, such as \"latent perturbation\" vs. \"image perturbation.\" Update definitions and ensure consistent usage in text and figure captions to prevent ambiguity.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Proofreading:** Correct grammatical errors, typos, and sentence fragments. Pay attention to article usage (e.g., \"a\" vs. \"an\") and prepositions.\n*   **Terminology Consistency:** Enforce consistent terminology throughout the paper. Avoid inconsistent capitalization or pluralization (e.g., \"Neural networks models\").\n*   **Logical Flow:** Reorganize disjointed sections, particularly in results, to group related comparisons logically. Ensure the narrative flow supports reader comprehension.\n\n**3. Experimental Details & Reproducibility (CLAR-WRT)**\n*   **Specific Architectures:** Vague descriptions (e.g., \"parameter equivalent\") are insufficient. Require explicit architectural specifications, including layer types, activations, and filter counts.\n*   **Training Protocols:** Provide detailed hyperparameters essential for reproducibility, such as optimizer type, learning rate, batch size, and number of epochs. A dedicated hyperparameter table is recommended.\n*   **Component Details:** If auxiliary components (e.g., classifiers attached to a VAE) are used, specify their exact architecture and training procedure.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure figures are legible. All labels, arrows, and axes must strictly match the notation defined in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, and legends. Avoid ambiguous captions that leave subplot conditions unclear.\n*   **Contextual Clarity:** Explicitly state the relationship between figures in the text. For example, clarify if one figure shows predictions on reconstructed images while another shows predictions on perturbed images. Add brief textual descriptions of figure components to aid understanding.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined and used consistently?\n2.  Are architectural and training details sufficient for reproducibility?\n3.  Do figure captions and labels provide complete context without ambiguity?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789589318,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-bd63c7b0a1272e4a",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 606,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1237,
+      "prompt_tokens_details": null,
+      "total_tokens": 1843
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Avoid overloading symbols (e.g., using the same variable for different concepts like input images and rotation angles).\n*   **Resolve Inconsistencies:** Check for conflicting definitions in loss functions or core equations. If notation varies between sections (e.g., $CE(c(x'), y)$ vs. $CE(x', y)$), standardize it or explicitly define the function to include all components.\n*   **Distinguish Concepts:** Clearly differentiate between similar but distinct concepts, such as \"latent perturbation\" vs. \"image perturbation.\" Update definitions and ensure consistent usage in text and figure captions to prevent ambiguity.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Proofreading:** Correct grammatical errors, typos, and sentence fragments. Pay attention to article usage (e.g., \"a\" vs. \"an\") and prepositions.\n*   **Terminology Consistency:** Enforce consistent terminology throughout the paper. Avoid inconsistent capitalization or pluralization (e.g., \"Neural networks models\").\n*   **Logical Flow:** Reorganize disjointed sections, particularly in results, to group related comparisons logically. Ensure the narrative flow supports reader comprehension.\n\n**3. Experimental Details & Reproducibility (CLAR-WRT)**\n*   **Specific Architectures:** Vague descriptions (e.g., \"parameter equivalent\") are insufficient. Require explicit architectural specifications, including layer types, activations, and filter counts.\n*   **Training Protocols:** Provide detailed hyperparameters essential for reproducibility, such as optimizer type, learning rate, batch size, and number of epochs. A dedicated hyperparameter table is recommended.\n*   **Component Details:** If auxiliary components (e.g., classifiers attached to a VAE) are used, specify their exact architecture and training procedure.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure figures are legible. All labels, arrows, and axes must strictly match the notation defined in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, and legends. Avoid ambiguous captions that leave subplot conditions unclear.\n*   **Contextual Clarity:** Explicitly state the relationship between figures in the text. For example, clarify if one figure shows predictions on reconstructed images while another shows predictions on perturbed images. Add brief textual descriptions of figure components to aid understanding.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined and used consistently?\n2.  Are architectural and training details sufficient for reproducibility?\n3.  Do figure captions and labels provide complete context without ambiguity?",
+  "tokens": {
+    "input_tokens": 1237,
+    "max_model_len": 65536
+  }
+}

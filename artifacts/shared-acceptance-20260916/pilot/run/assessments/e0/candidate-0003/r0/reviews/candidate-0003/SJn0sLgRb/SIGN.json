@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T21:26:50.563319+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "a250440ff67dfcb6e52e1b8adfc201b2330656d3ddf400e1122d85331f6cae67",
+    "request_sha256": "9656cc36b7d5848ffe71fd77c2bdd67652111209ba067ee7e31072ea66619434",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "ff710a3c66bb232b344f99963a685b44c8baa192aba131e95f6af6f39611d4d4",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "candidate-0003",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes \"SamplePairing,\" a simple data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors demonstrate that this method significantly reduces validation error rates on standard benchmarks (ILSVRC 2012, CIFAR-10, CIFAR-100, SVHN) and is particularly effective when the training set size is limited. The technique is presented as orthogonal to other augmentation methods and regularization techniques, with a specific focus on its utility for data-scarce scenarios such as medical imaging.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses the fundamental and broadly important challenge of overfitting in deep learning, particularly in data-scarce regimes, which is a critical concern across multiple research areas including computer vision and medical AI.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates strong domain relevance for image classification, showing consistent improvements across diverse datasets (ILSVRC, CIFAR, SVHN) and explicitly highlighting its value for specialized fields like medical imaging where training data is limited.\n  evidence_anchors: [SRC-001, SRC-003, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The paper reports substantial and consistent performance gains over the baseline (no SamplePairing), with validation error reductions ranging from 3.05% to 28.74% across different datasets and metrics, indicating a significant improvement over the standard training protocol used as the baseline.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The paper lacks a discussion on the practical and societal implications of the method, such as potential biases introduced by random pairing, computational overhead, or specific risks in high-stakes applications like medical diagnosis, despite claiming relevance to such domains.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a section discussing the potential societal impacts, including fairness considerations (e.g., does pairing exacerbate class imbalance or demographic biases?) and practical deployment constraints (e.g., computational cost, impact on model interpretability in safety-critical systems).\n\nKey questions for the authors:\n- How does the random pairing strategy affect the fairness of the model, particularly in the presence of class imbalance or demographic biases in the training data?\n- What are the computational and environmental costs of implementing SamplePairing compared to standard data augmentation techniques, and how does this impact its scalability in real-world deployments?\n- Can you provide more concrete evidence or case studies demonstrating the method's effectiveness in a real-world medical imaging task, rather than just stating its potential value?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "8a8a2f8824165d672a6154973826d5bf71d8e97674853e3582fdae17cc4df477",
+      "prompt_sha256": "9656cc36b7d5848ffe71fd77c2bdd67652111209ba067ee7e31072ea66619434"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Data Augmentation by Pairing Samples for Image Classification**\n\n**1. Validate Domain Scope and Benchmark Rigor (SIGN-DOM)**\n*   **Reject Low-Complexity Validation:** Do not accept MNIST or similar low-dimensional datasets as sufficient proof of efficacy. Explicitly require validation on complex, high-stakes benchmarks such as CIFAR-10, ImageNet, or domain-specific datasets (e.g., medical imaging, autonomous driving) to establish practical impact.\n*   **Assess Real-World Applicability:** Critically evaluate whether the pairing strategy addresses challenges in high-stakes domains. If the work relies solely on simple benchmarks, flag it as having limited practical value and demand extension to complex scenarios where data scarcity or class imbalance is critical.\n\n**2. Demand Rigorous Quantitative Validation (SIGN-BRD)**\n*   **Reject Qualitative Claims:** Dismiss unsupported assertions of \"intuitiveness,\" \"interpretability,\" or \"naturalness\" of the paired samples. Require rigorous quantitative comparisons against established baselines (e.g., standard augmentation pipelines, GAN-based synthesis, or other pairing methods).\n*   **Verify Fundamental Tension:** Ensure the identified problem (e.g., data scarcity vs. overfitting, or geometric robustness vs. adversarial vulnerability) is a fundamental, community-wide challenge rather than a niche artifact. The contribution must address a broad relevance issue, not just a specific dataset quirk.\n\n**3. Contextualize State-of-the-Art (SIGN-SOT)**\n*   **Distinguish Analysis from Method:** Clearly differentiate between diagnostic observations and methodological improvements. Do not award SOTA scores for analytical insights that do not propose a new, superior method.\n*   **Position Against Current SOTA:** Ensure the proposed pairing technique is explicitly compared against current state-of-the-art augmentation methods. The paper must demonstrate a meaningful advancement over existing techniques, not just a novel perspective on existing data.\n\n**4. Assess Impact and Ethical Implications (SIGN-IMP)**\n*   **Mandate Deployment Context:** Require discussion of real-world deployment implications, particularly for safety-critical systems. Flag papers lacking this context as having limited practical impact.\n*   **Evaluate Societal and Ethical Risks:** Scrutinize potential risks associated with the augmentation process, including:\n    *   **Fairness:** Does the pairing strategy introduce or exacerbate biases across demographic groups?\n    *   **Misleading Explanations:** If the method affects model interpretability, assess the risk of misleading downstream users.\n    *   **Environmental Cost:** Consider the computational and environmental overhead of generating paired samples compared to standard augmentation.\n*   **Require Mitigation Strategies:** If risks are identified, the authors must propose concrete mitigations or discuss limitations in the context of real-world safety and ethics.",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise, actionable, and strictly grounded in the paper.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "3af2efe217252938c56799e88a3486a2a1c6bb6841480f00da702ded397255c5",
+              "role": "SIGN",
+              "score": 0.39173037829614404
+            },
+            {
+              "id": "947eec344db0b2dcf6f3f942b7e412847478eed1de08bc255607bf994cf74dd2",
+              "role": "SIGN",
+              "score": 0.34613261824269725
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Data Augmentation by Pairing Samples for Image Classification**\n\n**1. Validate Domain Scope and Benchmark Rigor (SIGN-DOM)**\n*   **Reject Low-Complexity Validation:** Do not accept MNIST or similar low-dimensional datasets as sufficient proof of efficacy. Explicitly require validation on complex, high-stakes benchmarks such as CIFAR-10, ImageNet, or domain-specific datasets (e.g., medical imaging, autonomous driving) to establish practical impact.\n*   **Assess Real-World Applicability:** Critically evaluate whether the pairing strategy addresses challenges in high-stakes domains. If the work relies solely on simple benchmarks, flag it as having limited practical value and demand extension to complex scenarios where data scarcity or class imbalance is critical.\n\n**2. Demand Rigorous Quantitative Validation (SIGN-BRD)**\n*   **Reject Qualitative Claims:** Dismiss unsupported assertions of \"intuitiveness,\" \"interpretability,\" or \"naturalness\" of the paired samples. Require rigorous quantitative comparisons against established baselines (e.g., standard augmentation pipelines, GAN-based synthesis, or other pairing methods).\n*   **Verify Fundamental Tension:** Ensure the identified problem (e.g., data scarcity vs. overfitting, or geometric robustness vs. adversarial vulnerability) is a fundamental, community-wide challenge rather than a niche artifact. The contribution must address a broad relevance issue, not just a specific dataset quirk.\n\n**3. Contextualize State-of-the-Art (SIGN-SOT)**\n*   **Distinguish Analysis from Method:** Clearly differentiate between diagnostic observations and methodological improvements. Do not award SOTA scores for analytical insights that do not propose a new, superior method.\n*   **Position Against Current SOTA:** Ensure the proposed pairing technique is explicitly compared against current state-of-the-art augmentation methods. The paper must demonstrate a meaningful advancement over existing techniques, not just a novel perspective on existing data.\n\n**4. Assess Impact and Ethical Implications (SIGN-IMP)**\n*   **Mandate Deployment Context:** Require discussion of real-world deployment implications, particularly for safety-critical systems. Flag papers lacking this context as having limited practical impact.\n*   **Evaluate Societal and Ethical Risks:** Scrutinize potential risks associated with the augmentation process, including:\n    *   **Fairness:** Does the pairing strategy introduce or exacerbate biases across demographic groups?\n    *   **Misleading Explanations:** If the method affects model interpretability, assess the risk of misleading downstream users.\n    *   **Environmental Cost:** Consider the computational and environmental overhead of generating paired samples compared to standard augmentation.\n*   **Require Mitigation Strategies:** If risks are identified, the authors must propose concrete mitigations or discuss limitations in the context of real-world safety and ethics."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+      "program_version": "candidate-0003",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 3108,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 13.277915623039007,
+        "prompt_chars": 8253,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "ff710a3c66bb232b344f99963a685b44c8baa192aba131e95f6af6f39611d4d4"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "ceca6397b3b165991e632120f65353796db508f69b31dfd086d275c378b84f98",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes \"SamplePairing,\" a simple data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors demonstrate that this method significantly reduces validation error rates on standard benchmarks (ILSVRC 2012, CIFAR-10, CIFAR-100, SVHN) and is particularly effective when the training set size is limited. The technique is presented as orthogonal to other augmentation methods and regularization techniques, with a specific focus on its utility for data-scarce scenarios such as medical imaging.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses the fundamental and broadly important challenge of overfitting in deep learning, particularly in data-scarce regimes, which is a critical concern across multiple research areas including computer vision and medical AI.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates strong domain relevance for image classification, showing consistent improvements across diverse datasets (ILSVRC, CIFAR, SVHN) and explicitly highlighting its value for specialized fields like medical imaging where training data is limited.\n  evidence_anchors: [SRC-001, SRC-003, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The paper reports substantial and consistent performance gains over the baseline (no SamplePairing), with validation error reductions ranging from 3.05% to 28.74% across different datasets and metrics, indicating a significant improvement over the standard training protocol used as the baseline.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The paper lacks a discussion on the practical and societal implications of the method, such as potential biases introduced by random pairing, computational overhead, or specific risks in high-stakes applications like medical diagnosis, despite claiming relevance to such domains.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a section discussing the potential societal impacts, including fairness considerations (e.g., does pairing exacerbate class imbalance or demographic biases?) and practical deployment constraints (e.g., computational cost, impact on model interpretability in safety-critical systems).\n\nKey questions for the authors:\n- How does the random pairing strategy affect the fairness of the model, particularly in the presence of class imbalance or demographic biases in the training data?\n- What are the computational and environmental costs of implementing SamplePairing compared to standard data augmentation techniques, and how does this impact its scalability in real-world deployments?\n- Can you provide more concrete evidence or case studies demonstrating the method's effectiveness in a real-world medical imaging task, rather than just stating its potential value?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "candidate-0003",
+  "schema_version": "research-core-v2-artifact-v1"
+}

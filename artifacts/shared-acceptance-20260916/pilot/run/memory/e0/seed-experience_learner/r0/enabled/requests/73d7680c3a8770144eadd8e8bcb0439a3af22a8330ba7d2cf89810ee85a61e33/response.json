@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"trigger\": \"Paper involves adversarial robustness, security, or dual-use technologies but lacks a dedicated Broader Impact or Ethical Considerations section.\",\n  \"review_heuristic\": \"Verify if the paper explicitly discusses the societal, security, or ethical implications of the research, particularly regarding dual-use potential (e.g., attacks vs. defenses) and the consequences of specific robustness trade-offs.\",\n  \"evidence_to_check\": \"Check for the presence of a 'Broader Impact', 'Ethical Considerations', or 'Societal Impact' section. Look for discussions on potential misuse, security implications, or responsible deployment in the introduction, conclusion, or a dedicated subsection.\",\n  \"failure_mode\": \"Missing or boilerplate impact statements; failure to address dual-use risks or security implications inherent in adversarial robustness research.\",\n  \"why_it_matters\": \"Adversarial robustness research has direct security implications. Failing to discuss these impacts violates conference policies on responsible AI and broader impact, and overlooks potential harms or misuse scenarios that are critical for ethical compliance.\",\n  \"reviewer_dimension\": \"POL\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789584917,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a14bca16ca5859f4",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 238,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1944,
+      "prompt_tokens_details": null,
+      "total_tokens": 2182
+    }
+  },
+  "raw_model_output": "{\n  \"trigger\": \"Paper involves adversarial robustness, security, or dual-use technologies but lacks a dedicated Broader Impact or Ethical Considerations section.\",\n  \"review_heuristic\": \"Verify if the paper explicitly discusses the societal, security, or ethical implications of the research, particularly regarding dual-use potential (e.g., attacks vs. defenses) and the consequences of specific robustness trade-offs.\",\n  \"evidence_to_check\": \"Check for the presence of a 'Broader Impact', 'Ethical Considerations', or 'Societal Impact' section. Look for discussions on potential misuse, security implications, or responsible deployment in the introduction, conclusion, or a dedicated subsection.\",\n  \"failure_mode\": \"Missing or boilerplate impact statements; failure to address dual-use risks or security implications inherent in adversarial robustness research.\",\n  \"why_it_matters\": \"Adversarial robustness research has direct security implications. Failing to discuss these impacts violates conference policies on responsible AI and broader impact, and overlooks potential harms or misuse scenarios that are critical for ethical compliance.\",\n  \"reviewer_dimension\": \"POL\"\n}",
+  "tokens": {
+    "input_tokens": 1944,
+    "max_model_len": 65536
+  }
+}

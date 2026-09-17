@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Quality (QUAL)**\n\n**1. Methodological Validity (QUAL-MET)**\n*   **Core Logic Check:** Verify that the core mathematical premise aligns with the problem structure. Ensure metrics or loss functions are correctly defined relative to the input features, not just labels or global sequences. If a method claims to capture specific data properties (e.g., order, non-convexity), the derivation must explicitly show how these are incorporated into the optimization or splitting criteria.\n*   **Theoretical Consistency:** For theoretical papers, check if the analysis of learning dynamics (e.g., eigenspace, regularization effects) correctly identifies the mechanisms preventing failure modes (e.g., collapse, divergence). Ensure assumptions (e.g., linear networks, specific loss forms) are clearly stated and their limitations acknowledged.\n\n**2. Experimental Adequacy (QUAL-EXP)**\n*   **Scale and Complexity:** Critically evaluate if datasets and architectures are sufficient to support the claims. Small-scale datasets (e.g., CIFAR-10, MNIST, UCI) or simple backbones (e.g., VGG11) may not validate scalability or robustness claims for complex models. Demand experiments on larger, more complex benchmarks (e.g., ImageNet, ResNet-50) if the method claims generalizability.\n*   **Relevance to Motivation:** Ensure experiments directly test the paper’s primary motivation. If a method is designed for sequential, temporal, or non-i.i.d. data, using standard i.i.d. datasets is a critical flaw. Similarly, for federated or distributed learning, ensure the experimental setup reflects the specific challenges (e.g., non-IID data, unbounded losses) rather than just standard centralized benchmarks.\n*   **Baseline Strength:** Assess if baselines are state-of-the-art and appropriate. Comparing only against standard, older methods (e.g., Random Forest, basic CNNs) without including recent, relevant alternatives (e.g., sequence-aware models, other SSL variants) weakens the contribution.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Detail Completeness:** Require explicit reporting of all hyperparameters (learning rates, weight decay, batch sizes, seeds) and implementation specifics. Vague descriptions of algorithms or missing code availability are significant weaknesses.\n*   **Code Availability:** Strongly recommend or require public code repositories to allow independent verification, especially for novel theoretical methods or complex training dynamics.\n\n**4. Statistical Rigor (QUAL-STA)**\n*   **Variance Reporting:** Single-run results are insufficient. Mandate reporting of mean and standard deviation (or confidence intervals) over multiple independent runs (e.g., 5–10+ seeds).\n*   **Significance Testing:** For small performance margins, require statistical significance tests (e.g., paired t-tests, Wilcoxon) to distinguish meaningful improvements from random variance.\n\n**5. Comparative Context (QUAL-CMP)**\n*   **Positioning:** Ensure the work is positioned against the current landscape. Missing comparisons to recent, relevant methods that address similar problems (e.g., other non-contrastive SSL methods, robust equivariant networks) limits the paper’s impact.\n*   **Ablation and Sensitivity:** Check if the paper investigates sensitivity to key hyperparameters or architectural choices. Lack of ablation studies can obscure the source of performance gains.\n\n**General Recommendation Strategy:**\n*   **Reject** if core methodology is flawed or experiments fundamentally fail to test the main claim.\n*   **Weak Accept/Reject** if methodology is sound but experiments are limited in scale, lack statistical rigor, or miss key baselines.\n*   **Accept** if theory is consistent, experiments are robust and scalable, and reproducibility is high.",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789582555,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a356e3a03427d12d",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 784,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2834,
+      "prompt_tokens_details": null,
+      "total_tokens": 3618
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Quality (QUAL)**\n\n**1. Methodological Validity (QUAL-MET)**\n*   **Core Logic Check:** Verify that the core mathematical premise aligns with the problem structure. Ensure metrics or loss functions are correctly defined relative to the input features, not just labels or global sequences. If a method claims to capture specific data properties (e.g., order, non-convexity), the derivation must explicitly show how these are incorporated into the optimization or splitting criteria.\n*   **Theoretical Consistency:** For theoretical papers, check if the analysis of learning dynamics (e.g., eigenspace, regularization effects) correctly identifies the mechanisms preventing failure modes (e.g., collapse, divergence). Ensure assumptions (e.g., linear networks, specific loss forms) are clearly stated and their limitations acknowledged.\n\n**2. Experimental Adequacy (QUAL-EXP)**\n*   **Scale and Complexity:** Critically evaluate if datasets and architectures are sufficient to support the claims. Small-scale datasets (e.g., CIFAR-10, MNIST, UCI) or simple backbones (e.g., VGG11) may not validate scalability or robustness claims for complex models. Demand experiments on larger, more complex benchmarks (e.g., ImageNet, ResNet-50) if the method claims generalizability.\n*   **Relevance to Motivation:** Ensure experiments directly test the paper’s primary motivation. If a method is designed for sequential, temporal, or non-i.i.d. data, using standard i.i.d. datasets is a critical flaw. Similarly, for federated or distributed learning, ensure the experimental setup reflects the specific challenges (e.g., non-IID data, unbounded losses) rather than just standard centralized benchmarks.\n*   **Baseline Strength:** Assess if baselines are state-of-the-art and appropriate. Comparing only against standard, older methods (e.g., Random Forest, basic CNNs) without including recent, relevant alternatives (e.g., sequence-aware models, other SSL variants) weakens the contribution.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Detail Completeness:** Require explicit reporting of all hyperparameters (learning rates, weight decay, batch sizes, seeds) and implementation specifics. Vague descriptions of algorithms or missing code availability are significant weaknesses.\n*   **Code Availability:** Strongly recommend or require public code repositories to allow independent verification, especially for novel theoretical methods or complex training dynamics.\n\n**4. Statistical Rigor (QUAL-STA)**\n*   **Variance Reporting:** Single-run results are insufficient. Mandate reporting of mean and standard deviation (or confidence intervals) over multiple independent runs (e.g., 5–10+ seeds).\n*   **Significance Testing:** For small performance margins, require statistical significance tests (e.g., paired t-tests, Wilcoxon) to distinguish meaningful improvements from random variance.\n\n**5. Comparative Context (QUAL-CMP)**\n*   **Positioning:** Ensure the work is positioned against the current landscape. Missing comparisons to recent, relevant methods that address similar problems (e.g., other non-contrastive SSL methods, robust equivariant networks) limits the paper’s impact.\n*   **Ablation and Sensitivity:** Check if the paper investigates sensitivity to key hyperparameters or architectural choices. Lack of ablation studies can obscure the source of performance gains.\n\n**General Recommendation Strategy:**\n*   **Reject** if core methodology is flawed or experiments fundamentally fail to test the main claim.\n*   **Weak Accept/Reject** if methodology is sound but experiments are limited in scale, lack statistical rigor, or miss key baselines.\n*   **Accept** if theory is consistent, experiments are robust and scalable, and reproducibility is high.",
+  "tokens": {
+    "input_tokens": 2834,
+    "max_model_len": 65536
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "config_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/protocol.json",
+  "document": {
+    "claim_scope": "development-only; no sealed test execution or generalization claim",
+    "deduplication": {
+      "family_audit": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/family-audit.json",
+        "sha256": "3afd496348bf31165269fdf43d27a50d72160b9772edcf0ca4ab9d3419715db3"
+      },
+      "policy": "identity-family-normalized-content-v1"
+    },
+    "embedding": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "device": "cpu",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "evolution": {
+      "attempts": 1,
+      "max_reflection_tokens": 16384,
+      "mutable_scope": "memory",
+      "parent_temperature": 0.5,
+      "random_seed": 20260916,
+      "reflection_scope": "scores_and_traces",
+      "rotating_sample_size": 1
+    },
+    "experiment_id": "shared-memory-acceptance-20260916",
+    "failure_policy": {
+      "candidate_failures": 3,
+      "candidate_repairs": 2,
+      "request_attempts": 2,
+      "round_repairs": 5
+    },
+    "generation": {
+      "input_max_tokens": 49152,
+      "memory_build_llm_calls": 2,
+      "memory_max_tokens": 4096,
+      "memory_query_mode": "instruction",
+      "memory_read_llm_calls": 2,
+      "meta_max_tokens": 16384,
+      "native_max_tokens": 8192,
+      "native_num_fewshot": 0,
+      "paper_context_max_chars": null,
+      "review_max_tokens": 8192
+    },
+    "historical_exposure_manifests": [
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/historical-exposure.json",
+        "sha256": "986965beedc7a87a28edbf2cb4a7aff5e9d8dbc697e005fda99ebe1eb238ecfc"
+      }
+    ],
+    "model": {
+      "api_key_env": "OPENAI_API_KEY",
+      "base_url": "http://127.0.0.1:18001/v1",
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "max_num_seqs": 8,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "non_memory_conditions": {
+      "final_mode": "meta",
+      "frozen_s2": {},
+      "review_policy_program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/seeds/vector_search.py",
+        "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "s2_mode": "off"
+    },
+    "protocol": "shared-memory-experiment-v1",
+    "scoring_config": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/deployment/original-coco/scoring.frozen.json",
+      "sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391"
+    },
+    "splits": {
+      "build": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/build/manifest.json",
+        "sha256": "6cb2383cc9ee782897397346d7deb2becf1f95816d82506cba206a2632fc68e2"
+      },
+      "rotating": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/rotating/manifest.json",
+        "sha256": "b83489d80e03cf08352db5250a3b88c3493f88ac188bf17d02df777b93de6518"
+      },
+      "sealed_test": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/sealed_test/manifest.json",
+        "sha256": "69bd711252bf61a2503e95f64f6512791d62b320ed554e924e86f01ace012ce1"
+      },
+      "static": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/static/manifest.json",
+        "sha256": "9865532404bb343109c00445cba1de03abe8b36f598f9870b4374cca5201fb8b"
+      }
+    },
+    "status": "frozen"
+  },
+  "protocol": "shared-memory-experiment-receipt-v1",
+  "protocol_sha256": "d382248b2c5e41b276961a78a20ed31111003d07c2dc537d7d4e55891995cdf4",
+  "split_identities": {
+    "build": [
+      {
+        "assets": {
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/build/papers/Ske25sC9FQ.json",
+            "sha256": "813b32e81dcdc6a9f8d3c29513e7adc37be243191f9d6a157a18a7cfa905283e"
+          }
+        },
+        "content_sha256": "605f875599c82cdac4fa172e407003dc17751e32d9a12c0ead0ab0db6a8f332f",
+        "normalized_content_sha256": "5019663751f4f3c8f8b49d401d58be3c4bc0cff4a165829b338d69c258587d9f",
+        "paper_id": "Ske25sC9FQ",
+        "source_partition": "build",
+        "title": "Robustness and Equivariance of Neural Networks",
+        "version_ids": [
+          "Ske25sC9FQ"
+        ],
+        "work_family": "coco-title-6211e91945c4684d37434e754afad6e0053295c05850609bb1d10d65dd9013d9"
+      }
+    ],
+    "rotating": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/rotating/references.json",
+            "sha256": "045fe89c8aa9f3a3ff73ef2151befb430758a4a1ed546947a703de734a63acb5"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/rotating/papers/S1EzRgb0W.json",
+            "sha256": "84c795d6abefc74e37f3d4b08ef77eff9be1539e4b1ff91efbe564b2551908d0"
+          }
+        },
+        "content_sha256": "26423f5ff695eb0d60e0c9bf81b33997bb4f54c7e378376ada93fa3aea684d32",
+        "normalized_content_sha256": "4cf03add19bc0e85c2cbb8118b900fce270c14e27636bc896dec22adf82bc136",
+        "paper_id": "S1EzRgb0W",
+        "source_partition": "rotating",
+        "title": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples",
+        "version_ids": [
+          "S1EzRgb0W"
+        ],
+        "work_family": "coco-title-37eecf0337d78c859875afeee24dbf28b150811f89d0be74d99c7a07d2b77a5f"
+      }
+    ],
+    "sealed_test": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/sealed_test/references.json",
+            "sha256": "ab5e9faad2d037da0870332826fc9091279831907c931ced6e9de026a5497bd4"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/sealed_test/papers/--rcOeCKRh.json",
+            "sha256": "4144ed30b508a6818c4a0a4b9100f0604feb30d44fb9d36db236b4dca16f8611"
+          }
+        },
+        "content_sha256": "e2865f83fdf2e88509aa2be677bb4fccb2676a425f6ea7364b6ffcc5b581ddcf",
+        "normalized_content_sha256": "a69c87082179945446d3152d30f07f41cde50b74502da94764f29f1a4fab9fbd",
+        "paper_id": "--rcOeCKRh",
+        "source_partition": "sealed_test",
+        "title": "CROSS-SUPERVISED OBJECT DETECTION",
+        "version_ids": [
+          "--rcOeCKRh"
+        ],
+        "work_family": "coco-title-52489dd70cd03bdc24601753061f08b7cc65bb40c431426b984828fa577dfef9"
+      }
+    ],
+    "static": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/static/references.json",
+            "sha256": "32f9b5ec9e06c62ca7824cabce9363b2d916b0c75fbc0dad9e356d296428c6e5"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/static/papers/-EHqoysUYLx.json",
+            "sha256": "8935e96699560afe8785ba382f2d8d017ee04897a0a958b4df4eac862348f6d7"
+          }
+        },
+        "content_sha256": "b205f7406d6a6521d8fba511fb897182e9e5571b21b90f6582b5ee11d7f75f23",
+        "normalized_content_sha256": "ac2137686c3caee340dc0e6dc934b353bb436dcef28f23e1b63ecd358c3db255",
+        "paper_id": "-EHqoysUYLx",
+        "source_partition": "static",
+        "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses",
+        "version_ids": [
+          "-EHqoysUYLx"
+        ],
+        "work_family": "coco-title-13349fb631e78c513f5440f7046f3978c6650f21c27cd4855e1ae6cffa569058"
+      }
+    ]
+  }
+}

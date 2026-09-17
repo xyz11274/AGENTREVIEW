@@ -13,10 +13,32 @@ from typing import Any, Protocol
 
 from .config import ModelConfig
 from .judge_lease import Qwen27BModeLease
+from .request_admission import profile as execution_profile, request_slot
 
 
 class EmptyCompletionOutput(RuntimeError):
     """The endpoint returned no usable assistant text for one request."""
+
+
+class IncompleteCompletionOutput(RuntimeError):
+    """A raw response is evidence, but is not usable downstream text."""
+
+    def __init__(self, message: str, completion: dict[str, Any]):
+        super().__init__(message)
+        self.completion = completion
+
+
+def validate_completion(response: Any, *, component: str) -> dict[str, Any]:
+    receipt = response.model_dump(mode="json")
+    choices = receipt.get("choices", [])
+    if len(choices) != 1 or choices[0].get("finish_reason") != "stop":
+        raise IncompleteCompletionOutput(
+            f"{component} requires one complete response; finish_reason="
+            f"{[choice.get('finish_reason') for choice in choices]}", receipt)
+    content = choices[0]["message"].get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise IncompleteCompletionOutput(f"{component} returned an empty response", receipt)
+    return receipt
 
 
 class CompletionClient(Protocol):
@@ -67,7 +89,7 @@ class OpenAICompletionClient:
             config.base_url.rstrip("/") == "http://127.0.0.1:18001/v1"
             and config.model == "qwen3.8-27b"
         ):
-            self._mode_lease = Qwen27BModeLease("reviewer")
+            self._mode_lease = Qwen27BModeLease("judge" if execution_profile() else "reviewer")
         api_key = os.environ.get(config.api_key_env) or "local-not-required"
         try:
             hostname = urlparse(config.base_url).hostname or ""
@@ -157,6 +179,7 @@ class OpenAICompletionClient:
         component: str,
         response_format: dict[str, Any] | None = None,
     ) -> str:
+        self.last_completion = None
         request: dict[str, Any] = {
             "model": self.config.model,
             "messages": messages,
@@ -170,9 +193,9 @@ class OpenAICompletionClient:
         }
         if response_format is not None:
             request["response_format"] = response_format
-        response = self.client.chat.completions.create(
-            **request,
-        )
+        with request_slot(self.config.base_url):
+            response = self.client.chat.completions.create(**request)
+        self.last_completion = validate_completion(response, component=component)
         text = response.choices[0].message.content
         if not isinstance(text, str) or not text.strip():
             raise EmptyCompletionOutput(f"{component} returned an empty response")

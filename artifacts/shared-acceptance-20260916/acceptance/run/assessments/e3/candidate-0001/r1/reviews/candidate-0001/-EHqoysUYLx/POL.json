@@ -1,0 +1,141 @@
+{
+  "created_at": "2026-09-16T16:56:04.260181+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "4c9ac76f6f90c7fa442cb77b7c5cc3c9d11771f74b4e9cc8cabe48af3c30fc83",
+    "request_sha256": "93716f9ca18db61e0d42cda43f007f1133612a9e33b54160c262d42910d1efc1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "89a999a96f9e23579a3d7d437b0a6cdfeb75028c6907469769425110e9a3cc58",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-EHqoysUYLx",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning, specifically addressing the performance for both participating and unparticipating clients under a two-level distribution framework. It derives fast learning rates for bounded losses and extends the analysis to unbounded (sub-Weibull) losses using small-ball methods.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by explicitly marking the submission as \"Anonymous authors\" and \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying acknowledgments.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. While the work is purely theoretical, modern conference standards typically require a statement discussing the societal implications, potential dual-use risks, or ethical constraints of the proposed federated learning frameworks, especially given the sensitivity of federated data.\n  evidence_anchors: [SRC-001, SRC-022]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" or \"Ethical Considerations\" section in the conclusion or as a separate section. Discuss how the theoretical guarantees might influence the deployment of federated learning in sensitive domains (e.g., healthcare) and acknowledge any limitations regarding privacy-preserving mechanisms (like differential privacy) which are not covered in this theoretical analysis.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The paper does not utilize specific real-world datasets or personally identifiable information (PII). The analysis is conducted on abstract mathematical distributions and theoretical assumptions (e.g., meta-distribution P, local distributions D_i), so standard data privacy compliance issues regarding consent or PII removal are not directly applicable.\n  evidence_anchors: [SRC-006, SRC-016]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The content appears original, with proper citation of related works (e.g., Mohri et al., 2019; Chen et al., 2021) and no evidence of plagiarism or dual submission. The theoretical contributions are clearly distinguished from prior art in the Related Work section and Table 1.\n  evidence_anchors: [SRC-021, SRC-022]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not address fairness, bias, or harms to marginalized populations directly, as it is a theoretical study on generalization bounds. However, the lack of discussion on how distributional heterogeneity (a key focus) might exacerbate biases in real-world federated deployments is a minor gap in ethical context, though not a critical flaw for a pure theory paper.\n  evidence_anchors: [SRC-004, SRC-015]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence in the discussion or conclusion noting that while the paper provides generalization bounds, ensuring fairness across heterogeneous client distributions remains a separate, important ethical challenge in practical federated learning.\n\nKey questions for the authors:\n- Did you consider adding a brief statement on the broader societal impact or ethical implications of applying these generalization bounds in sensitive federated learning scenarios?\n- Are there any specific privacy-preserving mechanisms (e.g., differential privacy) that these theoretical bounds are intended to support or complement, and if so, how does the lack of such mechanisms in the current analysis affect the practical ethical deployment?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "26e7536a7c0ef1652a2d0d0128f4a5f62bb39028f3bac611acc277b1c14938f8",
+      "prompt_sha256": "93716f9ca18db61e0d42cda43f007f1133612a9e33b54160c262d42910d1efc1"
+    },
+    "memory": {
+      "always_on_knowledge": "Ground every judgment in the Frozen Paper. Use memory only for general review heuristics.",
+      "context": "[REVIEW EXPERIENCE 687f9b50c2606374891b5fd4374e9ed11d19bba68edb9e5cc5be3ef7d096bcb6]\nVerify double-blind compliance by checking for explicit anonymity markers and scanning for self-identifying text, acknowledgments, or URLs. Assess data privacy by ensuring PII is removed and explicit consent is documented for sensitive datasets, while recognizing standard public benchmarks as generally compliant. Require dedicated sections addressing broader societal, security, and ethical implications, including adversarial robustness concerns. Evaluate dual-use potential to ensure responsible deployment and harm mitigation are discussed. Confirm originality and proper citation to detect plagiarism or dual submission.",
+      "instruction_response": "Synthesize the retrieved review experience into actionable guidance for the current review. Ensure the guidance is general and does not reference specific details from the retrieved papers. Maintain a professional, constructive tone.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "687f9b50c2606374891b5fd4374e9ed11d19bba68edb9e5cc5be3ef7d096bcb6",
+              "role": "POL",
+              "score": 0.4422260835826387
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Federated learning generalization bounds unparticipating clients unbounded losses privacy compliance ethics data usage",
+        "reviewer_dimension": "POL"
+      },
+      "resources": {
+        "completion_chars": 171,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 1.7266231756657362,
+        "prompt_chars": 6316,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "89a999a96f9e23579a3d7d437b0a6cdfeb75028c6907469769425110e9a3cc58"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "a0f7c8d59f51a26512d6d8335d9fbad009f0543b245cb88a5195c8bc3376a848",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "134da23c1f1941be2e6079a2a3b08952edfbbc3645b23c435c8c5e6bb6e1b269",
+  "review_text": "```\nReviewer dimension: POL\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning, specifically addressing the performance for both participating and unparticipating clients under a two-level distribution framework. It derives fast learning rates for bounded losses and extends the analysis to unbounded (sub-Weibull) losses using small-ball methods.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by explicitly marking the submission as \"Anonymous authors\" and \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying acknowledgments.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. While the work is purely theoretical, modern conference standards typically require a statement discussing the societal implications, potential dual-use risks, or ethical constraints of the proposed federated learning frameworks, especially given the sensitivity of federated data.\n  evidence_anchors: [SRC-001, SRC-022]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" or \"Ethical Considerations\" section in the conclusion or as a separate section. Discuss how the theoretical guarantees might influence the deployment of federated learning in sensitive domains (e.g., healthcare) and acknowledge any limitations regarding privacy-preserving mechanisms (like differential privacy) which are not covered in this theoretical analysis.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The paper does not utilize specific real-world datasets or personally identifiable information (PII). The analysis is conducted on abstract mathematical distributions and theoretical assumptions (e.g., meta-distribution P, local distributions D_i), so standard data privacy compliance issues regarding consent or PII removal are not directly applicable.\n  evidence_anchors: [SRC-006, SRC-016]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The content appears original, with proper citation of related works (e.g., Mohri et al., 2019; Chen et al., 2021) and no evidence of plagiarism or dual submission. The theoretical contributions are clearly distinguished from prior art in the Related Work section and Table 1.\n  evidence_anchors: [SRC-021, SRC-022]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not address fairness, bias, or harms to marginalized populations directly, as it is a theoretical study on generalization bounds. However, the lack of discussion on how distributional heterogeneity (a key focus) might exacerbate biases in real-world federated deployments is a minor gap in ethical context, though not a critical flaw for a pure theory paper.\n  evidence_anchors: [SRC-004, SRC-015]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence in the discussion or conclusion noting that while the paper provides generalization bounds, ensuring fairness across heterogeneous client distributions remains a separate, important ethical challenge in practical federated learning.\n\nKey questions for the authors:\n- Did you consider adding a brief statement on the broader societal impact or ethical implications of applying these generalization bounds in sensitive federated learning scenarios?\n- Are there any specific privacy-preserving mechanisms (e.g., differential privacy) that these theoretical bounds are intended to support or complement, and if so, how does the lack of such mechanisms in the current analysis affect the practical ethical deployment?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer POL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+    "task_id": "POL"
+  },
+  "role": "POL",
+  "run_id": "candidate-0001",
+  "schema_version": "research-core-v2-artifact-v1"
+}

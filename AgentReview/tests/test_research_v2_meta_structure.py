@@ -91,6 +91,8 @@ class MetaStructureTest(unittest.TestCase):
             split = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(split)
             parts, _, _ = split.build_prompt(text)
+        self.assertFalse(any(part.lstrip().startswith("#") for part in parts),
+                         "CoCo must not receive standalone decorative headings as opinions")
         for statement in NOVELTY_POINTS:
             matching_parts = [part for part in parts if statement in part]
             self.assertEqual(len(matching_parts), 1)

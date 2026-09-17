@@ -2,17 +2,96 @@
 
 from contextlib import contextmanager
 from pathlib import Path
+import copy
+import threading
 
 import pytest
 
 import test_research_v2_experiment_protocol as protocol_fixtures
 import test_research_v2 as review_fixtures
+from test_research_v2_development_coco import fixture_integrity
 from agentreview.research_v2 import development_coco as coco
 from agentreview.research_v2.constants import ROLES
 from agentreview.research_v2.experiment_protocol import load_experiment_protocol
 from agentreview.research_v2.io import atomic_write_json, read_json, write_immutable_jsonl
 from agentreview.research_v2.memory import seed_program_path
 from agentreview.research_v2.shared_experiment import LocalSharedBackend, binding
+
+
+def test_composed_receipt_checks_child_evidence_and_rejects_rehashed_tampering(backend, monkeypatch):
+    from agentreview.research_v2.cohort_receipt import compose
+    from agentreview.research_v2.io import value_sha256
+    install_model_scores(monkeypatch)
+    candidate_recipe = recipe(backend)
+    result = backend.assess(candidate_recipe, epoch=0)
+    child = read_json(result["assessment"]["path"])
+    receipt = compose(children=[result["assessment"]], review_manifest=Path(child["inputs"]["reviews"]["path"]),
+        candidate_identity=result["identity"], output=backend.root / "composed")
+    coco.validate_assessment_receipt(receipt, expected_paper_ids=candidate_recipe["paper_ids"])
+    for mutate in (
+        lambda value: value.update(mean_score=4),
+        lambda value: value["candidate_identity"].update(memory_enabled=True),
+        lambda value: value.update(children=[]),
+        lambda value: value["rows"][0]["metrics"].update({"Paper.": 5}),
+    ):
+        invalid = copy.deepcopy(receipt)
+        mutate(invalid)
+        invalid["receipt_id"] = value_sha256({k:v for k,v in invalid.items() if k != "receipt_id"})
+        with pytest.raises(ValueError):
+            coco.validate_assessment_receipt(invalid)
+
+
+def test_two_papers_overlap_coco_without_sharing_role_state(backend, monkeypatch):
+    from agentreview.research_v2 import shared_experiment as shared
+    row = backend.protocol.records("static")[0]
+    second = copy.deepcopy(row)
+    second["paper_id"] = "second-paper"
+    paper = read_json(row["assets"]["paper"]["path"])
+    paper.update(paper_id="second-paper", title="Second independent paper")
+    second["assets"]["paper"] = binding(atomic_write_json(backend.root / "second.json", paper))
+    ids = [row["paper_id"], second["paper_id"]]
+    benchmark = write_immutable_jsonl(backend.root / "benchmark.jsonl", [{"id": pid} for pid in ids])
+    human = write_immutable_jsonl(backend.root / "human.jsonl", [{"id": pid} for pid in ids])
+    selection = atomic_write_json(backend.root / "selection.json", dict.fromkeys(ids, "Reviewer 1"))
+    reference = atomic_write_json(backend.root / "references.json", {"protocol": coco.REFERENCE_MANIFEST_PROTOCOL,
+        "partition": "static", "paper_ids": ids, "benchmark_files": [binding(benchmark)],
+        "complete_human_classify_file": binding(human), "reviewer_selection_file": binding(selection)})
+    for record in (row, second):
+        record["assets"]["coco_reference"] = binding(reference)
+    backend.protocol.splits["static"] = [row, second]
+    backend.execution = {"paper_workers": 2}
+    original_review, original_meta = shared.run_specialist_review, shared.generate_final_review
+    barrier = threading.Barrier(2)
+    first_scored = threading.Event()
+    calls = install_model_scores(monkeypatch)
+    original_stage = coco._run_stage
+    def review(**kwargs):
+        if kwargs["role"] == "QUAL":
+            barrier.wait(timeout=10)
+        return original_review(**kwargs)
+    def meta(**kwargs):
+        if read_json(kwargs["paper_path"])["paper_id"] == "second-paper":
+            assert first_scored.wait(timeout=20), "CoCo must start before all paper generation completes"
+        return original_meta(**kwargs)
+    def stage(**kwargs):
+        result = original_stage(**kwargs)
+        if kwargs["stage"] == "evaluation":
+            first_scored.set()
+        return result
+    monkeypatch.setattr(shared, "run_specialist_review", review)
+    monkeypatch.setattr(shared, "generate_final_review", meta)
+    monkeypatch.setattr(coco, "_run_stage", stage)
+    candidate_recipe = recipe(backend)
+    candidate_recipe["paper_ids"] = ids
+    result = backend.assess(candidate_recipe, epoch=0)
+    receipt = backend.validate(result, recipe=candidate_recipe, epoch=0)
+    assert len(receipt["children"]) == 2
+    assert calls == [(0, "final"), (0, "final")]
+    for role in ROLES:
+        refs = result["identity"]["role_reviews"][role]
+        assert [ref["paper_id"] for ref in refs] == ids
+        assert len({ref["path"] for ref in refs}) == 2
+        assert len({read_json(ref["path"])["memory_snapshot_id"] for ref in refs}) == 1
 
 
 @pytest.fixture
@@ -34,7 +113,11 @@ def backend(monkeypatch):
                 "complete_human_classify_file": binding(human), "reviewer_selection_file": binding(selection)}, immutable=False)
             fixture.mutate_row(split, lambda row: row["assets"].update(coco_reference=binding(reference)))
         scoring = fixture.root / "scoring.json"
-        atomic_write_json(scoring, {"source_files": [], "coco_root": "/data0/xyj/shengao/CoCoReviewBench"}, immutable=False)
+        model_dir = fixture.root / "model"
+        model_dir.mkdir()
+        (model_dir / "weights").write_bytes(b"test frozen model")
+        atomic_write_json(scoring, {"source_files": [], "coco_root": "/data0/xyj/shengao/CoCoReviewBench",
+            "bert_score_model": coco._model_identity(model_dir), "services": {}}, immutable=False)
         fixture.config["scoring_config"] = binding(scoring)
         fixture.rewrite_config()
         protocol = load_experiment_protocol(fixture.config_path)
@@ -64,6 +147,7 @@ def install_model_scores(monkeypatch, *, fail_role=None):
         counts = dict.fromkeys(coco.COLUMNS, 1)
         rows = [{"status": "complete", "metrics": metrics, "metric_counts": counts} for _ in request["paper_ids"]]
         raw = {"request": binding(request_path), "paper_ids": request["paper_ids"], "table_1_summary": coco.aggregate_paper_scores(rows),
+            "integrity": fixture_integrity(output, stage, request["paper_ids"]),
             "papers": {paper: {"table_1_summary": {"absolute_scores": metrics, "paper_counts": counts},
                 "paper_judge_scores": {"success": True, "average": score}, "category_judge_scores": {}}
                 for paper in request["paper_ids"]}}
@@ -77,19 +161,16 @@ def recipe(backend):
             "paper_ids": ["static-paper"], "memory_enabled": False}
 
 
-def test_shared_backend_uses_final_paper_fitness_and_independent_role_receipts(backend, monkeypatch):
+def test_shared_backend_scores_only_final_review_with_independent_role_memory(backend, monkeypatch):
     calls = install_model_scores(monkeypatch)
     candidate_recipe = recipe(backend)
     result = backend.assess(candidate_recipe, epoch=0)
     receipt = backend.validate(result, recipe=candidate_recipe, epoch=0)
     assert result["static_score"] == 2.0
     assert receipt["review_target"] == "final"
-    assert set(result["role_diagnostics"]) == set(ROLES)
-    assert calls == [(0, "final"), *((0, f"role:{role}") for role in ROLES)]
-    for role, artifact in result["role_diagnostics"].items():
-        diagnostic = coco.validate_assessment_receipt(artifact["path"])
-        assert diagnostic["mean_score"] == 5.0
-        assert diagnostic["review_target"] == f"role:{role}"
+    assert result["role_diagnostics"] == {}
+    assert calls == [(0, "final")]
+    assert set(result["identity"]["role_reviews"]) == set(ROLES)
     assert len({ref["path"] for ref in result["identity"]["snapshots"].values()}) == 5
     assert len({read_json(ref["path"])["program_sha256"] for ref in result["identity"]["snapshots"].values()}) == 1
 
@@ -102,21 +183,18 @@ def test_fresh_epoch_rebuilds_all_review_and_scoring_artifacts(backend, monkeypa
     backend.validate(second, recipe=candidate_recipe, epoch=1)
     assert first["assessment"]["path"] != second["assessment"]["path"]
     assert first["identity"]["snapshots"]["QUAL"]["path"] != second["identity"]["snapshots"]["QUAL"]["path"]
-    assert len(calls) == 12
+    assert len(calls) == 2
     with pytest.raises(ValueError, match="epoch"):
         backend.validate(first, recipe=candidate_recipe, epoch=1)
 
 
-def test_role_scoring_failure_cannot_return_a_rankable_candidate(backend, monkeypatch):
+def test_role_scoring_is_never_called(backend, monkeypatch):
     calls = install_model_scores(monkeypatch, fail_role="role:QUAL")
     candidate_recipe = recipe(backend)
-    with pytest.raises(coco.DevelopmentCoCoFailure):
-        backend.assess(candidate_recipe, epoch=0)
-    main = backend.root / "assessments/e0/seed-vector_search/r0/coco/assessment.json"
-    assert coco.validate_assessment_receipt(main)["mean_score"] == 2.0
-    failed = read_json(backend.root / "assessments/e0/seed-vector_search/r0/role-coco/QUAL/assessment.json")
-    assert failed["status"] == "paused" and failed["mean_score"] is None
-    assert calls == [(0, "final"), (0, "role:QUAL")]
+    result = backend.assess(candidate_recipe, epoch=0)
+    assert backend.validate(result, recipe=candidate_recipe, epoch=0)["mean_score"] == 2.0
+    assert calls == [(0, "final")]
+    assert not list(backend.root.rglob("role-coco"))
 
 
 def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypatch):

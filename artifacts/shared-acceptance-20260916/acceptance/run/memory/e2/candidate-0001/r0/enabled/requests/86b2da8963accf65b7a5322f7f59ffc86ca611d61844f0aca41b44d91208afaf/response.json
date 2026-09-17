@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"topic\": \"CLAR Review Heuristics\",\n  \"content\": \"1. **Writing & Terminology (CLAR-WRT)**: Check for grammatical errors, typos, and inconsistent terminology (e.g., capitalization, abbreviations). Ensure experimental setups and hyperparameters are detailed enough for reproducibility, including specific architecture changes for 'parameter equivalent' models. 2. **Notation (CLAR-NOT)**: Verify that mathematical notation is consistent and variables are defined before use. Watch for symbol overloading (e.g., using the same variable for input images and rotation angles). 3. **Figures (CLAR-FIG)**: Ensure figure captions are complete, defining axes, legends, and specific conditions for all subplots. Check for clear labels in multi-panel figures. 4. **Organization**: Evaluate the logical flow of the results section. Results should be grouped logically (e.g., by attack type or network type) rather than scattered. Consider suggesting summary tables for key results to aid comprehension.\",\n  \"reviewer_name\": \"CLAR Specialist\",\n  \"reviewer_dimension\": \"CLAR\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789576747,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a17bcdfb265afabd",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 239,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2024,
+      "prompt_tokens_details": null,
+      "total_tokens": 2263
+    }
+  },
+  "raw_model_output": "{\n  \"topic\": \"CLAR Review Heuristics\",\n  \"content\": \"1. **Writing & Terminology (CLAR-WRT)**: Check for grammatical errors, typos, and inconsistent terminology (e.g., capitalization, abbreviations). Ensure experimental setups and hyperparameters are detailed enough for reproducibility, including specific architecture changes for 'parameter equivalent' models. 2. **Notation (CLAR-NOT)**: Verify that mathematical notation is consistent and variables are defined before use. Watch for symbol overloading (e.g., using the same variable for input images and rotation angles). 3. **Figures (CLAR-FIG)**: Ensure figure captions are complete, defining axes, legends, and specific conditions for all subplots. Check for clear labels in multi-panel figures. 4. **Organization**: Evaluate the logical flow of the results section. Results should be grouped logically (e.g., by attack type or network type) rather than scattered. Consider suggesting summary tables for key results to aid comprehension.\",\n  \"reviewer_name\": \"CLAR Specialist\",\n  \"reviewer_dimension\": \"CLAR\"\n}",
+  "tokens": {
+    "input_tokens": 2024,
+    "max_model_len": 65536
+  }
+}

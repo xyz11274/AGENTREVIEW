@@ -1,0 +1,776 @@
+{
+  "aggregate": {
+    "absolute_scores": {
+      "Average": 3.1208333333333336,
+      "BERT.": 81.3039630651474,
+      "BLEU": 0.2628096787091525,
+      "Clarity": 4.416666666666666,
+      "Complete.": 275.0,
+      "Correct.": 2.916666666666667,
+      "Ground.": 3.5,
+      "Paper.": 4.0,
+      "ROUGE-L": 7.461495145510913,
+      "Thoro.": 1.9166666666666667,
+      "Verify.": 2.8333333333333335
+    },
+    "paper_counts": {
+      "Average": 2,
+      "BERT.": 2,
+      "BLEU": 2,
+      "Clarity": 2,
+      "Complete.": 2,
+      "Correct.": 2,
+      "Ground.": 2,
+      "Paper.": 2,
+      "ROUGE-L": 2,
+      "Thoro.": 2,
+      "Verify.": 1
+    }
+  },
+  "candidate_id": "feedback-0002-e0",
+  "candidate_identity": {
+    "candidate": {
+      "candidate_id": "candidate-0001",
+      "change": "Refactored KnowledgeBase to use a two-stage read process (retrieval + summarization) to strictly respect the read_llm_calls=2 budget. Added a build_llm_calls budget tracker to KnowledgeBase to enforce the constraint that one call is reserved for host induction and only the remainder is available for write operations. Updated KnowledgeItem and Query schemas to include a 'source' field for traceability. Refined instruction constants to explicitly guide the LLM on the distinction between guidance and evidence, and to enforce the 6000-character limit on read results. Preserved the plan_review function and its imports exactly as required.",
+      "lineage": [
+        "seed-llm_summarizer"
+      ],
+      "parent_id": "seed-llm_summarizer",
+      "program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a1-e0/program.py",
+        "sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "revision": 0,
+      "round": 1,
+      "seed": "llm_summarizer",
+      "seed_kind": "evolved"
+    },
+    "experiment_protocol_sha256": "bafa506905c0d52a01fc58bb74a5d95236a30727cd0f8455d5bb46169305d403",
+    "generation_identity": {
+      "host_generation_ast_sha256": "16c5af3ddcbd48b5a34fc321176e969de122952806026eabafce15d484dd869e",
+      "meta": {
+        "identity_version": "meta-synthesis-identity-v2",
+        "name": "Final Meta Synthesizer",
+        "output_protocol_version": "meta-synthesis-output-v2",
+        "rendering_protocol_version": "meta-opinion-markdown-v3",
+        "request_protocol_version": "meta-synthesis-request-v2",
+        "request_template_sha256": "36cb43f63ad3a9aa719135640bcf91e32a8f7ccdad75ac6a685a9c75891f8b9e",
+        "source_path": "META_SYNTHESIS_Request_v2.md",
+        "source_sha256": "21a013957565addad6c93bb5c1b9a8bf3660705f6864c1414b7ce9379835f3c0",
+        "system_prompt_sha256": "aec56065c9c9f284b6d49d1118b11784e9ea3d6ac4f60caea6ba1dca29d8710a"
+      },
+      "roles": {
+        "CLAR": {
+          "identity_version": "frozen-specialist-identity-v3",
+          "name": "Reviewer CLAR",
+          "request_protocol_version": "specialist-review-request-v2",
+          "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+          "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+          "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+          "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+          "task_id": "CLAR"
+        },
+        "ORIG": {
+          "identity_version": "frozen-specialist-identity-v3",
+          "name": "Reviewer ORIG",
+          "request_protocol_version": "specialist-review-request-v2",
+          "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+          "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+          "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+          "system_prompt_sha256": "733a1336772475ccf90ca3ecedfc1f427d16726772c7580043af6eaddeae3ff7",
+          "task_id": "ORIG"
+        },
+        "POL": {
+          "identity_version": "frozen-specialist-identity-v3",
+          "name": "Reviewer POL",
+          "request_protocol_version": "specialist-review-request-v2",
+          "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+          "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+          "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+          "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+          "task_id": "POL"
+        },
+        "QUAL": {
+          "identity_version": "frozen-specialist-identity-v3",
+          "name": "Reviewer QUAL",
+          "request_protocol_version": "specialist-review-request-v2",
+          "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+          "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+          "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+          "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+          "task_id": "QUAL"
+        },
+        "SIGN": {
+          "identity_version": "frozen-specialist-identity-v3",
+          "name": "Reviewer SIGN",
+          "request_protocol_version": "specialist-review-request-v2",
+          "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+          "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+          "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+          "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+          "task_id": "SIGN"
+        }
+      },
+      "sources": [
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/memory.py",
+          "sha256": "62b6507d78b5253b38b63cb06083c82198153064ba2e0107e6d645ed7354e598"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review.py",
+          "sha256": "87bc7f031cbe4644b3d615ffc6609ab3b864cdccd0b165008abbd54894599596"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review_preparation.py",
+          "sha256": "da14d4d4fa97f5d060749d97f53dc86f6c606b2dfdf6d9e1da43d66a318cdb03"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/meta.py",
+          "sha256": "87aa060d0f8672f5147438c379cc6c3dd01e5f436301f8ea53d6edd97cf7e7b5"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/coco_native.py",
+          "sha256": "558f0b811a0e6b81293053bb659dbd645273e283806cac9fd92d32ead335e5bc"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/experiment_requests.py",
+          "sha256": "9d413d593c0b6dbfa529b4f05ef417c16c4cee9c04c6fe8f55c8eae16bcc0bb2"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/llm.py",
+          "sha256": "a9e807e5034172a7414ebd16b711e7cee16304b499a98a5ec90aa807e4218f7f"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/config.py",
+          "sha256": "a6d2b75b05093fdba68fcb966f275784d86a667b7f3372f6b77e34910ad57c1a"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/constants.py",
+          "sha256": "fdfa6d53c2b8cfd45d8968ab52889fcb910e3a1ab8ef48849ab3d02c49c580bf"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_identity.py",
+          "sha256": "bab51f6bd7cac8a8bf63c8e19d75446091730e8c61ce4730be3a76aed1d0e478"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/paper_context.py",
+          "sha256": "5d1e26b9046b305aa455ac0adb89d4cfa1ff67a3aa4829702adb5c3da82dbe90"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/source_map.py",
+          "sha256": "ce9e9dba468289f198d63895aaaaa4192c0a24b1618f031ee3700f8434fc74ba"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/__init__.py",
+          "sha256": "e8be309af3f0cc8dbaaad46506b2942d11a1997fea5a99d87895a491a0c017c8"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox.py",
+          "sha256": "f4551a5f785f9d4ae801c8bc506e8bb5c04ffb779589578f6dbe0a69bad31b6f"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py",
+          "sha256": "3b6c96ed9fbbd357b8d2f7873036f935b13ac5d906071e155c57c952c4dd16c6"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/task_agent.py",
+          "sha256": "60585e95f240cb6878bc76c12e5c359b4aae3ecdb48d38a025cb7600a4cd0667"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/tasks.py",
+          "sha256": "2f1fa7b58c64bdd1c5165af32c534d6b81af6146f33074ec187074930553a30c"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/toolkit.py",
+          "sha256": "afa85c57595e9e31e8547a171a8b0f53b68a95363851bf70ad1f6ed245745e54"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/memory_evolution/embedding_adapter.py",
+          "sha256": "733dbe6b89a5d94a97e984a0aeea8ea3bd334592d2240e834811530a5df06018"
+        }
+      ]
+    },
+    "memory_enabled": true,
+    "non_memory_conditions": {
+      "final_mode": "meta",
+      "frozen_s2": {},
+      "review_policy_program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/seeds/vector_search.py",
+        "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "s2_mode": "off"
+    },
+    "role_reviews": {
+      "CLAR": [
+        {
+          "paper_id": "B1-Hhnslg",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/B1-Hhnslg/CLAR.json",
+          "sha256": "b0cec8245a893513992721ee592fcbeaa734e1d396cf8f9d2a6d3a1282a58650"
+        },
+        {
+          "paper_id": "SkYXvCR6W",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/SkYXvCR6W/CLAR.json",
+          "sha256": "4cf3c8cd12ff69a8c26a5583ba5b9449f215e770ff79b206db4302103690927d"
+        }
+      ],
+      "ORIG": [
+        {
+          "paper_id": "B1-Hhnslg",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/B1-Hhnslg/ORIG.json",
+          "sha256": "bfa86991537a736bb77b08518ff344bb2f99a830ac10dd78a244ea205f84403e"
+        },
+        {
+          "paper_id": "SkYXvCR6W",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/SkYXvCR6W/ORIG.json",
+          "sha256": "6d76a37329eb6a2357854b82e76e57f3a40be2b97c02aef9a21778b6009058b0"
+        }
+      ],
+      "POL": [
+        {
+          "paper_id": "B1-Hhnslg",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/B1-Hhnslg/POL.json",
+          "sha256": "ff66828770bfc81cc8634f885178d3fc9ff910a3123a28b7cd0ef2f2e48cc3a0"
+        },
+        {
+          "paper_id": "SkYXvCR6W",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/SkYXvCR6W/POL.json",
+          "sha256": "ca40bbd4d41028f6103003f1c7ff5ff49612d51ad78dd89bff6388cf5da75d3a"
+        }
+      ],
+      "QUAL": [
+        {
+          "paper_id": "B1-Hhnslg",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/B1-Hhnslg/QUAL.json",
+          "sha256": "34547f1f549b7d9d5b499287a8fee51c770897c251f41bac65be08df389f5325"
+        },
+        {
+          "paper_id": "SkYXvCR6W",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/SkYXvCR6W/QUAL.json",
+          "sha256": "79dc82cf0c7eddeb6814ea6ea4eaab43c4a05dfb35df92821ff835fa3fef1e4b"
+        }
+      ],
+      "SIGN": [
+        {
+          "paper_id": "B1-Hhnslg",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/B1-Hhnslg/SIGN.json",
+          "sha256": "45285583e69fa320f46f005794b3b2f93f2bd1b4afec38b8bfadefc8cde855e0"
+        },
+        {
+          "paper_id": "SkYXvCR6W",
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews/feedback-0002-e0/SkYXvCR6W/SIGN.json",
+          "sha256": "9a0838b766da3d65e113bc364148d9a7ca903fcaaec82a1545a9f3fee727d216"
+        }
+      ]
+    },
+    "runtime": [
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_experiment.py",
+        "sha256": "213a1b788be0a3f3083f70f3e36056300b29e1b37c523d857d55534a2804164e"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/shared_evolution.py",
+        "sha256": "dc9fae4900df3b6d4e7fa88a2786ac8f39e193762c6538e695f18d0d7328da62"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/experiment_requests.py",
+        "sha256": "9d413d593c0b6dbfa529b4f05ef417c16c4cee9c04c6fe8f55c8eae16bcc0bb2"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/memory.py",
+        "sha256": "62b6507d78b5253b38b63cb06083c82198153064ba2e0107e6d645ed7354e598"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review.py",
+        "sha256": "87bc7f031cbe4644b3d615ffc6609ab3b864cdccd0b165008abbd54894599596"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/review_preparation.py",
+        "sha256": "da14d4d4fa97f5d060749d97f53dc86f6c606b2dfdf6d9e1da43d66a318cdb03"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/meta.py",
+        "sha256": "87aa060d0f8672f5147438c379cc6c3dd01e5f436301f8ea53d6edd97cf7e7b5"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco.py",
+        "sha256": "d4ded38bc9895f8831ce202ed46e6cb7945ea8d214a0513f6697a0f829c98505"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/development_coco_worker.py",
+        "sha256": "fb3892210102cf53132c660e73b863ed3b1ceacb0c0b07fecc0720b15bc54963"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/experiment_protocol.py",
+        "sha256": "d76946094b461d475d007da5dbc202927795da69d1b5645728a77328de4447cf"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/program_checks.py",
+        "sha256": "b0040f7c959739ce17abcb21681bbd001e2956ceef09b3e77882e0ac56a61d7a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/coco_native.py",
+        "sha256": "558f0b811a0e6b81293053bb659dbd645273e283806cac9fd92d32ead335e5bc"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/data.py",
+        "sha256": "8b37268f17ed4804de7b63937032f898e94cbd9eb267011591d8b01d95446b99"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/llm.py",
+        "sha256": "a9e807e5034172a7414ebd16b711e7cee16304b499a98a5ec90aa807e4218f7f"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/config.py",
+        "sha256": "a6d2b75b05093fdba68fcb966f275784d86a667b7f3372f6b77e34910ad57c1a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/constants.py",
+        "sha256": "fdfa6d53c2b8cfd45d8968ab52889fcb910e3a1ab8ef48849ab3d02c49c580bf"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/coco_integrity.py",
+        "sha256": "85ec9d628132b5807063b4e951dd3831de5ad393d6109aaa4ccd78f7d95e246f"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_identity.py",
+        "sha256": "bab51f6bd7cac8a8bf63c8e19d75446091730e8c61ce4730be3a76aed1d0e478"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/paper_context.py",
+        "sha256": "5d1e26b9046b305aa455ac0adb89d4cfa1ff67a3aa4829702adb5c3da82dbe90"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/source_map.py",
+        "sha256": "ce9e9dba468289f198d63895aaaaa4192c0a24b1618f031ee3700f8434fc74ba"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/__init__.py",
+        "sha256": "e8be309af3f0cc8dbaaad46506b2942d11a1997fea5a99d87895a491a0c017c8"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox.py",
+        "sha256": "f4551a5f785f9d4ae801c8bc506e8bb5c04ffb779589578f6dbe0a69bad31b6f"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py",
+        "sha256": "3b6c96ed9fbbd357b8d2f7873036f935b13ac5d906071e155c57c952c4dd16c6"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/task_agent.py",
+        "sha256": "60585e95f240cb6878bc76c12e5c359b4aae3ecdb48d38a025cb7600a4cd0667"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/tasks.py",
+        "sha256": "2f1fa7b58c64bdd1c5165af32c534d6b81af6146f33074ec187074930553a30c"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/reviewer_runtime/toolkit.py",
+        "sha256": "afa85c57595e9e31e8547a171a8b0f53b68a95363851bf70ad1f6ed245745e54"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/memory_evolution/embedding_adapter.py",
+        "sha256": "733dbe6b89a5d94a97e984a0aeea8ea3bd334592d2240e834811530a5df06018"
+      }
+    ],
+    "snapshots": {
+      "CLAR": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/memory/e0/candidate-0001/r0/enabled/CLAR.json",
+        "sha256": "1406592d0ebd228064e7eebe1833d0981b07e7b102d0e572250719451a201e86"
+      },
+      "ORIG": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/memory/e0/candidate-0001/r0/enabled/ORIG.json",
+        "sha256": "4efa046120aeb26fc4204623d83e5eec0493b339dc3c71b2662c9dd92198fbd2"
+      },
+      "POL": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/memory/e0/candidate-0001/r0/enabled/POL.json",
+        "sha256": "2d30922fc00bb895fe94538eeaf276a8d1ff0d97840d912ea03ad351f8430978"
+      },
+      "QUAL": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/memory/e0/candidate-0001/r0/enabled/QUAL.json",
+        "sha256": "62e5d1397c9b489010a363904565f704ede3901df8f87a632e65ce556752b6fa"
+      },
+      "SIGN": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/memory/e0/candidate-0001/r0/enabled/SIGN.json",
+        "sha256": "cddd441b5f3e4d4126edd5f72902193a3f6ada6588c07b32da67609f369ea30f"
+      }
+    }
+  },
+  "complete_count": 2,
+  "evaluation_epoch": 0,
+  "expected_count": 2,
+  "inputs": {
+    "references": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+      "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+    },
+    "reviews": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/reviews.json",
+      "sha256": "fdd82fd2542e738da824690b4cc0f8dc8813cb7977e9511e316ed3d044a55b5a"
+    },
+    "scoring_config": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/deployment/original-coco/scoring.frozen.json",
+      "sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391"
+    }
+  },
+  "mean_score": 4.0,
+  "paper_ids": [
+    "B1-Hhnslg",
+    "SkYXvCR6W"
+  ],
+  "papers": [
+    {
+      "paper_id": "B1-Hhnslg",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/papers/000000.json",
+      "sha256": "ba164644c1e15056dcb4724960fce50e7c0bd2ce2df39129382e25c7f500da08"
+    },
+    {
+      "paper_id": "SkYXvCR6W",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/papers/000001.json",
+      "sha256": "d8d034c6765e95298fac9caf24d33ff7962cd51f536aaaa9e77e36413b2091b3"
+    }
+  ],
+  "partition": "rotating",
+  "protocol": "research-v2-development-coco-receipt-v1",
+  "purpose": "development",
+  "receipt_id": "ad6cf3325879ebc44f0dc42f2072ed6e9c5a7e9ea6fd7d3104458a8a814c7eb2",
+  "review_target": "final",
+  "rows": [
+    {
+      "applicability": {
+        "Average": "applicable",
+        "BERT.": "applicable",
+        "BLEU": "applicable",
+        "Clarity": "applicable",
+        "Complete.": "applicable",
+        "Correct.": "applicable",
+        "Ground.": "applicable",
+        "Paper.": "applicable",
+        "ROUGE-L": "applicable",
+        "Thoro.": "applicable",
+        "Verify.": "not_applicable"
+      },
+      "candidate_id": "feedback-0002-e0",
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 3,
+              "average": 3.25,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "Although the idea is quite straightforward, and there are a great many prior works on zero-shot and few-shot learning, the proposed technique is novel to my knowledge, and achieves state-of-the-art results on several  benchmark datasets. One addition that I think would improve the paper is a clearer description of the training algorithm (perhaps pseudocode). In its current form the paper a bit vague about this.",
+            "test_text": "- CLAR: The paper is well-structured with a clear narrative flow, moving logically from introduction to related work, method, experiments, and conclusion. The terminology is generally precise and consistently used. Evidence anchors: SRC-001, SRC-006."
+          },
+          "ORIG-MTH": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 2,
+              "average": 2.5,
+              "claim_extraction": "normal",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 2,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 2,\n  \"verifiability\": \"X\",\n  \"alignment\": 2,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "The paper is an extension of the matching networks by Vinyals et al. in NIPS2016.\nInstead of using all the examples in the support set during test, the method represents each class by the mean of its learned embeddings. The training procedure and experimental setting are very similar to the original matching networks. I am not completely sure about its advantages over the original matching networks. It seems to me when dealing with 1-shot case, these two methods are identical since there is only one example seen in this class, so the mean of the embedding is the embedding itself.\nWhen dealing with 5-shot case, original matching networks compute the weighted average of all examples, but it is at most 5x cost. The experimental results reported for prototypical nets are only slightly better than matching networks. I  think it is a simple, straightforward,  novel extension, but I am not fully convinced its advantages.",
+            "test_text": "- ORIG: The paper introduces a genuinely novel and conceptually simple algorithmic approach (prototypical networks) that replaces complex attention mechanisms with Euclidean distance to class prototypes, offering a clear conceptual advance in few-shot learning methodology. Evidence anchors: SRC-006."
+          }
+        },
+        "only_ref_tag": [],
+        "only_test_tag": [
+          "CLAR-FIG",
+          "CLAR-NOT",
+          "ORIG-ANL",
+          "ORIG-COM",
+          "ORIG-NEG",
+          "POL-ANO",
+          "POL-DAT",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "QUAL-MET",
+          "QUAL-STA",
+          "SIGN-BRD",
+          "SIGN-DOM",
+          "SIGN-IMP"
+        ]
+      },
+      "evaluation_epoch": 0,
+      "metric_counts": {
+        "Average": 1,
+        "BERT.": 1,
+        "BLEU": 1,
+        "Clarity": 1,
+        "Complete.": 1,
+        "Correct.": 1,
+        "Ground.": 1,
+        "Paper.": 1,
+        "ROUGE-L": 1,
+        "Thoro.": 1,
+        "Verify.": 0
+      },
+      "metrics": {
+        "Average": 2.875,
+        "BERT.": 81.36112689971924,
+        "BLEU": 0.28180690084894794,
+        "Clarity": 4.5,
+        "Complete.": 350.0,
+        "Correct.": 2.5,
+        "Ground.": 3.0,
+        "Paper.": 4.0,
+        "ROUGE-L": 6.982543640897757,
+        "Thoro.": 1.5,
+        "Verify.": null
+      },
+      "paper_id": "B1-Hhnslg",
+      "paper_judge_scores": {
+        "actionability": 5,
+        "alignment": 4,
+        "average": 4.166666666666667,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 3,
+        "grounding_specificity": 5,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 4
+      },
+      "partition": "rotating",
+      "protocol": "research-v2-development-coco-paper-v1",
+      "raw": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/stages/evaluation/result-001.json",
+        "sha256": "026ba64bfc7de98adf9a36ca9f16dd46d74e2fd31efc421e6826d2dd1f1ba576"
+      },
+      "review": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/final_reviews/feedback-0002-e0/B1-Hhnslg.json",
+        "sha256": "8f6a79c72e6335ff649acc0f024a353c3f22a4aae15ccb7ae17a7a3a33211241"
+      },
+      "run_id": "shared-memory-pilot-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "status": "complete"
+    },
+    {
+      "applicability": {
+        "Average": "applicable",
+        "BERT.": "applicable",
+        "BLEU": "applicable",
+        "Clarity": "applicable",
+        "Complete.": "applicable",
+        "Correct.": "applicable",
+        "Ground.": "applicable",
+        "Paper.": "applicable",
+        "ROUGE-L": "applicable",
+        "Thoro.": "applicable",
+        "Verify.": "applicable"
+      },
+      "candidate_id": "feedback-0002-e0",
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-FIG": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 4,
+              "average": 4.0,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 4
+            },
+            "ref_text": "This paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- Suggested revision for QUAL opinion 5: Clarify the relationship between the reported loss and actual classification accuracy, and revise the claims to reflect the trade-off between efficiency and performance if accuracy is not competitive.\n\n- CLAR: Tables are poorly formatted and contain ambiguous abbreviations, such as cryptic column headers in Table 6 (e.g., 'YLP P', 'AMZ F') that are not fully defined, and Table 4 uses 'merge_1' without specifying the type of merge operation. Evidence anchors: SRC-008.\n\n- Suggested revision for CLAR opinion 4: Expand the abbreviations in Table 6 or provide a clear legend, and specify the type of merge operation (e.g., concatenation, addition) used in the network architecture."
+          },
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": 5,
+              "alignment": 4,
+              "average": 3.6666666666666665,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "The paper proposed to encode text into a binary matrix by using a compressing code for each word in each matrix row. The idea is interesting, and overall introduction is clear.\n\nThis paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- CLAR: The writing quality is poor, with frequent grammatical errors, awkward phrasing, and inconsistent terminology that hinder readability and professional presentation. Evidence anchors: SRC-001, SRC-003, SRC-011.\n\n- Suggested revision for CLAR opinion 1: Perform a thorough line-by-line proofreading to correct grammatical errors such as 'reduces drastically' and 'In all of ours experiments'.\n\n- CLAR: The algorithm presentation lacks formal pseudocode, relying instead on prose and examples, which makes the encoding procedure less precise and harder to reproduce without ambiguity. Evidence anchors: SRC-003, SRC-004.\n\n- Suggested revision for CLAR opinion 2: Provide a clear, step-by-step pseudocode block for the encoding algorithm, explicitly defining inputs, outputs, and edge cases such as the handling of characters not in the rank list.\n\n- Suggested revision for CLAR opinion 4: Expand the abbreviations in Table 6 or provide a clear legend, and specify the type of merge operation (e.g., concatenation, addition) used in the network architecture.\n\n- CLAR: The paper lacks a clear definition of the 'compressing inspired techniques' and does not explicitly state the name of the algorithm (Tagged Huffman Code) until the Discussion section, which delays the reader's understanding of the core contribution. Evidence anchors: SRC-001, SRC-011.\n\n- Suggested revision for CLAR opinion 5: Introduce the specific compression technique (Tagged Huffman Code) in the Introduction or early in Section 2 and explain the connection between the proposed encoding and Huffman coding more clearly."
+          },
+          "QUAL-CMP": {
+            "judge_scores": {
+              "actionability": 3,
+              "alignment": 4,
+              "average": 3.3333333333333335,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 3,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 2,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 2
+            },
+            "ref_text": "However, the work lacks justification for this particular way of encoding, and no comparison for any other encoding mechanism is provided except for the one-hot encoding used in Zhang & LeCun 2015. The results using this particular encoding are not better than any previous work.\n\nOverall, the lack of comparisons and the questionable choices for the networks render this work lacking significance to be published in ICLR 2018.",
+            "test_text": "- QUAL: The comparison is limited to the 2015 Zhang & LeCun baseline and traditional non-deep learning methods, lacking comparison against more recent or state-of-the-art character-level CNN variants or other efficient encoding methods that have emerged since 2015. Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 3: Include comparisons with more recent character-level CNN architectures or other efficient embedding techniques to better contextualize the proposed method's performance.\n\n- Suggested revision for ORIG opinion 2: More rigorously justify why this specific compression scheme is superior to other dimensionality reduction techniques (e.g., hashing, PCA) for CNN inputs, beyond just parameter count."
+          },
+          "QUAL-EXP": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 3,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "Overall, the lack of comparisons and the questionable choices for the networks render this work lacking significance to be published in ICLR 2018.\n\nThis paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- QUAL: The primary experimental results are reported using 'Loss' values rather than standard classification metrics like Accuracy or F1-score, making it impossible to directly compare performance with the cited baselines or assess the practical utility of the model. Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 1: Report Accuracy and F1-scores for all datasets and baselines.\n\n- QUAL: The claim of 'competitive accuracies' is not supported by the provided loss values, which are often higher (worse) than the Zhang & LeCun baselines in several datasets (e.g., Yelp Polarity: 7.96 vs 5.89; Yahoo Answers: 31.90 vs 29.55). Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 5: Clarify the relationship between the reported loss and actual classification accuracy, and revise the claims to reflect the trade-off between efficiency and performance if accuracy is not competitive.\n\n- SIGN: The method is validated on a diverse set of standard, large-scale text classification datasets (Ag News, Sogou News, DBpedia, Yelp, Yahoo Answers, Amazon), demonstrating generalizability across different domains and languages (including Chinese via Pinyin). Evidence anchors: SRC-007, SRC-008.\n\n- Suggested revision for SIGN opinion 3: Explicitly discuss the trade-off between efficiency and accuracy, and provide a more nuanced analysis of why accuracy drops on certain datasets like Yelp Polarity and Yahoo Answers.\n\n- Suggested revision for ORIG opinion 4: Consider introducing a new benchmark or evaluation metric that specifically measures the efficiency-accuracy trade-off of compact encodings, or test on datasets with high out-of-vocabulary rates to better demonstrate the claimed robustness."
+          },
+          "SIGN-BRD": {
+            "judge_scores": {
+              "actionability": 1,
+              "alignment": 1,
+              "average": 2.0,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 2,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 1,\n  \"grounding_specificity\": 2,\n  \"verifiability\": 2,\n  \"alignment\": 1,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 2
+            },
+            "ref_text": "This paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- SIGN: The work addresses a broadly important problem in NLP: the computational inefficiency and high resource requirements of character-level deep learning models, which limits their accessibility to researchers and practitioners without high-end hardware. Evidence anchors: SRC-001, SRC-010."
+          },
+          "SIGN-SOT": {
+            "judge_scores": {
+              "actionability": 2,
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 2,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 2,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "However, the work lacks justification for this particular way of encoding, and no comparison for any other encoding mechanism is provided except for the one-hot encoding used in Zhang & LeCun 2015. The results using this particular encoding are not better than any previous work.",
+            "test_text": "- SIGN: While the paper claims 'competitive accuracies,' the results in Table 6 show that the proposed method often underperforms the state-of-the-art baseline (Zhang et al. 2015) in terms of loss, indicating that the improvement is primarily in efficiency (time/parameters) rather than accuracy, with accuracy degraded in several cases. Evidence anchors: SRC-008."
+          }
+        },
+        "only_ref_tag": [
+          "QUAL-MET"
+        ],
+        "only_test_tag": [
+          "CLAR-FIG",
+          "CLAR-NOT",
+          "ORIG-ANL",
+          "ORIG-COM",
+          "ORIG-EXP",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "QUAL-STA",
+          "SIGN-IMP"
+        ]
+      },
+      "evaluation_epoch": 0,
+      "metric_counts": {
+        "Average": 1,
+        "BERT.": 1,
+        "BLEU": 1,
+        "Clarity": 1,
+        "Complete.": 1,
+        "Correct.": 1,
+        "Ground.": 1,
+        "Paper.": 1,
+        "ROUGE-L": 1,
+        "Thoro.": 1,
+        "Verify.": 1
+      },
+      "metrics": {
+        "Average": 3.3666666666666667,
+        "BERT.": 81.24679923057556,
+        "BLEU": 0.24381245656935713,
+        "Clarity": 4.333333333333333,
+        "Complete.": 200.0,
+        "Correct.": 3.3333333333333335,
+        "Ground.": 4.0,
+        "Paper.": 4.0,
+        "ROUGE-L": 7.94044665012407,
+        "Thoro.": 2.3333333333333335,
+        "Verify.": 2.8333333333333335
+      },
+      "paper_id": "SkYXvCR6W",
+      "paper_judge_scores": {
+        "actionability": 5,
+        "alignment": 4,
+        "average": 4.166666666666667,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 3,
+        "grounding_specificity": 5,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 4
+      },
+      "partition": "rotating",
+      "protocol": "research-v2-development-coco-paper-v1",
+      "raw": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/stages/evaluation/result-001.json",
+        "sha256": "026ba64bfc7de98adf9a36ca9f16dd46d74e2fd31efc421e6826d2dd1f1ba576"
+      },
+      "review": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/final_reviews/feedback-0002-e0/SkYXvCR6W.json",
+        "sha256": "af1c3542c4b5d78c9ecec2661b1872f8532df66143e10ff34c969115f5dfbb27"
+      },
+      "run_id": "shared-memory-pilot-20260916",
+      "scoring_protocol": {
+        "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+        "protocol": "research-v2-standard-coco-v1",
+        "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+      },
+      "status": "complete"
+    }
+  ],
+  "run_id": "shared-memory-pilot-20260916",
+  "scoring_protocol": {
+    "config_sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391",
+    "protocol": "research-v2-standard-coco-v1",
+    "standard_source_sha256": "dc428569d1de1484fe9af8f5b40a0a6fb8e33df05ff67abde6567f27d2e9fdf9"
+  },
+  "stage_integrity": {
+    "classify": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/integrity/classify.json",
+      "sha256": "b8d562a67dcfeec02d6cc5a8be99ef1daf242045ac04493886f160ed8d33880f"
+    },
+    "evaluation": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/integrity/evaluation.json",
+      "sha256": "f302c1a8a28adcec73fbf914fee2e37484651cac9c7045bc74303505903924fd"
+    },
+    "split": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/integrity/split.json",
+      "sha256": "1305138ecf82fe155389a034f84d98c754618bdb8acd3ad0d40df50ec668fa6a"
+    }
+  },
+  "status": "complete"
+}

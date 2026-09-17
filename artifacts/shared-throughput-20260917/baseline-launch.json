@@ -1,0 +1,16 @@
+{
+  "pid": 2823808,
+  "command": [
+    "/data/xyj/envs/coco-original/bin/python",
+    "-u",
+    "deployment/throughput_profile.py",
+    "--source",
+    "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline-source",
+    "--root",
+    "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline",
+    "--protocol",
+    "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline-protocol.json",
+    "--pilot",
+    "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/search.json"
+  ]
+}

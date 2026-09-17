@@ -1,0 +1,82 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_classifier_receipt_preserves_original_accepted_na_normalization _____
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-23/test_classifier_receipt_preser0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2f04d8f7a0>
+
+    def test_classifier_receipt_preserves_original_accepted_na_normalization(tmp_path, monkeypatch):
+        module = _load_standard(COCO, "_3_classify")
+        source = {"id": "paper", "sentence_texts": ['"Decision": "Reject"'], "opinions": [[0]]}
+        input_path = write_immutable_jsonl(tmp_path / "input.jsonl", [source])
+        tasks = {}
+        class OriginalClient:
+            def submit_task(self, prompt, **kwargs):
+                key = str(len(tasks))
+                tasks[key] = task(prompt, "</think>None")
+                return key
+            def get_result(self, key):
+                return {"content": tasks[key]["completion"]["choices"][0]["message"]["content"]}
+            def shutdown(self):
+                pass
+        monkeypatch.setattr(module, "client", OriginalClient())
+        output = tmp_path / "output.jsonl"
+        module.classify_opinions(SimpleNamespace(input_jsonl=str(input_path), output_jsonl=str(output), effort="medium"))
+        results = read_jsonl(output)
+        assert results[0]["category"] == [["N/A"]]
+        # The original implementation accepted three format-valid responses and
+        # intentionally normalized no recognized category to N/A.
+>       assert audit_classify(module, [source], results, tasks)[0]["classified_count"] == 1
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module '_3_classify' from '/data/xyj/shengao/CoCoReviewBench/src/evaluation/_3_classify.py'>
+inputs = [{'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['"Decision": "Reject"']}]
+outputs = [{'category': [['N/A']], 'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['"Decision": "Reject"']}]
+tasks = {'0': {'completion': {'choices': [{'finish_reason': 'stop', 'message': {'content': '</think>None'}}]}, 'messages': [{'...e label. Do not include any other words or explanation in the output.\n\n\nReviewer Comment:\n"Decision": "Reject"'}]}}
+
+    def audit_classify(module, inputs, outputs, tasks):
+        allowed, _ = module.classify_categories()
+        _, main = module.classify_reviews_prompt()
+        if len(inputs) != len(outputs):
+            raise ValueError("CoCo Classify lost an input review")
+        evidence = []
+        for source, result in zip(inputs, outputs):
+            opinions = source["opinions"]
+            categories = result.get("category", [])
+            if len(categories) != len(opinions) or any(result.get(k) != v for k, v in source.items()):
+                raise ValueError("CoCo Classify must preserve every opinion and supply every classification")
+            for opinion, labels in zip(opinions, categories):
+                comment = "\n".join(source["sentence_texts"][i] for i in opinion).strip()
+                prompt = main.strip() + "\n\n\nReviewer Comment:\n" + comment
+                valid = []
+                for task in tasks.values():
+                    if task["messages"][-1]["content"] != prompt:
+                        continue
+                    raw = task["completion"]["choices"][0]["message"]["content"]
+                    parsed, okay = module.parse_labels_from_llm(raw, allowed)
+                    # Explicit N/A is legitimate taxonomy output; empty parsing is a failure.
+                    if okay and "</think>" in raw and parsed:
+                        valid.append(parsed)
+                if labels not in valid:
+>                   raise ValueError("CoCo Classify has an unresolved opinion or fallback N/A without valid model evidence")
+E                   ValueError: CoCo Classify has an unresolved opinion or fallback N/A without valid model evidence
+
+AgentReview/agentreview/research_v2/coco_integrity.py:140: ValueError
+----------------------------- Captured stdout call -----------------------------
+Reading /tmp/pytest-of-xyj/pytest-23/test_classifier_receipt_preser0/input.jsonl and preparing flat tasks...
+Prepared 1 tasks for 1 records.
+Collecting results and writing to /tmp/pytest-of-xyj/pytest-23/test_classifier_receipt_preser0/output.jsonl...
+[Round 1] presence_penalty=0.0, processing 1 tasks...
+[Round 1] presence_penalty=0.0, need_retry=1
+[Round 2] presence_penalty=0.5, processing 1 tasks...
+[Round 2] presence_penalty=0.5, accepted=1, next_pending=1
+[Round 3] presence_penalty=1.0, processing 1 tasks...
+[Round 3] presence_penalty=1.0, accepted=1, next_pending=1
+Done.
+Retry count: 3
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_classifier_receipt_preserves_original_accepted_na_normalization
+1 failed, 3 deselected in 0.61s

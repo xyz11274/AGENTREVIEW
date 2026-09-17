@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T19:45:21.761760+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "67fd951f92128486e926fc589b7361b4b347db310d6b75e589b11622caa7ce0f",
+    "request_sha256": "2d89ba417cc5d7180ee8d0c15c12b83395a379a366a9ec32ec6023aa343c911d",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot and zero-shot classification. It learns an embedding space where class prototypes are computed as the mean of support set examples, and classification is performed via Euclidean distance to these prototypes. The method is evaluated on Omniglot, miniImageNet, and CUB-200 datasets, demonstrating competitive or state-of-the-art performance with a simpler and more scalable architecture compared to matching networks.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The paper explicitly lists author names and institutional affiliations (University of Toronto, Twitter) on the title page, which violates double-blind review policies if this submission was intended for a double-blind venue.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: If this is a double-blind submission, remove all author names, affiliations, and any self-identifying information from the title page and acknowledgments. If the venue (ICLR 2017) did not enforce double-blind review at the time, this is a non-issue, but for modern standards, anonymity must be preserved.\n- subcategory: POL-IMP\n  polarity: neutral\n  claim: The paper does not include a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. However, the work is a general-purpose machine learning method for classification, and no specific societal harms, dual-use risks, or sensitive applications are identified in the context of the experiments (handwritten characters, generic objects, birds).\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: For future submissions to venues requiring such statements, add a brief section discussing the general applicability of the method and confirming that no specific ethical risks were identified for the datasets used.\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The datasets used (Omniglot, miniImageNet, CUB-200) are standard public benchmarks. The paper cites the original sources for these datasets and follows established splits and procedures, indicating compliance with data usage norms and licensing terms typical for academic research.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: No ethical concerns regarding fairness, bias, or harm to marginalized populations are apparent in the scope of this work. The tasks (character recognition, object classification, bird species identification) do not involve sensitive personal data or decision-making processes that could lead to discriminatory outcomes.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper cites relevant prior work (e.g., Matching Networks, Neural Statistician, NCA) and clearly distinguishes its contributions. There is no evidence of plagiarism or dual submission in the text provided.\n  evidence_anchors: [SRC-002, SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Was this paper submitted under a double-blind review policy? If so, how will the anonymity violation on the title page be addressed?\n- Are there any specific licensing restrictions on the miniImageNet or CUB-200 datasets that require explicit acknowledgment beyond standard citation?\n\nRecommendation: Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "6ee06ff12aaf7c56022494bd8efdbb8292c0ee5535d991d6ae2919ae07777b09",
+      "prompt_sha256": "2d89ba417cc5d7180ee8d0c15c12b83395a379a366a9ec32ec6023aa343c911d"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Reusable Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify strict adherence to double-blind policies. Ensure no author names, institutional affiliations, specific email domains, or self-identifying URLs appear in headers, footers, or acknowledgments.\n*   **Action:** If violations are found (e.g., explicit names/affiliations), flag as a critical weakness and request immediate removal to comply with submission guidelines.\n\n**2. Broader Impact & Ethics (POL-IMP, POL-ETH)**\n*   **Check:** Assess the presence of a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. This is increasingly mandatory for major venues (NeurIPS, ICLR).\n*   **Action:** If missing, recommend adding a brief section discussing societal implications, potential misuse, or security risks.\n*   **Contextual Nuance:**\n    *   *Theoretical/General Methods:* If the work is general-purpose (e.g., optimization dynamics, few-shot metrics), ethical concerns may be minimal. Note this as neutral/strength if no specific harm is identified.\n    *   *Sensitive Domains:* For adversarial robustness, note dual-use potential (security vs. attack). For generative models on human data, explicitly address risks of disinformation, harassment, or re-identification.\n\n**3. Data Privacy & Licensing (POL-DAT)**\n*   **Check:** Evaluate datasets for Personally Identifiable Information (PII) and licensing compliance.\n*   **Action:**\n    *   *Standard Benchmarks (MNIST, C",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "94481f6fc0c56cfd5eae5c27c497b7d31e9ca3904237de344bc428d8e72c7ac5",
+              "role": "POL",
+              "score": 0.39019085631572625
+            },
+            {
+              "id": "ade82383d66daaccda59d33a379b610eb791c6cb1c6b6704674f4b9344f8e161",
+              "role": "POL",
+              "score": 0.36222706266473687
+            },
+            {
+              "id": "51a951f2ed13fcf758d78e0a72e6900eb2942aaefc1de0220fe238ebb9cbf838",
+              "role": "POL",
+              "score": 0.3468494952215593
+            },
+            {
+              "id": "0024bfe3c48d2f8a66bfaae92f426cc5d8cdfd696257b8630a4a3729cec01612",
+              "role": "POL",
+              "score": 0.3366670752939951
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify strict adherence to double-blind policies. Ensure no author names, institutional affiliations, specific email domains, or self-identifying URLs appear in headers, footers, or acknowledgments.\n*   **Action:** If violations are found (e.g., explicit names/affiliations), flag as a critical weakness and request immediate removal to comply with submission guidelines.\n\n**2. Broader Impact & Ethics (POL-IMP, POL-ETH)**\n*   **Check:** Assess the presence of a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. This is increasingly mandatory for major venues (NeurIPS, ICLR).\n*   **Action:** If missing, recommend adding a brief section discussing societal implications, potential misuse, or security risks.\n*   **Contextual Nuance:**\n    *   *Theoretical/General Methods:* If the work is general-purpose (e.g., optimization dynamics, few-shot metrics), ethical concerns may be minimal. Note this as neutral/strength if no specific harm is identified.\n    *   *Sensitive Domains:* For adversarial robustness, note dual-use potential (security vs. attack). For generative models on human data, explicitly address risks of disinformation, harassment, or re-identification.\n\n**3. Data Privacy & Licensing (POL-DAT)**\n*   **Check:** Evaluate datasets for Personally Identifiable Information (PII) and licensing compliance.\n*   **Action:**\n    *   *Standard Benchmarks (MNIST, CIFAR-10, Omniglot, mini-ImageNet):* Generally low risk. Confirm public availability and standard research use.\n    *   *Human-Centric Data (CelebA, etc.):* High risk. Require explicit discussion of data licensing, consent, and privacy regulations (e.g., GDPR). Flag failure to address privacy implications of generating or perturbing real human faces as a significant weakness.\n\n**4. Plagiarism & Originality (POL-PLG)**\n*   **Check:** Review citations for appropriateness and check for signs of dual submission or plagiarism.\n*   **Action:** If prior work is cited correctly and findings appear original, mark as strength/neutral. No action required unless evidence of misconduct is found.\n\n**5. Reproducibility & Open Science (POL-IMP)**\n*   **Check:** Look for code availability and license statements.\n*   **Action:** If code is not provided or licenses are unclear, suggest including a link to an anonymous repository and specifying software/data licenses to support reproducibility.\n\n**Summary for Reviewers:**\nPrioritize anonymity violations and missing broader impact statements. For data-heavy papers, rigorously check privacy compliance for human-subject data. For theoretical papers, ensure ethical considerations are addressed even if risks are low, to meet venue standards."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Role: POL\nTitle: Prototypical Networks for Few-shot Learning\nAbstract: A recent approach to few-shot classification called matching networks has demonstrated the benefits of coupling metric learning with a training procedure that mimics test. This approach relies on a complicated fine-tuning procedure and an attention scheme that forms a distribution over all points in the support set, scaling poorly with its size. We propose a more streamlined approach, prototypical networks, that learns a metric space in which few-shot classification can be performed by computing Euclidean distances to prototype representations of each class, rather than individual points. Our method is competitive with state-of-the-art one-shot classification approaches while being much simpler and more scalable with the size of the support set. We empirically demonstrate the performance of our approach on the Omniglot and mini-ImageNet datasets. We further demonstrate that a similar idea can be used for zero-shot learning, where each class is described by a set of attributes, and achieve state-of-the-art results on the Caltech UCSD bird dataset.",
+        "reviewer_dimension": "POL"
+      },
+      "resources": {
+        "completion_chars": 3968,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 19.591781483963132,
+        "prompt_chars": 19282,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "4ca1fa8a9d4dc731a70077ead53b796165232d405b2002de6d7b5976e4735e8f",
+  "review_text": "```\nReviewer dimension: POL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot and zero-shot classification. It learns an embedding space where class prototypes are computed as the mean of support set examples, and classification is performed via Euclidean distance to these prototypes. The method is evaluated on Omniglot, miniImageNet, and CUB-200 datasets, demonstrating competitive or state-of-the-art performance with a simpler and more scalable architecture compared to matching networks.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The paper explicitly lists author names and institutional affiliations (University of Toronto, Twitter) on the title page, which violates double-blind review policies if this submission was intended for a double-blind venue.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: If this is a double-blind submission, remove all author names, affiliations, and any self-identifying information from the title page and acknowledgments. If the venue (ICLR 2017) did not enforce double-blind review at the time, this is a non-issue, but for modern standards, anonymity must be preserved.\n- subcategory: POL-IMP\n  polarity: neutral\n  claim: The paper does not include a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. However, the work is a general-purpose machine learning method for classification, and no specific societal harms, dual-use risks, or sensitive applications are identified in the context of the experiments (handwritten characters, generic objects, birds).\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: For future submissions to venues requiring such statements, add a brief section discussing the general applicability of the method and confirming that no specific ethical risks were identified for the datasets used.\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The datasets used (Omniglot, miniImageNet, CUB-200) are standard public benchmarks. The paper cites the original sources for these datasets and follows established splits and procedures, indicating compliance with data usage norms and licensing terms typical for academic research.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: No ethical concerns regarding fairness, bias, or harm to marginalized populations are apparent in the scope of this work. The tasks (character recognition, object classification, bird species identification) do not involve sensitive personal data or decision-making processes that could lead to discriminatory outcomes.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper cites relevant prior work (e.g., Matching Networks, Neural Statistician, NCA) and clearly distinguishes its contributions. There is no evidence of plagiarism or dual submission in the text provided.\n  evidence_anchors: [SRC-002, SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Was this paper submitted under a double-blind review policy? If so, how will the anonymity violation on the title page be addressed?\n- Are there any specific licensing restrictions on the miniImageNet or CUB-200 datasets that require explicit acknowledgment beyond standard citation?\n\nRecommendation: Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer POL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+    "task_id": "POL"
+  },
+  "role": "POL",
+  "run_id": "feedback-0001-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

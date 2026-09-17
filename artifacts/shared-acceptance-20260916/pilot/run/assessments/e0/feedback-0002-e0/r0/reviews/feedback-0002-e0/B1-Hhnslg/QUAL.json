@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T20:19:56.301676+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "8d1745f6982d90b57053380cdefac464e1bcb5e9aceda16e8d2acfd4889b47df",
+    "request_sha256": "9ed64f0f2f6c6f4c73d84216f71b545797f03e913faca681cdf74d13639a59f4",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot classification that represents each class by the mean of its support set embeddings (prototypes) and classifies queries via softmax over Euclidean distances to these prototypes. The method is trained using episodic training to mimic the few-shot test setting. The authors demonstrate the method's effectiveness on Omniglot and miniImageNet for few-shot learning and on CUB-200 for zero-shot learning, claiming competitive or state-of-the-art performance with a simpler and more scalable architecture than matching networks.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is mathematically well-formulated, with a clear derivation showing the equivalence of the distance-based softmax to a linear classifier, which provides strong theoretical grounding for the approach.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental results are reported as single-point estimates without standard deviations or confidence intervals, making it difficult to assess the statistical significance of the performance differences, particularly on miniImageNet where the gap to matching networks is small.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Report mean accuracy and standard deviation over multiple independent training runs (e.g., 5-10 seeds) for all datasets to validate the robustness of the results.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks critical implementation details necessary for reproduction, such as specific hyperparameters (learning rate, optimizer, number of training episodes, batch size) and does not mention code availability.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix or supplementary material listing all hyperparameters, training schedules, and random seeds used. Consider releasing the source code to facilitate independent verification.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper provides appropriate comparisons against the primary contemporary baseline (Matching Networks) and other relevant methods (Neural Statistician, Baseline Classifier) on the standard few-shot benchmarks.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The absence of statistical tests or variance reporting undermines the claim of \"state-of-the-art\" performance, especially given the small sample sizes in few-shot evaluation episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Include statistical significance tests (e.g., paired t-tests) comparing the proposed method against baselines to confirm that observed improvements are not due to random variation.\n\nKey questions for the authors:\n- What are the specific hyperparameters (learning rate, optimizer, number of episodes) used for training on Omniglot and miniImageNet?\n- Can you provide the standard deviation of the accuracy over multiple independent runs to support the reported performance gains?\n- Is the code for the prototypical networks implementation available for public use?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "8f7ce61e7704393d098a3eca481a63c288d6163ddcfefa05ab8681dba4517ba9",
+      "prompt_sha256": "9ed64f0f2f6c6f4c73d84216f71b545797f03e913faca681cdf74d13639a59f4"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Technical Quality & Methodological Soundness**\n\nBased on the provided review experiences, the following actionable criteria should be applied when evaluating technical quality, experimental design, and rigor:\n\n**1. Statistical Rigor (QUAL-STA)**\n*   **Variance Reporting:** Reject or heavily critique papers reporting single-run results. Require mean ± standard deviation over multiple independent runs (minimum 5 seeds) to distinguish performance gaps from random initialization variance.\n*   **Significance Testing:** Mandate statistical significance tests for all key comparisons. Single-point estimates without confidence intervals are insufficient for robust conclusions, especially with small sample sizes.\n*   **Sample Size:** Evaluate if dataset sizes (e.g., n=87) are adequate for the claims made. Small samples undermine generalizability and statistical power.\n\n**2. Experimental Design & Generalizability (QUAL-EXP)**\n*   **Dataset Complexity:** Scrutinize evaluations restricted to low-dimensional or simple datasets (e.g., MNIST). Such limitations may produce dataset-specific artifacts rather than inherent architectural properties. Demand expansion to higher-dimensional benchmarks (e.g., CIFAR-10, ImageNet) to verify generalizability.\n*   **Causal Grounding:** For interpretability or explanation methods, require empirical validation that the proposed mechanism reflects true causal features (e.g., correlation with saliency maps or human judgment) rather than circular definitions or minimal corrections.\n\n**3. Comparisons to Prior Work (QUAL-CMP)**\n*   **Baseline Completeness:** Identify missing comparisons with state-of-the-art methods or relevant architectural variants. If a paper cites specific models (e.g., Steerable CNNs, LIME, SHAP) but does not evaluate them, flag this as a critical gap.\n*   **Relevance:** Ensure baselines are appropriate for the specific claim (e.g., adversarial robustness vs. standard accuracy). Omitting recent SOTA models weakens the validity of superiority claims.\n\n**4. Reproducibility (QUAL-REP)**\n*   **Implementation Details:** Check for the presence of critical hyperparameters (learning rates, batch sizes, epochs, optimizer settings) and random seeds. Missing details prevent independent verification.\n*   **Code Availability:** Publicly released code is a strong indicator of reproducibility. Absence of code combined with missing hyperparameters is a significant weakness.\n\n**5. Methodological Clarity (QUAL-MET)**\n*   **Isolation of Variables:** Assess whether the experimental design effectively isolates the variable of interest (e.g., using data augmentation to induce specific robustness before testing vulnerability).\n*   **Theoretical vs. Empirical:** Ensure that theoretical claims are supported by empirical evidence. If a method lacks theoretical grounding, require stronger empirical validation to support its utility.\n\n**Actionable Review Checklist:**\n1.  Are results reported with variance and significance tests?\n2.  Are experiments conducted on sufficiently complex datasets?\n3.  Are all cited relevant baselines actually evaluated?\n4.  Are all hyperparameters and code available for reproduction?\n5.  Is the core claim (e.g., \"explanation,\" \"robustness\") causally grounded and empirically validated?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "c49d0345b327c19473cfb54d42243aca4ca18c25c3f0dd9d55e3f0e8beb21f0d",
+              "role": "QUAL",
+              "score": 0.4920640272877298
+            },
+            {
+              "id": "d7c5f5ace67ebeb18f099a86339db0ed6e72325a50253a2f34abfcbe9aa8093c",
+              "role": "QUAL",
+              "score": 0.4253350851717676
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Technical Quality & Methodological Soundness**\n\nBased on the provided review experiences, the following actionable criteria should be applied when evaluating technical quality, experimental design, and rigor:\n\n**1. Statistical Rigor (QUAL-STA)**\n*   **Variance Reporting:** Reject or heavily critique papers reporting single-run results. Require mean ± standard deviation over multiple independent runs (minimum 5 seeds) to distinguish performance gaps from random initialization variance.\n*   **Significance Testing:** Mandate statistical significance tests for all key comparisons. Single-point estimates without confidence intervals are insufficient for robust conclusions, especially with small sample sizes.\n*   **Sample Size:** Evaluate if dataset sizes (e.g., n=87) are adequate for the claims made. Small samples undermine generalizability and statistical power.\n\n**2. Experimental Design & Generalizability (QUAL-EXP)**\n*   **Dataset Complexity:** Scrutinize evaluations restricted to low-dimensional or simple datasets (e.g., MNIST). Such limitations may produce dataset-specific artifacts rather than inherent architectural properties. Demand expansion to higher-dimensional benchmarks (e.g., CIFAR-10, ImageNet) to verify generalizability.\n*   **Causal Grounding:** For interpretability or explanation methods, require empirical validation that the proposed mechanism reflects true causal features (e.g., correlation with saliency maps or human judgment) rather than circular definitions or minimal corrections.\n\n**3. Comparisons to Prior Work (QUAL-CMP)**\n*   **Baseline Completeness:** Identify missing comparisons with state-of-the-art methods or relevant architectural variants. If a paper cites specific models (e.g., Steerable CNNs, LIME, SHAP) but does not evaluate them, flag this as a critical gap.\n*   **Relevance:** Ensure baselines are appropriate for the specific claim (e.g., adversarial robustness vs. standard accuracy). Omitting recent SOTA models weakens the validity of superiority claims.\n\n**4. Reproducibility (QUAL-REP)**\n*   **Implementation Details:** Check for the presence of critical hyperparameters (learning rates, batch sizes, epochs, optimizer settings) and random seeds. Missing details prevent independent verification.\n*   **Code Availability:** Publicly released code is a strong indicator of reproducibility. Absence of code combined with missing hyperparameters is a significant weakness.\n\n**5. Methodological Clarity (QUAL-MET)**\n*   **Isolation of Variables:** Assess whether the experimental design effectively isolates the variable of interest (e.g., using data augmentation to induce specific robustness before testing vulnerability).\n*   **Theoretical vs. Empirical:** Ensure that theoretical claims are supported by empirical evidence. If a method lacks theoretical grounding, require stronger empirical validation to support its utility.\n\n**Actionable Review Checklist:**\n1.  Are results reported with variance and significance tests?\n2.  Are experiments conducted on sufficiently complex datasets?\n3.  Are all cited relevant baselines actually evaluated?\n4.  Are all hyperparameters and code available for reproduction?\n5.  Is the core claim (e.g., \"explanation,\" \"robustness\") causally grounded and empirically validated?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Review the technical quality, methodological soundness, experimental design, reproducibility, comparisons to prior work, and statistical rigor of the paper titled 'Prototypical Networks for Few-shot Learning'.",
+        "reviewer_dimension": "QUAL"
+      },
+      "resources": {
+        "completion_chars": 3576,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 16.15536701772362,
+        "prompt_chars": 12148,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "3df96bb87abb4c2ce460f10bba8de08f5ac45934ab775e23e9a1c765bf89b44b",
+  "review_text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes Prototypical Networks, a metric learning approach for few-shot classification that represents each class by the mean of its support set embeddings (prototypes) and classifies queries via softmax over Euclidean distances to these prototypes. The method is trained using episodic training to mimic the few-shot test setting. The authors demonstrate the method's effectiveness on Omniglot and miniImageNet for few-shot learning and on CUB-200 for zero-shot learning, claiming competitive or state-of-the-art performance with a simpler and more scalable architecture than matching networks.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is mathematically well-formulated, with a clear derivation showing the equivalence of the distance-based softmax to a linear classifier, which provides strong theoretical grounding for the approach.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental results are reported as single-point estimates without standard deviations or confidence intervals, making it difficult to assess the statistical significance of the performance differences, particularly on miniImageNet where the gap to matching networks is small.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Report mean accuracy and standard deviation over multiple independent training runs (e.g., 5-10 seeds) for all datasets to validate the robustness of the results.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks critical implementation details necessary for reproduction, such as specific hyperparameters (learning rate, optimizer, number of training episodes, batch size) and does not mention code availability.\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix or supplementary material listing all hyperparameters, training schedules, and random seeds used. Consider releasing the source code to facilitate independent verification.\n- subcategory: QUAL-CMP\n  polarity: strength\n  claim: The paper provides appropriate comparisons against the primary contemporary baseline (Matching Networks) and other relevant methods (Neural Statistician, Baseline Classifier) on the standard few-shot benchmarks.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The absence of statistical tests or variance reporting undermines the claim of \"state-of-the-art\" performance, especially given the small sample sizes in few-shot evaluation episodes.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 5\n  actionable_suggestion: Include statistical significance tests (e.g., paired t-tests) comparing the proposed method against baselines to confirm that observed improvements are not due to random variation.\n\nKey questions for the authors:\n- What are the specific hyperparameters (learning rate, optimizer, number of episodes) used for training on Omniglot and miniImageNet?\n- Can you provide the standard deviation of the accuracy over multiple independent runs to support the reported performance gains?\n- Is the code for the prototypical networks implementation available for public use?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer QUAL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+    "task_id": "QUAL"
+  },
+  "role": "QUAL",
+  "run_id": "feedback-0002-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

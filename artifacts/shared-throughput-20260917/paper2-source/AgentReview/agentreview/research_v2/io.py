@@ -1,0 +1,185 @@
+"""Atomic immutable artifact I/O without a global manifest graph."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import tempfile
+from pathlib import Path
+from typing import Any, Iterable
+
+
+def canonical_json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def value_sha256(value: Any) -> str:
+    return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+
+
+def file_sha256(path: str | Path) -> str:
+    source = Path(path).expanduser().resolve()
+    digest = hashlib.sha256()
+    with source.open("rb") as handle:
+        while block := handle.read(1024 * 1024):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _output_target(path: str | Path, *, reject_symlink: bool) -> Path:
+    """Resolve an output target without following it in strict mode.
+
+    Formal artifacts use ``reject_symlink=True`` so a caller-controlled final
+    path, or any symlink in its parent chain, cannot redirect a write outside
+    the requested lexical directory.  The default preserves the historical I/O
+    behavior for non-formal callers.
+    """
+    expanded = Path(path).expanduser()
+    if not reject_symlink:
+        return expanded.resolve()
+    lexical = Path(os.path.abspath(expanded))
+    if lexical.is_symlink():
+        raise ValueError(f"Artifact output path must not be a symbolic link: {lexical}")
+    if lexical.parent.resolve() != lexical.parent:
+        raise ValueError(
+            "Artifact output parent must be a canonical non-symlink directory: "
+            f"{lexical.parent}"
+        )
+    return lexical
+
+
+def atomic_write_json(
+    path: str | Path,
+    value: Any,
+    *,
+    immutable: bool = True,
+    reject_symlink: bool = False,
+) -> Path:
+    """Commit one JSON artifact; immutable paths may only be replayed identically."""
+    target = _output_target(path, reject_symlink=reject_symlink)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    rendered = json.dumps(
+        value,
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    ).encode("utf-8") + b"\n"
+    if target.exists() and immutable:
+        if target.read_bytes() == rendered:
+            return target
+        raise FileExistsError(f"Immutable artifact already exists with new content: {target}")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if immutable:
+            try:
+                os.link(temporary, target)
+            except FileExistsError:
+                if target.read_bytes() == rendered:
+                    return target
+                raise FileExistsError(
+                    f"Immutable artifact already exists with new content: {target}"
+                ) from None
+        else:
+            os.replace(temporary, target)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return target
+
+
+def read_json(path: str | Path) -> Any:
+    return json.loads(Path(path).expanduser().resolve().read_text(encoding="utf-8"))
+
+
+def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
+    source = Path(path).expanduser().resolve()
+    values = []
+    with source.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Invalid JSONL at {source}:{line_number}") from exc
+            if not isinstance(value, dict):
+                raise ValueError(f"JSONL record is not an object at {source}:{line_number}")
+            values.append(value)
+    return values
+
+
+def write_derived_jsonl(path: str | Path, values: Iterable[dict[str, Any]]) -> Path:
+    """Write a rebuildable JSONL view atomically."""
+    target = Path(path).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as handle:
+            for value in values:
+                handle.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, target)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return target
+
+
+def write_immutable_jsonl(
+    path: str | Path,
+    values: Iterable[dict[str, Any]],
+    *,
+    reject_symlink: bool = False,
+) -> Path:
+    """Commit one JSONL artifact; replay is allowed only for identical bytes."""
+    target = _output_target(path, reject_symlink=reject_symlink)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    rendered = b"".join(
+        json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8") + b"\n"
+        for value in values
+    )
+    if target.exists():
+        if target.read_bytes() == rendered:
+            return target
+        raise FileExistsError(
+            f"Immutable JSONL artifact already exists with new content: {target}"
+        )
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".tmp",
+        dir=target.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            os.link(temporary, target)
+        except FileExistsError:
+            if target.read_bytes() == rendered:
+                return target
+            raise FileExistsError(
+                f"Immutable JSONL artifact already exists with new content: {target}"
+            ) from None
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return target

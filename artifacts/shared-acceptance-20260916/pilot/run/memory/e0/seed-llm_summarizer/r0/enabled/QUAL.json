@@ -1,0 +1,226 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": null,
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-llm_summarizer/program.py",
+    "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+    "program_version": "seed-llm_summarizer",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "QUAL",
+    "seed_kind": "llm_summarizer",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "fe3cf8aa15a56e8f7bd09f92f8541452d8c1fef5c46b28429f7de1aa4735cc77",
+        "review_sha256": "a58e99dc0a4546a73234fdd60b9177ece995dddaf90ee1f2a343a9a5e80e3ea3"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 1,
+        "review_id": "521c29b5c751e8189663eff5f15f61af6df0d4076f11a37945931fb797a31f6a",
+        "review_sha256": "b0210af41c1e6c5120e309844fe2eda02a01cd4437d148d2418c654261b7620e"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 2,
+        "review_id": "b47e30c80442063a37564077b4faf7360c9bb084d77ab65ae61c30f217868b21",
+        "review_sha256": "0b11b92ec0e0ba51606e726cb6c08e77258ac28b3278a66858e15de8bcd5eae2"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 3,
+        "review_id": "897cb92246676824d9f6c883b658ed0207bbdf8c9432e3d83b5c91f9df9209b8",
+        "review_sha256": "4047667704f5b6f63beb4ec10bebb6d23f36c195dec2c4149f0e23b3c4422888"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "seed-llm_summarizer",
+      "item_id": "6f966ea6fc0d205a2b622ac24eebdf2a945922ac9be0b8da2f360679e4864dc9",
+      "payload": {
+        "content": "```\nReviewer dimension: QUAL\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks. The authors empirically compare Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet) against Standard CNNs on the MNIST dataset. The central finding is that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they exhibit increased vulnerability to small pixel-wise adversarial attacks compared to standard CNNs, particularly as the range of rotation augmentation increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is limited to a single, relatively simple dataset (MNIST), which undermines the generalizability of the claim that equivariant networks are inherently more vulnerable to pixel-wise attacks.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Expand experiments to more complex datasets such as CIFAR-10 or ImageNet subsets to verify if the observed trade-off persists in higher-dimensional feature spaces.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks critical implementation details necessary for reproducibility, including specific hyperparameters (learning rate, optimizer, batch size, number of epochs) and code availability.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters, random seeds, and make the code publicly available to ensure the results can be independently verified.\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The reported results appear to be based on single runs without statistical significance tests, confidence intervals, or variance reporting, making it difficult to assess the reliability of the observed performance differences.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs and include statistical significance tests to validate that the observed robustness gaps are not due to random initialization variance.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison against prior work is incomplete, as the paper does not compare against recent state-of-the-art adversarially robust models or other equivariant architectures that might mitigate the observed vulnerability.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Include comparisons with other recent equivariant architectures (e.g., Steerable CNNs) and discuss how the findings relate to existing literature on adversarial robustness in symmetric networks.\n- subcategory: QUAL-MET\n  polarity: neutral\n  claim: The methodological approach of using data augmentation to induce rotation robustness and then testing against pixel-wise attacks is a valid and clear experimental design for isolating the trade-off.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was MNIST the only dataset chosen for this study, and do you have preliminary results on more complex datasets like CIFAR-10?\n- Can you provide the specific hyperparameters and code used to train the GCNNs and StdCNNs to ensure reproducibility?\n- Did you perform multiple runs with different random seeds, and if so, what was the variance in the reported accuracy drops?\n- How do your findings compare to other equivariant architectures like Steerable CNNs, which were cited but not fully evaluated in the main experiments?\n\nRecommendation: Weak Reject\n```",
+        "reviewer_dimension": "QUAL",
+        "topic": ""
+      },
+      "role": "QUAL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "fe3cf8aa15a56e8f7bd09f92f8541452d8c1fef5c46b28429f7de1aa4735cc77"
+      ]
+    },
+    {
+      "derivation_version": "seed-llm_summarizer",
+      "item_id": "e7e3a17dd058257d20d076fd76f2ae87e0b0c55ae72e8d66a04f04cc7803c537",
+      "payload": {
+        "content": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by finding a perturbation in the latent space of a generative model (VAE/VAE-GAN) that, when mapped back to image space, corrects the classifier's error. The method uses gradient descent on the latent vector to minimize cross-entropy loss while keeping the perturbation small. Experiments are conducted on MNIST and CelebA, showing success rates and visual examples of the generated explanations.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: weakness\n  claim: The methodological definition of \"explanation\" is circular and lacks theoretical grounding; it defines an explanation as the perturbation that corrects the error, but does not prove that this perturbation corresponds to the actual causal feature responsible for the misclassification.\n  evidence_anchors: [SRC-004]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical analysis or empirical validation (e.g., correlation with saliency maps or human judgment) that the generated LSEs align with the true causal features of the misclassification, rather than just being a minimal correction.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation lacks rigorous statistical validation; success rates are reported as single-point estimates without confidence intervals, standard deviations, or significance tests, making it difficult to assess the robustness of the results.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation of success rates and perturbation norms over multiple runs or different random seeds. Include statistical tests to compare the performance of 2D vs 10D latent spaces and different traits on CelebA.\n\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Critical implementation details are missing, such as the specific architecture of the classifiers, the number of gradient descent steps, the stopping criteria beyond \"c(x')=y\", and the code availability, which hinders reproducibility.\n  evidence_anchors: [SRC-003, SRC-005]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with hyperparameters (learning rate, number of iterations, optimizer type), classifier architecture details, and make the code publicly available to ensure reproducibility.\n\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The paper fails to compare its method against other established explanation techniques (e.g., LIME, SHAP, Grad-CAM) or other latent-space perturbation methods, limiting the ability to judge its relative effectiveness.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Include a comparative study with at least two other state-of-the-art explanation methods to demonstrate the advantages of LSE in terms of interpretability, fidelity, or computational cost.\n\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The analysis of the effect of latent space dimensionality is based on a small sample size (87 misclassified examples for MNIST) and lacks statistical rigor, with no indication of variance or reliability of the success rate metrics.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Increase the sample size for the MNIST experiments and report confidence intervals for the success rates to provide a more robust statistical analysis.\n\nKey questions for the authors:\n- How do you ensure that the generated LSEs are not just exploiting artifacts of the generative model or the classifier, but actually reflect the true reasons for the misclassification?\n- What are the computational costs of generating LSEs compared to other explanation methods, and is it feasible for real-time applications?\n- Can you provide a quantitative metric for the \"interpretability\" of the generated explanations, rather than relying solely on qualitative visual examples?\n\nRecommendation: Weak Reject\n```",
+        "reviewer_dimension": "QUAL",
+        "topic": ""
+      },
+      "role": "QUAL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "521c29b5c751e8189663eff5f15f61af6df0d4076f11a37945931fb797a31f6a"
+      ]
+    },
+    {
+      "derivation_version": "seed-llm_summarizer",
+      "item_id": "b51fcf2bc40c78ea481826156149c6cfdfcb446b6f17bb41f939dd03cf07f9f1",
+      "payload": {
+        "content": "```\nReviewer dimension: QUAL\nPaper summary: The paper provides a theoretical analysis of non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam, specifically focusing on the DirectPred and DirectCopy variants. By analyzing the learning dynamics in the eigenspace of the representation covariance matrix, the authors demonstrate that these methods implicitly regularize variance, preventing representational collapse. Based on this analysis, they propose an \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the Exponential Moving Average (EMA) target network without performance degradation. The work is supported by linear network simulations and empirical validation on CIFAR-10 and STL-10 using VGG11 backbones.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The theoretical derivation of the implicit variance regularization mechanism is mathematically consistent and correctly identifies the role of the predictor network and stop-gradient in preventing collapse.\n  evidence_anchors: [SRC-004, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is limited to small-scale datasets (CIFAR-10, STL-10) and a relatively small backbone (VGG11), which may not fully validate the claim that the isotropic loss is robust at scale or for complex architectures.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include experiments on larger datasets (e.g., ImageNet) or more complex backbones (e.g., ResNet-50) to demonstrate the scalability of the proposed isotropic loss.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, weight decay, EMA decay rates for baselines) and does not explicitly state if code is available.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters used for the CIFAR-10 and STL-10 experiments and make the code publicly available.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison is limited to the standard BYOL/SimSiam loss with and without EMA, lacking comparisons to other state-of-the-art non-contrastive methods (e.g., VICReg, Barlow Twins) or recent variants that also address the EMA requirement.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Add comparisons with other non-contrastive SSL methods that do not rely on EMA or contrastive pairs to better position the proposed method in the current landscape.\n- subcategory: QUAL-STA\n  polarity: strength\n  claim: The authors report standard deviations over four random seeds for the linear readout accuracies, providing a basic level of statistical validation for the empirical results.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Consider increasing the number of seeds or providing confidence intervals for more robust statistical significance, especially given the small margin in some comparisons.\n\nKey questions for the authors:\n- How does the proposed isotropic loss perform on larger-scale datasets like ImageNet with deeper backbones?\n- Are the hyperparameters for the isotropic loss sensitive to the choice of the exponent $\\alpha$ in the predictor network?\n- Can the theoretical insights be extended to non-linear predictor networks or more complex augmentation strategies?\n\nRecommendation: Weak Accept\n```",
+        "reviewer_dimension": "QUAL",
+        "topic": ""
+      },
+      "role": "QUAL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "b47e30c80442063a37564077b4faf7360c9bb084d77ab65ae61c30f217868b21"
+      ]
+    },
+    {
+      "derivation_version": "seed-llm_summarizer",
+      "item_id": "26d0c4df721be26b391f01095d22cfed2efe598d8f08c65e174e557ba750bd0d",
+      "payload": {
+        "content": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, leading to \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" ensemble method. The authors compare this approach against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 2\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: weakness\n  claim: The core methodological premise is flawed because the proposed ETC impurity measure is applied to the label sequence of the entire dataset (or node) rather than the feature-label relationship required for decision tree splitting. Standard decision trees split based on feature values to minimize label impurity within resulting subsets; however, the paper defines ETC Gain based on the ETC of the label sequence itself (Equation 1), which does not account for the feature values used to create the split. Consequently, the \"split\" is not actually driven by feature information in the standard sense, but rather by the global order of labels, making the resulting \"tree\" structurally invalid as a feature-based classifier.\n  evidence_anchors: [SRC-005]\n  confidence: 5\n  actionable_suggestion: The authors must clarify how feature values are used in the ETC calculation. If ETC is only computed on labels, the model is not a decision tree in the traditional sense. If features are involved, the definition of ETC Gain must be revised to reflect the partitioning of feature space.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is severely inadequate, relying on only six small, standard UCI datasets (Iris, Wine, etc.) that are typically i.i.d. and lack the temporal or sequential structure the paper claims to address. The paper fails to demonstrate any advantage on datasets with actual order dependencies (e.g., time series, text, or sequential data), which is the primary motivation for the work.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Include experiments on datasets with inherent sequential or temporal structure (e.g., time series classification, sequence labeling) to validate the claim that the method captures order dependencies.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The performance comparison against Random Forest is misleading and unfavorable. The proposed method underperforms Random Forest on 4 out of 6 datasets and only matches it on one, with a single win on Haberman's Survival. The paper does not provide statistical significance tests or confidence intervals, making it impossible to determine if the small differences are meaningful.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Provide statistical significance tests (e.g., paired t-tests or Wilcoxon signed-rank tests) across multiple random splits to validate performance differences.\n\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility. It does not specify the exact version of the NSRPS algorithm used, how the ETC is computed for multi-class or continuous features, or the specific hyperparameters for the Permutation Decision Forest (e.g., number of permutations, voting scheme details). No code is provided.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Provide a public code repository with detailed documentation on the ETC computation pipeline and all hyperparameters used in the experiments.\n\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited to Random Forest, which is a standard baseline but not the only relevant ensemble method. The paper does not compare against other order-sensitive models (e.g., LSTM, Transformer-based classifiers, or sequence-aware decision trees) that are more appropriate for the claimed application domain.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Compare against state-of-the-art sequence-aware models to demonstrate the relative advantage of the proposed ETC-based approach.\n\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper reports single-run results without any measure of variance or statistical significance. Given the stochastic nature of permutation-based methods and the small dataset sizes, single-run F1-scores are insufficient to support the claims of performance.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation of F1-scores over multiple independent runs (e.g., 10 or 30) with different random seeds or permutation sets.\n\nKey questions for the authors:\n- How exactly are feature values incorporated into the ETC calculation? If ETC is only computed on the label sequence, how does the model learn feature-based decision boundaries?\n- Why were only i.i.d. datasets used to evaluate a method designed for order-dependent data?\n- What is the computational complexity of the ETC calculation compared to standard entropy/Gini, and how does it scale with dataset size?\n- Can you provide code and detailed hyperparameters to allow for independent reproduction of the results?\n\nRecommendation: Reject\n```",
+        "reviewer_dimension": "QUAL",
+        "topic": ""
+      },
+      "role": "QUAL",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "897cb92246676824d9f6c883b658ed0207bbdf8c9432e3d83b5c91f9df9209b8"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-llm_summarizer/program.py",
+  "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+  "program_version": "seed-llm_summarizer",
+  "role": "QUAL",
+  "seed_kind": "llm_summarizer",
+  "snapshot": {
+    "collections": {
+      "research_v2_summarizer": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "324d72391c6e930e673fd81ec481d2aabfb2c41b384c5fd5531cdbd5e61aad39",
+          "4e6ea1a55b2953a5e2f09e309b0751e2290f317362d235b308f02ffabbe0da41",
+          "e96150e1f2294fec84dbf9587f6d1b29932d9e3619eeee6e72e70f848e4ec20a",
+          "ee7c5e66b04c25772d8140e10a16e4b39c09aab5798e1b1487bd33c15d664497"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "a77bb30bec7501d7fa6490a19b7a65084b43665fccff7766627861125dfc4a0f",
+            "id": "4e6ea1a55b2953a5e2f09e309b0751e2290f317362d235b308f02ffabbe0da41",
+            "metadata": {
+              "role": "QUAL",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: QUAL\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks. The authors empirically compare Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet) against Standard CNNs on the MNIST dataset. The central finding is that while equivariant networks achieve high accuracy with fewer samples and are robust to rotations, they exhibit increased vulnerability to small pixel-wise adversarial attacks compared to standard CNNs, particularly as the range of rotation augmentation increases.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is limited to a single, relatively simple dataset (MNIST), which undermines the generalizability of the claim that equivariant networks are inherently more vulnerable to pixel-wise attacks.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Expand experiments to more complex datasets such as CIFAR-10 or ImageNet subsets to verify if the observed trade-off persists in higher-dimensional feature spaces.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks critical implementation details necessary for reproducibility, including specific hyperparameters (learning rate, optimizer, batch size, number of epochs) and code availability.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters, random seeds, and make the code publicly available to ensure the results can be independently verified.\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The reported results appear to be based on single runs without statistical significance tests, confidence intervals, or variance reporting, making it difficult to assess the reliability of the observed performance differences.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs and include statistical significance tests to validate that the observed robustness gaps are not due to random initialization variance.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison against prior work is incomplete, as the paper does not compare against recent state-of-the-art adversarially robust models or other equivariant architectures that might mitigate the observed vulnerability.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Include comparisons with other recent equivariant architectures (e.g., Steerable CNNs) and discuss how the findings relate to existing literature on adversarial robustness in symmetric networks.\n- subcategory: QUAL-MET\n  polarity: neutral\n  claim: The methodological approach of using data augmentation to induce rotation robustness and then testing against pixel-wise attacks is a valid and clear experimental design for isolating the trade-off.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was MNIST the only dataset chosen for this study, and do you have preliminary results on more complex datasets like CIFAR-10?\n- Can you provide the specific hyperparameters and code used to train the GCNNs and StdCNNs to ensure reproducibility?\n- Did you perform multiple runs with different random seeds, and if so, what was the variance in the reported accuracy drops?\n- How do your findings compare to other equivariant architectures like Steerable CNNs, which were cited but not fully evaluated in the main experiments?\n\nRecommendation: Weak Reject\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "d9daf8285ef2f761c82cd04759ffb46df41a20a2463249c767aea6cc72a8bd2b",
+            "id": "324d72391c6e930e673fd81ec481d2aabfb2c41b384c5fd5531cdbd5e61aad39",
+            "metadata": {
+              "role": "QUAL",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"Latent Sympathetic Examples\" (LSE), a method to explain neural network misclassifications by finding a perturbation in the latent space of a generative model (VAE/VAE-GAN) that, when mapped back to image space, corrects the classifier's error. The method uses gradient descent on the latent vector to minimize cross-entropy loss while keeping the perturbation small. Experiments are conducted on MNIST and CelebA, showing success rates and visual examples of the generated explanations.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: weakness\n  claim: The methodological definition of \"explanation\" is circular and lacks theoretical grounding; it defines an explanation as the perturbation that corrects the error, but does not prove that this perturbation corresponds to the actual causal feature responsible for the misclassification.\n  evidence_anchors: [SRC-004]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical analysis or empirical validation (e.g., correlation with saliency maps or human judgment) that the generated LSEs align with the true causal features of the misclassification, rather than just being a minimal correction.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation lacks rigorous statistical validation; success rates are reported as single-point estimates without confidence intervals, standard deviations, or significance tests, making it difficult to assess the robustness of the results.\n  evidence_anchors: [SRC-007, SRC-008]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation of success rates and perturbation norms over multiple runs or different random seeds. Include statistical tests to compare the performance of 2D vs 10D latent spaces and different traits on CelebA.\n\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Critical implementation details are missing, such as the specific architecture of the classifiers, the number of gradient descent steps, the stopping criteria beyond \"c(x')=y\", and the code availability, which hinders reproducibility.\n  evidence_anchors: [SRC-003, SRC-005]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with hyperparameters (learning rate, number of iterations, optimizer type), classifier architecture details, and make the code publicly available to ensure reproducibility.\n\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The paper fails to compare its method against other established explanation techniques (e.g., LIME, SHAP, Grad-CAM) or other latent-space perturbation methods, limiting the ability to judge its relative effectiveness.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Include a comparative study with at least two other state-of-the-art explanation methods to demonstrate the advantages of LSE in terms of interpretability, fidelity, or computational cost.\n\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The analysis of the effect of latent space dimensionality is based on a small sample size (87 misclassified examples for MNIST) and lacks statistical rigor, with no indication of variance or reliability of the success rate metrics.\n  evidence_anchors: [SRC-007]\n  confidence: 4\n  actionable_suggestion: Increase the sample size for the MNIST experiments and report confidence intervals for the success rates to provide a more robust statistical analysis.\n\nKey questions for the authors:\n- How do you ensure that the generated LSEs are not just exploiting artifacts of the generative model or the classifier, but actually reflect the true reasons for the misclassification?\n- What are the computational costs of generating LSEs compared to other explanation methods, and is it feasible for real-time applications?\n- Can you provide a quantitative metric for the \"interpretability\" of the generated explanations, rather than relying solely on qualitative visual examples?\n\nRecommendation: Weak Reject\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "8a8cebe814e563a6d7542e2dbc897f3994a71e43e557ba880a1a960b4d4acedb",
+            "id": "ee7c5e66b04c25772d8140e10a16e4b39c09aab5798e1b1487bd33c15d664497",
+            "metadata": {
+              "role": "QUAL",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: QUAL\nPaper summary: The paper provides a theoretical analysis of non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam, specifically focusing on the DirectPred and DirectCopy variants. By analyzing the learning dynamics in the eigenspace of the representation covariance matrix, the authors demonstrate that these methods implicitly regularize variance, preventing representational collapse. Based on this analysis, they propose an \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the Exponential Moving Average (EMA) target network without performance degradation. The work is supported by linear network simulations and empirical validation on CIFAR-10 and STL-10 using VGG11 backbones.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The theoretical derivation of the implicit variance regularization mechanism is mathematically consistent and correctly identifies the role of the predictor network and stop-gradient in preventing collapse.\n  evidence_anchors: [SRC-004, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is limited to small-scale datasets (CIFAR-10, STL-10) and a relatively small backbone (VGG11), which may not fully validate the claim that the isotropic loss is robust at scale or for complex architectures.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include experiments on larger datasets (e.g., ImageNet) or more complex backbones (e.g., ResNet-50) to demonstrate the scalability of the proposed isotropic loss.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, weight decay, EMA decay rates for baselines) and does not explicitly state if code is available.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters used for the CIFAR-10 and STL-10 experiments and make the code publicly available.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison is limited to the standard BYOL/SimSiam loss with and without EMA, lacking comparisons to other state-of-the-art non-contrastive methods (e.g., VICReg, Barlow Twins) or recent variants that also address the EMA requirement.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Add comparisons with other non-contrastive SSL methods that do not rely on EMA or contrastive pairs to better position the proposed method in the current landscape.\n- subcategory: QUAL-STA\n  polarity: strength\n  claim: The authors report standard deviations over four random seeds for the linear readout accuracies, providing a basic level of statistical validation for the empirical results.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Consider increasing the number of seeds or providing confidence intervals for more robust statistical significance, especially given the small margin in some comparisons.\n\nKey questions for the authors:\n- How does the proposed isotropic loss perform on larger-scale datasets like ImageNet with deeper backbones?\n- Are the hyperparameters for the isotropic loss sensitive to the choice of the exponent $\\alpha$ in the predictor network?\n- Can the theoretical insights be extended to non-linear predictor networks or more complex augmentation strategies?\n\nRecommendation: Weak Accept\n```"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "71df426f88b3a4cdc6d0fd9b55bc97f3cb1c468c5677cdc4cf07adf385e06ae9",
+            "id": "e96150e1f2294fec84dbf9587f6d1b29932d9e3619eeee6e72e70f848e4ec20a",
+            "metadata": {
+              "role": "QUAL",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, leading to \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" ensemble method. The authors compare this approach against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 2\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: weakness\n  claim: The core methodological premise is flawed because the proposed ETC impurity measure is applied to the label sequence of the entire dataset (or node) rather than the feature-label relationship required for decision tree splitting. Standard decision trees split based on feature values to minimize label impurity within resulting subsets; however, the paper defines ETC Gain based on the ETC of the label sequence itself (Equation 1), which does not account for the feature values used to create the split. Consequently, the \"split\" is not actually driven by feature information in the standard sense, but rather by the global order of labels, making the resulting \"tree\" structurally invalid as a feature-based classifier.\n  evidence_anchors: [SRC-005]\n  confidence: 5\n  actionable_suggestion: The authors must clarify how feature values are used in the ETC calculation. If ETC is only computed on labels, the model is not a decision tree in the traditional sense. If features are involved, the definition of ETC Gain must be revised to reflect the partitioning of feature space.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is severely inadequate, relying on only six small, standard UCI datasets (Iris, Wine, etc.) that are typically i.i.d. and lack the temporal or sequential structure the paper claims to address. The paper fails to demonstrate any advantage on datasets with actual order dependencies (e.g., time series, text, or sequential data), which is the primary motivation for the work.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Include experiments on datasets with inherent sequential or temporal structure (e.g., time series classification, sequence labeling) to validate the claim that the method captures order dependencies.\n\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The performance comparison against Random Forest is misleading and unfavorable. The proposed method underperforms Random Forest on 4 out of 6 datasets and only matches it on one, with a single win on Haberman's Survival. The paper does not provide statistical significance tests or confidence intervals, making it impossible to determine if the small differences are meaningful.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Provide statistical significance tests (e.g., paired t-tests or Wilcoxon signed-rank tests) across multiple random splits to validate performance differences.\n\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility. It does not specify the exact version of the NSRPS algorithm used, how the ETC is computed for multi-class or continuous features, or the specific hyperparameters for the Permutation Decision Forest (e.g., number of permutations, voting scheme details). No code is provided.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Provide a public code repository with detailed documentation on the ETC computation pipeline and all hyperparameters used in the experiments.\n\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited to Random Forest, which is a standard baseline but not the only relevant ensemble method. The paper does not compare against other order-sensitive models (e.g., LSTM, Transformer-based classifiers, or sequence-aware decision trees) that are more appropriate for the claimed application domain.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Compare against state-of-the-art sequence-aware models to demonstrate the relative advantage of the proposed ETC-based approach.\n\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper reports single-run results without any measure of variance or statistical significance. Given the stochastic nature of permutation-based methods and the small dataset sizes, single-run F1-scores are insufficient to support the claims of performance.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation of F1-scores over multiple independent runs (e.g., 10 or 30) with different random seeds or permutation sets.\n\nKey questions for the authors:\n- How exactly are feature values incorporated into the ETC calculation? If ETC is only computed on the label sequence, how does the model learn feature-based decision boundaries?\n- Why were only i.i.d. datasets used to evaluate a method designed for order-dependent data?\n- What is the computational complexity of the ETC calculation compared to standard entropy/Gini, and how does it scale with dataset size?\n- Can you provide code and detailed hyperparameters to allow for independent reproduction of the results?\n\nRecommendation: Reject\n```"
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_summarizer"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "324d72391c6e930e673fd81ec481d2aabfb2c41b384c5fd5531cdbd5e61aad39",
+          "4e6ea1a55b2953a5e2f09e309b0751e2290f317362d235b308f02ffabbe0da41",
+          "e96150e1f2294fec84dbf9587f6d1b29932d9e3619eeee6e72e70f848e4ec20a",
+          "ee7c5e66b04c25772d8140e10a16e4b39c09aab5798e1b1487bd33c15d664497"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "543c0a893cf085cf8cc2a770b4d59f755c2456919c12134817b0679203b69530",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "fe3cf8aa15a56e8f7bd09f92f8541452d8c1fef5c46b28429f7de1aa4735cc77",
+    "521c29b5c751e8189663eff5f15f61af6df0d4076f11a37945931fb797a31f6a",
+    "b47e30c80442063a37564077b4faf7360c9bb084d77ab65ae61c30f217868b21",
+    "897cb92246676824d9f6c883b658ed0207bbdf8c9432e3d83b5c91f9df9209b8"
+  ]
+}

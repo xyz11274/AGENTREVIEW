@@ -1,0 +1,79 @@
+{
+  "config": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/services.judge-seqs16.json",
+  "before": {
+    "role": "judge",
+    "running": false,
+    "record": {
+      "role": "judge",
+      "process": {
+        "pid": 2440320,
+        "uid": 1032,
+        "start_time": "505048484",
+        "argv": [
+          "/data/xyj/envs/qwen38serve/bin/python",
+          "-m",
+          "vllm.entrypoints.openai.api_server",
+          "--model",
+          "/data/xyj/models/Qwen3.8-27B",
+          "--served-model-name",
+          "qwen3.8-27b",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "18001",
+          "--dtype",
+          "bfloat16",
+          "--tensor-parallel-size",
+          "4",
+          "--max-model-len",
+          "65536",
+          "--gpu-memory-utilization",
+          "0.85",
+          "--max-num-seqs",
+          "8",
+          "--reasoning-parser",
+          "qwen3"
+        ]
+      },
+      "model_root": "/data/xyj/models/Qwen3.8-27B"
+    }
+  },
+  "started": 1789613953.391803,
+  "role": "judge",
+  "after": {
+    "role": "judge",
+    "process": {
+      "pid": 2870949,
+      "uid": 1032,
+      "start_time": "509566041",
+      "argv": [
+        "/data/xyj/envs/qwen38serve/bin/python",
+        "-m",
+        "vllm.entrypoints.openai.api_server",
+        "--model",
+        "/data/xyj/models/Qwen3.8-27B",
+        "--served-model-name",
+        "qwen3.8-27b",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "18001",
+        "--dtype",
+        "bfloat16",
+        "--tensor-parallel-size",
+        "4",
+        "--max-model-len",
+        "65536",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--max-num-seqs",
+        "16",
+        "--reasoning-parser",
+        "qwen3"
+      ]
+    },
+    "model_root": "/data/xyj/models/Qwen3.8-27B"
+  },
+  "status": "ready",
+  "ended": 1789614238.7499251
+}

@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T18:26:11.076795+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "543c0a893cf085cf8cc2a770b4d59f755c2456919c12134817b0679203b69530",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "BJKYvt5lg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes PixelVAE, a latent variable model that combines the global structure modeling of Variational Autoencoders (VAEs) with the fine-detail capture of PixelCNNs by using a PixelCNN-based autoregressive decoder. The authors extend this to a hierarchical architecture and evaluate it on binarized MNIST, 64x64 ImageNet, and LSUN bedrooms, claiming state-of-the-art performance on MNIST and competitive results on ImageNet.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed model architecture is mathematically well-formulated, correctly defining the autoregressive conditional likelihood and the hierarchical evidence lower bound (ELBO) for training.\n  evidence_anchors: [SRC-005, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation on 64x64 ImageNet is limited to a single run without reporting variance or confidence intervals, and the model's log-likelihood is slightly worse than the PixelRNN baseline, making the claim of \"competitive performance\" less robust.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Report mean and standard deviation over multiple independent runs for the 64x64 ImageNet experiments to demonstrate statistical significance and robustness of the reported log-likelihood.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, batch sizes, number of training epochs), and does not mention code availability.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters, training schedules, and dataset splits, and make the source code publicly available to facilitate reproduction.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work on 64x64 ImageNet is incomplete, as it only compares against PixelRNN and Gated PixelCNN, omitting other relevant state-of-the-art generative models (e.g., VAEs with normalizing flows, or other autoregressive models) that were available at the time.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Include comparisons with a broader set of recent state-of-the-art models on the 64x64 ImageNet benchmark to provide a more comprehensive evaluation of the model's performance.\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper relies on single-point estimates for most reported metrics (e.g., NLL on MNIST and ImageNet) without statistical tests or confidence intervals, which is insufficient to validate the significance of the reported improvements, especially for small margins.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 5\n  actionable_suggestion: Conduct multiple independent training runs and report the mean and standard deviation (or confidence intervals) for all key metrics to ensure that the observed improvements are statistically meaningful.\n\nKey questions for the authors:\n- Can you provide the mean and standard deviation of the log-likelihood over multiple independent runs for the 64x64 ImageNet experiments?\n- What specific hyperparameters (e.g., learning rate, batch size, number of epochs) were used for training the models on MNIST, ImageNet, and LSUN bedrooms?\n- Why were other recent state-of-the-art generative models not included in the comparison on the 64x64 ImageNet benchmark?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "ef8434bcc8613d1a5e9daa9db7a2fd17b826b78382955f71c2071c5c7b6bf515",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "6a081c8ce8ae4616c35cabaae5a62bf79e0c8681bc89fb8c15a7a9dd55ece89b"
+  },
+  "review_plan_identity_sha256": "0a8847d2942b4b10c098b5496dbf2a0a45357a1658ca6e8c0bf77141987e69ae",
+  "role": "QUAL",
+  "run_id": "seed-llm_summarizer"
+}

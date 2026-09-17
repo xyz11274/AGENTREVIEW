@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-17T03:41:43.047107+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "27c71c14bb95b1cc5afb32f8f474d2dddaddfcb1f630672eeec8d75861c937c1",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "Ske25sC9FQ",
+  "program_version": "seed-vector_search",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in rotation-equivariant neural networks (GCNNs, H-Nets, PTN, RotEqNet) compared to standard CNNs. The study is conducted on the MNIST dataset.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and explicitly stating \"Paper under double-blind review\" in the header, with no visible author names, affiliations, or self-identifying acknowledgments.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The paper uses the MNIST dataset, which is a standard, publicly available benchmark for handwritten digit recognition. MNIST does not contain personally identifiable information (PII) or sensitive personal data, and its use for academic research is standard practice and compliant with data privacy regulations.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section. While the work is on a benign dataset (MNIST), ICLR submissions typically require a discussion of the broader societal impact, potential misuse, or ethical implications of the research, especially regarding adversarial robustness which has security implications.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" or \"Ethical Considerations\" section discussing the implications of the observed trade-off between geometric and pixel-wise robustness, and any potential societal or security impacts of deploying such models.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The research focuses on adversarial robustness, which has dual-use potential (e.g., for creating more robust security systems or for developing more effective attacks). However, the paper does not discuss these ethical dimensions or potential harms, which is a minor gap given the benign nature of the MNIST task.\n  evidence_anchors: [SRC-002]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence or two in the conclusion or a new section acknowledging the dual-use nature of adversarial robustness research and the importance of responsible deployment.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper cites all relevant prior work on equivariant networks and adversarial attacks (e.g., Cohen & Welling, Worrall et al., Madry et al.) and presents original empirical findings. There is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-011, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Did you consider the broader societal or security implications of the trade-off between geometric and pixel-wise robustness, and if so, why is it not discussed in the paper?\n- Are there any ethical considerations or potential harms associated with the deployment of models that are robust to one type of attack but vulnerable to another, and how do you recommend practitioners handle this trade-off?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "6e4004048b706d93958ba5c9975fc1fbbbf1c4498e886b1c079f9fbf2a4c83c7",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "bfb31a87b08c66d282e515a6b76ec4b13358b327f1fade0f6b146a3573ef377c"
+  },
+  "review_plan_identity_sha256": "af4f34c311030d322493b64be4c5c8bf7d4d014d0546910a23d8d8377ba28600",
+  "role": "POL",
+  "run_id": "build"
+}

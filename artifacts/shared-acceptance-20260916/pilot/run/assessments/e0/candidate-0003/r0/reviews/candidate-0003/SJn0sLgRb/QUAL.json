@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T21:25:39.855922+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "a5b61eb2f52be60069e14ea840fd7929898da55ebb0451437455fd580c27cf83",
+    "request_sha256": "8808181dbce48e593f1448d6196535431936e460cb7bb53030aa5d98e7316634",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "3db6b44e10aacfe684957efbf69eab68001d6cca559c602c5077289d1e0007e9",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "candidate-0003",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors claim this simple method acts as a strong regularizer, significantly reducing validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when training data is limited. The method involves a specific training schedule where SamplePairing is enabled after an initial warm-up phase and intermittently disabled before a final fine-tuning stage.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The method is technically sound and correctly formulated; the authors accurately identify that using the label of only one image in a 50/50 mix creates a non-zero lower bound on training loss, which acts as a regularizer.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: strength\n  claim: The experimental design includes appropriate datasets (ILSVRC, CIFAR-10/100, SVHN) and a valuable ablation study on reduced training set sizes, which supports the claim that the method is beneficial for low-data regimes.\n  evidence_anchors: [SRC-008, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper reports single-run results without confidence intervals, standard deviations, or statistical significance tests, making it impossible to determine if the observed improvements (e.g., 1.29% on CIFAR-10) are statistically meaningful or due to random initialization variance.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation over at least 5 independent runs with different random seeds for all main results.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Critical implementation details are missing, including specific learning rates, weight decay, exact number of total epochs, and random seeds; the code is not provided, hindering reproducibility.\n  evidence_anchors: [SRC-008]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters (learning rate, schedule, weight decay) and release the source code.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited; while the paper mentions mixup and SMOTE, it lacks direct empirical comparison against other standard regularization techniques (e.g., Dropout, Batch Normalization variants) or other data augmentation methods (e.g., Cutout, AutoAugment) to isolate the specific benefit of SamplePairing.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: Include ablation studies comparing SamplePairing against other regularization methods or augmentation techniques to demonstrate its unique contribution.\n- subcategory: QUAL-MET\n  polarity: neutral\n  claim: The training schedule (intermittent disabling of SamplePairing) is empirically determined but lacks theoretical justification; the authors acknowledge this is an empirical finding.\n  evidence_anchors: [SRC-006, SRC-012]\n  confidence: 4\n  actionable_suggestion: Provide more analysis on why the intermittent schedule is superior to continuous application or other schedules.\n\nKey questions for the authors:\n- What is the variance in performance metrics across multiple random seeds?\n- Can you share specific hyperparameters (learning rate, weight decay, total epochs) and code for training and evaluation?\n- How do these findings compare to established SOTA augmentation or classification methods in terms of computational cost and performance?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "95fd5bf8b872000dcda049cd1a01fc5753ba8b3b5c1dfb01be0a11c60ac867e8",
+      "prompt_sha256": "8808181dbce48e593f1448d6196535431936e460cb7bb53030aa5d98e7316634"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Data Augmentation by Pairing Samples for Image Classification**\n\n**1. Experimental Scope & Generalizability (QUAL-EXP)**\n*   **Pitfall:** Relying solely on low-dimensional, simple datasets (e.g., MNIST) invalidates generalization claims to broader architectures or higher-dimensional feature spaces.\n*   **Action:** Mandate evaluation on standard, complex benchmarks such as CIFAR-10 or ImageNet subsets. Verify if the proposed pairing strategy’s benefits persist in higher-dimensional spaces where augmentation effects are typically more pronounced.\n\n**2. Statistical Rigor (QUAL-STA)**\n*   **Pitfall:** Reporting single-run results or single-point estimates obscures variance, making it impossible to distinguish true performance gains from initialization noise or random fluctuation.\n*   **Action:** Require mean ± standard deviation over at least 5 independent runs with different random seeds. Include statistical significance tests (e.g., t-tests) to validate that observed improvements are not due to random variance. Ensure sample sizes are sufficient for reliable inference.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Pitfall:** Missing critical implementation details (hyperparameters, seeds, code) prevents independent verification and hinders community adoption.\n*   **Action:** Demand a comprehensive appendix listing all hyperparameters (learning rate, optimizer, batch size, epochs), random seeds, and specific architecture specs. Require public release of source code to ensure full reproducibility.\n\n**4. Comparative Baselines (QUAL-CMP)**\n*   **Pitfall:** Incomplete comparison against state-of-the-art (SOTA) methods limits the novelty and impact of the contribution.\n*   **Action:** Require comparisons with recent, relevant baselines (e.g., standard augmentation techniques, other pairing strategies, or SOTA classification architectures). Discuss how findings align with or contradict existing literature on data augmentation efficacy.\n\n**5. Methodological Validity (QUAL-MET)**\n*   **Pitfall:** Circular definitions or lack of theoretical grounding for the core mechanism (e.g., defining success without causal validation).\n*   **Action:** Request theoretical grounding or empirical validation (e.g., ablation studies, correlation with known metrics) proving that the pairing method addresses the intended problem (e.g., robustness, accuracy) rather than just producing minimal corrections or artifacts.\n\n**Key Questions for Authors:**\n1.  What preliminary results exist on CIFAR-10 or ImageNet? Why was the primary dataset limited to simpler benchmarks?\n2.  Can you share specific hyperparameters, seeds, and code for training and evaluation?\n3.  What is the variance in performance metrics across multiple random seeds?\n4.  How do these findings compare to established SOTA augmentation or classification methods?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise, actionable, and strictly grounded in the paper.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "538d440381dc21c2f4f030d5f341cb3032dba775326d52d0293585c18942e376",
+              "role": "QUAL",
+              "score": 0.4680659391735039
+            },
+            {
+              "id": "d7c5f5ace67ebeb18f099a86339db0ed6e72325a50253a2f34abfcbe9aa8093c",
+              "role": "QUAL",
+              "score": 0.3872437827155548
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Data Augmentation by Pairing Samples for Image Classification**\n\n**1. Experimental Scope & Generalizability (QUAL-EXP)**\n*   **Pitfall:** Relying solely on low-dimensional, simple datasets (e.g., MNIST) invalidates generalization claims to broader architectures or higher-dimensional feature spaces.\n*   **Action:** Mandate evaluation on standard, complex benchmarks such as CIFAR-10 or ImageNet subsets. Verify if the proposed pairing strategy’s benefits persist in higher-dimensional spaces where augmentation effects are typically more pronounced.\n\n**2. Statistical Rigor (QUAL-STA)**\n*   **Pitfall:** Reporting single-run results or single-point estimates obscures variance, making it impossible to distinguish true performance gains from initialization noise or random fluctuation.\n*   **Action:** Require mean ± standard deviation over at least 5 independent runs with different random seeds. Include statistical significance tests (e.g., t-tests) to validate that observed improvements are not due to random variance. Ensure sample sizes are sufficient for reliable inference.\n\n**3. Reproducibility (QUAL-REP)**\n*   **Pitfall:** Missing critical implementation details (hyperparameters, seeds, code) prevents independent verification and hinders community adoption.\n*   **Action:** Demand a comprehensive appendix listing all hyperparameters (learning rate, optimizer, batch size, epochs), random seeds, and specific architecture specs. Require public release of source code to ensure full reproducibility.\n\n**4. Comparative Baselines (QUAL-CMP)**\n*   **Pitfall:** Incomplete comparison against state-of-the-art (SOTA) methods limits the novelty and impact of the contribution.\n*   **Action:** Require comparisons with recent, relevant baselines (e.g., standard augmentation techniques, other pairing strategies, or SOTA classification architectures). Discuss how findings align with or contradict existing literature on data augmentation efficacy.\n\n**5. Methodological Validity (QUAL-MET)**\n*   **Pitfall:** Circular definitions or lack of theoretical grounding for the core mechanism (e.g., defining success without causal validation).\n*   **Action:** Request theoretical grounding or empirical validation (e.g., ablation studies, correlation with known metrics) proving that the pairing method addresses the intended problem (e.g., robustness, accuracy) rather than just producing minimal corrections or artifacts.\n\n**Key Questions for Authors:**\n1.  What preliminary results exist on CIFAR-10 or ImageNet? Why was the primary dataset limited to simpler benchmarks?\n2.  Can you share specific hyperparameters, seeds, and code for training and evaluation?\n3.  What is the variance in performance metrics across multiple random seeds?\n4.  How do these findings compare to established SOTA augmentation or classification methods?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+      "program_version": "candidate-0003",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "QUAL"
+      },
+      "resources": {
+        "completion_chars": 2979,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 13.698152881115675,
+        "prompt_chars": 11561,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "3db6b44e10aacfe684957efbf69eab68001d6cca559c602c5077289d1e0007e9"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "84ed749ebd16871d505bcd48f70f28d1957f2d0a461edb86e54109dcdf13a98b",
+  "review_text": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors claim this simple method acts as a strong regularizer, significantly reducing validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when training data is limited. The method involves a specific training schedule where SamplePairing is enabled after an initial warm-up phase and intermittently disabled before a final fine-tuning stage.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The method is technically sound and correctly formulated; the authors accurately identify that using the label of only one image in a 50/50 mix creates a non-zero lower bound on training loss, which acts as a regularizer.\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: strength\n  claim: The experimental design includes appropriate datasets (ILSVRC, CIFAR-10/100, SVHN) and a valuable ablation study on reduced training set sizes, which supports the claim that the method is beneficial for low-data regimes.\n  evidence_anchors: [SRC-008, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper reports single-run results without confidence intervals, standard deviations, or statistical significance tests, making it impossible to determine if the observed improvements (e.g., 1.29% on CIFAR-10) are statistically meaningful or due to random initialization variance.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: Report mean and standard deviation over at least 5 independent runs with different random seeds for all main results.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Critical implementation details are missing, including specific learning rates, weight decay, exact number of total epochs, and random seeds; the code is not provided, hindering reproducibility.\n  evidence_anchors: [SRC-008]\n  confidence: 5\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters (learning rate, schedule, weight decay) and release the source code.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited; while the paper mentions mixup and SMOTE, it lacks direct empirical comparison against other standard regularization techniques (e.g., Dropout, Batch Normalization variants) or other data augmentation methods (e.g., Cutout, AutoAugment) to isolate the specific benefit of SamplePairing.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: Include ablation studies comparing SamplePairing against other regularization methods or augmentation techniques to demonstrate its unique contribution.\n- subcategory: QUAL-MET\n  polarity: neutral\n  claim: The training schedule (intermittent disabling of SamplePairing) is empirically determined but lacks theoretical justification; the authors acknowledge this is an empirical finding.\n  evidence_anchors: [SRC-006, SRC-012]\n  confidence: 4\n  actionable_suggestion: Provide more analysis on why the intermittent schedule is superior to continuous application or other schedules.\n\nKey questions for the authors:\n- What is the variance in performance metrics across multiple random seeds?\n- Can you share specific hyperparameters (learning rate, weight decay, total epochs) and code for training and evaluation?\n- How do these findings compare to established SOTA augmentation or classification methods in terms of computational cost and performance?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer QUAL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "52422ff9ffcc618c42a1f0cb20a39352969e5083ed2e1e23c2cee809b19325bc",
+    "task_id": "QUAL"
+  },
+  "role": "QUAL",
+  "run_id": "candidate-0003",
+  "schema_version": "research-core-v2-artifact-v1"
+}

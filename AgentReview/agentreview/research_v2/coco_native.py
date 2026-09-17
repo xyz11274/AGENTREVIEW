@@ -130,6 +130,7 @@ def _request(*, paper_path: Path, coco_root: str | Path, run_id: str, model_iden
     ]
     request = {
         "protocol": REQUEST_PROTOCOL, "run_id": run_id, "paper_id": paper.paper_id,
+        "completion_contract": "complete-stop-v1",
         "paper": paper_binding, "paper_text_sha256": hashlib.sha256(paper.text.encode("utf-8")).hexdigest(),
         "paper_character_count": len(paper.text), "input_policy": "complete_paper_text",
         "model_identity": dict(model_identity), "max_tokens": max_tokens,

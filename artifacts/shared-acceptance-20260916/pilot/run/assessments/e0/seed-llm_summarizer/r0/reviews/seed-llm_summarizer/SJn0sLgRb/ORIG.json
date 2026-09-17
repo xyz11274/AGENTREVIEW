@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T18:23:47.445253+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "e51ed88b7a01f35419eccf2ea2192ca612929253a3d2578871b5e87a2331fc5b",
+    "request_sha256": "f31c66e7aef1fc9527a1493e83fd5c453d6951debb48b4e1a4f5ba5e0e9f68de",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "5d52b19414086f85ce131c05cd5586a0b83dc3594dfabc77681e9a4fb013a0f0",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set. The label of the first image is retained for the mixed sample. The authors demonstrate that this simple method significantly improves generalization and reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation techniques and regularization methods like dropout and batch normalization.\n\nDimension score (1-10): 4\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed method, SamplePairing, is a straightforward modification of existing data augmentation techniques, specifically resembling the \"mixup\" technique which was submitted to the same conference and cited in the paper. The core algorithmic contribution is limited to using a fixed 50/50 average and retaining a single label, which the authors acknowledge is equivalent to label blending in terms of learning results.\n  evidence_anchors: [SRC-005, SRC-006]\n  confidence: 5\n  actionable_suggestion: The authors should more explicitly position their work relative to mixup, highlighting any specific advantages of the fixed-weight, single-label approach beyond simplicity, or acknowledge that the methodological novelty is incremental.\n\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The paper lacks theoretical analysis or deep insights into why SamplePairing improves generalization. The authors explicitly state that they only provide empirical evidence and leave the theoretical background for future work. The observation that training accuracy is capped at ~50% is a trivial consequence of the method's design rather than a novel insight into the learning dynamics.\n  evidence_anchors: [SRC-012, SRC-006]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical analysis or a more detailed empirical investigation into the regularization effect of SamplePairing, such as analyzing the impact on the loss landscape or feature space geometry, to deepen the understanding of the method's effectiveness.\n\n- subcategory: ORIG-EXP\n  polarity: strength\n  claim: The experimental setup includes a valuable evaluation of the method's performance under data scarcity, showing that SamplePairing yields larger improvements when the number of training samples is reduced. This highlights the method's potential utility in low-data regimes, such as medical imaging, which is a meaningful contribution to the evaluation of data augmentation techniques.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: Expand the low-data regime experiments to include more datasets or different network architectures to strengthen the claim about the method's value in limited-data scenarios.\n\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of SamplePairing with standard data augmentations (flipping, cropping) and regularization techniques (dropout, batch normalization) is presented as orthogonal and beneficial. However, the rationale for this combination is not deeply explored, and the paper does not provide a compelling argument for why this specific combination is novel or superior to other combinations of existing techniques.\n  evidence_anchors: [SRC-004, SRC-008]\n  confidence: 3\n  actionable_suggestion: Provide ablation studies that isolate the contribution of SamplePairing when combined with other techniques, to better justify the novelty and effectiveness of the proposed combination.\n\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (data augmentation for image classification) is not new, and the paper does not introduce a novel task or dataset. The motivation for the method is based on the general need to avoid overfitting, which is a well-established problem in machine learning.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does SamplePairing compare to mixup in terms of performance and computational efficiency, given that both methods mix two samples?\n- Can you provide a theoretical explanation for why SamplePairing acts as a strong regularizer, particularly in low-data regimes?\n- Have you tested SamplePairing on other types of data (e.g., text, audio) to assess its generality beyond image classification?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "b9329b3d8a53293d4741056eb5ffd8e2d3951ead6ede021f118e4052c2b262fe",
+      "prompt_sha256": "f31c66e7aef1fc9527a1493e83fd5c453d6951debb48b4e1a4f5ba5e0e9f68de"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Reusable Peer-Review Guidance: Originality (ORIG)**\n\n**1. Distinguish Novelty Types**\nExplicitly categorize the paper’s contribution to avoid conflating problem identification with methodological innovation.\n*   **Problem/Insight Novelty:** If the paper identifies a new trade-off, mechanism, or under-explored problem (e.g., geometric vs. adversarial robustness, collapse prevention in SSL), rate **ORIG-PROB** and **ORIG-ANL** as strengths if the insight is non-trivial and well-motivated.\n*   **Methodological Novelty:** If the core contribution is a new algorithm or loss function, evaluate **ORIG-MTH** based on whether it offers a distinct mechanism over existing combinations. If the method is a straightforward assembly of existing techniques (e.g., standard gradient descent + VAEs, or standard attacks on existing architectures) without significant algorithmic modification, flag **ORIG-MTH** as a weakness.\n\n**2. Evaluate Theoretical Depth**\n*   **Analytical Rigor:** High scores for **ORIG-ANL** should be reserved for papers that provide analytical derivations (e.g., eigenspace analysis, implicit regularization proofs) that explain *why* a phenomenon occurs, rather than just observing it empirically.\n*   **Mechanism vs. Observation:** Distinguish between papers that merely benchmark existing models (empirical study) and those that derive new theoretical frameworks or propose novel loss functions derived from those theories.\n\n**3. Assess Experimental Generality**\n*   **Benchmar",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "4fc9e1a7fbbb8d500043b47234a70cdd9dda4397c424cf22162a4cd3df07f2ad",
+              "role": "ORIG",
+              "score": 0.43904399827365714
+            },
+            {
+              "id": "0b06bcb72b77535e69bec32da141bfeb3c36875f12e4d0d8f52536a05cd0e84b",
+              "role": "ORIG",
+              "score": 0.38872160991748017
+            },
+            {
+              "id": "8e7ed3817ed465516835607445bdc7acabf3e77a67d4fc2467e4f194a4cd5b39",
+              "role": "ORIG",
+              "score": 0.3853358737815801
+            },
+            {
+              "id": "14317d65b0c17c2725d8d479e4d12a7d4c7ff24bb58ec850450ebba97f78945a",
+              "role": "ORIG",
+              "score": 0.36139414933090847
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Originality (ORIG)**\n\n**1. Distinguish Novelty Types**\nExplicitly categorize the paper’s contribution to avoid conflating problem identification with methodological innovation.\n*   **Problem/Insight Novelty:** If the paper identifies a new trade-off, mechanism, or under-explored problem (e.g., geometric vs. adversarial robustness, collapse prevention in SSL), rate **ORIG-PROB** and **ORIG-ANL** as strengths if the insight is non-trivial and well-motivated.\n*   **Methodological Novelty:** If the core contribution is a new algorithm or loss function, evaluate **ORIG-MTH** based on whether it offers a distinct mechanism over existing combinations. If the method is a straightforward assembly of existing techniques (e.g., standard gradient descent + VAEs, or standard attacks on existing architectures) without significant algorithmic modification, flag **ORIG-MTH** as a weakness.\n\n**2. Evaluate Theoretical Depth**\n*   **Analytical Rigor:** High scores for **ORIG-ANL** should be reserved for papers that provide analytical derivations (e.g., eigenspace analysis, implicit regularization proofs) that explain *why* a phenomenon occurs, rather than just observing it empirically.\n*   **Mechanism vs. Observation:** Distinguish between papers that merely benchmark existing models (empirical study) and those that derive new theoretical frameworks or propose novel loss functions derived from those theories.\n\n**3. Assess Experimental Generality**\n*   **Benchmark Scope:** Critically evaluate **ORIG-EXP** based on dataset complexity. Findings limited to simple benchmarks (e.g., MNIST, UCI datasets) may not generalize to complex domains (e.g., ImageNet, CIFAR-10).\n*   **Actionable Feedback:** If experiments are limited to simple datasets, explicitly suggest extending to more complex benchmarks to validate the generality of the claimed insights or trade-offs.\n\n**4. Contextualize Combinations**\n*   **Motivation:** For papers combining existing fields (e.g., equivariance + adversarial robustness, generative models + error explanation), assess **ORIG-COM** based on the logical rationale. A clear, well-motivated combination that bridges conceptual gaps is a strength; a forced combination without clear benefit is a weakness.\n\n**5. Critical Assessment of Limitations**\n*   **Negative Analysis:** Evaluate **ORIG-NEG** by checking if the authors provide a deep critical assessment of failure cases or limitations. Merely acknowledging limitations is insufficient; strong papers link failures to specific properties of the model or data (e.g., local minima, annotation ambiguity, dataset bias).\n\n**6. Key Questions for Authors**\n*   Always ask about the generalizability of findings to more complex datasets.\n*   Request theoretical or empirical explanations for non-monotonic behaviors or specific anomalies observed in experiments.\n*   Inquire about the impact of training protocols (e.g., adversarial training) on the observed trade-offs or mechanisms."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Data Augmentation by Pairing Samples for Images Classification",
+        "reviewer_dimension": "ORIG"
+      },
+      "resources": {
+        "completion_chars": 3108,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 16.221145032905042,
+        "prompt_chars": 19114,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "5d52b19414086f85ce131c05cd5586a0b83dc3594dfabc77681e9a4fb013a0f0"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "f23126cbff3fc97236b853d8d7671f5ef3e85e107427f7e467e31edb2989d18a",
+  "review_text": "```\nReviewer dimension: ORIG\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that synthesizes new training samples by averaging two randomly selected images from the training set. The label of the first image is retained for the mixed sample. The authors demonstrate that this simple method significantly improves generalization and reduces validation error rates on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as orthogonal to other augmentation techniques and regularization methods like dropout and batch normalization.\n\nDimension score (1-10): 4\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The proposed method, SamplePairing, is a straightforward modification of existing data augmentation techniques, specifically resembling the \"mixup\" technique which was submitted to the same conference and cited in the paper. The core algorithmic contribution is limited to using a fixed 50/50 average and retaining a single label, which the authors acknowledge is equivalent to label blending in terms of learning results.\n  evidence_anchors: [SRC-005, SRC-006]\n  confidence: 5\n  actionable_suggestion: The authors should more explicitly position their work relative to mixup, highlighting any specific advantages of the fixed-weight, single-label approach beyond simplicity, or acknowledge that the methodological novelty is incremental.\n\n- subcategory: ORIG-ANL\n  polarity: weakness\n  claim: The paper lacks theoretical analysis or deep insights into why SamplePairing improves generalization. The authors explicitly state that they only provide empirical evidence and leave the theoretical background for future work. The observation that training accuracy is capped at ~50% is a trivial consequence of the method's design rather than a novel insight into the learning dynamics.\n  evidence_anchors: [SRC-012, SRC-006]\n  confidence: 5\n  actionable_suggestion: Provide a theoretical analysis or a more detailed empirical investigation into the regularization effect of SamplePairing, such as analyzing the impact on the loss landscape or feature space geometry, to deepen the understanding of the method's effectiveness.\n\n- subcategory: ORIG-EXP\n  polarity: strength\n  claim: The experimental setup includes a valuable evaluation of the method's performance under data scarcity, showing that SamplePairing yields larger improvements when the number of training samples is reduced. This highlights the method's potential utility in low-data regimes, such as medical imaging, which is a meaningful contribution to the evaluation of data augmentation techniques.\n  evidence_anchors: [SRC-003, SRC-011]\n  confidence: 4\n  actionable_suggestion: Expand the low-data regime experiments to include more datasets or different network architectures to strengthen the claim about the method's value in limited-data scenarios.\n\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of SamplePairing with standard data augmentations (flipping, cropping) and regularization techniques (dropout, batch normalization) is presented as orthogonal and beneficial. However, the rationale for this combination is not deeply explored, and the paper does not provide a compelling argument for why this specific combination is novel or superior to other combinations of existing techniques.\n  evidence_anchors: [SRC-004, SRC-008]\n  confidence: 3\n  actionable_suggestion: Provide ablation studies that isolate the contribution of SamplePairing when combined with other techniques, to better justify the novelty and effectiveness of the proposed combination.\n\n- subcategory: ORIG-PROB\n  polarity: neutral\n  claim: The problem formulation (data augmentation for image classification) is not new, and the paper does not introduce a novel task or dataset. The motivation for the method is based on the general need to avoid overfitting, which is a well-established problem in machine learning.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How does SamplePairing compare to mixup in terms of performance and computational efficiency, given that both methods mix two samples?\n- Can you provide a theoretical explanation for why SamplePairing acts as a strong regularizer, particularly in low-data regimes?\n- Have you tested SamplePairing on other types of data (e.g., text, audio) to assess its generality beyond image classification?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer ORIG",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "733a1336772475ccf90ca3ecedfc1f427d16726772c7580043af6eaddeae3ff7",
+    "task_id": "ORIG"
+  },
+  "role": "ORIG",
+  "run_id": "seed-llm_summarizer",
+  "schema_version": "research-core-v2-artifact-v1"
+}

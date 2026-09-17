@@ -1,0 +1,40 @@
+{
+  "candidate_id": "candidate-0001",
+  "initial_proposal_feedback": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/proposals/a1-e2/feedback.json",
+    "sha256": "e33505085e5fb37f22f3a25d04f730fac88dc2eb985689505b80c3701a9b0e11"
+  },
+  "initial_proposal_response": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/proposals/a1-e2/response.json",
+    "sha256": "c41fcca99af1384f2f3708142a27a4b77a3e4b25ed5cc949036ede601f4108fd"
+  },
+  "model_response": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/response.json",
+    "sha256": "7059608e8c4dbf211c2fc934079d22e26cddb1cbb699f883589b8cf94c874d3f"
+  },
+  "program": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/program.py",
+    "sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+  },
+  "request": {
+    "component": "shared_mstar_reflection",
+    "output_budget": 16384,
+    "response": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/requests/4f038a6379c2c5f799579264ac986c6e5931c269b479c4d592216f703bfeb223/response.json",
+      "sha256": "d92a8ce1080baf69bddd12761a9fa38e39db2dae7873b4dd63876cc82e93d68e"
+    },
+    "tokens": {
+      "input_tokens": 1721,
+      "max_model_len": 65536
+    },
+    "usage": {
+      "completion_tokens": 1595,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1721,
+      "prompt_tokens_details": null,
+      "total_tokens": 3316
+    }
+  },
+  "revision": 1,
+  "source_equals_model_output": true
+}

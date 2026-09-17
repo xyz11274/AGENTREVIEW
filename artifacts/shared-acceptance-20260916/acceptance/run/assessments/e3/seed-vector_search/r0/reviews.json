@@ -1,0 +1,14 @@
+{
+  "paper_ids": [
+    "-EHqoysUYLx"
+  ],
+  "partition": "static",
+  "protocol": "research-v2-coco-review-manifest-v1",
+  "records": [
+    {
+      "paper_id": "-EHqoysUYLx",
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/assessments/e3/seed-vector_search/r0/final_reviews/seed-vector_search/-EHqoysUYLx.json",
+      "sha256": "157f6fcbff32de6c9a69590dba23cdb105715b64b97ed3f508399e9f2b14640e"
+    }
+  ]
+}

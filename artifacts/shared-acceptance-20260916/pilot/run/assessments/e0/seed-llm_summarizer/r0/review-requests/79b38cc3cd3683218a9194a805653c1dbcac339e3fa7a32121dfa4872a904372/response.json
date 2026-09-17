@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Originality (ORIG)**\n\n**1. Distinguish Conceptual Novelty from Empirical Observation**\n*   **Guidance:** Differentiate between introducing a new theoretical framework or algorithm (High Originality) and conducting a novel empirical study on existing methods (Moderate Originality).\n*   **Application:** If a paper identifies a previously unexplored trade-off (e.g., geometric vs. adversarial robustness) or mechanism (e.g., implicit variance regularization in SSL), credit the *insight* even if the underlying architectures are standard. However, if the contribution is purely empirical without new methods or deep theoretical analysis, cap the originality score accordingly.\n*   **Check:** Does the paper propose a new loss function, algorithm, or theoretical bound? Or does it merely test existing components in a new configuration?\n\n**2. Evaluate the Depth of Theoretical Analysis**\n*   **Guidance:** Assess whether the analysis provides actionable insights or remains superficial.\n*   **Application:** Strong originality is demonstrated when analysis reveals *why* a method works (e.g., eigenspace dynamics explaining collapse prevention) or *when* it fails. Weak originality is indicated when performance is reported without explaining the underlying causes of success or failure (e.g., underperformance of a new impurity measure without ablation).\n*   **Check:** Does the paper provide analytical expressions, proofs, or deep mechanistic explanations? If the method underperforms baselines, is there a rigorous analysis of the discrepancy?\n\n**3. Assess the Motivation and Problem Formulation**\n*   **Guidance:** Verify that the problem addressed is significant and the motivation is well-established.\n*   **Application:** A novel method applied to a trivial or poorly motivated problem (e.g., order-dependence in standard tabular data without strong justification) reduces originality. Conversely, a creative combination of existing techniques (e.g., ETC + Decision Trees) is valuable only if the rationale for the combination is clearly articulated and the problem is non-trivial.\n*   **Check:** Is the \"gap\" in the literature clearly defined? Is the proposed solution directly addressing a critical limitation, or is it a minor variation of existing ensemble/learning methods?\n\n**4. Scrutinize Experimental Validation of Novel Claims**\n*   **Guidance:** Ensure experiments are designed to specifically test the *novel* aspect of the contribution, not just general performance.\n*   **Application:** If a paper claims a new mechanism (e.g., removing EMA networks), experiments must isolate this variable (e.g., comparing with/without EMA). If a paper claims robustness to a specific factor (e.g., rotation), experiments should vary that factor systematically. Using only simple benchmarks (MNIST, CIFAR-10) for complex claims limits the perceived originality and generalizability.\n*   **Check:** Do the experiments validate the specific theoretical or methodological claim? Are there ablation studies that isolate the contribution of the novel component?\n\n**5. Identify Creative Synthesis**\n*   **Guidance:** Recognize originality in the creative bridging of distinct research areas.\n*   **Application:** Combining concepts from different fields (e.g., time-series complexity measures with decision trees, or equivariant networks with adversarial robustness) can be highly original if the synthesis yields new insights. However, the rationale for the combination must be explicit.\n*   **Check:** Does the paper bridge a conceptual gap between two separate lines of research? Is the combination logical and well-motivated?\n\n**Key Questions for Authors (Template):**\n*   How does the proposed method perform on larger/more complex datasets to validate the generality of the novel claim?\n*   Can you provide a theoretical or empirical explanation for any non-monotonic behaviors or underperformance relative to baselines?\n*   What is the specific theoretical link between the novel component and the observed improvement in generalization/performance?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789582705,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-ade3391dedb0e0cc",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 826,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2950,
+      "prompt_tokens_details": null,
+      "total_tokens": 3776
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Originality (ORIG)**\n\n**1. Distinguish Conceptual Novelty from Empirical Observation**\n*   **Guidance:** Differentiate between introducing a new theoretical framework or algorithm (High Originality) and conducting a novel empirical study on existing methods (Moderate Originality).\n*   **Application:** If a paper identifies a previously unexplored trade-off (e.g., geometric vs. adversarial robustness) or mechanism (e.g., implicit variance regularization in SSL), credit the *insight* even if the underlying architectures are standard. However, if the contribution is purely empirical without new methods or deep theoretical analysis, cap the originality score accordingly.\n*   **Check:** Does the paper propose a new loss function, algorithm, or theoretical bound? Or does it merely test existing components in a new configuration?\n\n**2. Evaluate the Depth of Theoretical Analysis**\n*   **Guidance:** Assess whether the analysis provides actionable insights or remains superficial.\n*   **Application:** Strong originality is demonstrated when analysis reveals *why* a method works (e.g., eigenspace dynamics explaining collapse prevention) or *when* it fails. Weak originality is indicated when performance is reported without explaining the underlying causes of success or failure (e.g., underperformance of a new impurity measure without ablation).\n*   **Check:** Does the paper provide analytical expressions, proofs, or deep mechanistic explanations? If the method underperforms baselines, is there a rigorous analysis of the discrepancy?\n\n**3. Assess the Motivation and Problem Formulation**\n*   **Guidance:** Verify that the problem addressed is significant and the motivation is well-established.\n*   **Application:** A novel method applied to a trivial or poorly motivated problem (e.g., order-dependence in standard tabular data without strong justification) reduces originality. Conversely, a creative combination of existing techniques (e.g., ETC + Decision Trees) is valuable only if the rationale for the combination is clearly articulated and the problem is non-trivial.\n*   **Check:** Is the \"gap\" in the literature clearly defined? Is the proposed solution directly addressing a critical limitation, or is it a minor variation of existing ensemble/learning methods?\n\n**4. Scrutinize Experimental Validation of Novel Claims**\n*   **Guidance:** Ensure experiments are designed to specifically test the *novel* aspect of the contribution, not just general performance.\n*   **Application:** If a paper claims a new mechanism (e.g., removing EMA networks), experiments must isolate this variable (e.g., comparing with/without EMA). If a paper claims robustness to a specific factor (e.g., rotation), experiments should vary that factor systematically. Using only simple benchmarks (MNIST, CIFAR-10) for complex claims limits the perceived originality and generalizability.\n*   **Check:** Do the experiments validate the specific theoretical or methodological claim? Are there ablation studies that isolate the contribution of the novel component?\n\n**5. Identify Creative Synthesis**\n*   **Guidance:** Recognize originality in the creative bridging of distinct research areas.\n*   **Application:** Combining concepts from different fields (e.g., time-series complexity measures with decision trees, or equivariant networks with adversarial robustness) can be highly original if the synthesis yields new insights. However, the rationale for the combination must be explicit.\n*   **Check:** Does the paper bridge a conceptual gap between two separate lines of research? Is the combination logical and well-motivated?\n\n**Key Questions for Authors (Template):**\n*   How does the proposed method perform on larger/more complex datasets to validate the generality of the novel claim?\n*   Can you provide a theoretical or empirical explanation for any non-monotonic behaviors or underperformance relative to baselines?\n*   What is the specific theoretical link between the novel component and the observed improvement in generalization/performance?",
+  "tokens": {
+    "input_tokens": 2950,
+    "max_model_len": 65536
+  }
+}

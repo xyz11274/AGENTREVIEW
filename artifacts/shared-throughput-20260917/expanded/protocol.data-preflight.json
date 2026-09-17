@@ -1,0 +1,111 @@
+{
+  "claim_scope": "development-only; historical exposure and exhaustive family audit incomplete; sealed test remains closed",
+  "data_isolation_gate": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/data-isolation-gate.json",
+    "sha256": "a10bba6262a3f6835a96b651c06372b77debebbe69d5cf5b67155a01151709ad"
+  },
+  "deduplication": {
+    "family_audit": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/family-audit.json",
+      "sha256": "f53f4c52426a8bbb8f7416ca9f4087a713cf90c80a3b77f5713c2bf9de44b54d"
+    },
+    "policy": "identity-family-normalized-content-v1"
+  },
+  "embedding": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "device": "cpu",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "evolution": {
+    "attempts": 6,
+    "max_reflection_tokens": 16384,
+    "mutable_scope": "memory",
+    "parent_temperature": 0.5,
+    "random_seed": 20260916,
+    "reflection_scope": "scores_and_traces",
+    "rotating_sample_size": 2
+  },
+  "execution_profile": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/execution-paper2.json",
+    "sha256": "8492ababf333ab9fc588f3986d66753e6fdd5b8e436f7a9385ffc6961a53e604"
+  },
+  "experiment_id": "shared-memory-expanded-development-20260917",
+  "failure_policy": {
+    "candidate_failures": 1,
+    "candidate_repairs": 2,
+    "request_attempts": 2,
+    "round_repairs": 5
+  },
+  "generation": {
+    "input_max_tokens": 49152,
+    "memory_build_llm_calls": 2,
+    "memory_max_tokens": 4096,
+    "memory_query_mode": "instruction",
+    "memory_read_llm_calls": 2,
+    "meta_max_tokens": 16384,
+    "native_max_tokens": 8192,
+    "native_num_fewshot": 0,
+    "paper_context_max_chars": null,
+    "review_max_tokens": 8192
+  },
+  "historical_exposure_manifests": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/historical-exposure.json",
+      "sha256": "986965beedc7a87a28edbf2cb4a7aff5e9d8dbc697e005fda99ebe1eb238ecfc"
+    }
+  ],
+  "launch_policy": {
+    "status": "data-preflight-only; not launchable without throughput gate"
+  },
+  "model": {
+    "api_key_env": "OPENAI_API_KEY",
+    "base_url": "http://127.0.0.1:18001/v1",
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "max_num_seqs": 8,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "non_memory_conditions": {
+    "final_mode": "meta",
+    "frozen_s2": {},
+    "review_policy_program": {
+      "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/seeds/vector_search.py",
+      "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "s2_mode": "off"
+  },
+  "protocol": "shared-memory-experiment-v1",
+  "scoring_config": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/deployment/original-coco/scoring.frozen.json",
+    "sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391"
+  },
+  "splits": {
+    "build": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/manifest.json",
+      "sha256": "90c7b74b5d2778958360d03d2bf1184a16a9ea89dd4bd76d500d1f735524b1ca"
+    },
+    "rotating": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/rotating/manifest.json",
+      "sha256": "5170ee4878e7687cd8b46c5d4bc8331ce6722974c8c598a235e6a8be46ff8305"
+    },
+    "sealed_test": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/manifest.json",
+      "sha256": "243dde2bafdeebaf9eb0e05e084ffa47072a6f7841c0f6478d99b90e313b2bde"
+    },
+    "static": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/static/manifest.json",
+      "sha256": "a2ac3a4511cda2a8f7f61c8da01da6be5cf4fba39a9683cb7b710b2117981313"
+    }
+  },
+  "status": "frozen"
+}

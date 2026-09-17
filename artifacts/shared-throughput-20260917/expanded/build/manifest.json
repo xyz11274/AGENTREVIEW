@@ -1,0 +1,142 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/Ske25sC9FQ.json",
+          "sha256": "e729fad3900062a9edbd5e03e0dd18e0297c1d826e73ff5c57ca95b0d7855d6d"
+        }
+      },
+      "content_sha256": "605f875599c82cdac4fa172e407003dc17751e32d9a12c0ead0ab0db6a8f332f",
+      "normalized_content_sha256": "5019663751f4f3c8f8b49d401d58be3c4bc0cff4a165829b338d69c258587d9f",
+      "paper_id": "Ske25sC9FQ",
+      "source_partition": "build",
+      "title": "Robustness and Equivariance of Neural Networks",
+      "version_ids": [
+        "Ske25sC9FQ"
+      ],
+      "work_family": "coco-title-6211e91945c4684d37434e754afad6e0053295c05850609bb1d10d65dd9013d9"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/S1EzRgb0W.json",
+          "sha256": "b9c74042cd41790b3f8b4487862562af64f80c120344f750db21dff7a50bfee5"
+        }
+      },
+      "content_sha256": "26423f5ff695eb0d60e0c9bf81b33997bb4f54c7e378376ada93fa3aea684d32",
+      "normalized_content_sha256": "4cf03add19bc0e85c2cbb8118b900fce270c14e27636bc896dec22adf82bc136",
+      "paper_id": "S1EzRgb0W",
+      "source_partition": "build",
+      "title": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples",
+      "version_ids": [
+        "S1EzRgb0W"
+      ],
+      "work_family": "coco-title-37eecf0337d78c859875afeee24dbf28b150811f89d0be74d99c7a07d2b77a5f"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/zMNUNd9zs1.json",
+          "sha256": "7f0bf883bc68b40da50f41c504e62b40627c925c28be102e3c603130410b554f"
+        }
+      },
+      "content_sha256": "409566c67681bb974daa4d3b28e8bf5262445c964fffc63212cb0e9988147f5d",
+      "normalized_content_sha256": "6595c92f13820072a8c1c564564cc48c94ea3bdf946ef3b598e215bdab0b3597",
+      "paper_id": "zMNUNd9zs1",
+      "source_partition": "build",
+      "title": "Implicit variance regularization in non-contrastive SSL",
+      "version_ids": [
+        "zMNUNd9zs1"
+      ],
+      "work_family": "coco-title-23b90f4aeb6abfba3de3ba2f4b5c0724ce40efc6626e967b158c418f1fab688c"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/2MRz5bSnan.json",
+          "sha256": "eaba2278ac4b2a404dd2608821131941e22802b98be09b625701bf747f2c1c3c"
+        }
+      },
+      "content_sha256": "2d555e48a953aca83f5a1e0b7cf4f9439d8e08a202c26e98b747f4d2d35706d7",
+      "normalized_content_sha256": "9f28db30273092f1b90b34a90456b675df252667fb06f958b1898aaf45908fdf",
+      "paper_id": "2MRz5bSnan",
+      "source_partition": "build",
+      "title": "Permutation Decision Trees using Structural Impurity",
+      "version_ids": [
+        "2MRz5bSnan"
+      ],
+      "work_family": "coco-title-cb883ef8c7dc2c326f2c60a1c147b26493cb7d8cd6d160d1dddd37c106a97871"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/HJflg30qKX.json",
+          "sha256": "d45e80f98478fa61f66d969f08c6edbdec371797fa556f5bbda03339f1a43677"
+        }
+      },
+      "content_sha256": "fd959f01ec32402656b9ff7c17f8a4936ac88a49dc4c1f726fde7d39c2e29606",
+      "normalized_content_sha256": "ec6924afc437f10f441fc322f996aef63668f5503ebfef75b1514e703c278aba",
+      "paper_id": "HJflg30qKX",
+      "source_partition": "build",
+      "title": "Gradient descent aligns the layers of deep linear networks",
+      "version_ids": [
+        "HJflg30qKX"
+      ],
+      "work_family": "coco-title-bab92c476ae7637e64633b23fecb26bd1a0891dc09f6b6f44136931d60643041"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/gcD2UtCGMc2.json",
+          "sha256": "884076d5808c2f33b9ee8ea9e31b53f7330d013bfd2116edf83857caf64d4f93"
+        }
+      },
+      "content_sha256": "ce1cbd0d21fef00723c821aed9a9d6581b5921225d51e4b5e498481991ecc9fc",
+      "normalized_content_sha256": "a9241a8e01bea132d390330c68db226dbcee44e7fd24bcf05e534ad3f971bc14",
+      "paper_id": "gcD2UtCGMc2",
+      "source_partition": "build",
+      "title": "Replicable Bandits",
+      "version_ids": [
+        "gcD2UtCGMc2"
+      ],
+      "work_family": "coco-title-6cb833ebe0eecdc92e0cb62cd0491807dcd668277fcbab1cea262a5fd09f5bd6"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/14rn7HpKVk.json",
+          "sha256": "5d030ecf9b5f8871062b09797c30257c88ad40164c709c4e0cf493abd76e85e6"
+        }
+      },
+      "content_sha256": "2514dc23c6414953a762e2c289ab1e4a68c76d947543c4642a3df4950a3c7fb7",
+      "normalized_content_sha256": "2aa2bd1f93e73c021a26f2456ebbf65a1a59b5fb060265b952490722c86d2f9a",
+      "paper_id": "14rn7HpKVk",
+      "source_partition": "build",
+      "title": "SALMONN: Towards Generic Hearing Abilities for Large Language Models",
+      "version_ids": [
+        "14rn7HpKVk"
+      ],
+      "work_family": "coco-title-9ffae7ebcd7cac74b1610707c6263b524afc8096567f08fcb835d59c656f3a42"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/expanded/build/papers/Skq89Scxx.json",
+          "sha256": "7553aa4c626f71b04a690b868d9fcc8ba4abd08587ba9acb2505c8aaeba8e101"
+        }
+      },
+      "content_sha256": "290b37620a850308be601e06fb8b9f3bd21038c650c07f8206f8fd0d70b52854",
+      "normalized_content_sha256": "ddfefeae04222b97af06dc8e597cdf6d533c72f8a558eedfb6bff0b136be4c72",
+      "paper_id": "Skq89Scxx",
+      "source_partition": "build",
+      "title": "SGDR: Stochastic Gradient Descent with Warm Restarts",
+      "version_ids": [
+        "Skq89Scxx"
+      ],
+      "work_family": "coco-title-77de83521b31df6ce1c267b6dc62126700b3e0dfda49c05b2bea552cadaa9912"
+    }
+  ],
+  "split": "build"
+}

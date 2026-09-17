@@ -1,0 +1,27 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "Refine the following review experience for the ORIG dimension. Make it concise, actionable, and specific.\n\nTopic: Evaluating Originality in Empirical Studies of Robustness Trade-offs\nContent: When reviewing the ORIG dimension for papers that do not propose new algorithms but instead conduct empirical studies on existing methods, focus on the novelty of the problem formulation (ORIG-PROB) and the insights gained (ORIG-ANL). A key strength is identifying previously unaddressed challenges, such as the trade-off between geometric equivariance and pixel-wise adversarial robustness. However, originality is weakened if the experimental setup is limited to simple benchmarks like MNIST (ORIG-EXP), as this raises questions about the generalizability of the insights. The combination of existing techniques (ORIG-COM) should be assessed for its logical motivation, and negative results or critical assessments (ORIG-NEG) that challenge common assumptions (e.g., that equivariance is always beneficial) are valuable contributions to the field.\n\nReturn only the refined content.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": null
+}

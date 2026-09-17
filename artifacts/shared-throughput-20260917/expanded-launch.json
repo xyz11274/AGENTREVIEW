@@ -1,0 +1,11 @@
+{
+  "pid": 2915951,
+  "command": [
+    "/data/xyj/envs/coco-original/bin/python",
+    "-u",
+    "/data/xyj/shengao/AgentReview_0915/deployment/launch_expanded.py",
+    "--worker",
+    "--after-transition",
+    "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/transition-selected-original.json"
+  ]
+}

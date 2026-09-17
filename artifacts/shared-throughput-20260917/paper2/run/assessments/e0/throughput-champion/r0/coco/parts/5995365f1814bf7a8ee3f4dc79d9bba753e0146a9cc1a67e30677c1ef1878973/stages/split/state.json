@@ -1,0 +1,18 @@
+{
+  "attempt_limit": 1,
+  "attempts": [
+    {
+      "number": 1,
+      "status": "complete"
+    }
+  ],
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/5995365f1814bf7a8ee3f4dc79d9bba753e0146a9cc1a67e30677c1ef1878973/request.json",
+    "sha256": "441e11355c05e58a35bb07d8690200579e9938350a6a290e269a4599d33ec954"
+  },
+  "result": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2/run/assessments/e0/throughput-champion/r0/coco/parts/5995365f1814bf7a8ee3f4dc79d9bba753e0146a9cc1a67e30677c1ef1878973/stages/split/result-001.json",
+    "sha256": "36c44f5dfd864c35d6f845b496ebd6082bf5d5de73e9fd36996c5a9f045a423d"
+  },
+  "status": "complete"
+}

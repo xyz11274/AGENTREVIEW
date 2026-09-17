@@ -435,6 +435,7 @@ def build_memory_snapshot(
     build_identity = None
     if seed_kind != "no_memory":
         build_identity = {
+            "completion_contract": "complete-stop-v1",
             "protocol": "research-v2-memory-build-input-v1",
             "role": role,
             "program_path": str(program_source),

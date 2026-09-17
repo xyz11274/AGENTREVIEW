@@ -1,0 +1,18 @@
+{
+  "candidate_failure_budget": {
+    "limit": 1,
+    "used": 0
+  },
+  "candidate_repair_limit": 2,
+  "candidate_repairs": {},
+  "champions": {},
+  "evaluation_epoch": 0,
+  "events": {},
+  "pending_candidates": [],
+  "protocol": "research-v2-failure-policy-v1",
+  "repair_budget": {
+    "limit": 5,
+    "used": 0
+  },
+  "status": "running"
+}

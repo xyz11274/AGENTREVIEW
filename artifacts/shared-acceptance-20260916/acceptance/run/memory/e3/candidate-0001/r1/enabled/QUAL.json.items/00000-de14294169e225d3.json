@@ -1,0 +1,66 @@
+{
+  "checkpoint_id": "ca26ab98b5976af4a42bf5454299a3edf0e5789d81f836b5d9ecf373c9c8efca",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "a0f7c8d59f51a26512d6d8335d9fbad009f0543b245cb88a5195c8bc3376a848",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/repairs/e3/candidate-0001/r1/program.py",
+    "program_sha256": "07747cb41f490ab90c8ca5c21e7e7ec9945797317060fba7b785eb103d379b68",
+    "program_version": "candidate-0001",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "QUAL",
+    "seed_kind": "evolved",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 0,
+      "review_id": "ffbbcc662f53e0a92d82f3c0372d4835f2bff39e64fe4f4743ec20fb2d1d2809",
+      "review_sha256": "bc00cd69c66253d745cbab44a1a1cd0744dd295e440a370b9b818261c7ece5a9"
+    }
+  },
+  "item": {
+    "derivation_version": "candidate-0001",
+    "item_id": "2978780e146190e4bf82472b0c5895329f50033682a763f21e6a00d9637901a8",
+    "payload": {
+      "content": "When evaluating experimental design, flag reliance on single, simple datasets (e.g., MNIST) as a weakness for generalizability and request expansion to complex benchmarks (e.g., CIFAR-10, ImageNet). Scrutinize reproducibility by checking for missing hyperparameters, random seeds, and code availability; require detailed appendices for independent verification. Assess statistical rigor by identifying single-run results without confidence intervals or significance tests, and mandate reporting of mean/variance over multiple independent runs. Evaluate comparisons to prior work by checking for missing state-of-the-art baselines or relevant architectural variants that could mitigate observed issues. Acknowledge valid methodological designs that effectively isolate specific trade-offs or phenomena, even if other aspects are weak.",
+      "reviewer_dimension": "QUAL",
+      "reviewer_name": "QUAL",
+      "topic": "QUAL Review Heuristics"
+    },
+    "role": "QUAL",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "ffbbcc662f53e0a92d82f3c0372d4835f2bff39e64fe4f4743ec20fb2d1d2809"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

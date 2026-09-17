@@ -1,0 +1,23 @@
+{
+  "candidate": {
+    "candidate_id": "seed-vector_search",
+    "lineage": [],
+    "parent_id": null,
+    "program": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/programs/seed-vector_search/program.py",
+      "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+    "revision": 0,
+    "round": 0,
+    "seed": "vector_search",
+    "seed_kind": "vector_search"
+  },
+  "key": "seed-vector_search",
+  "kind": "seed",
+  "memory_enabled": true,
+  "paper_ids": [
+    "-EHqoysUYLx"
+  ],
+  "split": "static"
+}

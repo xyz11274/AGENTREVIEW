@@ -1,0 +1,111 @@
+{
+  "artifact_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/coco-native/r0/native-raw/fe216226e3e7f751f3529966ecf6f7fbaf4c59b1926d2f656a9a70e64cca6dc0/review.json",
+  "identity": {
+    "native": {
+      "fewshot_assets": [],
+      "mode": "qwen3.8-27b",
+      "num_fewshot": 0,
+      "source_files": [
+        {
+          "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/ai_scientist/perform_llm_review.py",
+          "sha256": "342e0d5a29c1468732f5b23b2869897d62d216b50ea8b92e9519a02fc51f2ffb"
+        },
+        {
+          "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/ai_scientist/llm.py",
+          "sha256": "73ed5e450897867d7a72526d3db409a311db6844b33cde7dd2ddc7c54a94f9f3"
+        },
+        {
+          "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/_1_query_ai_reviewer.py",
+          "sha256": "c44af965a0b1101df053567a858c37871358c211b1e1726325c03cb04143f1e2"
+        }
+      ]
+    },
+    "request_id": "c5e4d677b76914282d1f85cdf9da62bfd80f83b98a2b67496556a733c93ef20a"
+  },
+  "input_policy": "complete_paper_text",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "native_identity": {
+    "fewshot_assets": [],
+    "mode": "qwen3.8-27b",
+    "num_fewshot": 0,
+    "source_files": [
+      {
+        "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/ai_scientist/perform_llm_review.py",
+        "sha256": "342e0d5a29c1468732f5b23b2869897d62d216b50ea8b92e9519a02fc51f2ffb"
+      },
+      {
+        "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/ai_scientist/llm.py",
+        "sha256": "73ed5e450897867d7a72526d3db409a311db6844b33cde7dd2ddc7c54a94f9f3"
+      },
+      {
+        "path": "/data/xyj/shengao/CoCoReviewBench/src/evaluation/_1_query_ai_reviewer.py",
+        "sha256": "c44af965a0b1101df053567a858c37871358c211b1e1726325c03cb04143f1e2"
+      }
+    ]
+  },
+  "paper_id": "BJKYvt5lg",
+  "protocol": "research-v2-coco-native-review-v1",
+  "raw": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/coco-native/r0/native-raw/fe216226e3e7f751f3529966ecf6f7fbaf4c59b1926d2f656a9a70e64cca6dc0/raw.json",
+    "sha256": "c0682cf2c6370166e6e47f59c0a7d4a0ec9c0b38b870ff115c20df7d9028c939"
+  },
+  "raw_model_output": "```json\n{\n\"Summary\": \"The paper introduces PixelVAE, a latent variable model that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs. It uses a VAE framework where the decoder is an autoregressive PixelCNN, allowing the model to capture fine-grained details while maintaining a meaningful latent representation. The authors extend this to a hierarchical architecture with multiple stochastic layers. Experiments on binarized MNIST, 64x64 ImageNet, and LSUN bedrooms demonstrate state-of-the-art or competitive performance, efficient use of autoregressive layers, and the ability to learn compressed latent codes.\",\n\"Strengths\": [\n    \"Novel combination of VAE and PixelCNN architectures that addresses the complementary weaknesses of both (VAE blurriness vs. PixelCNN lack of latent structure).\",\n    \"Demonstrates that fewer autoregressive layers are needed compared to standard PixelCNNs to achieve similar or better performance, improving computational efficiency.\",\n    \"Provides insightful analysis of the latent space, showing that the autoregressive decoder allows the latent variables to focus on global structure rather than local details.\",\n    \"Strong empirical results on standard benchmarks (MNIST, ImageNet, LSUN), including state-of-the-art NLL on binarized MNIST.\",\n    \"Clear visualization of the hierarchical structure's effect on generated samples (Figure 5), showing distinct roles for different latent levels.\"\n],\n\"Weaknesses\": [\n    \"The evaluation on 64x64 ImageNet shows a slightly higher NLL (worse likelihood) compared to Gated PixelCNN, relying on qualitative sample quality to justify the model, which is a weaker claim for a density estimation paper.\",\n    \"The paper does not extensively compare against other recent latent variable models with flexible decoders (e.g., VQ-VAE, though perhaps not yet published at the time, or other flow-based VAEs) to isolate the benefit of the autoregressive decoder specifically.\",\n    \"The computational cost of sampling is still high due to the autoregressive nature, and the paper does not provide a detailed comparison of sampling speed vs. PixelCNN, only training efficiency via fewer layers.\",\n    \"The 'Gated PixelVAE without upsampling' variant achieves the best results on MNIST, but the main proposed architecture uses upsampling. The paper could be clearer about which architecture is the primary contribution.\"\n],\n\"Originality\": 3,\n\"Quality\": 3,\n\"Clarity\": 4,\n\"Significance\": 3,\n\"Questions\": [\n    \"How does the sampling time of PixelVAE compare to PixelCNN and standard VAEs? Given the autoregressive decoder, is the inference cost prohibitive for real-time applications?\",\n    \"In the ImageNet experiments, the NLL is slightly worse than Gated PixelCNN. Can the authors provide a more rigorous quantitative comparison of sample quality (e.g., FID scores if available, or human evaluation) to support the claim of 'significantly more globally coherent' samples?\",\n    \"The paper mentions that the higher-level PixelCNN decoders use diagonal Gaussian outputs. Was this a design choice for simplicity or due to convergence issues? Would using a full autoregressive decoder at all levels improve performance?\",\n    \"How sensitive is the model to the number of latent variables? Does the 'compressed' latent space property hold for larger, more complex datasets beyond MNIST and LSUN?\"\n],\n\"Limitations\": [\n    \"The autoregressive decoder makes sampling slow, which is a significant limitation for applications requiring fast generation.\",\n    \"The model's performance on high-resolution images (beyond 64x64) is not evaluated, and it is unclear if the computational benefits of using fewer PixelCNN layers scale well to larger resolutions.\",\n    \"The paper focuses on density estimation and sample quality but does not explore downstream tasks (e.g., classification) that could benefit from the learned latent representations, despite mentioning it as future work.\"\n],\n\"Ethical Concerns\": false,\n\"Soundness\": 3,\n\"Presentation\": 4,\n\"Contribution\": 3,\n\"Overall\": 6,\n\"Confidence\": 4,\n\"Decision\": \"Accept\"\n}\n```",
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/coco-native/r0/native-raw/fe216226e3e7f751f3529966ecf6f7fbaf4c59b1926d2f656a9a70e64cca6dc0/request.json",
+    "sha256": "c32fe2e44e967cfaff3e2cceb177a6cc4672afa5af8abfede683865d6aacfaa8"
+  },
+  "request_id": "c5e4d677b76914282d1f85cdf9da62bfd80f83b98a2b67496556a733c93ef20a",
+  "review_text": "## Strengths\n1. Novel combination of VAE and PixelCNN architectures that addresses the complementary weaknesses of both (VAE blurriness vs. PixelCNN lack of latent structure).\n\n2. Demonstrates that fewer autoregressive layers are needed compared to standard PixelCNNs to achieve similar or better performance, improving computational efficiency.\n\n3. Provides insightful analysis of the latent space, showing that the autoregressive decoder allows the latent variables to focus on global structure rather than local details.\n\n4. Strong empirical results on standard benchmarks (MNIST, ImageNet, LSUN), including state-of-the-art NLL on binarized MNIST.\n\n5. Clear visualization of the hierarchical structure's effect on generated samples (Figure 5), showing distinct roles for different latent levels.\n\n\n## Weaknesses\n1. The evaluation on 64x64 ImageNet shows a slightly higher NLL (worse likelihood) compared to Gated PixelCNN, relying on qualitative sample quality to justify the model, which is a weaker claim for a density estimation paper.\n\n2. The paper does not extensively compare against other recent latent variable models with flexible decoders (e.g., VQ-VAE, though perhaps not yet published at the time, or other flow-based VAEs) to isolate the benefit of the autoregressive decoder specifically.\n\n3. The computational cost of sampling is still high due to the autoregressive nature, and the paper does not provide a detailed comparison of sampling speed vs. PixelCNN, only training efficiency via fewer layers.\n\n4. The 'Gated PixelVAE without upsampling' variant achieves the best results on MNIST, but the main proposed architecture uses upsampling. The paper could be clearer about which architecture is the primary contribution.\n\n\n## Questions\n1. How does the sampling time of PixelVAE compare to PixelCNN and standard VAEs? Given the autoregressive decoder, is the inference cost prohibitive for real-time applications?\n\n2. In the ImageNet experiments, the NLL is slightly worse than Gated PixelCNN. Can the authors provide a more rigorous quantitative comparison of sample quality (e.g., FID scores if available, or human evaluation) to support the claim of 'significantly more globally coherent' samples?\n\n3. The paper mentions that the higher-level PixelCNN decoders use diagonal Gaussian outputs. Was this a design choice for simplicity or due to convergence issues? Would using a full autoregressive decoder at all levels improve performance?\n\n4. How sensitive is the model to the number of latent variables? Does the 'compressed' latent space property hold for larger, more complex datasets beyond MNIST and LSUN?\n\n\n## Limitations\n1. The autoregressive decoder makes sampling slow, which is a significant limitation for applications requiring fast generation.\n\n2. The model's performance on high-resolution images (beyond 64x64) is not evaluated, and it is unclear if the computational benefits of using fewer PixelCNN layers scale well to larger resolutions.\n\n3. The paper focuses on density estimation and sample quality but does not explore downstream tasks (e.g., classification) that could benefit from the learned latent representations, despite mentioning it as future work.\n\n",
+  "run_id": "coco-native",
+  "structured_review": {
+    "Clarity": 4,
+    "Confidence": 4,
+    "Contribution": 3,
+    "Decision": "Accept",
+    "Ethical Concerns": false,
+    "Limitations": [
+      "The autoregressive decoder makes sampling slow, which is a significant limitation for applications requiring fast generation.",
+      "The model's performance on high-resolution images (beyond 64x64) is not evaluated, and it is unclear if the computational benefits of using fewer PixelCNN layers scale well to larger resolutions.",
+      "The paper focuses on density estimation and sample quality but does not explore downstream tasks (e.g., classification) that could benefit from the learned latent representations, despite mentioning it as future work."
+    ],
+    "Originality": 3,
+    "Overall": 6,
+    "Presentation": 4,
+    "Quality": 3,
+    "Questions": [
+      "How does the sampling time of PixelVAE compare to PixelCNN and standard VAEs? Given the autoregressive decoder, is the inference cost prohibitive for real-time applications?",
+      "In the ImageNet experiments, the NLL is slightly worse than Gated PixelCNN. Can the authors provide a more rigorous quantitative comparison of sample quality (e.g., FID scores if available, or human evaluation) to support the claim of 'significantly more globally coherent' samples?",
+      "The paper mentions that the higher-level PixelCNN decoders use diagonal Gaussian outputs. Was this a design choice for simplicity or due to convergence issues? Would using a full autoregressive decoder at all levels improve performance?",
+      "How sensitive is the model to the number of latent variables? Does the 'compressed' latent space property hold for larger, more complex datasets beyond MNIST and LSUN?"
+    ],
+    "Significance": 3,
+    "Soundness": 3,
+    "Strengths": [
+      "Novel combination of VAE and PixelCNN architectures that addresses the complementary weaknesses of both (VAE blurriness vs. PixelCNN lack of latent structure).",
+      "Demonstrates that fewer autoregressive layers are needed compared to standard PixelCNNs to achieve similar or better performance, improving computational efficiency.",
+      "Provides insightful analysis of the latent space, showing that the autoregressive decoder allows the latent variables to focus on global structure rather than local details.",
+      "Strong empirical results on standard benchmarks (MNIST, ImageNet, LSUN), including state-of-the-art NLL on binarized MNIST.",
+      "Clear visualization of the hierarchical structure's effect on generated samples (Figure 5), showing distinct roles for different latent levels."
+    ],
+    "Summary": "The paper introduces PixelVAE, a latent variable model that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs. It uses a VAE framework where the decoder is an autoregressive PixelCNN, allowing the model to capture fine-grained details while maintaining a meaningful latent representation. The authors extend this to a hierarchical architecture with multiple stochastic layers. Experiments on binarized MNIST, 64x64 ImageNet, and LSUN bedrooms demonstrate state-of-the-art or competitive performance, efficient use of autoregressive layers, and the ability to learn compressed latent codes.",
+    "Weaknesses": [
+      "The evaluation on 64x64 ImageNet shows a slightly higher NLL (worse likelihood) compared to Gated PixelCNN, relying on qualitative sample quality to justify the model, which is a weaker claim for a density estimation paper.",
+      "The paper does not extensively compare against other recent latent variable models with flexible decoders (e.g., VQ-VAE, though perhaps not yet published at the time, or other flow-based VAEs) to isolate the benefit of the autoregressive decoder specifically.",
+      "The computational cost of sampling is still high due to the autoregressive nature, and the paper does not provide a detailed comparison of sampling speed vs. PixelCNN, only training efficiency via fewer layers.",
+      "The 'Gated PixelVAE without upsampling' variant achieves the best results on MNIST, but the main proposed architecture uses upsampling. The paper could be clearer about which architecture is the primary contribution."
+    ]
+  },
+  "variant_kind": "coco_native"
+}

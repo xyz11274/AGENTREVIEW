@@ -1,0 +1,27 @@
+{
+  "contract_failure": {
+    "contract_failure": {
+      "category": "candidate",
+      "error": "CandidateContractError: Unknown toolkit interface: llm; use llm_completion(messages, **kwargs) for model calls and embed(texts) for embeddings",
+      "fingerprint": "74bfc76ee5e122ab42c7e3428099b7486e485354750b1d6f43ab8608fa0abfb4",
+      "phase": "shared_candidate_run",
+      "transient": false
+    }
+  },
+  "history": {
+    "1": {
+      "feedback_key": "feedback-0001-e2",
+      "ordinal": 1,
+      "parent_key": "seed-vector_search",
+      "status": "pending"
+    }
+  },
+  "parent": {
+    "candidate_id": "candidate-0001",
+    "lineage": [
+      "seed-vector_search"
+    ],
+    "seed": "vector_search",
+    "static_score": null
+  }
+}

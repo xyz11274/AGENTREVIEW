@@ -1,0 +1,18 @@
+{
+  "attempt_limit": 1,
+  "attempts": [
+    {
+      "number": 1,
+      "status": "complete"
+    }
+  ],
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/seed-experience_learner/r0/coco/request.json",
+    "sha256": "b83631f8762a8810a1c7a8ecc660f4b9653c959f7df50e8a4ba5a7ac41113418"
+  },
+  "result": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/seed-experience_learner/r0/coco/stages/evaluation/result-001.json",
+    "sha256": "71d66ab4405cd628680b1a8704080c823c30a0025c8d1a9abcd75c6c4b524304"
+  },
+  "status": "complete"
+}

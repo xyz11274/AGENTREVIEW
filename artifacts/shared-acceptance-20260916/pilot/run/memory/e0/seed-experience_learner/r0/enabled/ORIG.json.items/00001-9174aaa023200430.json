@@ -1,0 +1,68 @@
+{
+  "checkpoint_id": "94caf7462cd063cfd8ce463e32cd9c30096775d104f871c7b4d356f2b17ecb71",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "e824e906cd25d96c55da8022cbce6aada67464221f03d13523f9d5c21e800e99",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-experience_learner/program.py",
+    "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+    "program_version": "seed-experience_learner",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "ORIG",
+    "seed_kind": "experience_learner",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 1,
+      "review_id": "779d95c213877abc1a41de2fc9fc3e39e4dff34d3baa2e0f11ce48b8f8352be3",
+      "review_sha256": "e9f5bd2b2301a0894ec623ae3a44a01bcb8486cc8c1ef34cd520a20e74de2438"
+    }
+  },
+  "item": {
+    "derivation_version": "seed-experience_learner",
+    "item_id": "e7062d93d039313dd71280939ee11e9e3189011474e987fc151cb35a47738ab0",
+    "payload": {
+      "evidence_to_check": "Check if the authors explicitly justify why the specific combination of techniques is superior to alternative optimization strategies or if they merely state that the combination works. Look for analysis that links the method's design choices to the specific constraints of the new problem formulation.",
+      "failure_mode": "Conflating a novel problem setup with a novel algorithmic contribution, or failing to identify that the method is a straightforward re-implementation of existing techniques applied to a new context without significant conceptual advance.",
+      "review_heuristic": "Distinguish between the novelty of the problem formulation and the novelty of the methodology. If the method is a direct composition of existing components, evaluate whether the rationale for this specific combination is compelling and if it yields capabilities or insights not achievable by the individual parts in isolation.",
+      "reviewer_dimension": "ORIG",
+      "trigger": "The paper proposes a method that combines multiple established techniques (e.g., generative models, gradient optimization, specific correction algorithms) to address a problem framed as a novel application or perspective.",
+      "why_it_matters": "Originality in machine learning often lies in the creative combination of existing tools to solve new problems. A rigorous review must assess whether the combination is superficial or if it provides a clear, well-articulated rationale that advances the field's understanding or capabilities."
+    },
+    "role": "ORIG",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "779d95c213877abc1a41de2fc9fc3e39e4dff34d3baa2e0f11ce48b8f8352be3"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

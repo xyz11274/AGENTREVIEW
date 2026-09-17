@@ -11,6 +11,8 @@ import fcntl
 import math
 import os
 import subprocess
+import threading
+import copy
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -91,12 +93,47 @@ def _source_identity(root: Path) -> list[dict[str, str]]:
     raise ValueError("CoCo source requires the upstream split, classify and evaluation modules")
 
 
-def _model_identity(root: str | Path) -> dict[str, Any]:
+_MODEL_IDENTITY_LOCK = threading.RLock()
+_MODEL_IDENTITY_CACHE = {}
+
+
+def _model_tree_state(directory):
+    state = []
+    for path in sorted(directory.rglob("*")):
+        if path.is_file():
+            st = path.stat()
+            state.append((str(path), str(path.resolve(strict=True)), st.st_dev, st.st_ino,
+                          st.st_size, st.st_mtime_ns, st.st_ctime_ns))
+    return tuple(state)
+
+
+def _model_identity(root: str | Path, *, force_rehash=False) -> dict[str, Any]:
     directory = Path(root).expanduser().resolve(strict=True)
-    files = [_binding(path) for path in sorted(directory.rglob("*")) if path.is_file()]
-    if directory.is_dir() and files:
-        return {"root": str(directory), "files": files, "tree_sha256": value_sha256(files)}
-    raise ValueError("Scoring model requires a populated local directory")
+    # Local Linux notifications detect even same-tick equal-size writes with
+    # restored mtime; metadata additionally binds namespace and symlink targets.
+    # The cache never survives process restart. Freeze rehashes every byte.
+    from concurrent.futures import ThreadPoolExecutor
+    from .model_watch import ModelWatch
+    with _MODEL_IDENTITY_LOCK:
+        before = _model_tree_state(directory)
+        cached = _MODEL_IDENTITY_CACHE.get(directory)
+        changed = cached[2].changed() if cached is not None else True
+        if not force_rehash and not changed and cached is not None and cached[0] == before:
+            return copy.deepcopy(cached[1])
+        if cached is not None:
+            cached[2].close()
+            del _MODEL_IDENTITY_CACHE[directory]
+        watch = ModelWatch(directory)
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            files = list(executor.map(_binding, [item[0] for item in before]))
+        if watch.changed() or _model_tree_state(directory) != before:
+            watch.close()
+            raise ValueError("Scoring model changed during byte verification")
+        if not directory.is_dir() or not files:
+            raise ValueError("Scoring model requires a populated local directory")
+        result = {"root": str(directory), "files": files, "tree_sha256": value_sha256(files)}
+        _MODEL_IDENTITY_CACHE[directory] = (before, result, watch)
+        return copy.deepcopy(result)
 
 
 def materialize_scoring_config(*, coco_root: str | Path, python_executable: str | Path,
@@ -273,6 +310,9 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
         if config.get("lease_path"):
             environment["AGENTREVIEW_QWEN27B_MODE_LEASE_PATH"] = config["lease_path"]
+        for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT"):
+            if name in os.environ:
+                environment[name] = os.environ[name]
         try:
             with log_path.open("wb") as log:
                 result = subprocess.run(command, cwd=stage_root, env=environment, stdout=log, stderr=subprocess.STDOUT, timeout=config["timeout_seconds"], check=False)
@@ -304,16 +344,22 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
 
 def validate_evaluation_receipt(receipt: dict[str, Any], *, expected_paper_ids: list[str] | None = None,
                                 expected_epoch: int | None = None) -> dict[str, Any]:
+    from .cohort_receipt import PROTOCOL as COMPOSED_PROTOCOL, validate_composed
+    if receipt.get("protocol") == COMPOSED_PROTOCOL:
+        return validate_composed(receipt, expected_paper_ids=expected_paper_ids, expected_epoch=expected_epoch)
     body = {key: value for key, value in receipt.items() if key != "receipt_id"}
     if receipt.get("protocol") == RECEIPT_PROTOCOL and receipt.get("status") == "complete" and receipt.get("receipt_id") == value_sha256(body):
         pass
     else:
         raise ValueError("Candidate admission requires a complete self-hashed standard CoCo receipt")
     paper_ids = _ids(receipt["paper_ids"])
+    if receipt.get("review_target") != "final":
+        raise ValueError("Only final complete-review assessments can be admitted")
     if expected_paper_ids is not None and paper_ids != expected_paper_ids:
         raise ValueError("Evaluation receipt paper order differs from the frozen cohort")
     if expected_epoch is not None and receipt["evaluation_epoch"] != expected_epoch:
         raise ValueError("Evaluation receipt epoch differs from the comparison epoch")
+    validate_stage_integrity(receipt.get("stage_integrity", {}), paper_ids)
     rows = [read_json(_bound_file(binding)) for binding in receipt["papers"]]
     if [row["paper_id"] for row in rows] != paper_ids or rows != receipt["rows"]:
         raise ValueError("Evaluation receipt requires exact persisted rows for its cohort")
@@ -375,6 +421,35 @@ def validate_assessment_receipt(receipt: dict[str, Any] | str | Path, *, expecte
     return value
 
 
+def validate_stage_integrity(stages, paper_ids):
+    if set(stages) != {"split", "classify", "evaluation"}:
+        raise ValueError("Assessment requires complete Split, Classify and Judge integrity receipts")
+    for stage, ref in stages.items():
+        value = read_json(_bound_file(ref))
+        if (value.get("status") != "complete" or value.get("stage") != stage
+                or value.get("unhandled_failures") != 0
+                or [row["paper_id"] for row in value["checks"]] != paper_ids):
+            raise ValueError("CoCo stage integrity requires complete cohort coverage without unresolved failures")
+        if not value.get("tasks"):
+            raise ValueError("CoCo stage integrity requires raw model completion evidence")
+        for task_ref in value["tasks"]:
+            task = read_json(_bound_file(task_ref))
+            choices = task["completion"]["choices"]
+            tokens = task["tokens"]
+            if (task.get("status") != "complete" or len(choices) != 1
+                    or choices[0].get("finish_reason") != "stop"
+                    or not choices[0]["message"].get("content")
+                    or tokens["input_tokens"] + tokens["output_budget"] > tokens["max_model_len"]):
+                raise ValueError("CoCo stage contains truncated or over-budget model output")
+        for row in value["checks"]:
+            if stage == "split" and (not row["opinion_count"] or max(row["raw_coverage"]) != 1.0):
+                raise ValueError("CoCo Split has unresolved missing parts")
+            if stage == "classify" and (not row["opinion_count"] or row["opinion_count"] != row["classified_count"]):
+                raise ValueError("CoCo Classify has unresolved opinions")
+            if stage == "evaluation" and (row["required_categories"] != row["completed_categories"] or row["paper_judge_complete"] is not True):
+                raise ValueError("CoCo Judge has unresolved required scores")
+
+
 def evaluate_final_reviews(*, review_manifest_path: str | Path, reference_manifest_path: str | Path,
                            scoring_config_path: str | Path, output_root: str | Path,
                            partition: str, run_id: str, candidate_id: str, evaluation_epoch: int,
@@ -395,6 +470,8 @@ def _evaluate_locked(*, review_manifest_path: Path, reference_manifest_path: Pat
                      output: Path, partition: str, run_id: str, candidate_id: str, evaluation_epoch: int,
                      candidate_identity: dict[str, Any], purpose: str, review_target: str) -> dict[str, Any]:
     try:
+        if review_target != "final":
+            raise ValueError("CoCo accepts only the final complete review; role scoring is disabled")
         if (partition == "sealed_test" and purpose == "final_test") or (partition != "sealed_test" and purpose == "development"):
             pass
         else:
@@ -430,9 +507,12 @@ def _evaluate_locked(*, review_manifest_path: Path, reference_manifest_path: Pat
              "applicability": dict.fromkeys(COLUMNS, "unknown"), "review": {key: by_id[paper_id][key] for key in ("path", "sha256")}}
             for paper_id in manifest["paper_ids"]]
     failure = None
+    stage_integrity = {}
     try:
         for stage in ("split", "classify", "evaluation"):
             result_path = _run_stage(stage=stage, request_path=request_path, output=output, config=config)
+            stage_integrity[stage] = read_json(result_path)["integrity"]
+        validate_stage_integrity(stage_integrity, manifest["paper_ids"])
         raw = read_json(result_path)
         if raw["request"] != _binding(request_path):
             raise ValueError("Standard CoCo worker result requires its original frozen scoring request")
@@ -475,6 +555,7 @@ def _evaluate_locked(*, review_manifest_path: Path, reference_manifest_path: Pat
         papers.append({"paper_id": row["paper_id"], **_binding(path)})
     aggregate = aggregate_paper_scores(rows)
     receipt = {"protocol": RECEIPT_PROTOCOL, **identity, "purpose": purpose, "review_target": review_target,
+        "stage_integrity": stage_integrity,
         "candidate_identity": candidate_identity, "inputs": inputs, "paper_ids": manifest["paper_ids"], "papers": papers, "rows": rows,
         "status": "paused" if failure else "complete", "expected_count": len(rows), "complete_count": sum(row["status"] == "complete" for row in rows),
         "aggregate": aggregate, "mean_score": aggregate["absolute_scores"]["Paper."] if failure is None else None}

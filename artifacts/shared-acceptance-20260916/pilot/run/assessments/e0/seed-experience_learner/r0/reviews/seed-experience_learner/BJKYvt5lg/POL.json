@@ -1,0 +1,156 @@
+{
+  "created_at": "2026-09-16T19:04:54.077122+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "13fabb4a0d74cef15ba93983e8c580873588693f71c7326e620a7bc4e672de8f",
+    "request_sha256": "827ca83613f995b55c9aabf7775ea86b6a45e3a2141f6afe37fbf54b91df83ef",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "efcad040701c31a87df6b13852eb7e9d848526d054fc61d6412b441781a2cf3f",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "BJKYvt5lg",
+  "program_version": "seed-experience_learner",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: The paper proposes PixelVAE, a latent variable model for natural images that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs by using a PixelCNN-based autoregressive decoder. The authors demonstrate state-of-the-art performance on binarized MNIST and competitive results on 64x64 ImageNet and LSUN bedrooms, showing that the model learns more compressed latent representations while capturing fine details.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The submission violates double-blind review policies by explicitly listing author names and institutional affiliations on the title page.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: Remove all author names and institutional affiliations from the title page and any other identifying sections to comply with ICLR's double-blind review policy.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated Broader Impact statement or discussion of societal implications, which is increasingly expected for generative model research.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a Broader Impact section discussing potential societal benefits and risks of the proposed generative model, including considerations for misuse or bias.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The paper uses standard public datasets (MNIST, ImageNet, LSUN) but does not explicitly discuss data licensing or privacy compliance.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 3\n  actionable_suggestion: Include a brief statement confirming that the datasets used are publicly available and that their usage complies with respective licensing terms.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not raise specific ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on a technical contribution to image generation.\n  evidence_anchors: [SRC-003]\n  confidence: 3\n  actionable_suggestion: Consider adding a brief ethical consideration section, even if minimal, to address potential biases in the generated images or the datasets used.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper appears to be original work with proper citations to related research, and there is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How do you ensure compliance with double-blind review policies in future submissions?\n- What are the potential societal impacts of your generative model, and how do you plan to mitigate any negative consequences?\n- Have you verified that the usage of the datasets (MNIST, ImageNet, LSUN) complies with their respective licensing terms?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "570dc87673b569f7e5f414fc077fd69dd2e55d818f7b471cd826c5ec2bfb5fd1",
+      "prompt_sha256": "827ca83613f995b55c9aabf7775ea86b6a45e3a2141f6afe37fbf54b91df83ef"
+    },
+    "memory": {
+      "always_on_knowledge": "Historical Review Experience is guidance, never current-paper evidence.",
+      "context": "[REVIEW EXPERIENCE POL:1]\nTrigger: Paper involves adversarial robustness, security, or dual-use technologies but lacks a dedicated Broader Impact or Ethical Considerations section.\nHeuristic: Verify if the paper explicitly discusses the societal, security, or ethical implications of the research, particularly regarding dual-use potential (e.g., attacks vs. defenses) and the consequences of specific robustness trade-offs.\nEvidence to check: Check for the presence of a 'Broader Impact', 'Ethical Considerations', or 'Societal Impact' section. Look for discussions on potential misuse, security implications, or responsible deployment in the introduction, conclusion, or a dedicated subsection.\nFailure mode: Missing or boilerplate impact statements; failure to address dual-use risks or security implications inherent in adversarial robustness research.\nWhy it matters: Adversarial robustness research has direct security implications. Failing to discuss these impacts violates conference policies on responsible AI and broader impact, and overlooks potential harms or misuse scenarios that are critical for ethical compliance.\n\n[REVIEW EXPERIENCE POL:2]\nTrigger: Paper uses datasets containing real human faces or personally identifiable information (e.g., CelebA, LFW) for training or generating perturbations.\nHeuristic: Verify that the paper explicitly states the dataset license, confirms compliance with terms of use (e.g., non-commercial research), and discusses privacy implications such as re-identification risks or GDPR compliance.\nEvidence to check: Check the Data section, Ethics statement, or Broader Impact section for mentions of dataset licensing, consent, and privacy regulations. Look for specific discussion on the risks of generating or modifying real human faces.\nFailure mode: Authors fail to disclose data licensing terms or ignore privacy/ethical risks associated with manipulating real human biometric data, leading to potential compliance violations or ethical concerns.\nWhy it matters: Using real human data without proper licensing or privacy consideration can violate legal regulations (like GDPR) and ethical guidelines, posing risks of misuse, harassment, or disinformation.\n\n[REVIEW EXPERIENCE POL:3]\nTrigger: Submission to a double-blind conference (e.g., NeurIPS, ICLR) or presence of author-identifying metadata.\nHeuristic: Verify that the title page, headers, footers, and acknowledgments do not contain author names, institutional affiliations, or specific email domains that violate anonymity policies.\nEvidence to check: Title page, header/footer text, and any 'Acknowledgments' or 'Contact' sections.\nFailure mode: Explicit listing of author names, affiliations, or email addresses in the header or title page.\nWhy it matters: Violating double-blind review policies can lead to immediate desk rejection or require a formal correction, compromising the fairness of the peer review process.\n\n[REVIEW EXPERIENCE POL:4]\nTrigger: Paper proposes a new machine learning methodology or model architecture.\nHeuristic: Verify the presence of a dedicated 'Broader Impact' statement and explicit declarations of software/data licensing and code availability.\nEvidence to check: Check for a specific section discussing societal implications, risks, and benefits. Look for explicit mentions of code repository links (anonymized if double-blind) and the specific licenses under which code and data are released.\nFailure mode: Missing or boilerplate impact statements; absent/unclear required checklists; ambiguous or incompatible licensing; lack of reproducibility due to missing code links.\nWhy it matters: Compliance with open science practices and conference policies (e.g., NeurIPS) requires transparency regarding societal impact and reproducibility. Missing these elements can lead to rejection or requests for major revisions.",
+      "instruction_response": "Apply retrieved experience conditionally and verify against the Frozen Paper.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "POL:0",
+              "role": "POL",
+              "score": null
+            },
+            {
+              "id": "POL:1",
+              "role": "POL",
+              "score": null
+            },
+            {
+              "id": "POL:2",
+              "role": "POL",
+              "score": null
+            },
+            {
+              "id": "POL:3",
+              "role": "POL",
+              "score": null
+            }
+          ]
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+      "program_version": "seed-experience_learner",
+      "query": {
+        "query_text": "PixelVAE: A Latent Variable Model for Natural Images",
+        "reviewer_dimension": "POL"
+      },
+      "resources": {
+        "completion_chars": 99,
+        "completion_tokens": 0,
+        "llm_call_count": 1,
+        "llm_latency_seconds": 1.3525356203317642,
+        "prompt_chars": 5689,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "experience_learner",
+      "snapshot_id": "efcad040701c31a87df6b13852eb7e9d848526d054fc61d6412b441781a2cf3f"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "e824e906cd25d96c55da8022cbce6aada67464221f03d13523f9d5c21e800e99",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "15d312a301060579a120affd98213cb6c7ca1b0d7946d95f2cda99c542475863",
+  "review_text": "```\nReviewer dimension: POL\nPaper summary: The paper proposes PixelVAE, a latent variable model for natural images that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs by using a PixelCNN-based autoregressive decoder. The authors demonstrate state-of-the-art performance on binarized MNIST and competitive results on 64x64 ImageNet and LSUN bedrooms, showing that the model learns more compressed latent representations while capturing fine details.\n\nDimension score (1-10): 4\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The submission violates double-blind review policies by explicitly listing author names and institutional affiliations on the title page.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: Remove all author names and institutional affiliations from the title page and any other identifying sections to comply with ICLR's double-blind review policy.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated Broader Impact statement or discussion of societal implications, which is increasingly expected for generative model research.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a Broader Impact section discussing potential societal benefits and risks of the proposed generative model, including considerations for misuse or bias.\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The paper uses standard public datasets (MNIST, ImageNet, LSUN) but does not explicitly discuss data licensing or privacy compliance.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 3\n  actionable_suggestion: Include a brief statement confirming that the datasets used are publicly available and that their usage complies with respective licensing terms.\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not raise specific ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on a technical contribution to image generation.\n  evidence_anchors: [SRC-003]\n  confidence: 3\n  actionable_suggestion: Consider adding a brief ethical consideration section, even if minimal, to address potential biases in the generated images or the datasets used.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper appears to be original work with proper citations to related research, and there is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How do you ensure compliance with double-blind review policies in future submissions?\n- What are the potential societal impacts of your generative model, and how do you plan to mitigate any negative consequences?\n- Have you verified that the usage of the datasets (MNIST, ImageNet, LSUN) complies with their respective licensing terms?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer POL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+    "task_id": "POL"
+  },
+  "role": "POL",
+  "run_id": "seed-experience_learner",
+  "schema_version": "research-core-v2-artifact-v1"
+}

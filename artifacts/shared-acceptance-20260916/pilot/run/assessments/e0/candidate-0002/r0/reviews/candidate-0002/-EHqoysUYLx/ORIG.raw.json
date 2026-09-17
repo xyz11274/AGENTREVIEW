@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T20:41:35.372916+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "510d226d816b97398bfa66ade6fa2777c6988e1fd49743a3036c926ab7692139",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-EHqoysUYLx",
+  "program_version": "candidate-0002",
+  "raw_model_output": "```\nReviewer dimension: ORIG\nPaper summary: This paper provides a theoretical analysis of generalization error in heterogeneous federated learning using a two-level distribution framework (meta-distribution of client distributions). It addresses two key gaps in existing literature: (1) the generalization performance for unparticipating clients (those not involved in training but using the model), and (2) the relaxation of the bounded loss assumption to include sub-exponential and sub-Weibull (heavy-tailed) losses. The authors derive fast learning rates in probability form for participating clients and establish the first generalization bounds for unparticipating clients under both bounded and unbounded loss settings.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper introduces a meaningful and practically motivated problem formulation by explicitly analyzing the generalization error for unparticipating clients in federated learning, a scenario previously ignored by most theoretical works that focused only on participating clients.\n  evidence_anchors: [SRC-002, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: strength\n  claim: The methodology extends the small-ball method, typically used for i.i.d. heavy-tailed data, to the heterogeneous federated learning setting where data is independent but non-identically distributed across clients. This is a non-trivial adaptation that requires defining new localized Rademacher complexities and small-ball conditions for the meta-distribution.\n  evidence_anchors: [SRC-015, SRC-016, SRC-019]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides novel theoretical insights by deriving fast learning rates (order O(1/mn)) in probability form for participating clients, improving upon previous results that were either in expectation form or had slower rates (O(1/sqrt(mn))). It also decomposes the excess risk for unparticipating clients into participating error and participation gap, offering a clearer understanding of the sources of generalization error in FL.\n  evidence_anchors: [SRC-003, SRC-008, SRC-012]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The paper lacks any experimental validation or empirical benchmarks. As a purely theoretical work, it does not provide evidence that the derived bounds are tight or practically relevant, nor does it test the assumptions (e.g., Bernstein condition, small-ball condition) on real-world federated learning datasets.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: Consider adding a small-scale empirical study to validate the theoretical rates or to demonstrate the practical impact of the participation gap on generalization error.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of the two-level distribution framework with the small-ball method for unbounded losses is well-articulated and justified by the need to handle heavy-tailed data in a heterogeneous setting. The rationale for using this combination is clear and addresses a specific limitation of previous works.\n  evidence_anchors: [SRC-005, SRC-022]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: neutral\n  claim: The paper does not present negative results or critical assessments of the limitations of its own assumptions (e.g., when the Bernstein condition fails or when the meta-distribution assumption is unrealistic). It focuses primarily on positive results.\n  evidence_anchors: [SRC-010]\n  confidence: 3\n  actionable_suggestion: Discuss the limitations of the Bernstein and small-ball conditions in the context of common federated learning tasks (e.g., deep learning) to provide a more balanced view of the applicability of the results.\n\nKey questions for the authors:\n- How do the derived fast rates compare to minimax lower bounds in the heterogeneous federated learning setting? Are they optimal?\n- Can the small-ball condition be verified for common loss functions used in deep learning (e.g., cross-entropy) in a federated context?\n- What are the practical implications of the participation gap term O(1/m) for systems with a very large number of total clients M but a small number of participating clients m?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "f65f8cb31ed19d84265ad3eae8a71478c6274c1d577ad2aa7ea5bf4d71d0b370",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "2660f057e9dd4bff5c8850f5b305873068676d522e80767c94bf00e79bc14b27"
+  },
+  "review_plan_identity_sha256": "c666291105f7113e5601e08bb3790e306a001054fef46aaacd282cfd74e98604",
+  "role": "ORIG",
+  "run_id": "candidate-0002"
+}

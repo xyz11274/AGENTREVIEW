@@ -1,0 +1,68 @@
+{
+  "checkpoint_id": "3e4dbe1e497945a1b608aab4f9abf88b7ae026d228d58c9cd6d68a88c60104a0",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "e824e906cd25d96c55da8022cbce6aada67464221f03d13523f9d5c21e800e99",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/programs/seed-experience_learner/program.py",
+    "program_sha256": "6254d2aecf430ecb429d6ce9d3b467477eba9c5f881f0922f14343b4f58073a4",
+    "program_version": "seed-experience_learner",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "QUAL",
+    "seed_kind": "experience_learner",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 3,
+      "review_id": "897cb92246676824d9f6c883b658ed0207bbdf8c9432e3d83b5c91f9df9209b8",
+      "review_sha256": "4047667704f5b6f63beb4ec10bebb6d23f36c195dec2c4149f0e23b3c4422888"
+    }
+  },
+  "item": {
+    "derivation_version": "seed-experience_learner",
+    "item_id": "a464eb63fe393cf338739ab76139a6acc7b89db5b27739af24e4da7c6b8d081a",
+    "payload": {
+      "evidence_to_check": "The mathematical definition of the impurity measure or gain function, specifically checking if it takes feature partitions as input and how it relates to the standard decision tree induction process.",
+      "failure_mode": "The method is structurally invalid as a decision tree because the splitting mechanism does not depend on feature values, effectively reducing the model to a label-sequence classifier or a non-feature-based heuristic.",
+      "review_heuristic": "Verify that the proposed splitting criterion explicitly incorporates feature values to partition the feature space, rather than relying solely on global label statistics or sequence order, to ensure the resulting model is a valid feature-based classifier.",
+      "reviewer_dimension": "QUAL",
+      "trigger": "A paper proposes a novel impurity measure or splitting criterion for decision trees or tree-based ensembles.",
+      "why_it_matters": "A decision tree that does not split based on feature values cannot learn feature-label relationships, rendering the core methodological premise flawed and the resulting model inapplicable to standard tabular classification tasks."
+    },
+    "role": "QUAL",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "897cb92246676824d9f6c883b658ed0207bbdf8c9432e3d83b5c91f9df9209b8"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

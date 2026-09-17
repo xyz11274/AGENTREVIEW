@@ -228,13 +228,12 @@ def parse_meta_synthesis(
 
 def render_meta_synthesis(structured: dict[str, Any]) -> str:
     """Render every validated point and suggestion once in their original order."""
-    paragraphs = ["# Final Review"]
+    paragraphs = []
     for section in structured["sections"]:
         if section["opinions"]:
             role = section["role"]
-            paragraphs.append(f"## {role} findings")
             for index, opinion in enumerate(section["opinions"], 1):
-                statement = "- " + opinion["statement"]
+                statement = f"- {role}: " + opinion["statement"]
                 if opinion["evidence_anchors"]:
                     statement += (
                         " Evidence anchors: "
@@ -348,6 +347,7 @@ def generate_final_review(
         synthesizer = load_meta_synthesizer()
         meta_identity = synthesizer.identity()
         generation_config = {
+            "completion_contract": "complete-stop-v1",
             "temperature": (model_identity or {}).get("temperature", 0.0),
             "enable_thinking": (model_identity or {}).get("enable_thinking", False),
             "max_tokens": max_tokens,

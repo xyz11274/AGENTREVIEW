@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Peer-Review Guidance: Significance (SIGN)**\n\n**1. Benchmark Scale & Domain Impact (SIGN-DOM)**\n*   **Avoid Toy Datasets:** Do not accept validation solely on low-dimensional or simple benchmarks (e.g., MNIST, CIFAR-10, UCI) for claims of broad applicability. If a method targets complex real-world tasks (medical, autonomous driving, high-res imaging), require evidence on larger, high-dimensional datasets (e.g., ImageNet, CelebA-HQ, or domain-specific large-scale sets).\n*   **Verify Domain Claims:** If the paper claims utility for specific domains (e.g., temporal data, high-stakes AI), demand empirical evidence within that domain. Unsubstantiated claims of domain impact significantly lower the significance score.\n*   **Scalability Analysis:** For generative or complex models, require discussion on computational cost and scalability. If the method relies on heavy components (e.g., VAEs, large backbones), assess if the benefits justify the overhead compared to simpler baselines.\n\n**2. State-of-the-Art Comparison (SIGN-SOT)**\n*   **Mandatory Baselines:** The paper must compare against established, relevant SOTA methods. For interpretability, compare with LIME/SHAP/Grad-CAM; for SSL, compare with BYOL/SimSiam/DINO; for classification, compare with standard ensembles (Random Forest).\n*   **Quantitative Rigor:** \"Intuitive\" or \"better\" claims require objective metrics (faithfulness, stability, accuracy, F1). Qualitative visual examples are insufficient without quantitative backing.\n*   **Performance Gains:** If the proposed method does not outperform strong baselines, the significance is limited to diagnostic or theoretical insights. Clearly distinguish between \"new SOTA\" and \"diagnostic analysis.\" If performance is degraded or inconsistent, the contribution is weak unless the trade-off (e.g., speed vs. accuracy) is explicitly justified and beneficial.\n\n**3. Broader Impact & Implications (SIGN-IMP)**\n*   **Societal & Ethical Considerations:** For methods involving generative models, explanations, or safety-critical applications, require discussion on potential harms: bias/fairness, robustness to adversarial attacks, and the risk of misleading outputs.\n*   **Practical Utility:** Assess if the method offers a practical simplification (e.g., removing EMA networks) or solves a critical barrier (e.g., interpretability in high-stakes domains). If the impact is purely theoretical without clear practical pathways, note this limitation.\n*   **Environmental Cost:** For computationally intensive training, consider mentioning environmental sustainability as part of the broader impact assessment.\n\n**4. General Evaluation Heuristics**\n*   **Weak Reject Signals:** Reliance on toy datasets, lack of SOTA comparison, unproven domain claims, or performance degradation without clear niche justification.\n*   **Weak Accept Signals:** Strong theoretical insights or practical simplifications (e.g., hyperparameter reduction) that hold on standard benchmarks, even if not SOTA, provided limitations are clearly stated.\n*   **Key Questions to Ask Authors:**\n    *   How does the method perform on larger, more complex benchmarks?\n    *   What are the computational requirements and scalability limits?\n    *   How does the method compare quantitatively to established baselines?\n    *   What are the potential societal risks or biases introduced by the method?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789583210,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-9cdf3b52638f2014",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 721,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2919,
+      "prompt_tokens_details": null,
+      "total_tokens": 3640
+    }
+  },
+  "raw_model_output": "**Peer-Review Guidance: Significance (SIGN)**\n\n**1. Benchmark Scale & Domain Impact (SIGN-DOM)**\n*   **Avoid Toy Datasets:** Do not accept validation solely on low-dimensional or simple benchmarks (e.g., MNIST, CIFAR-10, UCI) for claims of broad applicability. If a method targets complex real-world tasks (medical, autonomous driving, high-res imaging), require evidence on larger, high-dimensional datasets (e.g., ImageNet, CelebA-HQ, or domain-specific large-scale sets).\n*   **Verify Domain Claims:** If the paper claims utility for specific domains (e.g., temporal data, high-stakes AI), demand empirical evidence within that domain. Unsubstantiated claims of domain impact significantly lower the significance score.\n*   **Scalability Analysis:** For generative or complex models, require discussion on computational cost and scalability. If the method relies on heavy components (e.g., VAEs, large backbones), assess if the benefits justify the overhead compared to simpler baselines.\n\n**2. State-of-the-Art Comparison (SIGN-SOT)**\n*   **Mandatory Baselines:** The paper must compare against established, relevant SOTA methods. For interpretability, compare with LIME/SHAP/Grad-CAM; for SSL, compare with BYOL/SimSiam/DINO; for classification, compare with standard ensembles (Random Forest).\n*   **Quantitative Rigor:** \"Intuitive\" or \"better\" claims require objective metrics (faithfulness, stability, accuracy, F1). Qualitative visual examples are insufficient without quantitative backing.\n*   **Performance Gains:** If the proposed method does not outperform strong baselines, the significance is limited to diagnostic or theoretical insights. Clearly distinguish between \"new SOTA\" and \"diagnostic analysis.\" If performance is degraded or inconsistent, the contribution is weak unless the trade-off (e.g., speed vs. accuracy) is explicitly justified and beneficial.\n\n**3. Broader Impact & Implications (SIGN-IMP)**\n*   **Societal & Ethical Considerations:** For methods involving generative models, explanations, or safety-critical applications, require discussion on potential harms: bias/fairness, robustness to adversarial attacks, and the risk of misleading outputs.\n*   **Practical Utility:** Assess if the method offers a practical simplification (e.g., removing EMA networks) or solves a critical barrier (e.g., interpretability in high-stakes domains). If the impact is purely theoretical without clear practical pathways, note this limitation.\n*   **Environmental Cost:** For computationally intensive training, consider mentioning environmental sustainability as part of the broader impact assessment.\n\n**4. General Evaluation Heuristics**\n*   **Weak Reject Signals:** Reliance on toy datasets, lack of SOTA comparison, unproven domain claims, or performance degradation without clear niche justification.\n*   **Weak Accept Signals:** Strong theoretical insights or practical simplifications (e.g., hyperparameter reduction) that hold on standard benchmarks, even if not SOTA, provided limitations are clearly stated.\n*   **Key Questions to Ask Authors:**\n    *   How does the method perform on larger, more complex benchmarks?\n    *   What are the computational requirements and scalability limits?\n    *   How does the method compare quantitatively to established baselines?\n    *   What are the potential societal risks or biases introduced by the method?",
+  "tokens": {
+    "input_tokens": 2919,
+    "max_model_len": 65536
+  }
+}

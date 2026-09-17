@@ -1,0 +1,161 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": null,
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/programs/seed-vector_search/program.py",
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+    "program_version": "seed-vector_search",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "ORIG",
+    "seed_kind": "vector_search",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "7fb04c801e3b69e973e1f02934d843d5385a1d1e47d9ab6b16c6f77a4142f2c6",
+        "review_sha256": "961900ddb452e44af7820cb7c35eb2ccd6ab166d13ff22e6146f66427642c12f"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "7ccca287924562351f79087575debb15bd94dd49a98fcfd5577aa6ad2456502f",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "seed-vector_search",
+      "item_id": "0495358ae9943283d705d210cd6168b2df69e6dece73c6c504491959f2ebaef8",
+      "payload": {
+        "content": "```\nReviewer dimension: ORIG\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in neural networks. It compares Standard CNNs (StdCNNs) with several rotation-equivariant architectures, including Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet). The authors claim to be the first to study the vulnerability of rotation-equivariant networks to pixel-wise perturbations. Experiments are conducted on the MNIST dataset, analyzing accuracy under rotation augmentation and adversarial attacks. The key finding is that while equivariant networks are more robust to rotations, they become more vulnerable to pixel-wise attacks as the range of rotation robustness increases, suggesting a trade-off between these two types of robustness.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper identifies a meaningful and previously under-explored problem: the potential trade-off between geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or more nuanced.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Extend experiments to CIFAR-10 or other non-trivial datasets to validate the generality of the observed trade-off.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of equivariant networks and adversarial robustness evaluation is a logical and well-motivated combination, given the separate lines of research on symmetry in neural networks and adversarial robustness.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: strength\n  claim: The paper effectively presents a critical assessment of the assumption that equivariance is universally beneficial, showing that it can come at the cost of robustness to other types of perturbations.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was the study limited to MNIST? Have you considered or attempted experiments on more complex datasets like CIFAR-10, where the interaction between geometric and pixel-wise robustness might be more complex?\n- The paper mentions that for small rotations, GCNNs are more robust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```",
+        "reviewer_dimension": "ORIG",
+        "reviewer_name": "Reviewer ORIG",
+        "topic": ""
+      },
+      "role": "ORIG",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "7fb04c801e3b69e973e1f02934d843d5385a1d1e47d9ab6b16c6f77a4142f2c6"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/acceptance/run/programs/seed-vector_search/program.py",
+  "program_sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc",
+  "program_version": "seed-vector_search",
+  "role": "ORIG",
+  "seed_kind": "vector_search",
+  "snapshot": {
+    "collections": {
+      "research_v2_vector": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+          "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+          "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+          "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "ec30fb562c63786f1d9ea196aa900d033e9fd164aeacc50c0b0d2196f7c7d18d",
+            "id": "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "```\nReviewer dimension: ORIG\nPaper summary: This paper investigates the trade-off between robustness to geometric transformations (specifically rotations) and robustness to pixel-wise adversarial perturbations (FGSM, PGD) in neural networks. It compares Standard CNNs (StdCNNs) with several rotation-equivariant architectures, including Group-equivariant Convolutional Networks (GCNNs), Harmonic Networks (H-Nets), Polar Transformer Networks (PTN), and Rotation Equivariant Vector Field Networks (RotEqNet). The authors claim to be the first to study the vulnerability of rotation-equivariant networks to pixel-wise perturbations. Experiments are conducted on the MNIST dataset, analyzing accuracy under rotation augmentation and adversarial attacks. The key finding is that while equivariant networks are more robust to rotations, they become more vulnerable to pixel-wise attacks as the range of rotation robustness increases, suggesting a trade-off between these two types of robustness.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: ORIG-PROB\n  polarity: strength\n  claim: The paper identifies a meaningful and previously under-explored problem: the potential trade-off"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "716386089a447378e0a51d33d99a812674f5197f78d51a5ae8d86a22b47dbec3",
+            "id": "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "between geometric robustness (via equivariance) and pixel-wise adversarial robustness.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-MTH\n  polarity: weakness\n  claim: The paper does not introduce a novel method or algorithm. It is purely an empirical study of existing architectures (GCNNs, H-Nets, etc.) and standard adversarial attacks (FGSM, PGD).\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: ORIG-ANL\n  polarity: strength\n  claim: The paper provides a novel empirical insight by demonstrating that increasing the range of rotation augmentation (and thus geometric robustness) in equivariant networks correlates with increased vulnerability to pixel-wise adversarial attacks, a trade-off not previously highlighted in the literature.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-EXP\n  polarity: weakness\n  claim: The experimental setup is limited to the MNIST dataset, which is a relatively simple benchmark. The findings may not generalize to more complex datasets like CIFAR-10 or ImageNet, where the trade-off might be different or"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "0a817a7b61144d6e2dccd9ebddce71e1198c2b7a540cda3f3200db2edd38e51d",
+            "id": "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "more nuanced.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Extend experiments to CIFAR-10 or other non-trivial datasets to validate the generality of the observed trade-off.\n- subcategory: ORIG-COM\n  polarity: neutral\n  claim: The combination of equivariant networks and adversarial robustness evaluation is a logical and well-motivated combination, given the separate lines of research on symmetry in neural networks and adversarial robustness.\n  evidence_anchors: [SRC-002, SRC-003]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: ORIG-NEG\n  polarity: strength\n  claim: The paper effectively presents a critical assessment of the assumption that equivariance is universally beneficial, showing that it can come at the cost of robustness to other types of perturbations.\n  evidence_anchors: [SRC-006, SRC-009]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Why was the study limited to MNIST? Have you considered or attempted experiments on more complex datasets like CIFAR-10, where the interaction between geometric and pixel-wise robustness might be more complex?\n- The paper mentions that for small rotations, GCNNs are more"
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "1219e4528a81cd070e113af84d0556a3a5aaeb9545c714266080b4c043abef8d",
+            "id": "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6",
+            "metadata": {
+              "role": "ORIG",
+              "topic": ""
+            },
+            "text": "robust to FGSM than StdCNNs. Can you provide a theoretical or empirical explanation for this non-monotonic behavior?\n- How does the trade-off change if the equivariant network is trained with adversarial robustness in mind from the start (e.g., adversarial training with both rotation and pixel-wise perturbations)?\n\nRecommendation: Weak Accept\n```"
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_vector"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "1159d9133c3e6f2b05fb4405582a960aced84da898b41c2457752fc9111798d8",
+          "22bd29afc18bb98c6c0b2c73e8a1f3140695ca552dac8d1b43199cc75cb3f736",
+          "52dc55d6b7841bddbe109e210046c9a893cf209dd8f448326ff5cacfe1388f4e",
+          "c0a9252ee5ac47f130595164ec6cb29d7fbfb9725a8d3baf95f1c6d45d5c00c6"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "15221b06f1b146256225f66afd8c2c53d41af822e0ec41ce7c46b363b79ce170",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "7fb04c801e3b69e973e1f02934d843d5385a1d1e47d9ab6b16c6f77a4142f2c6"
+  ]
+}

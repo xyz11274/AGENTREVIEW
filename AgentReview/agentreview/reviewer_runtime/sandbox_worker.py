@@ -317,6 +317,13 @@ class CapabilityToolkit:
         self.toolkit_embedding_sources = set()
         self.logger = _Logger()
 
+    def __getattr__(self, name):
+        if name.startswith("__"):
+            raise AttributeError(name)
+        # Report unknown APIs to the host even when candidate code catches the
+        # exception (including calls through aliases that evade static checks).
+        return _tool_call("unsupported_toolkit_attribute", name)
+
     def llm_completion(self, messages, **kwargs):
         return str(_tool_call("llm_completion", messages, **kwargs))
 

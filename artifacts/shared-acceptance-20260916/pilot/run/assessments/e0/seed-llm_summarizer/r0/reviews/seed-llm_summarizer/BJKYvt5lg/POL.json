@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T18:28:45.809197+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "6c6236d76699558e48820282bdff1f47fd4cbb82c577219df02e47935c032c9b",
+    "request_sha256": "3417c2adf6f8a4d89d4439576f4719ad26c21556e6b4feaf4f73fbff2089d1d7",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "BJKYvt5lg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: The paper proposes PixelVAE, a latent variable model for natural images that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs. It uses a PixelCNN-based autoregressive decoder within a VAE framework to capture fine details while maintaining a useful latent representation. The model is extended to a hierarchical architecture and evaluated on binarized MNIST, 64x64 ImageNet, and LSUN bedrooms datasets, demonstrating competitive log-likelihood and high-quality sample generation.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The paper violates double-blind review policies by explicitly listing author names and institutional affiliations in the header.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: Remove all author names and institutional affiliations from the header and replace them with \"Anonymous Authors\" and \"Paper under double-blind review\" to comply with ICLR submission guidelines.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section, which is expected for ICLR submissions.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a concise \"Broader Impact\" section discussing the societal implications of the work, including potential benefits (e.g., improved image generation for creative tools) and risks (e.g., misuse for generating misleading content).\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The datasets used (MNIST, ImageNet, LSUN) are standard public benchmarks without personally identifiable information (PII), and their use appears to comply with standard research licensing terms.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not raise significant ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on general image modeling without specific applications to sensitive domains.\n  evidence_anchors: [SRC-003]\n  confidence: 3\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: neutral\n  claim: There is no evidence of plagiarism or dual submission; the work builds on prior research (e.g., VAEs, PixelCNNs) with proper citations.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How do you plan to address the double-blind review violation by removing author names and affiliations?\n- Can you provide a brief statement on the broader societal impact of your work, including potential risks and benefits?\n\nRecommendation: Weak Reject\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "570dc87673b569f7e5f414fc077fd69dd2e55d818f7b471cd826c5ec2bfb5fd1",
+      "prompt_sha256": "3417c2adf6f8a4d89d4439576f4719ad26c21556e6b4feaf4f73fbff2089d1d7"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify the header uses \"Anonymous authors\" and explicitly states \"Paper under double-blind review.\"\n*   **Action:** Ensure no author names, institutional affiliations, or self-identifying URLs/emails appear in the main text, references, or acknowledgments.\n*   **Severity:** Violations are critical; flag immediately for policy breach.\n\n**2. Data Licensing & Privacy (POL-DAT)**\n*   **Standard Datasets:** For public benchmarks without PII (e.g., MNIST, CIFAR-10, STL-10), confirm standard research licensing is sufficient. No further action needed.\n*   **Sensitive Data:** If using datasets with real individuals (e.g., CelebA, medical images), explicitly verify:\n    *   Compliance with dataset terms of use (e.g., non-commercial research only).\n    *   Privacy regulations (e.g., GDPR).\n    *   Risks of re-identification or misuse of generated/processed data.\n*   **Action:** Require a statement clarifying license compliance and privacy implications if sensitive data is used.\n\n**3. Broader Impact Statement (POL-IMP)**\n*   **Requirement:** Most major venues (ICLR, NeurIPS) expect a dedicated \"Broader Impact\" or \"Ethical Considerations\" section.\n*   **Action:** If missing, request a brief statement discussing societal implications, potential benefits/risks, and fairness/transparency in high-stakes applications.\n*   **Note:** Even for benign tasks (e.g., MNIST), discuss security implicat",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "0024bfe3c48d2f8a66bfaae92f426cc5d8cdfd696257b8630a4a3729cec01612",
+              "role": "POL",
+              "score": 0.46498964684502486
+            },
+            {
+              "id": "94481f6fc0c56cfd5eae5c27c497b7d31e9ca3904237de344bc428d8e72c7ac5",
+              "role": "POL",
+              "score": 0.4334996251528548
+            },
+            {
+              "id": "ade82383d66daaccda59d33a379b610eb791c6cb1c6b6704674f4b9344f8e161",
+              "role": "POL",
+              "score": 0.38890150043081106
+            },
+            {
+              "id": "51a951f2ed13fcf758d78e0a72e6900eb2942aaefc1de0220fe238ebb9cbf838",
+              "role": "POL",
+              "score": 0.3852344863641536
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Peer-Review Guidance: Policy & Ethics (POL)**\n\n**1. Anonymity Compliance (POL-ANO)**\n*   **Check:** Verify the header uses \"Anonymous authors\" and explicitly states \"Paper under double-blind review.\"\n*   **Action:** Ensure no author names, institutional affiliations, or self-identifying URLs/emails appear in the main text, references, or acknowledgments.\n*   **Severity:** Violations are critical; flag immediately for policy breach.\n\n**2. Data Licensing & Privacy (POL-DAT)**\n*   **Standard Datasets:** For public benchmarks without PII (e.g., MNIST, CIFAR-10, STL-10), confirm standard research licensing is sufficient. No further action needed.\n*   **Sensitive Data:** If using datasets with real individuals (e.g., CelebA, medical images), explicitly verify:\n    *   Compliance with dataset terms of use (e.g., non-commercial research only).\n    *   Privacy regulations (e.g., GDPR).\n    *   Risks of re-identification or misuse of generated/processed data.\n*   **Action:** Require a statement clarifying license compliance and privacy implications if sensitive data is used.\n\n**3. Broader Impact Statement (POL-IMP)**\n*   **Requirement:** Most major venues (ICLR, NeurIPS) expect a dedicated \"Broader Impact\" or \"Ethical Considerations\" section.\n*   **Action:** If missing, request a brief statement discussing societal implications, potential benefits/risks, and fairness/transparency in high-stakes applications.\n*   **Note:** Even for benign tasks (e.g., MNIST), discuss security implications (e.g., adversarial robustness) or general societal impact.\n\n**4. Ethical Implications (POL-ETH)**\n*   **Generative Models:** If generating perturbations or images of real people, address potential for disinformation, harassment, or deceptive media. Clarify that outputs are for diagnostic/explanatory purposes.\n*   **Dual-Use Research:** For adversarial robustness or security-related work, acknowledge dual-use potential (attack vs. defense) and recommend responsible deployment.\n*   **General:** If the work is purely theoretical/algorithmic with no direct harm potential, note this as neutral.\n\n**5. Plagiarism & Originality (POL-PLG)**\n*   **Check:** Ensure relevant prior art is cited and the proposed method is clearly distinguished from existing techniques.\n*   **Action:** Flag any evidence of plagiarism or dual submission. If citations are appropriate and work is original, mark as neutral/strength.\n\n**Summary Checklist for Reviewers:**\n1.  Is the paper fully anonymized?\n2.  Are data licenses and privacy concerns addressed (especially for PII)?\n3.  Is there a Broader Impact statement?\n4.  Are ethical risks (generative misuse, dual-use) discussed?\n5.  Is prior work properly cited?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "PixelVAE: A Latent Variable Model for Natural Images",
+        "reviewer_dimension": "POL"
+      },
+      "resources": {
+        "completion_chars": 2799,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 15.815525652840734,
+        "prompt_chars": 18019,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "9a2b8b4da95542194bf728cdc4e6fe59dfc6a75701f8ca80dee0451e39e59de8",
+  "review_text": "```\nReviewer dimension: POL\nPaper summary: The paper proposes PixelVAE, a latent variable model for natural images that combines the strengths of Variational Autoencoders (VAEs) and PixelCNNs. It uses a PixelCNN-based autoregressive decoder within a VAE framework to capture fine details while maintaining a useful latent representation. The model is extended to a hierarchical architecture and evaluated on binarized MNIST, 64x64 ImageNet, and LSUN bedrooms datasets, demonstrating competitive log-likelihood and high-quality sample generation.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: weakness\n  claim: The paper violates double-blind review policies by explicitly listing author names and institutional affiliations in the header.\n  evidence_anchors: [SRC-001]\n  confidence: 5\n  actionable_suggestion: Remove all author names and institutional affiliations from the header and replace them with \"Anonymous Authors\" and \"Paper under double-blind review\" to comply with ICLR submission guidelines.\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section, which is expected for ICLR submissions.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Add a concise \"Broader Impact\" section discussing the societal implications of the work, including potential benefits (e.g., improved image generation for creative tools) and risks (e.g., misuse for generating misleading content).\n- subcategory: POL-DAT\n  polarity: neutral\n  claim: The datasets used (MNIST, ImageNet, LSUN) are standard public benchmarks without personally identifiable information (PII), and their use appears to comply with standard research licensing terms.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not raise significant ethical concerns related to fairness, bias, or harms to marginalized populations, as it focuses on general image modeling without specific applications to sensitive domains.\n  evidence_anchors: [SRC-003]\n  confidence: 3\n  actionable_suggestion: N/A\n- subcategory: POL-PLG\n  polarity: neutral\n  claim: There is no evidence of plagiarism or dual submission; the work builds on prior research (e.g., VAEs, PixelCNNs) with proper citations.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- How do you plan to address the double-blind review violation by removing author names and affiliations?\n- Can you provide a brief statement on the broader societal impact of your work, including potential risks and benefits?\n\nRecommendation: Weak Reject\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer POL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+    "task_id": "POL"
+  },
+  "role": "POL",
+  "run_id": "seed-llm_summarizer",
+  "schema_version": "research-core-v2-artifact-v1"
+}

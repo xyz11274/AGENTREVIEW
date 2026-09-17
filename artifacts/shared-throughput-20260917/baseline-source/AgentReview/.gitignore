@@ -1,0 +1,55 @@
+# Credentials and workstation configuration
+.env
+.env.*
+key.py
+.vscode/
+.idea/
+.DS_Store
+
+# Python environments and generated packages
+.Python
+.venv/
+venv/
+env/
+.conda/
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+
+# Test, type-checker, notebook, and coverage state
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Runtime logs, caches, and generated outputs
+*.log
+/cache/*.sqlite3*
+/configs/*.jsonl.work/
+/.gradio/
+/runs/
+/outputs*/
+/evolution_viewer/.runtime/
+
+# Local corpora and deployment workspaces
+/data/
+/unused_data/
+/demo/
+/Summary/
+/hf-spaces/
+/etc/
+
+# Derived media alongside the tracked Markdown review fixtures
+/test_data/**/content_list.json
+/test_data/**/images/

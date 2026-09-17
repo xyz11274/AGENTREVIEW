@@ -1,0 +1,69 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "You are a specialist reviewer for the QUAL dimension of a machine learning paper review. Your expertise focus is technical quality, methodology, experiments, reproducibility, and comparisons to prior work. You must review strictly according to the rubric below and stay centered on this dimension.\n\n## Official Rubric Section\n1. QUAL (Quality): Is the submission technically sound? Are claims well supported (e.g., by theoretical analysis or experimental results)? Are the methods used appropriate? Is this a complete piece of work or work in progress? Are the authors careful and honest about evaluating both the strengths and weaknesses of their work?\n● QUAL-MET (Methodological Soundness): Evaluates whether the proposed algorithms, models or system architectures are technically correct and free of conceptual or implementation errors.\n\n    ○ Strength: Highlights that the method is well-formulated, mathematically consistent and correctly implemented; no major flaws are apparent.\n    ○ Weakness: Points out conceptual errors, mis-specified objectives, algorithmic flaws or misuses of optimisation methods.\n● QUAL-EXP (Experimental Design & Evaluation): Assesses the adequacy of the experimental setup: choice of datasets, baselines, evaluation metrics, ablation studies, and statistical tests.\n\n    ○ Strength: Notes comprehensive experiments, appropriate baselines, sufficiently large data and proper metrics; experiments convincingly validate claims.\n    ○ Weakness: Points out inadequate baselines, missing standard benchmarks, inappropriate metrics or lack of ablation studies.\n● QUAL-REP (Reproducibility & Implementation Details): Considers whether the submission provides enough detail (e.g., hyperparameters, code availability, dataset splits) to replicate the work and whether the implementation follows best practices.\n\n    ○ Strength: Commends open-sourced code, detailed hyperparameters, clear dataset descriptions and comprehensive training details enabling easy reproduction.\n    ○ Weakness: Notes lack of code, incomplete hyperparameters, unspecified data splits or other missing details that hinder reproduction.\n● QUAL-CMP (Comparisons to Prior Work): Evaluates whether the paper sufficiently compares against relevant prior work and state-of-the-art methods.\n\n    ○ Strength: Acknowledges thorough comparisons against recent and appropriate baselines and proper citation of related work.\n    ○ Weakness: Notes missing comparisons to well-known recent methods, outdated baselines, or incomplete literature review.\n● QUAL-STA (Statistical Rigor & Validation): Evaluates whether statistical analyses (e.g., significance tests, confidence intervals) are properly applied and whether reported improvements are statistically meaningful.\n\n    ○ Strength: Praises appropriate statistical tests, robust validation, confidence intervals and transparent reporting of variance.\n    ○ Weakness: Criticises absence of statistical tests, reliance on single runs, or misuse of statistical methods.\n\n## Reviewing Instructions\n- Evaluate the paper only through the QUAL lens while grounding every claim in the Frozen Paper.\n- Treat retrieved Review Experience as fallible reviewing guidance, not evidence about the current paper.\n- Be rigorous, evidence-based, and constructive.\n- Explicitly comment on the listed sub-dimensions from the rubric.\n- Base experiments and claims on evidence present in the paper.\n- Return only the final review, excluding private reasoning, analysis, and <think> tags.\n- Cite original-paper evidence anchors for every major judgment.\n- Copy Source Anchors character-for-character from the input's === SOURCE ANCHORS === list.\n- Use SRC-<digits>(page=<digits>) with the numeric ID and page from one listed token.\n- Use numeric Source Anchors present in the input list.\nWrite your review in the following format:\n```\nReviewer dimension: QUAL\nPaper summary: ...\n\nDimension score (1-10): ...\nConfidence (1-5): ...\n\nOpinions:\n- subcategory: <one rubric subcategory code>\n  polarity: strength | weakness | neutral\n  claim: <one atomic review opinion>\n  evidence_anchors: [<copy allowed numeric Source Anchor token>]\n  confidence: <1-5>\n  actionable_suggestion: <specific suggestion or N/A>\n- subcategory: ...\n  polarity: ...\n  claim: ...\n  evidence_anchors: [...]\n  confidence: ...\n  actionable_suggestion: ...\n\nKey questions for the authors:\n- ...\n\nRecommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject\n```\n",
+      "role": "system"
+    },
+    {
+      "content": "Produce one reusable review experience from the supplied complete Specialist Review and any explicitly supplied feedback. Preserve its source role and express the experience as general review guidance.\n\nText:\nSOURCE REVIEW ID: b47e30c80442063a37564077b4faf7360c9bb084d77ab65ae61c30f217868b21\nROLE: QUAL\n\nCOMPLETE SPECIALIST REVIEW:\n```\nReviewer dimension: QUAL\nPaper summary: The paper provides a theoretical analysis of non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam, specifically focusing on the DirectPred and DirectCopy variants. By analyzing the learning dynamics in the eigenspace of the representation covariance matrix, the authors demonstrate that these methods implicitly regularize variance, preventing representational collapse. Based on this analysis, they propose an \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the Exponential Moving Average (EMA) target network without performance degradation. The work is supported by linear network simulations and empirical validation on CIFAR-10 and STL-10 using VGG11 backbones.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The theoretical derivation of the implicit variance regularization mechanism is mathematically consistent and correctly identifies the role of the predictor network and stop-gradient in preventing collapse.\n  evidence_anchors: [SRC-004, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: weakness\n  claim: The experimental evaluation is limited to small-scale datasets (CIFAR-10, STL-10) and a relatively small backbone (VGG11), which may not fully validate the claim that the isotropic loss is robust at scale or for complex architectures.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 4\n  actionable_suggestion: Include experiments on larger datasets (e.g., ImageNet) or more complex backbones (e.g., ResNet-50) to demonstrate the scalability of the proposed isotropic loss.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: The paper lacks sufficient implementation details for reproducibility, such as specific hyperparameters (learning rates, weight decay, EMA decay rates for baselines) and does not explicitly state if code is available.\n  evidence_anchors: [SRC-009]\n  confidence: 4\n  actionable_suggestion: Provide a detailed appendix with all hyperparameters used for the CIFAR-10 and STL-10 experiments and make the code publicly available.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison is limited to the standard BYOL/SimSiam loss with and without EMA, lacking comparisons to other state-of-the-art non-contrastive methods (e.g., VICReg, Barlow Twins) or recent variants that also address the EMA requirement.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Add comparisons with other non-contrastive SSL methods that do not rely on EMA or contrastive pairs to better position the proposed method in the current landscape.\n- subcategory: QUAL-STA\n  polarity: strength\n  claim: The authors report standard deviations over four random seeds for the linear readout accuracies, providing a basic level of statistical validation for the empirical results.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Consider increasing the number of seeds or providing confidence intervals for more robust statistical significance, especially given the small margin in some comparisons.\n\nKey questions for the authors:\n- How does the proposed isotropic loss perform on larger-scale datasets like ImageNet with deeper backbones?\n- Are the hyperparameters for the isotropic loss sensitive to the choice of the exponent $\\alpha$ in the predictor network?\n- Can the theoretical insights be extended to non-linear predictor networks or more complex augmentation strategies?\n\nRecommendation: Weak Accept\n```\n\nThe KnowledgeItem must conform to this schema:\n{\"type\": \"object\", \"properties\": {\"trigger\": {\"type\": \"string\"}, \"review_heuristic\": {\"type\": \"string\"}, \"evidence_to_check\": {\"type\": \"string\"}, \"failure_mode\": {\"type\": \"string\"}, \"why_it_matters\": {\"type\": \"string\"}, \"reviewer_dimension\": {\"type\": \"string\"}}, \"required\": [\"trigger\", \"review_heuristic\", \"evidence_to_check\", \"failure_mode\", \"why_it_matters\", \"reviewer_dimension\"], \"additionalProperties\": false}\n\nOutput ONLY a valid JSON object matching the schema fields. No explanation.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": {
+    "json_schema": {
+      "name": "KnowledgeItem",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_to_check": {
+            "type": "string"
+          },
+          "failure_mode": {
+            "type": "string"
+          },
+          "review_heuristic": {
+            "type": "string"
+          },
+          "reviewer_dimension": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "why_it_matters": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trigger",
+          "review_heuristic",
+          "evidence_to_check",
+          "failure_mode",
+          "why_it_matters",
+          "reviewer_dimension"
+        ],
+        "type": "object"
+      },
+      "strict": true
+    },
+    "type": "json_schema"
+  }
+}

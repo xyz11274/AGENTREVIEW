@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T19:43:58.843679+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "e0f3b320150b864167ed8ecc73fe53a8b78f27a28b32415f3ec8e4a301024e37",
+    "request_sha256": "f3bab78ae4a389e0c4da9a15b83a5a07cc7afc0e60bd45d3ef868c46e2d8ebba",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "6f952d85c609d05e63887ecf6c4978491adabb80ea55fb954373c741175facb2",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper introduces Prototypical Networks, a simple and scalable metric learning approach for few-shot classification. It represents each class by the mean of its support set examples in a learned embedding space and classifies queries by nearest prototype. The method is trained via episodic training to mimic the few-shot test setting. Experiments demonstrate competitive performance on Omniglot and miniImageNet for few-shot learning, and state-of-the-art results on the CUB-200 dataset for zero-shot learning, highlighting the method's simplicity, efficiency, and generalizability.\n\nDimension score (1-10): 9\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses the broadly important and challenging problem of few-shot learning, introducing a simple, scalable paradigm (prototype-based metric learning) that has significantly influenced subsequent research in meta-learning and few-shot classification.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates strong domain impact by achieving state-of-the-art results on the CUB-200 zero-shot learning benchmark and competitive results on standard few-shot benchmarks (Omniglot, miniImageNet), showing applicability across different learning paradigms (few-shot and zero-shot).\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The paper achieves state-of-the-art performance on Omniglot (matching or exceeding Matching Nets) and a substantial improvement over previous methods on CUB-200 zero-shot learning (48.6% vs. 44.3% for the previous best), while offering a simpler and more scalable alternative to attention-based methods like Matching Networks.\n  evidence_anchors: [SRC-009, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: neutral\n  claim: The paper does not explicitly discuss societal impacts, fairness, or environmental considerations, which is typical for foundational algorithmic papers of this era but limits the explicit demonstration of real-world societal ramifications.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Consider adding a brief discussion on the potential applications of efficient few-shot learning in resource-constrained or data-scarce real-world scenarios (e.g., medical diagnosis, rare event detection) to highlight practical societal benefits.\n\nKey questions for the authors:\n- How does the simplicity and scalability of Prototypical Networks compare to more complex meta-learning approaches in terms of deployment efficiency on edge devices?\n- Can the prototype-based approach be extended to handle multi-modal data or non-Euclidean spaces, and what would be the impact on its broad applicability?\n\nRecommendation: Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "53de20b02f07d9707d19908c8bad04e37ab2700b31bbb78d664491a4bb7850a8",
+      "prompt_sha256": "f3bab78ae4a389e0c4da9a15b83a5a07cc7afc0e60bd45d3ef868c46e2d8ebba"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Reusable Peer-Review Guidance: Significance (SIGN)**\n\n**1. State-of-the-Art (SOT) Validation**\n*   **Benchmark Scale:** Do not accept SOTA claims based solely on small-scale or low-dimensional datasets (e.g., MNIST, CIFAR-10, STL-10) or small backbones (e.g., VGG11). Require validation on standard, large-scale benchmarks (e.g., ImageNet) to ensure generalizability.\n*   **Quantitative Comparison:** The paper must provide rigorous quantitative comparisons against established baselines. If the method is a diagnostic or theoretical analysis, explicitly state that it does not claim SOTA performance; otherwise, demand proof of superiority over current leaders.\n*   **Performance Gains:** Scrutinize the magnitude of improvements. Modest, inconsistent, or negative results on key metrics undermine SOTA claims. If a new method underperforms standard baselines (e.g., Random Forest), require a clear definition of the specific niche where it is superior or a revision of the algorithm.\n\n**2. Domain Impact (DOM)**\n*   **Generalizability:** Assess whether the proposed method applies to complex, real-world tasks. Limitations to simple benchmarks restrict domain impact. Request experiments on more complex datasets (e.g., medical imaging, autonomous driving scenarios) to demonstrate practical utility.\n*   **Claim-Evidence Alignment:** Ensure experimental evidence supports all domain-specific claims. For instance, if a method claims to handle temporal or ordered data, it must be tested on time-",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "1e11ec6a5d581c67bc134e75d7b8e3494a35405c04040eed1274dce67313892c",
+              "role": "SIGN",
+              "score": 0.3937932761291329
+            },
+            {
+              "id": "03b705efbf1fff831bdacfc930cd2be073f7be240d0e7a6f3264124941deeba7",
+              "role": "SIGN",
+              "score": 0.38107047557719625
+            },
+            {
+              "id": "494b8261fbb1520c46f19c3f4df7ee99453aaeac9a78f291b6ec86d240c462ea",
+              "role": "SIGN",
+              "score": 0.31701348653191413
+            },
+            {
+              "id": "233e776ad1ae2e8cf2681fa747fee2bb6841d75d0ac6669fa3d86c033e6223ce",
+              "role": "SIGN",
+              "score": 0.3147709017198235
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Significance (SIGN)**\n\n**1. State-of-the-Art (SOT) Validation**\n*   **Benchmark Scale:** Do not accept SOTA claims based solely on small-scale or low-dimensional datasets (e.g., MNIST, CIFAR-10, STL-10) or small backbones (e.g., VGG11). Require validation on standard, large-scale benchmarks (e.g., ImageNet) to ensure generalizability.\n*   **Quantitative Comparison:** The paper must provide rigorous quantitative comparisons against established baselines. If the method is a diagnostic or theoretical analysis, explicitly state that it does not claim SOTA performance; otherwise, demand proof of superiority over current leaders.\n*   **Performance Gains:** Scrutinize the magnitude of improvements. Modest, inconsistent, or negative results on key metrics undermine SOTA claims. If a new method underperforms standard baselines (e.g., Random Forest), require a clear definition of the specific niche where it is superior or a revision of the algorithm.\n\n**2. Domain Impact (DOM)**\n*   **Generalizability:** Assess whether the proposed method applies to complex, real-world tasks. Limitations to simple benchmarks restrict domain impact. Request experiments on more complex datasets (e.g., medical imaging, autonomous driving scenarios) to demonstrate practical utility.\n*   **Claim-Evidence Alignment:** Ensure experimental evidence supports all domain-specific claims. For instance, if a method claims to handle temporal or ordered data, it must be tested on time-series or sequence data, not just static tabular data.\n*   **Practical Simplification:** Acknowledge practical benefits such as reduced hyperparameter tuning, computational overhead, or architectural simplification (e.g., removing EMA networks) as valid domain contributions, provided they are empirically validated.\n\n**3. Broader Research Impact (BRD)**\n*   **Fundamental Questions:** Evaluate if the work addresses fundamental theoretical questions or reconciles distinct method families. Theoretical insights that clarify learning dynamics or implicit regularization have high broader impact, even if empirical gains are modest.\n*   **Conceptual Novelty:** Distinguish between conceptually interesting ideas and proven utility. If a novel metric or approach (e.g., compression-based impurity) is proposed, require theoretical analysis or specific non-i.i.d. scenario validation to justify its broader relevance.\n\n**4. Societal and Practical Impact (IMP)**\n*   **Deployment Considerations:** Assess the discussion of real-world deployment factors, including computational cost, robustness to distribution shifts, and safety-critical implications.\n*   **Societal Scope:** While not always mandatory for theoretical papers, note the absence of discussions on fairness, environmental impact, or societal risks. For applied methods, require analysis of how the work affects high-stakes domains (e.g., explainability in medical AI).\n*   **Mitigation Strategies:** If the paper identifies vulnerabilities or trade-offs (e.g., robustness vs. equivariance), it should offer mitigation strategies or discuss implications for safety-critical applications to enhance impact.\n\n**Key Review Questions:**\n*   Does the SOTA claim hold on large-scale, standard benchmarks?\n*   Is the domain impact supported by experiments on complex, real-world data?\n*   Are the broader theoretical contributions clearly articulated and distinct from empirical results?\n*   Are practical deployment costs and societal implications adequately addressed?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Evaluate the significance, impact, and state-of-the-art improvement of the paper 'Prototypical Networks for Few-shot Learning' based on its abstract, focusing on its contribution to few-shot and zero-shot learning.",
+        "reviewer_dimension": "SIGN"
+      },
+      "resources": {
+        "completion_chars": 3785,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 17.858103333972394,
+        "prompt_chars": 17960,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "6f952d85c609d05e63887ecf6c4978491adabb80ea55fb954373c741175facb2"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "312aed89a826123cd2c8fbc5016eec07f5a67fd1885124a712caab48b68c936d",
+  "review_text": "```\nReviewer dimension: SIGN\nPaper summary: The paper introduces Prototypical Networks, a simple and scalable metric learning approach for few-shot classification. It represents each class by the mean of its support set examples in a learned embedding space and classifies queries by nearest prototype. The method is trained via episodic training to mimic the few-shot test setting. Experiments demonstrate competitive performance on Omniglot and miniImageNet for few-shot learning, and state-of-the-art results on the CUB-200 dataset for zero-shot learning, highlighting the method's simplicity, efficiency, and generalizability.\n\nDimension score (1-10): 9\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses the broadly important and challenging problem of few-shot learning, introducing a simple, scalable paradigm (prototype-based metric learning) that has significantly influenced subsequent research in meta-learning and few-shot classification.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates strong domain impact by achieving state-of-the-art results on the CUB-200 zero-shot learning benchmark and competitive results on standard few-shot benchmarks (Omniglot, miniImageNet), showing applicability across different learning paradigms (few-shot and zero-shot).\n  evidence_anchors: [SRC-009, SRC-010, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: strength\n  claim: The paper achieves state-of-the-art performance on Omniglot (matching or exceeding Matching Nets) and a substantial improvement over previous methods on CUB-200 zero-shot learning (48.6% vs. 44.3% for the previous best), while offering a simpler and more scalable alternative to attention-based methods like Matching Networks.\n  evidence_anchors: [SRC-009, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-IMP\n  polarity: neutral\n  claim: The paper does not explicitly discuss societal impacts, fairness, or environmental considerations, which is typical for foundational algorithmic papers of this era but limits the explicit demonstration of real-world societal ramifications.\n  evidence_anchors: [SRC-012]\n  confidence: 4\n  actionable_suggestion: Consider adding a brief discussion on the potential applications of efficient few-shot learning in resource-constrained or data-scarce real-world scenarios (e.g., medical diagnosis, rare event detection) to highlight practical societal benefits.\n\nKey questions for the authors:\n- How does the simplicity and scalability of Prototypical Networks compare to more complex meta-learning approaches in terms of deployment efficiency on edge devices?\n- Can the prototype-based approach be extended to handle multi-modal data or non-Euclidean spaces, and what would be the impact on its broad applicability?\n\nRecommendation: Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer SIGN",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "f3b4f1b59c42d151ea75f7b845f0602b4051f738f91a8d6ea91bd4a9f383221c",
+    "task_id": "SIGN"
+  },
+  "role": "SIGN",
+  "run_id": "feedback-0001-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

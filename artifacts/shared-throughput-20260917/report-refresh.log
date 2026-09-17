@@ -1,0 +1,8 @@
+{"name": "judge-batch4096", "status": "complete", "valid_full_flow_reviews": 0, "seconds": 242.32496070861816, "speed_ratio_to_reference": 1.2233654354085461, "paper_scores": {"-EHqoysUYLx": 3.2, "SJn0sLgRb": 3.6}, "paper_deltas": [0.0, 0.20000000000000018], "cohort_mean_delta": 0.10000000000000009, "primary_gate": "passed", "integrity": "complete", "identical_payloads": 16}
+{"name": "judge-batch65536", "status": "not_started", "valid_full_flow_reviews": 0}
+{"name": "judge-prefix4096", "status": "not_started", "valid_full_flow_reviews": 0}
+{"name": "judge-prefix4096-r1", "status": "cancelled_by_user_direction", "valid_full_flow_reviews": 0}
+{"name": "judge-reference", "status": "failed", "valid_full_flow_reviews": 0}
+{"name": "judge-reference-r1", "status": "complete", "valid_full_flow_reviews": 0, "seconds": 296.45198106765747, "speed_ratio_to_reference": 1.0, "paper_scores": {"-EHqoysUYLx": 3.0, "SJn0sLgRb": 3.6}, "paper_deltas": [-0.20000000000000018, 0.20000000000000018], "cohort_mean_delta": 0.0, "primary_gate": "passed", "integrity": "complete", "identical_payloads": 16}
+{"name": "judge-seqs16", "status": "complete", "valid_full_flow_reviews": 0, "seconds": 227.94978022575378, "speed_ratio_to_reference": 1.300514441268868, "paper_scores": {"-EHqoysUYLx": 3.0, "SJn0sLgRb": 3.2}, "paper_deltas": [-0.20000000000000018, -0.19999999999999973], "cohort_mean_delta": -0.19999999999999996, "primary_gate": "rejected", "integrity": "complete", "identical_payloads": 16}
+{"name": "judge-unchunked", "status": "not_started", "valid_full_flow_reviews": 0}

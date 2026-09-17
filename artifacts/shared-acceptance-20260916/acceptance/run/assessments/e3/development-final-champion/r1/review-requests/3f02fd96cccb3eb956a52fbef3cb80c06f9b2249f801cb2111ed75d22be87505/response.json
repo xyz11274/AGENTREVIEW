@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"query_text\": \"Federated learning generalization bounds unparticipating clients unbounded losses privacy compliance ethics data usage\",\n  \"reviewer_dimension\": \"POL\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789579045,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-87c302da069e4037",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 41,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1349,
+      "prompt_tokens_details": null,
+      "total_tokens": 1390
+    }
+  },
+  "raw_model_output": "{\n  \"query_text\": \"Federated learning generalization bounds unparticipating clients unbounded losses privacy compliance ethics data usage\",\n  \"reviewer_dimension\": \"POL\"\n}",
+  "tokens": {
+    "input_tokens": 1349,
+    "max_model_len": 65536
+  }
+}

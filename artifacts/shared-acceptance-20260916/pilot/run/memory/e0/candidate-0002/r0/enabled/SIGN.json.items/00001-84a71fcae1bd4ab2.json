@@ -1,0 +1,66 @@
+{
+  "checkpoint_id": "9ed0fec871e5ae45673d602691795ab184bdbdd6f019a2c4c69093f0ae821466",
+  "input_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a2-e0/program.py",
+    "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+    "program_version": "candidate-0002",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "SIGN",
+    "seed_kind": "evolved",
+    "source": {
+      "evaluation_id": "",
+      "evaluation_sha256": "",
+      "ordinal": 1,
+      "review_id": "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+      "review_sha256": "0963d6aec362be52720f08094a42e8888b88cb2a89f63299474c7f06caf2766b"
+    }
+  },
+  "item": {
+    "derivation_version": "candidate-0002",
+    "item_id": "5d7039a78de006b9a7f139f444fddf6558a41bab41d93520e7e7b3c244b4f78b",
+    "payload": {
+      "content": "When reviewing the SIGN dimension for interpretability methods, assess whether the work addresses a broadly important problem (SIGN-BRD). Critically evaluate domain impact (SIGN-DOM) by checking if the method is demonstrated on complex, high-dimensional real-world tasks rather than just simple benchmarks like MNIST. Verify improvements over state-of-the-art (SIGN-SOT) by ensuring quantitative comparisons against established baselines (e.g., LIME, SHAP) and objective metrics for 'intuitiveness'. Finally, check for real-world and societal impact (SIGN-IMP) discussions, including fairness, risks of misleading explanations, and computational sustainability.",
+      "reviewer_dimension": "SIGN",
+      "source": "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+      "topic": "Evaluating Significance and Impact in Interpretability Papers"
+    },
+    "role": "SIGN",
+    "source_evaluation_ids": [],
+    "source_review_ids": [
+      "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e"
+    ]
+  },
+  "protocol": "research-v2-memory-item-checkpoint-v1"
+}

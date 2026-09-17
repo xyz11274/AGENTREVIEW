@@ -1,0 +1,87 @@
+{
+  "checks": [
+    {
+      "completed_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "ORIG-MTH",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ],
+      "paper_id": "-cII-Vju5C",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "ORIG-MTH",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ]
+    },
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-MTH"
+      ],
+      "paper_id": "B1-Hhnslg",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-MTH"
+      ]
+    }
+  ],
+  "stage": "evaluation",
+  "status": "complete",
+  "tasks": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/0acbef5f228c28a8c89518f117d383a591b312f17af8c40ac9f35af0aca707fa.audit.json",
+      "sha256": "ea75ce5fd9cd058aa6c88850099b00e9ad5bf4e09288d2c519246392cacdca65"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/1c5978d57410dd815418cc47faa81926abe0b100e7dfb58d4130a5511373efd2.audit.json",
+      "sha256": "8e84bd271943cdcf995d9e99fefb39a45717796fc2d4b506be4588302051de80"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/59d6eae09c0ada87c0f9c4afe6b5313fcbcf752018c7f7975a5ad47a295bd5fb.audit.json",
+      "sha256": "d237ba5a66a2d430048b350df7041348cd7bf27a82da3ca3fae5a45ae60ded21"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/687f12cbf8a2b13249c193c307ad0101eaf13dff848a81330a4fe2a59aa03cf1.audit.json",
+      "sha256": "2b886c5d2566b4e9e8eb1b2c9c2a7a16a04f85db5717f0b9d03035f415b8ccdc"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/6dcaaa63fed29426d9e2dfddd7d6ce917326c4bd324f589a03b9bff4e4a2355f.audit.json",
+      "sha256": "91eafd071fb0520c898c4d67c5fab1a36651f23b68f914b249760f6bf0159604"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/817cb54153ffba9fca854e2ac1ecb3ddd6239612f80b272fcfc3ec47c6028c21.audit.json",
+      "sha256": "156bba5c340cbfce6eeae29c74b8faaf611133fdf3285afdfa07bf2ba0ba4fd0"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/9bcf8d0fbf9bd7526b53f144ba584b14e11ddc19de6819a59e60c7f468755657.audit.json",
+      "sha256": "b4e0ef70f753c814f68ce94a4e938b89b0c39cc9ef3b80e83381745d35cf4d1a"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/a2d1316b754a4f44eb5dfc7fb5eba049a6e630e10834dccda4eba1f6d7a3b171.audit.json",
+      "sha256": "28c8a83a8ecdf905530c50249900b0d2848f569f02e0be7ce8cf311bfae8061c"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/a88dc5f9f3316975034efcd028780a50d50ba46bacd80488d6c524391c8ec384.audit.json",
+      "sha256": "d8fe15827a2dbb4f8e3dcee234a752d8490c4eac9249383d5fca55f954d0d76b"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/bcef8d8039652461e198d219918cb3cda90e9ba763f5020abbafb043ad14298b.audit.json",
+      "sha256": "50e6c08d3a7b2c34ca2418b53a1edd30bc10b918fb8b13144622e7e57d81dac0"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0001-e0/r0/coco/cache/judge/db990533515bc8f77a5d9d71bff235b99d4357526e4927c506bf28c0f70857c5.audit.json",
+      "sha256": "31ec3cce0ca6c151ed5225cc74718f1b7c2496a40725eeae29c225777a5b0690"
+    }
+  ],
+  "unhandled_failures": 0
+}

@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "```\nReviewer dimension: CLAR\nPaper summary: The paper investigates the mechanism by which predictor networks and stop-gradient operations in non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam prevent representational collapse. By analyzing the learning dynamics in the eigenspace of the representation correlation matrix, the authors show that these methods implicitly regularize variance. They propose a new \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the exponential moving average (EMA) target network without performance degradation.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a logical flow from theoretical analysis to empirical validation, and the introduction clearly defines the problem and the contribution.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the empirical Neural Tangent Kernel (NTK) is inconsistent and potentially confusing. Equation (3) defines $\\hat{\\Theta}_t(x, \\mathcal{X})$ but the text immediately following defines it as $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$. Furthermore, the use of calligraphic $\\mathcal{Z}$ for the dataset-concatenated vector and hat-$z$ for single samples is not explicitly distinguished in the text before being used in the derivation of the decoupled dynamics.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: Clarify the definition of $\\hat{\\Theta}_t$ to ensure the arguments match the definition. Explicitly state that $\\mathcal{Z}$ denotes the concatenation of all sample representations in the dataset $\\mathcal{X}$ to distinguish it from the single-sample representation $z$.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 2 is complex and the caption does not sufficiently explain the \"neural updates\" visualized in the top and middle rows. The caption mentions \"neural updates\" but the plots appear to show trajectories of eigenvalues or representation components over time, which is not explicitly labeled in the caption. The bottom row is described as \"evolution of the eigenvalues,\" but the top/middle rows lack clear axis labels or descriptions in the caption.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Expand the caption of Figure 2 to explicitly describe what is plotted in the top and middle rows (e.g., \"Trajectories of representation components in the eigenbasis\"). Ensure axis labels are visible in the figure itself.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The transition from the continuous-time gradient descent dynamics (Eq. 3) to the simplified representational dynamics (Eq. 5) relies on the assumption that the NTK reduces to the identity for linear networks with i.i.d Gaussian inputs. This assumption is stated briefly but the justification for why this allows the decoupling of the loss into per-component losses is not fully detailed in the main text, relying on Appendix A.1.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 3\n  actionable_suggestion: Provide a brief sentence in the main text explaining how the identity NTK leads to the decoupling, or explicitly state that the decoupling is a direct consequence of the diagonal form of the loss in the eigenbasis when the NTK is identity.\n- subcategory: CLAR-FIG\n  polarity: strength\n  claim: Table 1 is clear and effectively summarizes the empirical results, showing the impact of the isotropic loss with and without EMA on CIFAR-10 and STL-10.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you clarify the exact definition of $\\hat{\\Theta}_t$ in Equation (3) and why the arguments differ from the text description?\n- In Figure 2, what exactly are the axes and curves in the top and middle rows? Are they showing the time evolution of specific eigenmodes?\n\nRecommendation: Weak Accept\n```",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789579792,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a100bd4c265481d8",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 958,
+      "completion_tokens_details": null,
+      "prompt_tokens": 8529,
+      "prompt_tokens_details": null,
+      "total_tokens": 9487
+    }
+  },
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper investigates the mechanism by which predictor networks and stop-gradient operations in non-contrastive self-supervised learning (SSL) methods like BYOL and SimSiam prevent representational collapse. By analyzing the learning dynamics in the eigenspace of the representation correlation matrix, the authors show that these methods implicitly regularize variance. They propose a new \"isotropic loss\" that equalizes learning rates across eigenmodes, allowing for the removal of the exponential moving average (EMA) target network without performance degradation.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-organized with a logical flow from theoretical analysis to empirical validation, and the introduction clearly defines the problem and the contribution.\n  evidence_anchors: [SRC-001, SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the empirical Neural Tangent Kernel (NTK) is inconsistent and potentially confusing. Equation (3) defines $\\hat{\\Theta}_t(x, \\mathcal{X})$ but the text immediately following defines it as $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$. Furthermore, the use of calligraphic $\\mathcal{Z}$ for the dataset-concatenated vector and hat-$z$ for single samples is not explicitly distinguished in the text before being used in the derivation of the decoupled dynamics.\n  evidence_anchors: [SRC-006]\n  confidence: 4\n  actionable_suggestion: Clarify the definition of $\\hat{\\Theta}_t$ to ensure the arguments match the definition. Explicitly state that $\\mathcal{Z}$ denotes the concatenation of all sample representations in the dataset $\\mathcal{X}$ to distinguish it from the single-sample representation $z$.\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure 2 is complex and the caption does not sufficiently explain the \"neural updates\" visualized in the top and middle rows. The caption mentions \"neural updates\" but the plots appear to show trajectories of eigenvalues or representation components over time, which is not explicitly labeled in the caption. The bottom row is described as \"evolution of the eigenvalues,\" but the top/middle rows lack clear axis labels or descriptions in the caption.\n  evidence_anchors: [SRC-005]\n  confidence: 4\n  actionable_suggestion: Expand the caption of Figure 2 to explicitly describe what is plotted in the top and middle rows (e.g., \"Trajectories of representation components in the eigenbasis\"). Ensure axis labels are visible in the figure itself.\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The transition from the continuous-time gradient descent dynamics (Eq. 3) to the simplified representational dynamics (Eq. 5) relies on the assumption that the NTK reduces to the identity for linear networks with i.i.d Gaussian inputs. This assumption is stated briefly but the justification for why this allows the decoupling of the loss into per-component losses is not fully detailed in the main text, relying on Appendix A.1.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 3\n  actionable_suggestion: Provide a brief sentence in the main text explaining how the identity NTK leads to the decoupling, or explicitly state that the decoupling is a direct consequence of the diagonal form of the loss in the eigenbasis when the NTK is identity.\n- subcategory: CLAR-FIG\n  polarity: strength\n  claim: Table 1 is clear and effectively summarizes the empirical results, showing the impact of the isotropic loss with and without EMA on CIFAR-10 and STL-10.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Can you clarify the exact definition of $\\hat{\\Theta}_t$ in Equation (3) and why the arguments differ from the text description?\n- In Figure 2, what exactly are the axes and curves in the top and middle rows? Are they showing the time evolution of specific eigenmodes?\n\nRecommendation: Weak Accept\n```",
+  "tokens": {
+    "input_tokens": 8529,
+    "max_model_len": 65536
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "Refine the following review experience for the CLAR dimension. Make it concise, actionable, and specific. Focus on common pitfalls and best practices.\n\nTopic: CLAR Review Criteria and Common Weaknesses\nContent: When reviewing the Clarity (CLAR) dimension, focus on three sub-dimensions: CLAR-WRT (Writing, Terminology & Algorithm Presentation), CLAR-NOT (Notation & Mathematical Explanation Clarity), and CLAR-FIG (Figures & Visual Aids Clarity). Common weaknesses include: (1) Grammatical errors, typos, and inconsistent terminology (e.g., 'Neural networks models', 'upto', inconsistent capitalization); (2) Insufficient experimental details for reproducibility, such as missing hyperparameters (learning rate, optimizer, batch size) or vague architecture descriptions (e.g., 'parameter equivalent' without specific filter counts); (3) Ambiguous or incomplete figure captions that fail to define axes, legends, or subplot conditions; (4) Inconsistent mathematical notation, such as using the same variable (e.g., 'x') for different concepts (input image vs. rotation angle range); and (5) Disjointed organization of results, where comparisons between different methods or attacks are scattered rather than grouped logically. Constructive suggestions should include specific corrections for language, requests for detailed hyperparameter tables, clarification of figure labels, and reorganization of results sections for better flow.\n\nReturn only the refined content.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": null
+}

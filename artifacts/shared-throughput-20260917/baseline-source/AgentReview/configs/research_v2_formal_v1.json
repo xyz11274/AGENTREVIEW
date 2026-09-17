@@ -1,0 +1,32 @@
+{
+  "artifact_root": "artifacts/research_v2",
+  "coco_root": "/data0/xyj/shengao/CoCoReviewBench",
+  "coco_scoring_spec_path": "artifacts/research_v2/frozen/formal-coco1300-scoring-spec-v1.json",
+  "embedding_cache_path": "AgentReview/cache/research_v2_qwen3_embedding.sqlite3",
+  "embedding_device": "",
+  "embedding_model": "Qwen/Qwen3-Embedding-8B",
+  "embedding_provider": "qwen3_embedding",
+  "embedding_revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+  "frozen_s2_path": "artifacts/research_v2/s2/frozen_s2_external_development_v1.jsonl",
+  "frozen_coco_s2_path": "artifacts/research_v2/s2/frozen_s2_coco1300_v1.jsonl",
+  "model": {
+    "api_key_env": "OPENAI_API_KEY",
+    "base_url": "http://127.0.0.1:18001/v1",
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "model": "qwen3.8-27b",
+    "max_model_len": 65536,
+    "max_num_seqs": 8,
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.8.1",
+    "vllm_version": "0.20.1+cu129"
+  },
+  "paper_asset_root": "/data0/xyj/shengao/OpenReview/home/hexuan/AIReviewBenchmark",
+  "require_bubblewrap": true,
+  "split_seed": 0,
+  "train_clean_path": "/data0/xyj/shengao/OpenReview/train_clean.jsonl"
+}

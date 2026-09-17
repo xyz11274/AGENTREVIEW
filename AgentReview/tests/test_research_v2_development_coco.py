@@ -59,11 +59,24 @@ def fake_standard(monkeypatch, experiment, *, mutate=None):
         calls.append(stage)
         raw = raw_results(["paper-a", "paper-b"])
         raw["request"] = binding(request_path)
+        raw["integrity"] = fixture_integrity(output, stage, ["paper-a", "paper-b"])
         if mutate:
             mutate(raw)
         return atomic_write_json(output / f"{stage}.json", raw)
     monkeypatch.setattr(coco, "_run_stage", run_stage)
     return calls
+
+
+def fixture_integrity(output, stage, ids):
+    task = atomic_write_json(output / f"{stage}-task.json", {"status": "complete",
+        "completion": {"choices": [{"finish_reason": "stop", "message": {"content": "fixture response"}}]},
+        "tokens": {"input_tokens": 10, "output_budget": 10, "max_model_len": 100}})
+    fields = {"split": {"opinion_count": 1, "raw_coverage": [1.0]},
+              "classify": {"opinion_count": 1, "classified_count": 1},
+              "evaluation": {"required_categories": [], "completed_categories": [], "paper_judge_complete": True}}[stage]
+    return binding(atomic_write_json(output / f"{stage}-integrity.json", {
+        "stage": stage, "status": "complete", "unhandled_failures": 0,
+        "checks": [{"paper_id": pid, **fields} for pid in ids], "tasks": [binding(task)]}))
 
 
 def test_complete_receipt_uses_paper_table_and_preserves_x(experiment, monkeypatch):

@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Precision**\n*   **Audit Symbol Definitions:** Verify that mathematical symbols are defined before use and remain consistent throughout the manuscript. Flag instances where arguments in equations do not match textual descriptions (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$ vs. $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$).\n*   **Distinguish Similar Concepts:** Ensure distinct terms are used for related but different concepts (e.g., \"latent perturbation\" $\\epsilon$ vs. \"image perturbation\" $x'-x$). If symbols are reused, explicitly state the distinction in the notation section.\n*   **Standardize Function Notation:** Check for consistency in function application (e.g., ensuring $CE(c(x), y)$ is used consistently rather than switching to $CE(x, y)$).\n\n**2. Writing Quality & Grammar**\n*   **Proofread for Professionalism:** Identify and flag grammatical errors, typos, and awkward phrasings that hinder readability (e.g., \"create an technique,\" missing prepositions, sentence fragments).\n*   **Terminology Consistency:** Ensure consistent capitalization and spelling of technical terms (e.g., \"Standard CNNs\" vs. \"StdCNNs,\" \"upto\" vs. \"up to\").\n\n**3. Figure & Table Clarity**\n*   **Caption Completeness:** Critique captions that fail to explicitly describe all subplots, axes, or legends. Ensure captions explain *what* is plotted (e.g., \"trajectories of eigenvalues\") rather than just referencing the figure number.\n*   **Visual-Text Alignment:** Verify that figure labels and arrows correspond exactly to the notation defined in the text. If a figure is complex, require a brief textual description in the main body to guide the reader.\n*   **Distinguish Similar Figures:** If multiple figures show similar data (e.g., predictions on reconstructed vs. perturbed images), explicitly explain the relationship and difference between them in the text.\n\n**4. Experimental Reproducibility**\n*   **Hyperparameter Detail:** Flag insufficient experimental setup details. Require explicit specification of architectures, optimizers, learning rates, and training protocols.\n*   **Clarify \"Parameter Equivalence\":** If comparing models of different architectures, explicitly define how parameter counts were matched (e.g., specific filter counts) rather than using vague descriptions.\n\n**5. Logical Flow & Assumptions**\n*   **Justify Key Transitions:** Ensure that major simplifications or assumptions (e.g., NTK reducing to identity) are briefly justified in the main text, not just deferred to appendices.\n*   **Structure:** Assess if the paper flows logically from problem definition to theoretical analysis to empirical validation.\n\n**Actionable Review Checklist:**\n1.  Are all symbols defined and used consistently?\n2.  Are figure captions self-contained and descriptive?\n3.  Is the writing free of significant grammatical errors?\n4.  Are experimental details sufficient for reproduction?\n5.  Are key theoretical assumptions clearly stated in the main text?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789587765,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-884d996e9c582842",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 670,
+      "completion_tokens_details": null,
+      "prompt_tokens": 3348,
+      "prompt_tokens_details": null,
+      "total_tokens": 4018
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Precision**\n*   **Audit Symbol Definitions:** Verify that mathematical symbols are defined before use and remain consistent throughout the manuscript. Flag instances where arguments in equations do not match textual descriptions (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$ vs. $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$).\n*   **Distinguish Similar Concepts:** Ensure distinct terms are used for related but different concepts (e.g., \"latent perturbation\" $\\epsilon$ vs. \"image perturbation\" $x'-x$). If symbols are reused, explicitly state the distinction in the notation section.\n*   **Standardize Function Notation:** Check for consistency in function application (e.g., ensuring $CE(c(x), y)$ is used consistently rather than switching to $CE(x, y)$).\n\n**2. Writing Quality & Grammar**\n*   **Proofread for Professionalism:** Identify and flag grammatical errors, typos, and awkward phrasings that hinder readability (e.g., \"create an technique,\" missing prepositions, sentence fragments).\n*   **Terminology Consistency:** Ensure consistent capitalization and spelling of technical terms (e.g., \"Standard CNNs\" vs. \"StdCNNs,\" \"upto\" vs. \"up to\").\n\n**3. Figure & Table Clarity**\n*   **Caption Completeness:** Critique captions that fail to explicitly describe all subplots, axes, or legends. Ensure captions explain *what* is plotted (e.g., \"trajectories of eigenvalues\") rather than just referencing the figure number.\n*   **Visual-Text Alignment:** Verify that figure labels and arrows correspond exactly to the notation defined in the text. If a figure is complex, require a brief textual description in the main body to guide the reader.\n*   **Distinguish Similar Figures:** If multiple figures show similar data (e.g., predictions on reconstructed vs. perturbed images), explicitly explain the relationship and difference between them in the text.\n\n**4. Experimental Reproducibility**\n*   **Hyperparameter Detail:** Flag insufficient experimental setup details. Require explicit specification of architectures, optimizers, learning rates, and training protocols.\n*   **Clarify \"Parameter Equivalence\":** If comparing models of different architectures, explicitly define how parameter counts were matched (e.g., specific filter counts) rather than using vague descriptions.\n\n**5. Logical Flow & Assumptions**\n*   **Justify Key Transitions:** Ensure that major simplifications or assumptions (e.g., NTK reducing to identity) are briefly justified in the main text, not just deferred to appendices.\n*   **Structure:** Assess if the paper flows logically from problem definition to theoretical analysis to empirical validation.\n\n**Actionable Review Checklist:**\n1.  Are all symbols defined and used consistently?\n2.  Are figure captions self-contained and descriptive?\n3.  Is the writing free of significant grammatical errors?\n4.  Are experimental details sufficient for reproduction?\n5.  Are key theoretical assumptions clearly stated in the main text?",
+  "tokens": {
+    "input_tokens": 3348,
+    "max_model_len": 65536
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T20:04:13.527121+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "1d8dfd506fbd019e1b6329e7c25db7781cdad129c9151a7d13d4b5b309687623",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "SJn0sLgRb",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: QUAL\nPaper summary: The paper proposes \"SamplePairing,\" a data augmentation technique for image classification that creates new training samples by averaging two randomly selected images from the training set, while retaining the label of only one of the images. The authors report significant improvements in validation accuracy on ILSVRC 2012, CIFAR-10, CIFAR-100, and SVHN, particularly when the training set size is limited. The method is presented as a simple, orthogonal regularizer that is integrated into the training loop with intermittent disabling and a final fine-tuning phase.\n\nDimension score (1-10): 5\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: QUAL-MET\n  polarity: strength\n  claim: The proposed method is technically sound and well-formulated; the simple averaging of two images with a single label is a valid regularization strategy that is correctly implemented and logically consistent with the observed training dynamics (e.g., the theoretical upper bound on training accuracy during the pairing phase).\n  evidence_anchors: [SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-EXP\n  polarity: strength\n  claim: The experimental design is comprehensive, covering multiple standard benchmarks (ILSVRC, CIFAR-10/100, SVHN) and including a valuable ablation study on the effect of training set size, which directly supports the claim that the method is most beneficial for data-limited scenarios.\n  evidence_anchors: [SRC-007, SRC-011]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: QUAL-STA\n  polarity: weakness\n  claim: The paper lacks statistical rigor; all reported results are single-point estimates without variance, standard deviation, or confidence intervals, making it impossible to determine if the observed improvements are statistically significant or due to random initialization.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: Report mean ± standard deviation over at least 5 independent runs with different random seeds for all key comparisons, and include statistical significance tests.\n- subcategory: QUAL-REP\n  polarity: weakness\n  claim: Reproducibility is hindered by the absence of code availability and incomplete hyperparameter details; while batch sizes and optimizers are mentioned, critical details such as learning rate schedules, weight decay, exact number of epochs, and random seeds are not provided.\n  evidence_anchors: [SRC-008]\n  confidence: 4\n  actionable_suggestion: Provide a public code repository and a detailed appendix listing all hyperparameters, learning rate schedules, and hardware specifications to enable independent verification.\n- subcategory: QUAL-CMP\n  polarity: weakness\n  claim: The comparison to prior work is limited; while the paper discusses SMOTE and a concurrent mixup submission, it does not provide direct empirical comparisons against other standard data augmentation techniques (e.g., Cutout, AutoAugment) or recent state-of-the-art methods to contextualize the magnitude of the improvement.\n  evidence_anchors: [SRC-004, SRC-005]\n  confidence: 4\n  actionable_suggestion: Include direct empirical comparisons against at least two other widely-used data augmentation or regularization techniques to better position the contribution relative to the state-of-the-art.\n\nKey questions for the authors:\n- What is the variance in performance across multiple random seeds, and are the reported improvements statistically significant?\n- Can you provide all hyperparameters, learning rate schedules, and code to ensure full reproducibility of the results?\n- How do the results compare to other standard data augmentation techniques (e.g., Cutout, AutoAugment) on the same datasets?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "db12526dfaa41816b6df165309a46ad025edddb23ec9f339a440e725bb7983aa",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "80b78a2ca9f395e8402cd169d9c31b98190c3f011fd58ea30c9746af00b19d9f"
+  },
+  "review_plan_identity_sha256": "e36c5f5d8fb11d265de2842c6f7d2f7cfee0b6c21814dc7825c38c794dda37ba",
+  "role": "QUAL",
+  "run_id": "candidate-0001"
+}

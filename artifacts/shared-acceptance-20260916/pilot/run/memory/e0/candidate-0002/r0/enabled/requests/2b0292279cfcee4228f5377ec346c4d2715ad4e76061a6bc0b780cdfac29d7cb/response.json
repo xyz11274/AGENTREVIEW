@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**CLAR Review Criteria & Actionable Checklist**\n\nEvaluate Clarity across three sub-dimensions: **CLAR-WRT** (Writing/Terminology), **CLAR-NOT** (Notation/Math), and **CLAR-FIG** (Figures/Visuals).\n\n**Common Weaknesses & Specific Corrections:**\n\n1.  **Language & Terminology (CLAR-WRT)**\n    *   *Issue:* Grammatical errors, typos, or inconsistent terms (e.g., \"Neural networks models,\" \"upto,\" capitalization inconsistencies).\n    *   *Action:* Request specific line-by-line corrections for grammar and enforce consistent terminology throughout the manuscript.\n\n2.  **Reproducibility Details (CLAR-WRT)**\n    *   *Issue:* Missing hyperparameters (learning rate, optimizer, batch size) or vague architecture descriptions (e.g., \"parameter equivalent\" without specific filter counts).\n    *   *Action:* Require a detailed hyperparameter table and explicit architectural specifications to ensure reproducibility.\n\n3.  **Figure Clarity (CLAR-FIG)**\n    *   *Issue:* Ambiguous captions lacking axis definitions, legends, or subplot conditions.\n    *   *Action:* Mandate clear labels for all axes/legends and comprehensive captions that fully define experimental conditions for each subplot.\n\n4.  **Mathematical Notation (CLAR-NOT)**\n    *   *Issue:* Inconsistent or overloaded variables (e.g., using 'x' for both input image and rotation angle).\n    *   *Action:* Request distinct, consistent notation for all variables and a clear definition of mathematical symbols upon first use.\n\n5.  **Results Organization (CLAR-WRT)**\n    *   *Issue:* Disjointed presentation where comparisons between methods/attacks are scattered.\n    *   *Action:* Suggest reorganizing the results section to group related comparisons logically for improved flow and readability.",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789590912,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-9b21265f55e300e0",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 409,
+      "completion_tokens_details": null,
+      "prompt_tokens": 304,
+      "prompt_tokens_details": null,
+      "total_tokens": 713
+    }
+  },
+  "raw_model_output": "**CLAR Review Criteria & Actionable Checklist**\n\nEvaluate Clarity across three sub-dimensions: **CLAR-WRT** (Writing/Terminology), **CLAR-NOT** (Notation/Math), and **CLAR-FIG** (Figures/Visuals).\n\n**Common Weaknesses & Specific Corrections:**\n\n1.  **Language & Terminology (CLAR-WRT)**\n    *   *Issue:* Grammatical errors, typos, or inconsistent terms (e.g., \"Neural networks models,\" \"upto,\" capitalization inconsistencies).\n    *   *Action:* Request specific line-by-line corrections for grammar and enforce consistent terminology throughout the manuscript.\n\n2.  **Reproducibility Details (CLAR-WRT)**\n    *   *Issue:* Missing hyperparameters (learning rate, optimizer, batch size) or vague architecture descriptions (e.g., \"parameter equivalent\" without specific filter counts).\n    *   *Action:* Require a detailed hyperparameter table and explicit architectural specifications to ensure reproducibility.\n\n3.  **Figure Clarity (CLAR-FIG)**\n    *   *Issue:* Ambiguous captions lacking axis definitions, legends, or subplot conditions.\n    *   *Action:* Mandate clear labels for all axes/legends and comprehensive captions that fully define experimental conditions for each subplot.\n\n4.  **Mathematical Notation (CLAR-NOT)**\n    *   *Issue:* Inconsistent or overloaded variables (e.g., using 'x' for both input image and rotation angle).\n    *   *Action:* Request distinct, consistent notation for all variables and a clear definition of mathematical symbols upon first use.\n\n5.  **Results Organization (CLAR-WRT)**\n    *   *Issue:* Disjointed presentation where comparisons between methods/attacks are scattered.\n    *   *Action:* Suggest reorganizing the results section to group related comparisons logically for improved flow and readability.",
+  "tokens": {
+    "input_tokens": 304,
+    "max_model_len": 65536
+  }
+}

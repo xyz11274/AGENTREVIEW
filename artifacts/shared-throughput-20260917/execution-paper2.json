@@ -1,0 +1,11 @@
+{
+  "protocol": "shared-execution-v1",
+  "paper_workers": 2,
+  "limits": {
+    "18001": 16,
+    "13099": 4,
+    "13098": 16
+  },
+  "admission_root": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/admission",
+  "note": "One global cap on 18001 includes reviewer, memory, Meta and original CoCo Judge; MSTAR rounds remain serial."
+}

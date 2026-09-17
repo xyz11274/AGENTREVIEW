@@ -1,0 +1,65 @@
+{
+  "attempts": 1,
+  "created_at": "2026-09-16T21:05:15.131676+00:00",
+  "generation_identity": {
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "model_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "protocol": "research-v2-specialist-invocation-v1",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "a49e3a5a36867b5b3e710fc3ab4c20d0670bfe233b65b673844cad9c88ec3698",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-cII-Vju5C",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes the gradients of components within a neural network layer (e.g., convolutional filters) using SVD before the update step. The authors hypothesize this prevents components from co-learning identical representations, thereby speeding up convergence and improving robustness to over-parametrization. Experiments on CIFAR-10 and ImageNet show significant speed-ups and accuracy gains over standard SGDM with default hyperparameters, though it does not surpass state-of-the-art tuned SGDM.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: SIGN-BRD\n  polarity: strength\n  claim: The work addresses a broadly important problem in neural network optimization by targeting the inefficiency of redundant component learning, a challenge relevant to a wide range of deep learning architectures.\n  evidence_anchors: [SRC-002]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: SIGN-DOM\n  polarity: strength\n  claim: The method demonstrates domain impact by showing consistent improvements across a suite of complex architectures (ResNets, DenseNets) on standard computer vision benchmarks (CIFAR-10, ImageNet), indicating generalizability beyond simple models.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 4\n  actionable_suggestion: N/A\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The method does not improve upon the state-of-the-art in terms of final accuracy; when using hyperparameters tuned for SGDM, Orthogonal-SGDM underperforms SGDM (90.18% vs 91.17% on CIFAR-10 ResNet20), and the authors explicitly state that tuned SGDM remains superior.\n  evidence_anchors: [SRC-007]\n  confidence: 5\n  actionable_suggestion: The authors should clarify the specific niche where this method is preferred over tuned SGDM, as the current evidence suggests it is a trade-off for speed/robustness rather than a SOTA improvement in performance.\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: The paper lacks a thorough discussion of the practical societal and computational impact, specifically noting that the SVD operation introduces non-linear time complexity and can be \"prohibitively expensive\" for dense layers, without providing a clear mitigation strategy or cost-benefit analysis for large-scale deployment.\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Include a more detailed analysis of the wall-time overhead versus convergence speed-up to help practitioners assess the net computational benefit, especially for large-scale models.\n\nKey questions for the authors:\n- Given that the SVD computation is non-linear and potentially expensive, what is the net wall-time savings when accounting for both the optimization overhead and the reduced number of epochs required?\n- How does the method perform on architectures with very large dense layers, where the SVD cost is highest, and is there a threshold beyond which the method becomes impractical?\n\nRecommendation: Weak Accept\n```",
+  "request_sha256": "7b1b47e2cdad43938d80b2f1a50170ce57e89193f520a5f8a8036a12cd929837",
+  "review_plan_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "intervention": {
+      "label": "shared-frozen-off-v1",
+      "mode": "forced_off",
+      "protocol": "s2-intervention-v1"
+    },
+    "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+    "preparation_sha256": "38104bd6fe04373346e8fb71be3bc5c38e5f317fe210accc37d628979de43da2"
+  },
+  "review_plan_identity_sha256": "c6e35df4c1d27ba07c47e253f0af4c443142b71bbf355186ab75481eb74e1104",
+  "role": "SIGN",
+  "run_id": "feedback-0003-e0"
+}

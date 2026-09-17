@@ -1,0 +1,12 @@
+{
+  "cause": "The strict adapter rejected original CoCo accepted no-category -> N/A normalization; original responses completed successfully. This was an adapter false positive, not an upstream transport failure.",
+  "checks": [
+    {
+      "classified_count": 17,
+      "opinion_count": 17,
+      "original_na_normalizations": 1,
+      "paper_id": "-EHqoysUYLx"
+    }
+  ],
+  "status": "diagnosed"
+}

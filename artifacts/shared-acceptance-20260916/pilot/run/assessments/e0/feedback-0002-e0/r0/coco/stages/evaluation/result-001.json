@@ -1,0 +1,532 @@
+{
+  "completeness_checks": [
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-MTH"
+      ],
+      "paper_id": "B1-Hhnslg",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-MTH"
+      ]
+    },
+    {
+      "completed_categories": [
+        "CLAR-FIG",
+        "CLAR-WRT",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "SIGN-BRD",
+        "SIGN-SOT"
+      ],
+      "paper_id": "SkYXvCR6W",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-FIG",
+        "CLAR-WRT",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "SIGN-BRD",
+        "SIGN-SOT"
+      ]
+    }
+  ],
+  "input": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/stages/classify/result-001.jsonl",
+    "sha256": "59b44aafd4008d954adb2739cd5cd699614aee905011b29c24ddede4c9a81882"
+  },
+  "integrity": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/integrity/evaluation.json",
+    "sha256": "f302c1a8a28adcec73fbf914fee2e37484651cac9c7045bc74303505903924fd"
+  },
+  "paper_ids": [
+    "B1-Hhnslg",
+    "SkYXvCR6W"
+  ],
+  "papers": {
+    "B1-Hhnslg": {
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 3,
+              "average": 3.25,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "Although the idea is quite straightforward, and there are a great many prior works on zero-shot and few-shot learning, the proposed technique is novel to my knowledge, and achieves state-of-the-art results on several  benchmark datasets. One addition that I think would improve the paper is a clearer description of the training algorithm (perhaps pseudocode). In its current form the paper a bit vague about this.",
+            "test_text": "- CLAR: The paper is well-structured with a clear narrative flow, moving logically from introduction to related work, method, experiments, and conclusion. The terminology is generally precise and consistently used. Evidence anchors: SRC-001, SRC-006."
+          },
+          "ORIG-MTH": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 2,
+              "average": 2.5,
+              "claim_extraction": "normal",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 2,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 2,\n  \"verifiability\": \"X\",\n  \"alignment\": 2,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "The paper is an extension of the matching networks by Vinyals et al. in NIPS2016.\nInstead of using all the examples in the support set during test, the method represents each class by the mean of its learned embeddings. The training procedure and experimental setting are very similar to the original matching networks. I am not completely sure about its advantages over the original matching networks. It seems to me when dealing with 1-shot case, these two methods are identical since there is only one example seen in this class, so the mean of the embedding is the embedding itself.\nWhen dealing with 5-shot case, original matching networks compute the weighted average of all examples, but it is at most 5x cost. The experimental results reported for prototypical nets are only slightly better than matching networks. I  think it is a simple, straightforward,  novel extension, but I am not fully convinced its advantages.",
+            "test_text": "- ORIG: The paper introduces a genuinely novel and conceptually simple algorithmic approach (prototypical networks) that replaces complex attention mechanisms with Euclidean distance to class prototypes, offering a clear conceptual advance in few-shot learning methodology. Evidence anchors: SRC-006."
+          }
+        },
+        "only_ref_tag": [],
+        "only_test_tag": [
+          "CLAR-FIG",
+          "CLAR-NOT",
+          "ORIG-ANL",
+          "ORIG-COM",
+          "ORIG-NEG",
+          "POL-ANO",
+          "POL-DAT",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "QUAL-MET",
+          "QUAL-STA",
+          "SIGN-BRD",
+          "SIGN-DOM",
+          "SIGN-IMP"
+        ]
+      },
+      "full_text_metrics": {
+        "bertscore_f1": 0.8136112689971924,
+        "bertscore_precision": 0.792218804359436,
+        "bertscore_recall": 0.8361911773681641,
+        "bleu": 0.0028180690084894794,
+        "rougeL": 0.06982543640897756
+      },
+      "paper_judge_scores": {
+        "actionability": 5,
+        "alignment": 4,
+        "average": 4.166666666666667,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 3,
+        "grounding_specificity": 5,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 4
+      },
+      "raw_table_1_summary": {
+        "absolute_scores": {
+          "Average": 2.875,
+          "BERT-F1": 81.36112689971924,
+          "BERT.": null,
+          "BLEU": 0.28180690084894794,
+          "Clarity": 4.5,
+          "Complete.": 350.0,
+          "Correct.": null,
+          "Correctness": 2.5,
+          "Ground.": null,
+          "Grounding": 3.0,
+          "Paper.": 4.0,
+          "ROUGE-L": 6.982543640897757,
+          "Thoro.": null,
+          "Thoroughness": 1.5,
+          "Verifiability": null,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 350.0
+          }
+        },
+        "input_label": "B1-Hhnslg",
+        "paper_counts": {
+          "Average": 1,
+          "BERT-F1": 1,
+          "BERT.": 0,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 0,
+          "Correctness": 1,
+          "Ground.": 0,
+          "Grounding": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 0,
+          "Thoroughness": 1,
+          "Verifiability": 0,
+          "Verify.": 0
+        }
+      },
+      "table_1_summary": {
+        "absolute_scores": {
+          "Average": 2.875,
+          "BERT.": 81.36112689971924,
+          "BLEU": 0.28180690084894794,
+          "Clarity": 4.5,
+          "Complete.": 350.0,
+          "Correct.": 2.5,
+          "Ground.": 3.0,
+          "Paper.": 4.0,
+          "ROUGE-L": 6.982543640897757,
+          "Thoro.": 1.5,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 350.0
+          }
+        },
+        "input_label": "B1-Hhnslg",
+        "paper_counts": {
+          "Average": 1,
+          "BERT.": 1,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 1,
+          "Ground.": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 1,
+          "Verify.": 0
+        }
+      }
+    },
+    "SkYXvCR6W": {
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-FIG": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 4,
+              "average": 4.0,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 4
+            },
+            "ref_text": "This paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- Suggested revision for QUAL opinion 5: Clarify the relationship between the reported loss and actual classification accuracy, and revise the claims to reflect the trade-off between efficiency and performance if accuracy is not competitive.\n\n- CLAR: Tables are poorly formatted and contain ambiguous abbreviations, such as cryptic column headers in Table 6 (e.g., 'YLP P', 'AMZ F') that are not fully defined, and Table 4 uses 'merge_1' without specifying the type of merge operation. Evidence anchors: SRC-008.\n\n- Suggested revision for CLAR opinion 4: Expand the abbreviations in Table 6 or provide a clear legend, and specify the type of merge operation (e.g., concatenation, addition) used in the network architecture."
+          },
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": 5,
+              "alignment": 4,
+              "average": 3.6666666666666665,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "The paper proposed to encode text into a binary matrix by using a compressing code for each word in each matrix row. The idea is interesting, and overall introduction is clear.\n\nThis paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- CLAR: The writing quality is poor, with frequent grammatical errors, awkward phrasing, and inconsistent terminology that hinder readability and professional presentation. Evidence anchors: SRC-001, SRC-003, SRC-011.\n\n- Suggested revision for CLAR opinion 1: Perform a thorough line-by-line proofreading to correct grammatical errors such as 'reduces drastically' and 'In all of ours experiments'.\n\n- CLAR: The algorithm presentation lacks formal pseudocode, relying instead on prose and examples, which makes the encoding procedure less precise and harder to reproduce without ambiguity. Evidence anchors: SRC-003, SRC-004.\n\n- Suggested revision for CLAR opinion 2: Provide a clear, step-by-step pseudocode block for the encoding algorithm, explicitly defining inputs, outputs, and edge cases such as the handling of characters not in the rank list.\n\n- Suggested revision for CLAR opinion 4: Expand the abbreviations in Table 6 or provide a clear legend, and specify the type of merge operation (e.g., concatenation, addition) used in the network architecture.\n\n- CLAR: The paper lacks a clear definition of the 'compressing inspired techniques' and does not explicitly state the name of the algorithm (Tagged Huffman Code) until the Discussion section, which delays the reader's understanding of the core contribution. Evidence anchors: SRC-001, SRC-011.\n\n- Suggested revision for CLAR opinion 5: Introduce the specific compression technique (Tagged Huffman Code) in the Introduction or early in Section 2 and explain the connection between the proposed encoding and Huffman coding more clearly."
+          },
+          "QUAL-CMP": {
+            "judge_scores": {
+              "actionability": 3,
+              "alignment": 4,
+              "average": 3.3333333333333335,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 3,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 2,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 2
+            },
+            "ref_text": "However, the work lacks justification for this particular way of encoding, and no comparison for any other encoding mechanism is provided except for the one-hot encoding used in Zhang & LeCun 2015. The results using this particular encoding are not better than any previous work.\n\nOverall, the lack of comparisons and the questionable choices for the networks render this work lacking significance to be published in ICLR 2018.",
+            "test_text": "- QUAL: The comparison is limited to the 2015 Zhang & LeCun baseline and traditional non-deep learning methods, lacking comparison against more recent or state-of-the-art character-level CNN variants or other efficient encoding methods that have emerged since 2015. Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 3: Include comparisons with more recent character-level CNN architectures or other efficient embedding techniques to better contextualize the proposed method's performance.\n\n- Suggested revision for ORIG opinion 2: More rigorously justify why this specific compression scheme is superior to other dimensionality reduction techniques (e.g., hashing, PCA) for CNN inputs, beyond just parameter count."
+          },
+          "QUAL-EXP": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 3,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "Overall, the lack of comparisons and the questionable choices for the networks render this work lacking significance to be published in ICLR 2018.\n\nThis paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- QUAL: The primary experimental results are reported using 'Loss' values rather than standard classification metrics like Accuracy or F1-score, making it impossible to directly compare performance with the cited baselines or assess the practical utility of the model. Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 1: Report Accuracy and F1-scores for all datasets and baselines.\n\n- QUAL: The claim of 'competitive accuracies' is not supported by the provided loss values, which are often higher (worse) than the Zhang & LeCun baselines in several datasets (e.g., Yelp Polarity: 7.96 vs 5.89; Yahoo Answers: 31.90 vs 29.55). Evidence anchors: SRC-008.\n\n- Suggested revision for QUAL opinion 5: Clarify the relationship between the reported loss and actual classification accuracy, and revise the claims to reflect the trade-off between efficiency and performance if accuracy is not competitive.\n\n- SIGN: The method is validated on a diverse set of standard, large-scale text classification datasets (Ag News, Sogou News, DBpedia, Yelp, Yahoo Answers, Amazon), demonstrating generalizability across different domains and languages (including Chinese via Pinyin). Evidence anchors: SRC-007, SRC-008.\n\n- Suggested revision for SIGN opinion 3: Explicitly discuss the trade-off between efficiency and accuracy, and provide a more nuanced analysis of why accuracy drops on certain datasets like Yelp Polarity and Yahoo Answers.\n\n- Suggested revision for ORIG opinion 4: Consider introducing a new benchmark or evaluation metric that specifically measures the efficiency-accuracy trade-off of compact encodings, or test on datasets with high out-of-vocabulary rates to better demonstrate the claimed robustness."
+          },
+          "SIGN-BRD": {
+            "judge_scores": {
+              "actionability": 1,
+              "alignment": 1,
+              "average": 2.0,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 2,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 1,\n  \"grounding_specificity\": 2,\n  \"verifiability\": 2,\n  \"alignment\": 1,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 2
+            },
+            "ref_text": "This paper proposes a new character encoding scheme for use with character-convolutional language models. This is a poor quality paper, is unclear in the results (what metric is even reported in Table 6), and has little significance (though this may highlight the opportunity to revisit the encoding scheme for characters).",
+            "test_text": "- SIGN: The work addresses a broadly important problem in NLP: the computational inefficiency and high resource requirements of character-level deep learning models, which limits their accessibility to researchers and practitioners without high-end hardware. Evidence anchors: SRC-001, SRC-010."
+          },
+          "SIGN-SOT": {
+            "judge_scores": {
+              "actionability": 2,
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 2,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 2,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "However, the work lacks justification for this particular way of encoding, and no comparison for any other encoding mechanism is provided except for the one-hot encoding used in Zhang & LeCun 2015. The results using this particular encoding are not better than any previous work.",
+            "test_text": "- SIGN: While the paper claims 'competitive accuracies,' the results in Table 6 show that the proposed method often underperforms the state-of-the-art baseline (Zhang et al. 2015) in terms of loss, indicating that the improvement is primarily in efficiency (time/parameters) rather than accuracy, with accuracy degraded in several cases. Evidence anchors: SRC-008."
+          }
+        },
+        "only_ref_tag": [
+          "QUAL-MET"
+        ],
+        "only_test_tag": [
+          "CLAR-FIG",
+          "CLAR-NOT",
+          "ORIG-ANL",
+          "ORIG-COM",
+          "ORIG-EXP",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "QUAL-STA",
+          "SIGN-IMP"
+        ]
+      },
+      "full_text_metrics": {
+        "bertscore_f1": 0.8124679923057556,
+        "bertscore_precision": 0.7952632904052734,
+        "bertscore_recall": 0.8425030708312988,
+        "bleu": 0.0024381245656935713,
+        "rougeL": 0.0794044665012407
+      },
+      "paper_judge_scores": {
+        "actionability": 5,
+        "alignment": 4,
+        "average": 4.166666666666667,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 3,
+        "grounding_specificity": 5,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 4
+      },
+      "raw_table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.3666666666666667,
+          "BERT-F1": 81.24679923057556,
+          "BERT.": null,
+          "BLEU": 0.24381245656935713,
+          "Clarity": 4.333333333333333,
+          "Complete.": 200.0,
+          "Correct.": null,
+          "Correctness": 3.3333333333333335,
+          "Ground.": null,
+          "Grounding": 4.0,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.94044665012407,
+          "Thoro.": null,
+          "Thoroughness": 2.3333333333333335,
+          "Verifiability": 2.8333333333333335,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 200.0
+          }
+        },
+        "input_label": "SkYXvCR6W",
+        "paper_counts": {
+          "Average": 1,
+          "BERT-F1": 1,
+          "BERT.": 0,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 0,
+          "Correctness": 1,
+          "Ground.": 0,
+          "Grounding": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 0,
+          "Thoroughness": 1,
+          "Verifiability": 1,
+          "Verify.": 0
+        }
+      },
+      "table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.3666666666666667,
+          "BERT.": 81.24679923057556,
+          "BLEU": 0.24381245656935713,
+          "Clarity": 4.333333333333333,
+          "Complete.": 200.0,
+          "Correct.": 3.3333333333333335,
+          "Ground.": 4.0,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.94044665012407,
+          "Thoro.": 2.3333333333333335,
+          "Verify.": 2.8333333333333335
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 200.0
+          }
+        },
+        "input_label": "SkYXvCR6W",
+        "paper_counts": {
+          "Average": 1,
+          "BERT.": 1,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 1,
+          "Ground.": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 1,
+          "Verify.": 1
+        }
+      }
+    }
+  },
+  "raw_table_1_summary": {
+    "absolute_scores": {
+      "Average": 3.1208333333333336,
+      "BERT-F1": 81.3039630651474,
+      "BERT.": null,
+      "BLEU": 0.26280967870915256,
+      "Clarity": 4.416666666666666,
+      "Complete.": 275.0,
+      "Correct.": null,
+      "Correctness": 2.916666666666667,
+      "Ground.": null,
+      "Grounding": 3.5,
+      "Paper.": 4.0,
+      "ROUGE-L": 7.461495145510913,
+      "Thoro.": null,
+      "Thoroughness": 1.9166666666666667,
+      "Verifiability": 2.8333333333333335,
+      "Verify.": null
+    },
+    "category_coverage": {
+      "item_count": 2,
+      "metric_counts": {
+        "Complete.": 2
+      },
+      "metrics": {
+        "Complete.": 275.0
+      }
+    },
+    "input_label": "candidate",
+    "paper_counts": {
+      "Average": 2,
+      "BERT-F1": 2,
+      "BERT.": 0,
+      "BLEU": 2,
+      "Clarity": 2,
+      "Complete.": 2,
+      "Correct.": 0,
+      "Correctness": 2,
+      "Ground.": 0,
+      "Grounding": 2,
+      "Paper.": 2,
+      "ROUGE-L": 2,
+      "Thoro.": 0,
+      "Thoroughness": 2,
+      "Verifiability": 1,
+      "Verify.": 0
+    }
+  },
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/feedback-0002-e0/r0/coco/request.json",
+    "sha256": "a6f659830bd65ac2c52c7feb5e25695f349252847bcf8123dabf0ba623c997ea"
+  },
+  "service_runtime": {
+    "argv_sha256": "a9c5647f6b9f7d3de0303092da51285603b7ec383e1b7dcd1209146a491e7052",
+    "base_url": "http://127.0.0.1:18001/v1",
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "model_root": "/data/xyj/models/Qwen3.8-27B",
+    "pid": 2440320,
+    "start_identity": "505048484"
+  },
+  "table_1_summary": {
+    "absolute_scores": {
+      "Average": 3.1208333333333336,
+      "BERT.": 81.3039630651474,
+      "BLEU": 0.26280967870915256,
+      "Clarity": 4.416666666666666,
+      "Complete.": 275.0,
+      "Correct.": 2.916666666666667,
+      "Ground.": 3.5,
+      "Paper.": 4.0,
+      "ROUGE-L": 7.461495145510913,
+      "Thoro.": 1.9166666666666667,
+      "Verify.": 2.8333333333333335
+    },
+    "category_coverage": {
+      "item_count": 2,
+      "metric_counts": {
+        "Complete.": 2
+      },
+      "metrics": {
+        "Complete.": 275.0
+      }
+    },
+    "input_label": "candidate",
+    "paper_counts": {
+      "Average": 2,
+      "BERT.": 2,
+      "BLEU": 2,
+      "Clarity": 2,
+      "Complete.": 2,
+      "Correct.": 2,
+      "Ground.": 2,
+      "Paper.": 2,
+      "ROUGE-L": 2,
+      "Thoro.": 2,
+      "Verify.": 1
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "completion_contract": "complete-stop-v1",
+  "component": "memory_build",
+  "input_max_tokens": 49152,
+  "max_attempts": 2,
+  "max_tokens": 4096,
+  "messages": [
+    {
+      "content": "Refine the following review experience for the SIGN dimension. Make it concise, actionable, and specific. Focus on common pitfalls and best practices.\n\nTopic: Evaluating Significance and Impact in Interpretability Papers\nContent: When reviewing the SIGN dimension for interpretability and explainability papers, assessors should prioritize the breadth of the problem addressed (SIGN-BRD) while critically examining the domain applicability (SIGN-DOM) and state-of-the-art comparison (SIGN-SOT). A common weakness is the reliance on low-dimensional or simple datasets (e.g., MNIST, CelebA) which limits the demonstration of practical value in complex, high-stakes fields like medical imaging or autonomous driving. Furthermore, claims of 'intuitive' or 'interpretable' explanations are often unsupported without quantitative comparisons against established baselines (e.g., LIME, SHAP, Grad-CAM) or user studies. Reviewers should also flag the absence of discussions regarding real-world societal impacts (SIGN-IMP), such as the risk of misleading explanations, fairness across demographic groups, and the environmental cost of training auxiliary generative models.\n\nReturn only the refined content.",
+      "role": "user"
+    }
+  ],
+  "model": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "response_format": null
+}

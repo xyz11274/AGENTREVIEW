@@ -1,0 +1,150 @@
+{
+  "created_at": "2026-09-16T21:04:44.291107+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "11ea07ef48555d2f77e4816bc419188f94b3f00ae91ac3038ff72e8cf084fcbb",
+    "request_sha256": "41f7c702ebfb6b7df54701b6ae2f9c2e4f5a1367492598a16398c069ad63276e",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "fcc4a9e241ae27b49d3d2688af8210fc15e7ba3e7eed48f0f760f3cdbd1ae5a3",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-cII-Vju5C",
+  "program_version": "candidate-0001",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes gradients of components within a layer using SVD to promote diverse representations and speed up learning. It reports improved accuracy and faster convergence on CIFAR-10 and ImageNet compared to standard SGDM, and shows benefits in a semi-supervised setting (Barlow Twins). The paper includes theoretical motivation, algorithmic details, and ablations on dense layers and mini-batch size.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and typos that reduce readability and professionalism.\n  evidence_anchors: [SRC-001, SRC-009]\n  confidence: 5\n  actionable_suggestion: Correct the title typo \"SPEEDUP\" to \"SPEED UP\" or \"ACCELERATE\". Fix the typo \"filers\" to \"filters\" in Section 3.1. Review the entire manuscript for grammatical consistency (e.g., \"speedup\" vs \"speed-up\" usage is inconsistent).\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The mathematical notation for the network architecture and component definitions is dense and potentially confusing, particularly the mapping dimensions.\n  evidence_anchors: [SRC-003]\n  confidence: 4\n  actionable_suggestion: In Section 2.2, the definition $c_l:\\mathbb{R}^{S_{l - 1}\\times N_{l - 1}}\\to \\mathbb{R}^{S_l}$ seems to omit the component count $N_l$ in the output dimension, while the next line says $f_l:\\mathbb{R}^{S_{l - 1}\\times N_{l - 1}}\\to \\mathbb{R}^{S_l\\times N_l}$. Clarify the relationship between $c_l$ and $f_l$ and ensure the dimensions of the gradient matrix $G_l$ ($P_l \\times N_l$) are explicitly linked to the parameterization $\\theta_l$.\n\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The algorithm presentation lacks a clear pseudocode block, relying instead on inline equations which makes the step-by-step procedure less immediately accessible.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Include a formal Algorithm 1 box that summarizes the Orthogonal-SGDM update rule, explicitly listing inputs (weights, gradients, hyperparameters) and outputs (updated weights), and detailing the SVD step. This would improve reproducibility and clarity.\n\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure captions are sometimes insufficiently descriptive, requiring the reader to cross-reference the main text to understand the specific experimental setup or model layer being shown.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Expand figure captions to include key experimental details (e.g., model name, dataset, specific layer index) directly in the caption. For example, Figure 6's caption mentions \"second convolutional layer of the third block in layer three\" which is very specific; ensure this level of detail is present for all figures or provide a consistent legend/key.\n\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is generally well-organized with a logical flow from hypothesis to method to results to discussion.\n  evidence_anchors: [SRC-002]\n  confidence: 4\n  actionable_suggestion: N/A\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the cosine similarity sets $C_l$ and $R_l$ uses absolute values of inner products, which is non-standard for cosine similarity (usually normalized).\n  evidence_anchors: [SRC-009]\n  confidence: 3\n  actionable_suggestion: Clarify whether $\\langle \\cdot, \\cdot \\rangle_2$ denotes the dot product or the cosine similarity. If it is the dot product, the term \"cosine similarity\" in the text is misleading unless the vectors are normalized. Define the normalization step explicitly if applicable.\n\nKey questions for the authors:\n- Can you provide a clearer definition of the component function $c_l$ and its relationship to the layer function $f_l$ to resolve the dimensional ambiguity in Section 2.2?\n- Why is the absolute value of the inner product used for the similarity metrics $C_l$ and $R_l$? Does this imply that the sign of the correlation is ignored, and if so, is this justified?\n- Could you include a pseudocode algorithm for Orthogonal-SGDM to make the implementation steps more explicit?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "d93ba80be57f2915d3825979529f3a6c4b83c1d9e3fbe6a43358e3919655277d",
+      "prompt_sha256": "41f7c702ebfb6b7df54701b6ae2f9c2e4f5a1367492598a16398c069ad63276e"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper. Use it to structure your review, but ground all claims in the paper itself.",
+      "context": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Avoid overloading symbols (e.g., using the same variable for different concepts like input images and rotation angles).\n*   **Resolve Inconsistencies:** Check for conflicting definitions across sections (e.g., differing loss function notations in adjacent sections). If a function is implicit in one section and explicit in another, standardize the notation or explicitly define the relationship in the preliminaries.\n*   **Distinct Terminology:** Clearly distinguish between similar but distinct concepts (e.g., \"latent perturbation\" vs. \"image-space perturbation\"). Update definitions and ensure consistent usage in text, equations, and figure captions to prevent reader confusion.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Syntax:** Perform a rigorous proofread for grammatical errors, typos, and sentence fragments. Correct articles (e.g., \"a\" vs. \"an\") and ensure complete sentences in technical descriptions.\n*   **Consistent Terminology:** Enforce consistent capitalization and phrasing for key terms (e.g., \"Neural Networks\" vs. \"neural networks\"). Avoid ambiguous or vague descriptors (e.g., \"parameter equivalent\") in favor of precise technical language.\n*   **Logical Flow:** Organize results and comparisons logically. Group related method comparisons together to improve readability and avoid disjointed presentation.\n\n**3. Experimental Reproducibility (CLAR-WRT)**\n*   **Detailed Specifications:** Provide explicit architectural details (layers, activations, filter counts) and training protocols (optimizer, learning rate, batch size, epochs). Vague descriptions hinder reproducibility.\n*   **Hyperparameter Tables:** Include a comprehensive table of all hyperparameters used in experiments to allow for exact replication.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure figures are high-resolution and legible. All axes, legends, and labels must be clearly defined and match the notation used in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, subplot contents, and the relationship between different figures (e.g., explicitly stating what each figure illustrates regarding specific variables or perturbations).\n*   **Textual Context:** Add brief textual descriptions in the main body to guide the reader through complex figures, explaining the significance of specific components or arrows.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined consistently and without ambiguity?\n2.  Are architectural and training details sufficient for full reproducibility?\n3.  Do figure captions and labels strictly align with the notation and terminology defined in the text?",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience. Do not add new information. Keep the summary concise and actionable.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "2d4f41d59c19aaf8e0567df091c214727aaa1b83d616c20b1bd1e0b348bcd2c1",
+              "role": "CLAR",
+              "score": 0.4487284206242769
+            },
+            {
+              "id": "260f2ae50fdb1caa94e52d73a709cb7aa17006eedb504ccb891ea254495fafa6",
+              "role": "CLAR",
+              "score": 0.3416305133276539
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all variables are defined upon first use and used consistently throughout the manuscript. Avoid overloading symbols (e.g., using the same variable for different concepts like input images and rotation angles).\n*   **Resolve Inconsistencies:** Check for conflicting definitions across sections (e.g., differing loss function notations in adjacent sections). If a function is implicit in one section and explicit in another, standardize the notation or explicitly define the relationship in the preliminaries.\n*   **Distinct Terminology:** Clearly distinguish between similar but distinct concepts (e.g., \"latent perturbation\" vs. \"image-space perturbation\"). Update definitions and ensure consistent usage in text, equations, and figure captions to prevent reader confusion.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Syntax:** Perform a rigorous proofread for grammatical errors, typos, and sentence fragments. Correct articles (e.g., \"a\" vs. \"an\") and ensure complete sentences in technical descriptions.\n*   **Consistent Terminology:** Enforce consistent capitalization and phrasing for key terms (e.g., \"Neural Networks\" vs. \"neural networks\"). Avoid ambiguous or vague descriptors (e.g., \"parameter equivalent\") in favor of precise technical language.\n*   **Logical Flow:** Organize results and comparisons logically. Group related method comparisons together to improve readability and avoid disjointed presentation.\n\n**3. Experimental Reproducibility (CLAR-WRT)**\n*   **Detailed Specifications:** Provide explicit architectural details (layers, activations, filter counts) and training protocols (optimizer, learning rate, batch size, epochs). Vague descriptions hinder reproducibility.\n*   **Hyperparameter Tables:** Include a comprehensive table of all hyperparameters used in experiments to allow for exact replication.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure figures are high-resolution and legible. All axes, legends, and labels must be clearly defined and match the notation used in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, subplot contents, and the relationship between different figures (e.g., explicitly stating what each figure illustrates regarding specific variables or perturbations).\n*   **Textual Context:** Add brief textual descriptions in the main body to guide the reader through complex figures, explaining the significance of specific components or arrows.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined consistently and without ambiguity?\n2.  Are architectural and training details sufficient for full reproducibility?\n3.  Do figure captions and labels strictly align with the notation and terminology defined in the text?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+      "program_version": "candidate-0001",
+      "query": {
+        "query_text": "Orthogonalising gradients to speedup neural network optimisation",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 3037,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 13.78857300337404,
+        "prompt_chars": 9787,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "evolved",
+      "snapshot_id": "fcc4a9e241ae27b49d3d2688af8210fc15e7ba3e7eed48f0f760f3cdbd1ae5a3"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "f7d83392beed58287dd50378b9bf4be14686f9bd3e9f0aa569e190fbb0d8caac",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "02b04e057af1475c82b5a01d2a9960b5101f96d83b26a663f7c8ecadfb694b82",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes gradients of components within a layer using SVD to promote diverse representations and speed up learning. It reports improved accuracy and faster convergence on CIFAR-10 and ImageNet compared to standard SGDM, and shows benefits in a semi-supervised setting (Barlow Twins). The paper includes theoretical motivation, algorithmic details, and ablations on dense layers and mini-batch size.\n\nDimension score (1-10): 6\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The paper contains several grammatical errors and typos that reduce readability and professionalism.\n  evidence_anchors: [SRC-001, SRC-009]\n  confidence: 5\n  actionable_suggestion: Correct the title typo \"SPEEDUP\" to \"SPEED UP\" or \"ACCELERATE\". Fix the typo \"filers\" to \"filters\" in Section 3.1. Review the entire manuscript for grammatical consistency (e.g., \"speedup\" vs \"speed-up\" usage is inconsistent).\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The mathematical notation for the network architecture and component definitions is dense and potentially confusing, particularly the mapping dimensions.\n  evidence_anchors: [SRC-003]\n  confidence: 4\n  actionable_suggestion: In Section 2.2, the definition $c_l:\\mathbb{R}^{S_{l - 1}\\times N_{l - 1}}\\to \\mathbb{R}^{S_l}$ seems to omit the component count $N_l$ in the output dimension, while the next line says $f_l:\\mathbb{R}^{S_{l - 1}\\times N_{l - 1}}\\to \\mathbb{R}^{S_l\\times N_l}$. Clarify the relationship between $c_l$ and $f_l$ and ensure the dimensions of the gradient matrix $G_l$ ($P_l \\times N_l$) are explicitly linked to the parameterization $\\theta_l$.\n\n- subcategory: CLAR-WRT\n  polarity: weakness\n  claim: The algorithm presentation lacks a clear pseudocode block, relying instead on inline equations which makes the step-by-step procedure less immediately accessible.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Include a formal Algorithm 1 box that summarizes the Orthogonal-SGDM update rule, explicitly listing inputs (weights, gradients, hyperparameters) and outputs (updated weights), and detailing the SVD step. This would improve reproducibility and clarity.\n\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: Figure captions are sometimes insufficiently descriptive, requiring the reader to cross-reference the main text to understand the specific experimental setup or model layer being shown.\n  evidence_anchors: [SRC-010]\n  confidence: 4\n  actionable_suggestion: Expand figure captions to include key experimental details (e.g., model name, dataset, specific layer index) directly in the caption. For example, Figure 6's caption mentions \"second convolutional layer of the third block in layer three\" which is very specific; ensure this level of detail is present for all figures or provide a consistent legend/key.\n\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is generally well-organized with a logical flow from hypothesis to method to results to discussion.\n  evidence_anchors: [SRC-002]\n  confidence: 4\n  actionable_suggestion: N/A\n\n- subcategory: CLAR-NOT\n  polarity: weakness\n  claim: The notation for the cosine similarity sets $C_l$ and $R_l$ uses absolute values of inner products, which is non-standard for cosine similarity (usually normalized).\n  evidence_anchors: [SRC-009]\n  confidence: 3\n  actionable_suggestion: Clarify whether $\\langle \\cdot, \\cdot \\rangle_2$ denotes the dot product or the cosine similarity. If it is the dot product, the term \"cosine similarity\" in the text is misleading unless the vectors are normalized. Define the normalization step explicitly if applicable.\n\nKey questions for the authors:\n- Can you provide a clearer definition of the component function $c_l$ and its relationship to the layer function $f_l$ to resolve the dimensional ambiguity in Section 2.2?\n- Why is the absolute value of the inner product used for the similarity metrics $C_l$ and $R_l$? Does this imply that the sign of the correlation is ignored, and if so, is this justified?\n- Could you include a pseudocode algorithm for Orthogonal-SGDM to make the implementation steps more explicit?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "feedback-0003-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

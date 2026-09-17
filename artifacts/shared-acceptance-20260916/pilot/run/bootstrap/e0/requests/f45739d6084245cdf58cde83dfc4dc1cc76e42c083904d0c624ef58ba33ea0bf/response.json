@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" ensemble method that relies on data permutation rather than random subsampling or feature selection. The authors compare this method against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 3\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The proposed method fails to demonstrate state-of-the-art performance, showing significant degradation compared to the standard Random Forest baseline on the majority of tested datasets.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: The authors should either improve the algorithm to match or exceed Random Forest performance on standard benchmarks or clearly define the specific niche where this method is superior, as current results suggest it is a weaker classifier for general tabular data.\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The paper claims potential for temporal data but fails to provide any experimental evidence on time-series or ordered datasets, limiting the demonstrated domain impact.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Include experiments on actual time-series or sequence data (e.g., stock prices, sensor data) to validate the claim that the method captures temporal order dependencies better than standard methods.\n- subcategory: SIGN-BRD\n  polarity: neutral\n  claim: The idea of using compression complexity as an impurity measure is conceptually interesting and addresses the i.i.d. assumption, but the practical utility is currently unproven due to poor generalization performance.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 4\n  actionable_suggestion: Provide a theoretical analysis of why ETC-based splits might be beneficial in specific non-i.i.d. scenarios to strengthen the broader research impact argument.\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: There is no discussion of the computational cost of the ETC calculation (NSRPS algorithm) compared to standard entropy calculations, which is a critical factor for real-world deployment.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Add a complexity analysis or empirical timing comparison between ETC-based trees and standard decision trees to assess practical feasibility.\n\nKey questions for the authors:\n- Why does the Permutation Decision Forest underperform Random Forest on 4 out of 6 datasets? Is this due to the lack of feature subsampling or the nature of the ETC impurity?\n- Can you provide a single example on a time-series dataset where your method outperforms a standard Random Forest or a sequence-aware model?\n- What is the computational overhead of calculating ETC for each split compared to calculating Gini impurity?\n\nRecommendation: Weak Reject\n```",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789579933,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-a689a903b9cde169",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 670,
+      "completion_tokens_details": null,
+      "prompt_tokens": 8439,
+      "prompt_tokens_details": null,
+      "total_tokens": 9109
+    }
+  },
+  "raw_model_output": "```\nReviewer dimension: SIGN\nPaper summary: The paper proposes using Effort-To-Compress (ETC) as a novel impurity measure for decision trees to capture order dependencies in data, which traditional measures like Shannon entropy and Gini impurity ignore. This leads to \"Permutation Decision Trees\" and a \"Permutation Decision Forest\" ensemble method that relies on data permutation rather than random subsampling or feature selection. The authors compare this method against Random Forest on six standard UCI datasets.\n\nDimension score (1-10): 3\nConfidence (1-5): 5\n\nOpinions:\n- subcategory: SIGN-SOT\n  polarity: weakness\n  claim: The proposed method fails to demonstrate state-of-the-art performance, showing significant degradation compared to the standard Random Forest baseline on the majority of tested datasets.\n  evidence_anchors: [SRC-009]\n  confidence: 5\n  actionable_suggestion: The authors should either improve the algorithm to match or exceed Random Forest performance on standard benchmarks or clearly define the specific niche where this method is superior, as current results suggest it is a weaker classifier for general tabular data.\n- subcategory: SIGN-DOM\n  polarity: weakness\n  claim: The paper claims potential for temporal data but fails to provide any experimental evidence on time-series or ordered datasets, limiting the demonstrated domain impact.\n  evidence_anchors: [SRC-010]\n  confidence: 5\n  actionable_suggestion: Include experiments on actual time-series or sequence data (e.g., stock prices, sensor data) to validate the claim that the method captures temporal order dependencies better than standard methods.\n- subcategory: SIGN-BRD\n  polarity: neutral\n  claim: The idea of using compression complexity as an impurity measure is conceptually interesting and addresses the i.i.d. assumption, but the practical utility is currently unproven due to poor generalization performance.\n  evidence_anchors: [SRC-001, SRC-003]\n  confidence: 4\n  actionable_suggestion: Provide a theoretical analysis of why ETC-based splits might be beneficial in specific non-i.i.d. scenarios to strengthen the broader research impact argument.\n- subcategory: SIGN-IMP\n  polarity: weakness\n  claim: There is no discussion of the computational cost of the ETC calculation (NSRPS algorithm) compared to standard entropy calculations, which is a critical factor for real-world deployment.\n  evidence_anchors: [SRC-004]\n  confidence: 4\n  actionable_suggestion: Add a complexity analysis or empirical timing comparison between ETC-based trees and standard decision trees to assess practical feasibility.\n\nKey questions for the authors:\n- Why does the Permutation Decision Forest underperform Random Forest on 4 out of 6 datasets? Is this due to the lack of feature subsampling or the nature of the ETC impurity?\n- Can you provide a single example on a time-series dataset where your method outperforms a standard Random Forest or a sequence-aware model?\n- What is the computational overhead of calculating ETC for each split compared to calculating Gini impurity?\n\nRecommendation: Weak Reject\n```",
+  "tokens": {
+    "input_tokens": 8439,
+    "max_model_len": 65536
+  }
+}

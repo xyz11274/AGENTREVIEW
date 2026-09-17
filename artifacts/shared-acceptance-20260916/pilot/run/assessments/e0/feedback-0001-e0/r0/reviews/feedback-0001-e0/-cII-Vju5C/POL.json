@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T19:40:32.620597+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "ffbe6f332b6e9e4154679ca6178d1cb033c315e091859d59eef7915e8ab5e5ae",
+    "request_sha256": "ec37e557d17b497a627a1b421c6abf576c28293a7d9c3b9511c7641ffd3fb46d",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "-cII-Vju5C",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: POL\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes gradients of components within a layer using SVD to speed up neural network training. It evaluates the method on CIFAR-10, ImageNet, and Barlow Twins, reporting faster convergence and improved accuracy compared to standard SGDM without extensive hyperparameter tuning.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and \"Paper under double-blind review\" on the title page, and by utilizing anonymized code repositories (anonymous.4open.science) for code release.\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section, which is increasingly expected at venues like ICLR. While the method is an optimization technique with low direct ethical risk, the absence of a statement regarding societal impact, computational efficiency benefits, or potential limitations in diverse deployment contexts is a compliance gap.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" section discussing the environmental benefits of faster convergence (reduced compute) and any potential risks associated with the method's reliance on SVD stability or its impact on model generalization in sensitive applications.\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The paper uses standard, publicly available datasets (CIFAR-10, ImageNet) and cites them appropriately. There is no indication of privacy violations or misuse of licensed data, as these are standard benchmarks with clear usage terms.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not address fairness, bias, or harms to marginalized populations, which is typical for core optimization algorithm papers. However, it does not explicitly state that no such concerns are identified, which could be improved for completeness.\n  evidence_anchors: [SRC-013]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence in the limitations or impact section stating that the optimization method does not introduce specific biases or fairness concerns beyond those inherent in the base models and datasets used.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper presents original work with proper citations to foundational methods (SGDM, SVD, Barlow Twins, ResNet). There is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-014]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Did you consider the environmental impact of the additional computational cost of SVD in the context of the speedup provided?\n- Are there any specific ethical concerns or limitations regarding the use of this optimizer in safety-critical applications where training stability is paramount?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "6f9a78af116590920db4745a2d3f1eea81564f8d140fe331c2688886977c39ac",
+      "prompt_sha256": "ec37e557d17b497a627a1b421c6abf576c28293a7d9c3b9511c7641ffd3fb46d"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Peer-Review Guidance: Policy & Ethics (POL)**\n*Context: Orthogonalising gradients to speedup neural network optimisation*\n\n**1. Anonymity & Double-Blind Compliance (POL-ANO)**\n*   **Check:** Verify the title page, headers, footers, and acknowledgments contain no author names, institutional affiliations, or specific email domains.\n*   **Action:** If identifying information is present, flag as a critical weakness. Require removal of all self-identifying details to comply with double-blind guidelines.\n*   **Note:** Ensure references do not inadvertently reveal authorship through self-citations or unique project names.\n\n**2. Broader Impact & Ethical Considerations (POL-IMP / POL-ETH)**\n*   **Check:** Assess if the paper includes a \"Broader Impact\" or \"Ethical Considerations\" section. This is frequently missing in optimization-focused papers.\n*   **Action:** If absent, recommend adding a brief statement. For gradient orthogonalization, discuss:\n    *   **Efficiency:** Potential benefits of reduced computational costs or faster convergence.\n    *   **Stability:** Implications for training stability and reproducibility.\n    *   **Risks:** Any potential downsides, such as altered generalization properties or specific hardware constraints.\n*   **Ethical Nuance:** While optimization methods are generally low-risk, explicitly state if there are no immediate ethical concerns regarding fairness or bias, or discuss dual-use potential if the method enhances adversarial capabilities.\n\n**3.",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "94481f6fc0c56cfd5eae5c27c497b7d31e9ca3904237de344bc428d8e72c7ac5",
+              "role": "POL",
+              "score": 0.48367750831314943
+            },
+            {
+              "id": "ade82383d66daaccda59d33a379b610eb791c6cb1c6b6704674f4b9344f8e161",
+              "role": "POL",
+              "score": 0.43294853810160744
+            },
+            {
+              "id": "51a951f2ed13fcf758d78e0a72e6900eb2942aaefc1de0220fe238ebb9cbf838",
+              "role": "POL",
+              "score": 0.4105006666271426
+            },
+            {
+              "id": "0024bfe3c48d2f8a66bfaae92f426cc5d8cdfd696257b8630a4a3729cec01612",
+              "role": "POL",
+              "score": 0.39605135955320914
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Peer-Review Guidance: Policy & Ethics (POL)**\n*Context: Orthogonalising gradients to speedup neural network optimisation*\n\n**1. Anonymity & Double-Blind Compliance (POL-ANO)**\n*   **Check:** Verify the title page, headers, footers, and acknowledgments contain no author names, institutional affiliations, or specific email domains.\n*   **Action:** If identifying information is present, flag as a critical weakness. Require removal of all self-identifying details to comply with double-blind guidelines.\n*   **Note:** Ensure references do not inadvertently reveal authorship through self-citations or unique project names.\n\n**2. Broader Impact & Ethical Considerations (POL-IMP / POL-ETH)**\n*   **Check:** Assess if the paper includes a \"Broader Impact\" or \"Ethical Considerations\" section. This is frequently missing in optimization-focused papers.\n*   **Action:** If absent, recommend adding a brief statement. For gradient orthogonalization, discuss:\n    *   **Efficiency:** Potential benefits of reduced computational costs or faster convergence.\n    *   **Stability:** Implications for training stability and reproducibility.\n    *   **Risks:** Any potential downsides, such as altered generalization properties or specific hardware constraints.\n*   **Ethical Nuance:** While optimization methods are generally low-risk, explicitly state if there are no immediate ethical concerns regarding fairness or bias, or discuss dual-use potential if the method enhances adversarial capabilities.\n\n**3. Data & Reproducibility (POL-DAT / POL-PLG)**\n*   **Check:** Verify that datasets used (e.g., CIFAR-10, ImageNet) are standard, publicly available, and free of Personally Identifiable Information (PII).\n*   **Action:**\n    *   If using sensitive data (e.g., faces, medical records), require explicit discussion of licensing, consent, and privacy compliance (e.g., GDPR).\n    *   Ensure code and data licenses are clearly stated.\n    *   Recommend providing a link to an anonymous code repository to support reproducibility and open science practices.\n*   **Plagiarism:** Confirm appropriate citation of prior work (e.g., related optimization techniques) and no evidence of dual submission.\n\n**4. Key Questions for Authors**\n*   Have all author-identifying information been removed to comply with double-blind policies?\n*   Can you provide a brief statement on the broader impact of your method, particularly regarding its potential to reduce computational costs and its implications for model training efficiency?\n*   Are there any specific ethical considerations or potential biases associated with the proposed optimization technique that you have not addressed?\n\n**Recommendation Logic:**\n*   **Weak Accept/Accept:** If anonymity is maintained, data is standard, and a brief broader impact statement is added or deemed unnecessary due to the benign nature of the method.\n*   **Borderline/Reject:** If anonymity is violated, or if sensitive data is used without privacy/consent discussion."
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Orthogonalising gradients to speedup neural network optimisation",
+        "reviewer_dimension": "POL"
+      },
+      "resources": {
+        "completion_chars": 3102,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 15.987606176175177,
+        "prompt_chars": 17975,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "0b01e2cfbc8307fd2e40310dd3cd5c658c37dc99279af7d25e54ffe7bbf39c3f"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "b0d347702ac1f947196f11640130af630cea78a454bca4f2bab09bf0296e276b",
+  "review_text": "```\nReviewer dimension: POL\nPaper summary: The paper proposes Orthogonal-SGDM, an optimization method that orthogonalizes gradients of components within a layer using SVD to speed up neural network training. It evaluates the method on CIFAR-10, ImageNet, and Barlow Twins, reporting faster convergence and improved accuracy compared to standard SGDM without extensive hyperparameter tuning.\n\nDimension score (1-10): 7\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: POL-ANO\n  polarity: strength\n  claim: The paper adheres to double-blind review policies by using \"Anonymous authors\" and \"Paper under double-blind review\" on the title page, and by utilizing anonymized code repositories (anonymous.4open.science) for code release.\n  evidence_anchors: [SRC-001, SRC-004]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-IMP\n  polarity: weakness\n  claim: The paper lacks a dedicated \"Broader Impact\" or \"Ethical Considerations\" section, which is increasingly expected at venues like ICLR. While the method is an optimization technique with low direct ethical risk, the absence of a statement regarding societal impact, computational efficiency benefits, or potential limitations in diverse deployment contexts is a compliance gap.\n  evidence_anchors: [SRC-013]\n  confidence: 4\n  actionable_suggestion: Add a brief \"Broader Impact\" section discussing the environmental benefits of faster convergence (reduced compute) and any potential risks associated with the method's reliance on SVD stability or its impact on model generalization in sensitive applications.\n- subcategory: POL-DAT\n  polarity: strength\n  claim: The paper uses standard, publicly available datasets (CIFAR-10, ImageNet) and cites them appropriately. There is no indication of privacy violations or misuse of licensed data, as these are standard benchmarks with clear usage terms.\n  evidence_anchors: [SRC-005, SRC-008]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: POL-ETH\n  polarity: neutral\n  claim: The paper does not address fairness, bias, or harms to marginalized populations, which is typical for core optimization algorithm papers. However, it does not explicitly state that no such concerns are identified, which could be improved for completeness.\n  evidence_anchors: [SRC-013]\n  confidence: 3\n  actionable_suggestion: Consider adding a sentence in the limitations or impact section stating that the optimization method does not introduce specific biases or fairness concerns beyond those inherent in the base models and datasets used.\n- subcategory: POL-PLG\n  polarity: strength\n  claim: The paper presents original work with proper citations to foundational methods (SGDM, SVD, Barlow Twins, ResNet). There is no evidence of plagiarism or dual submission.\n  evidence_anchors: [SRC-014]\n  confidence: 4\n  actionable_suggestion: N/A\n\nKey questions for the authors:\n- Did you consider the environmental impact of the additional computational cost of SVD in the context of the speedup provided?\n- Are there any specific ethical concerns or limitations regarding the use of this optimizer in safety-critical applications where training stability is paramount?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer POL",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "debba91293d892908e7a3e393b3c28bb9b46f42fd4d8220f190344abfa6835e1",
+    "task_id": "POL"
+  },
+  "role": "POL",
+  "run_id": "feedback-0001-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

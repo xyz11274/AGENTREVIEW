@@ -1,0 +1,232 @@
+{
+  "build_identity": {
+    "capability_manifest": {
+      "interface_version": "evolvable-review-plan-v1",
+      "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+      "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+      "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+    },
+    "completion_contract": "complete-stop-v1",
+    "completion_identity": {
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "embedding_identity": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "memory_runtime": {
+      "build_llm_calls": 2,
+      "max_tokens": 4096,
+      "query_mode": "instruction",
+      "read_llm_calls": 2
+    },
+    "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a3-e0/program.py",
+    "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+    "program_version": "candidate-0003",
+    "protocol": "research-v2-memory-build-input-v1",
+    "role": "SIGN",
+    "seed_kind": "evolved",
+    "sources": [
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 0,
+        "review_id": "0865b4f40d0135e9ea0a048435abc0b79ade126c58af1bca997f76c6040670cc",
+        "review_sha256": "993828c4fe4ff5de3e6b61e33c366b23dee61aa5bdd83ce030e4e63c7d46764a"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 1,
+        "review_id": "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+        "review_sha256": "0963d6aec362be52720f08094a42e8888b88cb2a89f63299474c7f06caf2766b"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 2,
+        "review_id": "e1c5a2ddc4222434c44637eeed52524b3ce6a6a76d36392024b933a9d18931c4",
+        "review_sha256": "a905dfe6782189210ae3d04330f7517feb1d61fa5f844576dc53e796012be0b6"
+      },
+      {
+        "evaluation_id": "",
+        "evaluation_sha256": "",
+        "ordinal": 3,
+        "review_id": "ad65038a4d4d8f735a6e4063da038e01e057d3b048d1f2d23f5e6a0423d93a02",
+        "review_sha256": "3825c998d134a7bee9087e1accac8f0bc8a513990fa5cf6109343c545199ffbe"
+      }
+    ]
+  },
+  "capability_manifest": {
+    "interface_version": "evolvable-review-plan-v1",
+    "memory_ast_sha256": "72ccd1e13f207d65009c85e07171d9482b56a876a96fd87e2a47b5e069bead70",
+    "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+    "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567"
+  },
+  "completion_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "embedding_identity": {
+    "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+    "model": "Qwen/Qwen3-Embedding-8B",
+    "provider": "qwen3_embedding",
+    "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+  },
+  "items": [
+    {
+      "derivation_version": "candidate-0003",
+      "item_id": "728313f282239cb09cb35ff2ad2550cf6689e58a0ddb8e738d2b723fcbeec1e7",
+      "payload": {
+        "content": "When reviewing the SIGN dimension for papers that identify trade-offs (e.g., between geometric robustness and adversarial vulnerability) rather than proposing new SOTA methods, reviewers should assess: 1) SIGN-BRD: Whether the identified tension is a fundamental, broadly relevant challenge for the community. 2) SIGN-DOM: The scope of empirical validation; reliance on simple benchmarks like MNIST is a significant weakness for domain impact, and extension to complex datasets (CIFAR-10, ImageNet) is a critical actionable suggestion. 3) SIGN-SOT: Clarify that diagnostic observations do not constitute SOTA improvements, which limits the 'improvement' score. 4) SIGN-IMP: Check for discussion of real-world deployment implications (e.g., safety-critical systems) and potential mitigations, as the lack of such discussion is a common weakness in purely analytical papers.",
+        "reviewer_dimension": "SIGN",
+        "source": "0865b4f40d0135e9ea0a048435abc0b79ade126c58af1bca997f76c6040670cc",
+        "topic": "Evaluating Significance of Empirical Trade-off Analyses in Equivariant Networks"
+      },
+      "role": "SIGN",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "0865b4f40d0135e9ea0a048435abc0b79ade126c58af1bca997f76c6040670cc"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0003",
+      "item_id": "b7fe8a9d31f3d8b44195b1dc5a14e38753b1f4156293144d70295b11d42aa61c",
+      "payload": {
+        "content": "When reviewing the SIGN dimension for interpretability and explainability papers, assessors should prioritize the breadth of the problem addressed (SIGN-BRD) while critically examining the domain applicability (SIGN-DOM) and state-of-the-art comparison (SIGN-SOT). A common weakness is the reliance on low-dimensional or simple datasets (e.g., MNIST, CelebA) which limits the demonstration of practical value in complex, high-stakes fields like medical imaging or autonomous driving. Furthermore, claims of 'intuitive' or 'interpretable' explanations are often unsupported without quantitative comparisons against established baselines (e.g., LIME, SHAP, Grad-CAM) or user studies. Reviewers should also flag the absence of discussions regarding real-world societal impacts (SIGN-IMP), such as the risk of misleading explanations, fairness across demographic groups, and the environmental cost of training auxiliary generative models.",
+        "reviewer_dimension": "SIGN",
+        "source": "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+        "topic": "Evaluating Significance and Impact in Interpretability Papers"
+      },
+      "role": "SIGN",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0003",
+      "item_id": "0ea6105683817a6eb92a71e480cc15138c1eb91823ef67dbcf680262aae24ba4",
+      "payload": {
+        "content": "When reviewing the significance of self-supervised learning (SSL) papers, prioritize the theoretical contribution's ability to reconcile distinct method families (e.g., asymmetric architectures vs. explicit regularization) as a strength for broad research impact (SIGN-BRD). For domain impact (SIGN-DOM), value practical simplifications such as removing EMA target networks that reduce computational overhead. However, critically assess state-of-the-art improvements (SIGN-SOT) by checking if empirical validation is limited to small-scale datasets (e.g., CIFAR-10) and small backbones (e.g., VGG11); such limitations often weaken claims of substantial SOTA improvement. Note that the absence of societal impact discussions (SIGN-IMP) is common in theoretical SSL work but should be acknowledged.",
+        "reviewer_dimension": "SIGN",
+        "source": "e1c5a2ddc4222434c44637eeed52524b3ce6a6a76d36392024b933a9d18931c4",
+        "topic": "Evaluating Significance in Self-Supervised Learning Papers"
+      },
+      "role": "SIGN",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "e1c5a2ddc4222434c44637eeed52524b3ce6a6a76d36392024b933a9d18931c4"
+      ]
+    },
+    {
+      "derivation_version": "candidate-0003",
+      "item_id": "d00168dfb3c613c3b9dd1231c69228108a041b06e1b2e5a92c9bd8a0f76a726d",
+      "payload": {
+        "content": "When reviewing papers that propose novel impurity measures or ensemble strategies (e.g., using compression complexity like ETC instead of Gini/Entropy), the SIGN dimension requires rigorous scrutiny of performance relative to strong baselines like Random Forest. A key weakness to identify is if the method fails to demonstrate state-of-the-art performance or shows significant degradation on standard benchmarks (SIGN-SOT). Additionally, if the paper claims domain-specific benefits (e.g., handling temporal or ordered data) but lacks experimental evidence on such datasets, this constitutes a weakness in Domain Impact (SIGN-DOM). Reviewers should also check for the absence of computational cost analysis, which is critical for Real-World Impact (SIGN-IMP), as novel measures often incur higher overhead than standard entropy calculations. The conceptual novelty (SIGN-BRD) is insufficient without proof of practical utility or theoretical justification for non-i.i.d. scenarios.",
+        "reviewer_dimension": "SIGN",
+        "source": "ad65038a4d4d8f735a6e4063da038e01e057d3b048d1f2d23f5e6a0423d93a02",
+        "topic": "Evaluating Significance and State-of-the-Art Improvement for Novel Impurity Measures"
+      },
+      "role": "SIGN",
+      "source_evaluation_ids": [],
+      "source_review_ids": [
+        "ad65038a4d4d8f735a6e4063da038e01e057d3b048d1f2d23f5e6a0423d93a02"
+      ]
+    }
+  ],
+  "program_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a3-e0/program.py",
+  "program_sha256": "0ff5553d393663879caa11419b437fda508460e4b8c1e5e1803af123f51a5567",
+  "program_version": "candidate-0003",
+  "role": "SIGN",
+  "seed_kind": "evolved",
+  "snapshot": {
+    "collections": {
+      "research_v2_summarizer": {
+        "embedding_reconstruction": "per_record_v1",
+        "ids": [
+          "3af2efe217252938c56799e88a3486a2a1c6bb6841480f00da702ded397255c5",
+          "947eec344db0b2dcf6f3f942b7e412847478eed1de08bc255607bf994cf74dd2"
+        ],
+        "records": [
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "fd2174abf7dd2004b9c48b558cfa9dcd0ecf31b094b4ed9e739d87d339673cd3",
+            "id": "3af2efe217252938c56799e88a3486a2a1c6bb6841480f00da702ded397255c5",
+            "metadata": {
+              "role": "SIGN",
+              "source": "0865b4f40d0135e9ea0a048435abc0b79ade126c58af1bca997f76c6040670cc",
+              "topic": "Evaluating Significance of Empirical Trade-off Analyses in Equivariant Networks"
+            },
+            "text": "**Evaluating Significance in Equivariant Trade-off Analyses**\n\n*   **Broad Relevance (BRD):** Verify the identified tension (e.g., geometric robustness vs. adversarial vulnerability) is a fundamental, community-wide challenge, not a niche artifact.\n*   **Domain Scope (DOM):** Reject reliance on simple benchmarks (e.g., MNIST) as sufficient validation. Explicitly require extension to complex datasets (CIFAR-10, ImageNet) to establish domain impact.\n*   **State-of-the-Art (SOT):** Distinguish diagnostic observations from methodological improvements. Do not award SOTA scores for analytical insights that do not propose new SOTA methods.\n*   **Impact (IMP):** Mandate discussion of real-world deployment implications (e.g., safety-critical systems) and potential mitigations. Flag purely analytical papers lacking this context as having limited practical impact."
+          },
+          {
+            "embedding_dimension": 4096,
+            "embedding_reconstruction": "toolkit_embed_text_v1",
+            "embedding_sha256": "1cd5b13c6a2e077eeb9d7ce07590c3f1486bc1f4fa0a658c7345512eae9724f8",
+            "id": "947eec344db0b2dcf6f3f942b7e412847478eed1de08bc255607bf994cf74dd2",
+            "metadata": {
+              "role": "SIGN",
+              "source": "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+              "topic": "Evaluating Significance and Impact in Interpretability Papers"
+            },
+            "text": "**Evaluating Significance and Impact (SIGN)**\n\n*   **Prioritize Breadth & Applicability (SIGN-BRD, SIGN-DOM):** Critically assess whether the work addresses complex, high-stakes domains (e.g., medical imaging, autonomous driving) rather than relying on low-dimensional benchmarks (e.g., MNIST, CelebA) that limit practical value.\n*   **Demand Quantitative Validation:** Reject unsupported claims of \"intuitiveness\" or \"interpretability.\" Require rigorous quantitative comparisons against established baselines (LIME, SHAP, Grad-CAM) or empirical user studies.\n*   **Verify State-of-the-Art Context (SIGN-SOT):** Ensure the contribution is clearly positioned against current SOTA methods to demonstrate meaningful advancement.\n*   **Assess Societal & Ethical Impact (SIGN-IMP):** Flag omissions regarding real-world risks, including potential for misleading explanations, fairness across demographic groups, and the environmental cost of training auxiliary models."
+          }
+        ]
+      }
+    },
+    "knowledge_base_state": {
+      "build_llm_calls_remaining": 0,
+      "collection": {
+        "__mstar_type__": "collection",
+        "name": "research_v2_summarizer"
+      },
+      "seen": {
+        "__mstar_type__": "set",
+        "items": [
+          "3af2efe217252938c56799e88a3486a2a1c6bb6841480f00da702ded397255c5",
+          "947eec344db0b2dcf6f3f942b7e412847478eed1de08bc255607bf994cf74dd2"
+        ]
+      },
+      "toolkit": {
+        "__mstar_type__": "toolkit"
+      }
+    },
+    "snapshot_version": "mstar-memory-snapshot-v2",
+    "sqlite_dump": [
+      "BEGIN TRANSACTION;",
+      "COMMIT;"
+    ]
+  },
+  "snapshot_id": "ff710a3c66bb232b344f99963a685b44c8baa192aba131e95f6af6f39611d4d4",
+  "snapshot_protocol": "research-v2-memory-snapshot-v1",
+  "source_evaluation_ids": [],
+  "source_review_ids": [
+    "0865b4f40d0135e9ea0a048435abc0b79ade126c58af1bca997f76c6040670cc",
+    "e826387b12272f168c8e3d5267a740ad9b7188af0d35d12689eda964d573d91e",
+    "e1c5a2ddc4222434c44637eeed52524b3ce6a6a76d36392024b933a9d18931c4",
+    "ad65038a4d4d8f735a6e4063da038e01e057d3b048d1f2d23f5e6a0423d93a02"
+  ]
+}

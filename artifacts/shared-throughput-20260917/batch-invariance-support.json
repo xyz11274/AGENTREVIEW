@@ -1,0 +1,8 @@
+{
+  "supported": false,
+  "local_backend": "GDN_ATTN",
+  "vllm": "0.27.1",
+  "evidence": "GDNAttentionBackend.supports_batch_invariance() returned False; vllm/v1/attention/selector.py explicitly raises for unsupported mamba backends.",
+  "official_documentation": "https://docs.vllm.ai/en/stable/features/batch_invariance/",
+  "action": "Do not enable unsupported batch invariance or patch the support declaration."
+}

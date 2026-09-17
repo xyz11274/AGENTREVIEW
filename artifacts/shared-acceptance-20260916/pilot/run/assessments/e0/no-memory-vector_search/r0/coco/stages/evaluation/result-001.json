@@ -1,0 +1,876 @@
+{
+  "completeness_checks": [
+    {
+      "completed_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-MTH",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "-EHqoysUYLx",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-FIG",
+        "CLAR-NOT",
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "ORIG-MTH",
+        "ORIG-PROB",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    },
+    {
+      "completed_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ],
+      "paper_id": "SJn0sLgRb",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "CLAR-WRT",
+        "ORIG-ANL",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "SIGN-BRD"
+      ]
+    },
+    {
+      "completed_categories": [
+        "ORIG-COM",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ],
+      "paper_id": "BJKYvt5lg",
+      "paper_judge_complete": true,
+      "required_categories": [
+        "ORIG-COM",
+        "QUAL-CMP",
+        "QUAL-EXP",
+        "QUAL-MET",
+        "QUAL-REP"
+      ]
+    }
+  ],
+  "input": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/coco/stages/classify/result-001.jsonl",
+    "sha256": "244fe52f681ba19bed99b96a981f4d0122bb63c15e59af25970d465d97fd9eb9"
+  },
+  "integrity": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/coco/integrity/evaluation.json",
+    "sha256": "20e5579cf8a26f2ab59450892aef9964c5d5a6697ef7872e7aadcaac1a759153"
+  },
+  "paper_ids": [
+    "-EHqoysUYLx",
+    "SJn0sLgRb",
+    "BJKYvt5lg"
+  ],
+  "papers": {
+    "-EHqoysUYLx": {
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-FIG": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 3,
+              "average": 3.1666666666666665,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 1,\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 1
+            },
+            "ref_text": "- Both column 2 and column 3 in Table 1 are some assumptions of the loss function (e.g. \"bounded\" in column 2 and \"Smoothness, SC\" in column 3). Why list them separately?",
+            "test_text": "- Suggested revision for CLAR opinion 4: Provide a more detailed textual description of Figure 1 in the main text, explaining how it illustrates the participation gap and participation error, or ensure the figure caption is more descriptive."
+          },
+          "CLAR-NOT": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 3,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "The symmetrization step in the proof of Lemma 1 should be expanded. BTW, the first line after \"By symmetrization, we have\" cannot be an equality.\n\nMore importantly, the definitions for ${\\cal R}_{mn}({\\cal F})$ in pages 14 and 15 are different, which makes the proof hard to read. The same issue exists in Lemma 2.\n\nIn addition, $Z_1$,..., $Z_m$ in the proof of Lemma 2 are undefined.\nSo I am not confident about the correctness of the results.\n\nAssumption 2: $X_i^1$ in Assumption 2 is drawn from $D_i$, which is not $D$. Assumption 2 (a) does not seem to be compatible with Definition 1.\n\n- Some statements and claims in this paper are confusing to me (see the \"Clarity\" section below).\n**Clarity**\nThe following parts of this paper are not clear to me.\n\n- Theorems 5 and 6 look weird to me. If $\\iota \\in (0,\\frac{1}{4})$ (say $\\iota = \\frac{1}{8})$, the second part of the rate is of $\\left(\\frac{1}{m}\\right)^{-\\frac{1}{4} + \\iota}$, which diverges as $m\\rightarrow \\infty$. It does not recover the $\\frac{1}{m^{\\frac{1}{4}}}$ rate shown in Table 1.\n\n- Assumption 3 states that $\\mathcal{H}$ is a family of bounded functions while the first sentence below that assumption claims that ``Assumption 3 is a mild assumption is the function classes are bounded.'' Could you please explain this?\n\n- In several places in the appendix, I see both $(X,Y)\\sim D_i$ and $X\\sim D_i$.\n\n- The last terms in Lemma 1 and Lemma 2 should be $3M\\sqrt{\\frac{\\ln(1/\\delta)}{2mn}}$ and $3M\\sqrt{\\frac{\\ln(1/\\delta)}{2m}}$?\n\n- \"state of art guarantees\"\n- \"Convering number\"\n\n- \"Uniformly entropy number\"\n\n- Several missing references to equations in the appendix\n**Reproducibility**\nN/A\nN/A\n\nFor example, what is the role of heterogeneity for seen and unseen clients? For semi-excess risk, why m and n seem to play a similar role? How does the assumptions interact with two-level distribution – any common or difference compared to centralized setting?\n\n- At the beginning of Page 19, the definition of $V(f) = \\frac{L^2}{m}\\sum_{i=1}^m \\mathbb{E}(h(X) -\\hat{h}^*(X) )^2$ , it seems that the index of $X$ is missing? I guess the expectation is taken over $X \\sim D_i$.\n\n- At the beginning of Page 25, definition of $B$ norm, should not it be $\\|g\\|_{B}=\\sup_{f\\in F} |g(f)|$?\n\n- My best guess is that these details are hidden in the $\\kappa_m$ and $\\omega_m$ objects (or in the previous sections, in the bound on the loss). It would be extremely helpful if the authors could elaborate on this dependence.\n\n- What is $\\mathcal{F}$ in theorems 2, 3, 4? It is not defined.\n\n- *Sub-root function* in Theorem 3 is not defined. It might be easier for the exposition to combine Theorems 3 and 4 into one.\n\n- Small-ball condition: In Definition 4, the quantity $\\mathbb{P}( | h| > \\tau \\| h\\|_{L_2})$ appears. What is the probability over? I'm assuming you mean $h(X)$.\nBut what distribution is $X$ drawn from?\n\n- The bounds in section 4 are on $\\| h_1 - h_2\\|_{L_2}$. How do these translate to vanilla generalization bounds, such as the ones developed in the preceding sections?\n\n- Definition 7 in Appendix A is not a real definition.\n\n- Appendix B.1 is not rigorous and can be improved.\nFirst, $X$ and $Y$ are dropped everywhere and it is hard to read.\nNext, the form of the Bernstein condition used here is different from the one in the main paper (and more like the one in Yousefi et al.). Equalities and inequalities in the first display of Section B.1.1 seem to be interchanged. For Section B.1.2, $\\mathcal{F}$ is unclear.\nFurther, \"$\\hat h^*$ is the projection of $Y$ in the space $\\mathcal{F}$\" is too casual. The inner product in $\\langle Y - \\hat h^*(X), h(X) - \\hat h^*(X) \\rangle$ is not defined. The $L_2$ norm in this space has not been defined either.\n# Novelty\n\n- There might be some technical difficulties in defining the two-level framework in full rigor, for instance, measurability, compactness, etc.",
+            "test_text": "- CLAR: There is an inconsistency in the definition of the noise term ξ between the participating and unparticipating client analyses, where it is defined with respect to different minimizers (semi-empirical vs. population) in different sections. Evidence anchors: SRC-017, SRC-020.\n\n- Suggested revision for CLAR opinion 2: Clarify whether the noise term is with respect to the semi-empirical minimizer ĥ* or the population minimizer h*, and ensure consistency across definitions and theorems in Section 4.1 and Section 4.2.\n\n- CLAR: The notation for the local Rademacher complexity in Section 3.2 is ambiguous and potentially incorrect, as the expectation over the meta-distribution is not explicitly stated and the relationship between the population quantity T(f) and the empirical Rademacher complexity is unclear. Evidence anchors: SRC-013.\n\n- Suggested revision for CLAR opinion 3: Make the expectation over the meta-distribution P explicit in the definition of R_m(F*, r) and clarify the relationship between the population quantity T(f) and the Rademacher complexity."
+          },
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "Strength: Studying federated learning in terms of learning is certainly an important direction, which has not been addressed in the current literature. I think the paper is well-written and the authors  did a good job in terms of going beyond convergence analyses and using known Rademacher complexity-based generalization bounds to obtain (semi) excess risk bounds.\n\nIt will be nice if the authors elaborate on what specific problems in ML lead to sub-Weibull loss  distributions with $\\alpha\\neq 1,2$ for $h$ as in Theorems 5 and 6.\nAlso it is a bit confusing since in the introduction the authors claim that they consider sub-Weibull loss functions while they indeed consider sub-Weibull classifiers in Theorem 5,6.\n\nThe definition of  VC major class, which is the main building block of Theorem 1 should be provided in the main paper.\n\nI read all comments and responses carefully. Unfortunately, I think this paper is far from being ready and recommend rejection.\n\n- The assumptions come with examples to back them up (e.g. Appendix B.1 for Assumption 2). Since this paper uses different assumptions compared to previous work, the examples make me better understand the contributions.\n**Weakness**\n\n- Some statements and claims in this paper are confusing to me (see the \"Clarity\" section below).\n**Clarity**\nThe following parts of this paper are not clear to me.\n\n- \"state of art guarantees\"\n- \"Convering number\"\n\n- \"Uniformly entropy number\"\n\n- \"produc\"\n\n- Several missing references to equations in the appendix\n**Reproducibility**\nN/A\nN/A\n\nNO.\n\nThe paper is generally well written and clear. I appreciate the summary in Table 1.\nThough I did not check the details of the proof, the results look reasonable.\n\nI have a few “cliche” comments for a theoretical paper.\n\nMaybe I missed it, could the authors comment more on the connection to practice.\nSpecifically, in table 1, compared to assumptions in previous papers, do new assumptions make more sense in practice? I understand that the results themselves are interesting: Lipschitz is probably more general than bi-classifiation; Bernstein can be more general than smoothness+SC (maybe?) and a probability form rather than expectation form is shown; sub-Weibull/heavy tailed losses are analyzed for the first time for FL.\n\nFor example, what is the role of heterogeneity for seen and unseen clients? For semi-excess risk, why m and n seem to play a similar role? How does the assumptions interact with two-level distribution – any common or difference compared to centralized setting?\n\n- The typo right after the computation of $R(F^*,r)$: Condiser $\\mapsto$ Consider\n\n- There seems to be an implicit assumption that $\\mathcal{Y} \\subset \\mathbb{R}$. Does the framework handle multi-output regression or multiclass/multilabel classification?\n\n- **Bernstein condition**: The Bernstein condition is not very interpretable. That it holds for linear regression is clear from Appendix B. Does it hold for other settings such as binary logistic regression? If yes, under what assumptions? What are the values of $B$ and $\\beta$ in this case? I would suggest that these details, if proved in previous papers, can be recalled in the appendix for the reader's convenience.\n\n- *Sub-root function* in Theorem 3 is not defined. It might be easier for the exposition to combine Theorems 3 and 4 into one.\n\n- The readability of the proofs would be greatly helped with a description of the high level idea and refactoring the proofs into smaller logical units.\n\n- There are far too many (??) in the appendix and the manuscript looks incomplete.\n\n**Comparing the bounds of Section 4 to the previous bounds**:\nWhere exactly are these comparisons? Could you write corollaries of Theorems 5/6 that are directly comparable to Theorems 2/4?\n\n**Experiments**:\nThank you for adding the experiments, this is super useful! Please proof-read the captions of the figures and the paper in general.\n\n**Suggestions to improve clarity/readability**:\nThe paper is still extremely hard to read and is dense. The technical depth of the paper is a strength but the onus to make the paper widely readable is on the authors. Personally, I think a more readable paper would have a greater reach/impact.\nThe authors can take several steps to make the main paper read like an extended summary of the key results and focus on the interpretation of the results for the federated learning setting. It would be nice to keep 2 or 3 running examples that are\n\n- Right now, definitions 1 and 2 appear as an unhelpful blob of technical details. In general, technical definitions need to be introduced smoothly and explained or they can be given in the appendix. My opinion is that the latter is better for this case. The main paper can have a pointer to the appendix, a quick intuition behind the definition, and concrete values for the running examples.\n\n- The remarks following the theorems can be given as an in-text description. Remark environments are helpful for small but significant pointers but it does not help for full discussions.\n\n- Definition 3 and Assumption 2: explain the intuition behind it and instantiate them for concrete running examples introduced earlier.\n\n- Without further details, definition 4 is not helpful.\nIn fact, Definition 4, Theorem 3, and Remark 4 can be moved into the appendix. They do not add much useful information to the discussion and are hard to parse.\nInstead, it would be helpful to discuss the resulting rates in the running examples and compare them with the VC-based rates.\n\n- Assumption 4 needs to be instantiated for the running examples. Same for definitions 6 and 7, which are currently not interpretable in terms of concrete applications. Theorems 5 and 6 can be stated in a form that is directly comparable to the previous sections (an end user might not be interested in the $L_2$ bounds presented but only cares about the loss). The $L_2$ bounds feel like intermediate results and can be given in the appendix.",
+            "test_text": "- CLAR: The paper contains several grammatical errors and awkward phrasings that reduce readability and professionalism, such as 'The realistic participation ratio may be slow' and 'it is natural and emergent to ask'. Evidence anchors: SRC-002, SRC-005, SRC-012.\n\n- Suggested revision for CLAR opinion 1: Correct grammatical errors such as 'The realistic participation ratio may be slow' (should be 'low' or 'small'), 'it is natural and emergent to ask' (should be 'important' or 'natural'), and 'The learning bounds in Theorem 2 are conducted for' (should be 'derived for' or 'established for').\n\n- CLAR: Figure 1 is referenced but its content is not described in the text, making it difficult for the reader to understand its contribution without seeing the image. Evidence anchors: SRC-004.\n\n- CLAR: The paper is well-organized with a clear structure, starting from the introduction of the problem, followed by the two-level framework, fast rates, unbounded losses, related work, and conclusion. Evidence anchors: SRC-001, SRC-005."
+          },
+          "ORIG-ANL": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 4.25,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 3,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 5,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "Strength: Studying federated learning in terms of learning is certainly an important direction, which has not been addressed in the current literature. I think the paper is well-written and the authors  did a good job in terms of going beyond convergence analyses and using known Rademacher complexity-based generalization bounds to obtain (semi) excess risk bounds.\n\nThe techniques used to prove Theorem 2 are pretty standard based on (Bartlett et al., 2002, Sridharan et al., 2009, Yousefi et a.., 2018). Is there any technical difficulty in the problem of bounding semi-excess risk compared to previous work?\nKarthik  Sridharan, Shai Shalev-Shwartz, and Nathan Srebro. \"Fast rates for regularized objectives.\" Advances in neural information processing systems (NeurIPS),  2008.\nPeter L. Bartlett, Olivier Bousquet, and Shahar Mendelson. \"Localized rademacher complexities.\" International Conference on Computational Learning Theory (COLT), 2002.\nNiloofar Yousefi, Yunwen Lei, Marius Kloft, Mansooreh Mollaghasemi, and Georgios C Anagnostopoulos. Local rademacher complexity-based learning guarantees for multi-task learning. The Journal of Machine Learning Research, 19(1):1385–1431, 2018.\n\n- Proof techniques seem to be new in the context of the generalization property of FL. Some open problems seem to be answered (e.g. unbounded loss, high-probability bounds).\n\nThe paper provides interesting theoretical insights about heterogeneity and the important challenge of partial participation in federated learning (FL).\n\n2. To get sharper risk bound, they employed seminal local Rademacher complexity based generalization analysis. To my best knowledge, in federated learning community, these techniques are new (analysis on Bernstein class, local Rademacher complexity, small ball method etc), and no one before use them to analyze FL's generalization bound.",
+            "test_text": "- SIGN: The extension to unbounded losses (sub-exponential and sub-Weibull) is a significant advancement, as previous generalization bounds for heterogeneous FL required bounded losses, which is restrictive for regression and heavy-tailed clustering tasks. Evidence anchors: SRC-005, SRC-015, SRC-019.\n\n- ORIG: The analysis provides novel insights by decomposing the excess risk for unparticipating clients into participating error and participation gap, and by establishing fast rates in probability form (rather than expectation form) which is a significant theoretical advance over prior work. Evidence anchors: SRC-008, SRC-012, SRC-014.\n\n- ORIG: The paper does not focus on negative results or critical assessments of existing methods, but rather on extending and improving theoretical guarantees, which is appropriate for the type of contribution. Evidence anchors: SRC-001."
+          },
+          "ORIG-MTH": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 3,
+              "average": 3.25,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "- The results appear to be somewhat straight-forward extensions of the existing literature (please correct me if I'm wrong). This in and of itself is not necessarily a negative, especially if the results give a novel perspective on the federated learning literature.\nHowever, there are one or two more steps required in translating these results into ones that make sense from a federated learning context.\n# Reproducibility",
+            "test_text": "- SIGN: The two-level distribution framework is well-suited for the federated learning domain, capturing both heterogeneity and relatedness of client distributions, which is more natural than gradient/parameter dissimilarity assumptions used in prior work. Evidence anchors: SRC-004, SRC-022."
+          },
+          "ORIG-PROB": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 2,
+              "grounding_specificity": 3,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 3,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "Strength\n1. This paper used a bi-level distribution framework to model the federated learning, and assume the nonparticipating client's distribution comes from meta-distribution $P$.\nThen, they treat the generalization risk on nonparticipating distribution as the expected risk on a distribution sampled from $P$.  This formulation looks novel to me, even though I still have some concern about this setting which I will discuss later.",
+            "test_text": "- ORIG: The paper introduces a meaningful and well-motivated problem formulation by explicitly analyzing the generalization error for unparticipating clients in federated learning, a gap identified in prior work that typically focuses only on participating clients. Evidence anchors: SRC-002, SRC-004."
+          },
+          "QUAL-CMP": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 3,
+              "average": 3.5,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 5,\n  \"verifiability\": \"X\",\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "1) Is there a connection between your setting and the literature on personalized FL?\nIndeed, from the point of view of the nonparticipating clients, the obtained model is not personalized enough. I am thinking for instance of the paper Hanzely et al. \"Lower Bounds and Optimal Algorithms for Personalized Federated Learning\"\n\n2) I have come across the paper \"With a Little Help from My Friend: Server-Aided Federated Learning with Partial Client Participation\" of Yang et al. (https://openreview.net/forum?id=xT6d2Ghtkv) which also studies the generalization error of heterogeneous FL with partial participation, and study server-aided FL as a possible remedy. Could you comment on their findings?\n\n3) Characterizing heterogeneity is important, as well as the study of the convergence speed of learning algorithms, depending on the amount of heterogeneity: intuitively, convergence is faster in the homogeneous setting, since there is redundancy, than in the heterogeneous setting.\nFor instance in the paper \"Permutation Compressors for Provably Faster Distributed Nonconvex Optimization\"\nby Szlendak et al., they introduce the notion of \"Hessian variance\", which characterizes the similarity between the individual loss functions of the clients. Since the losses are date-fit terms with respect to the individual datasets, this is directly related to the amount of heterogeneity. Could you comment on this aspect?",
+            "test_text": "- QUAL: The paper provides a clear comparison table (Table 1) contrasting its results with prior works in terms of loss function assumptions, probability vs. expectation form, and coverage of unparticipating clients, effectively highlighting the novelty and state-of-the-art status of the contributions. Evidence anchors: SRC-021."
+          },
+          "QUAL-EXP": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 4,
+              "average": 3.6666666666666665,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "Also, it is unfortunate that the paper lacks convincing experimental results to validate that the developed bounds indeed explain whether \"unparticipating clients benefit from the model trained by participating clients?\"\n\n- No empirical verifications (although this is not a big issue for a theory paper).",
+            "test_text": "- QUAL: The paper lacks any experimental validation, which is a significant omission for a complete piece of work as it fails to verify the tightness of the derived bounds or demonstrate the practical relevance of the 'participation gap' and 'fast rates' claims. Evidence anchors: SRC-001, SRC-005.\n\n- Suggested revision for QUAL opinion 2: Include a section with synthetic experiments or simulations on standard federated learning benchmarks (e.g., CIFAR-10 with Dirichlet distribution) to empirically validate the generalization bounds and compare them with existing baselines.\n\n- SIGN: The paper lacks discussion of practical implications, computational costs of the theoretical assumptions (e.g., verifying Bernstein or small-ball conditions), or societal impact of the results, and there is no empirical validation to demonstrate the tightness or practical relevance of the derived bounds. Evidence anchors: SRC-001, SRC-028.\n\n- Suggested revision for SIGN opinion 6: Provide guidance on practical scenarios where the derived bounds are most informative and consider adding empirical studies to bridge the theory-practice gap.\n\n- ORIG: The paper is purely theoretical and does not introduce new experimental setups, benchmarks, or datasets, and the lack of empirical validation of the derived bounds or the practical relevance of the meta-distribution assumption limits the scope of the contribution. Evidence anchors: SRC-001.\n\n- Suggested revision for ORIG opinion 4: Consider adding a small-scale empirical study to validate the tightness of the derived bounds or to demonstrate the practical impact of the participation gap on generalization error."
+          },
+          "QUAL-MET": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 1,
+              "average": 2.75,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 1,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "Weakness: Although the authors emphasized much about the relevanece of their bounds to FL in practical settings, in particular cross-device FL with a large pool of unparticipating clients, there are major concerns regarding the considered model, the correctness of results, and conditions under which main theorems hold, which will be elaborated in the following.\n\nDetailed comments:\n\"We argue that this assumption is reasonable in practice.\nFor instance, in cross-device federated learning, the number of total clients is generally large and it is natural to assume that there exists a meta-distribution\"\nThis is not really convincing. What if some clients have data distributions that are quite different from others.\nAlso what if the distribution of clients changes over time.\nAnother major issue is  how should such meta-distribution be modelled? Will you use parametric or non-parameteric models? Given that the authors emphasize much about practical scenarios and settings where several clients may not even participate in training, how can one model/estimate the meta distribution? Imagine that a practitioner does not have even a sample drawn from distributions for the major of clients (unparticipating clients).\n\nTheorem 2 requires $n=\\Omega(d)$, which does not hold for typical overparameterized models whose number of parameters far exceed the number of training data.  This is even worse in Theorem 4 where $m$, which is claimed to be relatively small is required to be larger than $d$.\n\nWhy not considering the excess risk instead of semi-excess risk for participating clients? It seems that the bounds will not be better than those for unparticipating clients.\n\nConsidering the issues in the proofs that I could check while reviewing the paper, I am not confident that all proofs are correct.\n\n- In Theorem 2, should not the first term in the risk bound depend on VC dimension?\n\n**Spread of $P$**:\nThank you for the response. The authors argue that $L_p(h^*)$ is large if the heterogeneity is large.\nWhile this is true, I do not think this fully addresses the issue. Consider mean estimation for Gaussians. The estimation error is $\\sigma / \\sqrt{n}$ where $\\sigma$ is the standard deviation. Here, $\\sigma$ measures the spread of the data. I think the un-participating generalization bounds in the federated setting should reflect the \"extent\" of the heterogeneity as a rough equivalent of $\\sigma$.\nWhat do you think? Is my intuition correct? If yes, can your bounds be interpreted this way? If not, can you tell me why this intuition is wrong?\n\n- Studying unbounded losses in this setting is technically challenging. It is possible to sweep under the rug subtle differences across clients with bounded loss/gradient assumptions in the federated setting. Avoiding such assumptions is a plus.\n**Weaknesses**:\n\n(W1) Interpretability: The biggest weakness for me is the lack of interpretability of the results, especially in Section 4.",
+            "test_text": "- QUAL: The theoretical framework is well-formulated, correctly defining the two-level distribution structure and distinguishing between semi-empirical risk (participating) and population risk (unparticipating), with methodologically sound use of local Rademacher complexity and small-ball conditions. Evidence anchors: SRC-006, SRC-011, SRC-015."
+          },
+          "SIGN-BRD": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "normal",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "**Strength**\n- The problem studied in this paper is interesting and challenging.\n\nGeneralization in federated learning is a timely topic, and the two-level distribution analysis makes a lot of sense.\n\nAnother bonus point: what are the main insights for federated learning? – it is nice to know that the risk gaps close when clients m and samples n are increased, but anything more?",
+            "test_text": "- SIGN: The work addresses a broadly important problem in federated learning theory by providing the first generalization bounds for unparticipating clients, which is a critical practical scenario in cross-device FL where many clients never participate in training. Evidence anchors: SRC-002, SRC-004."
+          }
+        },
+        "only_ref_tag": [],
+        "only_test_tag": [
+          "ORIG-COM",
+          "ORIG-EXP",
+          "POL-ANO",
+          "POL-DAT",
+          "POL-IMP",
+          "POL-PLG",
+          "SIGN-SOT"
+        ]
+      },
+      "full_text_metrics": {
+        "bertscore_f1": 0.8175597786903381,
+        "bertscore_precision": 0.8139442801475525,
+        "bertscore_recall": 0.8244102597236633,
+        "bleu": 0.00818042010969108,
+        "rougeL": 0.1406060606060606
+      },
+      "paper_judge_scores": {
+        "actionability": 4,
+        "alignment": 3,
+        "average": 3.0,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 2,
+        "grounding_specificity": 3,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 3,\n  \"verifiability\": 2,\n  \"alignment\": 3,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 2
+      },
+      "raw_table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.415,
+          "BERT-F1": 81.75597786903381,
+          "BERT.": null,
+          "BLEU": 0.818042010969108,
+          "Clarity": 4.7,
+          "Complete.": 146.66666666666666,
+          "Correct.": null,
+          "Correctness": 3.3,
+          "Ground.": null,
+          "Grounding": 4.3,
+          "Paper.": 2.8,
+          "ROUGE-L": 14.060606060606059,
+          "Thoro.": null,
+          "Thoroughness": 1.7,
+          "Verifiability": 2.5,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 146.66666666666666
+          }
+        },
+        "input_label": "-EHqoysUYLx",
+        "paper_counts": {
+          "Average": 1,
+          "BERT-F1": 1,
+          "BERT.": 0,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 0,
+          "Correctness": 1,
+          "Ground.": 0,
+          "Grounding": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 0,
+          "Thoroughness": 1,
+          "Verifiability": 1,
+          "Verify.": 0
+        }
+      },
+      "table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.415,
+          "BERT.": 81.75597786903381,
+          "BLEU": 0.818042010969108,
+          "Clarity": 4.7,
+          "Complete.": 146.66666666666666,
+          "Correct.": 3.3,
+          "Ground.": 4.3,
+          "Paper.": 2.8,
+          "ROUGE-L": 14.060606060606059,
+          "Thoro.": 1.7,
+          "Verify.": 2.5
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 146.66666666666666
+          }
+        },
+        "input_label": "-EHqoysUYLx",
+        "paper_counts": {
+          "Average": 1,
+          "BERT.": 1,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 1,
+          "Ground.": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 1,
+          "Verify.": 1
+        }
+      }
+    },
+    "BJKYvt5lg": {
+      "category_judge_scores": {
+        "category_scores": {
+          "ORIG-COM": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 4.0,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "I think the idea of capturing the global structure with a VAE and modeling the local structure with a PixelCNN decoder makes a lot of sense and can prevent the blurry reconstruction/samples of VAE. I specially like the hierarchical image generation experiments.",
+            "test_text": "- ORIG: The paper presents a compelling and well-articulated combination of VAEs and PixelCNNs, leveraging the complementary strengths of both architectures to address their respective limitations. Evidence anchors: SRC-001, SRC-002, SRC-005.\n\n- ORIG: The introduction of a hierarchical PixelVAE architecture, where PixelCNN decoders are applied not only to the output pixels but also to higher-level latent featuremaps, represents a novel methodological extension that allows for autoregressive modeling across multiple scales. Evidence anchors: SRC-003, SRC-006."
+          },
+          "QUAL-CMP": {
+            "judge_scores": {
+              "actionability": 3,
+              "alignment": 3,
+              "average": 3.3333333333333335,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 1,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 3,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 1,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "2) A similar idea is also presented in a concurrent ICLR submission \"Variational Lossy Autoencoder\". It would be interesting to have a discussion included in the paper and compare these works.",
+            "test_text": "- QUAL: The comparison on 64x64 ImageNet is limited to PixelRNN and Gated PixelCNN, missing comparisons to other relevant state-of-the-art generative models available at the time. Evidence anchors: SRC-011.\n\n- Suggested revision for QUAL opinion 4: Expand the baseline comparisons on 64x64 ImageNet to include other recent state-of-the-art models to provide a more comprehensive evaluation of the model's performance."
+          },
+          "QUAL-EXP": {
+            "judge_scores": {
+              "actionability": 4,
+              "alignment": 3,
+              "average": 3.5,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "4) As pointed out in my pre-review question, it would be great to include two sets of MNIST samples maybe in an appendix section. One with PixelCNN and the other with PixelVAE with the same pixelcnn depth to illustrate the hidden code in PixelVAE actually captures the global structure.\n\nOn the experimental side, I would have liked to see something more than NLL measurements and samples - maybe show this is useful for other tasks such as classification?\n\n1) Is there any experiment showing that using the PixelCNN as the decoder of VAE will result in better disentangling of high-level factors of variations in the hidden code?\nFor example, the authors can train a PixelVAE and VAE on MNIST with 2D hidden code and visualize the 2D hidden code for test images and color code each hidden code based on the digit and show that the digits have a better separation in the PixelVAE representation. A semi-supervised classification comparison between VAE and the PixelVAE will also significantly improve the quality of the paper.",
+            "test_text": "- QUAL: The experimental evaluation on the LSUN bedrooms dataset lacks quantitative metrics such as log-likelihood or FID, relying solely on qualitative sample inspection and vague claims of outperforming baselines. Evidence anchors: SRC-010.\n\n- Suggested revision for QUAL opinion 2: Provide quantitative log-likelihood or other standard metrics for the LSUN bedrooms experiments to objectively validate the claim that the model outperforms the two-level convolutional VAE and single-level PixelVAE."
+          },
+          "QUAL-MET": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 4.0,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 3,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 3,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "I think the model is quite clever, attempting to get the best of latent variable models and auto-regressive models. The implementation and specific architecture choices (as discussed in the pre-review) also seem reasonable.",
+            "test_text": "- QUAL: The proposed model architecture is technically sound, correctly formulating the VAE objective with an autoregressive decoder and providing a clear derivation for the hierarchical extension. Evidence anchors: SRC-005, SRC-006."
+          },
+          "QUAL-REP": {
+            "judge_scores": {
+              "actionability": 5,
+              "alignment": 4,
+              "average": 4.5,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 4,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 4,\n  \"completeness\": 4,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 4
+            },
+            "ref_text": "3) The answer to the pre-review questions made the architecture details of the paper much more clear, but I still ask the authors to include the exact architecture details of all the experiments in the paper and/or open source the code. The clarity of the presentation is not satisfying and the experiments are difficult to reproduce.",
+            "test_text": "- QUAL: The paper lacks sufficient implementation details for reproducibility, omitting specific hyperparameters such as learning rates, batch sizes, and exact layer dimensions, and does not provide code availability. Evidence anchors: SRC-007, SRC-011.\n\n- Suggested revision for QUAL opinion 3: Include a detailed appendix with all hyperparameters, network architecture specifications, and training protocols, and make the code publicly available to facilitate reproduction."
+          }
+        },
+        "only_ref_tag": [
+          "ORIG-MTH"
+        ],
+        "only_test_tag": [
+          "ORIG-ANL",
+          "ORIG-EXP",
+          "ORIG-PROB",
+          "POL-ANO",
+          "POL-DAT",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "SIGN-BRD",
+          "SIGN-DOM",
+          "SIGN-IMP"
+        ]
+      },
+      "full_text_metrics": {
+        "bertscore_f1": 0.8186331987380981,
+        "bertscore_precision": 0.8085358738899231,
+        "bertscore_recall": 0.837263286113739,
+        "bleu": 0.0022213596778851517,
+        "rougeL": 0.13201727328809376
+      },
+      "paper_judge_scores": {
+        "actionability": 4,
+        "alignment": 3,
+        "average": 3.3333333333333335,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 2,
+        "grounding_specificity": 4,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 4,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 3
+      },
+      "raw_table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.84,
+          "BERT-F1": 81.86331987380981,
+          "BERT.": null,
+          "BLEU": 0.22213596778851516,
+          "Clarity": 4.8,
+          "Complete.": 190.9090909090909,
+          "Correct.": null,
+          "Correctness": 3.6,
+          "Ground.": null,
+          "Grounding": 4.6,
+          "Paper.": 3.2,
+          "ROUGE-L": 13.201727328809376,
+          "Thoro.": null,
+          "Thoroughness": 2.6,
+          "Verifiability": 3.3333333333333335,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 190.9090909090909
+          }
+        },
+        "input_label": "BJKYvt5lg",
+        "paper_counts": {
+          "Average": 1,
+          "BERT-F1": 1,
+          "BERT.": 0,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 0,
+          "Correctness": 1,
+          "Ground.": 0,
+          "Grounding": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 0,
+          "Thoroughness": 1,
+          "Verifiability": 1,
+          "Verify.": 0
+        }
+      },
+      "table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.84,
+          "BERT.": 81.86331987380981,
+          "BLEU": 0.22213596778851516,
+          "Clarity": 4.8,
+          "Complete.": 190.9090909090909,
+          "Correct.": 3.6,
+          "Ground.": 4.6,
+          "Paper.": 3.2,
+          "ROUGE-L": 13.201727328809376,
+          "Thoro.": 2.6,
+          "Verify.": 3.3333333333333335
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 190.9090909090909
+          }
+        },
+        "input_label": "BJKYvt5lg",
+        "paper_counts": {
+          "Average": 1,
+          "BERT.": 1,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 1,
+          "Ground.": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 1,
+          "Verify.": 1
+        }
+      }
+    },
+    "SJn0sLgRb": {
+      "category_judge_scores": {
+        "category_scores": {
+          "CLAR-WRT": {
+            "judge_scores": {
+              "actionability": 5,
+              "alignment": 3,
+              "average": 3.6666666666666665,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 5,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 3,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "+ The paper is easy to read: the method and the experiments are explained clearly.\n\nThis is quite interesting. The paper is also straightforward to read and clear, which is positive.\nOverall i think the finding is of sufficient interest for acceptance.",
+            "test_text": "- CLAR: The paper is well-organized with a clear narrative flow from introduction to method, experiments, and conclusion, and the writing is generally concise and readable, making the core contribution easy to understand. Evidence anchors: SRC-001, SRC-006.\n\n- CLAR: The algorithm presentation in Section 3 is somewhat informal and lacks a formal pseudocode block, with specific implementation details such as how 'intermittently disable' is triggered described in prose, which may hinder precise reproduction. Evidence anchors: SRC-006.\n\n- Suggested revision for CLAR opinion 2: Add a formal pseudocode block for the SamplePairing training loop to clearly define the inputs, outputs, and control flow for enabling/disabling the augmentation.\n\n- CLAR: There is a typo in Section 4.2 where 'CA FAR-10' is written instead of 'CIFAR-10'. Evidence anchors: SRC-011.\n\n- Suggested revision for CLAR opinion 6: Correct the typo 'CA FAR-10' to 'CIFAR-10'."
+          },
+          "ORIG-ANL": {
+            "judge_scores": {
+              "actionability": 3,
+              "alignment": 4,
+              "average": 4.166666666666667,
+              "claim_extraction": "claim",
+              "clarity": 5,
+              "completeness": 5,
+              "grounding_specificity": 5,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 3,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 3,\n  \"alignment\": 4,\n  \"completeness\": 5,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": 3
+            },
+            "ref_text": "The paper would benefit from adding some speculation on reasons why this phenomenon occurs.",
+            "test_text": "- ORIG: The paper lacks theoretical analysis or insights into why the method works, explicitly stating that only empirical evidence is provided and leaving the theoretical background for future work. Evidence anchors: SRC-012.\n\n- Suggested revision for ORIG opinion 2: Include a theoretical analysis or a more detailed empirical investigation into the regularization properties of SamplePairing to deepen the understanding of its effectiveness."
+          },
+          "QUAL-EXP": {
+            "judge_scores": {
+              "actionability": 3,
+              "alignment": 3,
+              "average": 2.8333333333333335,
+              "claim_extraction": "claim",
+              "clarity": 4,
+              "completeness": 2,
+              "grounding_specificity": 3,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 3,\n  \"grounding_specificity\": 3,\n  \"verifiability\": 2,\n  \"alignment\": 3,\n  \"completeness\": 2,\n  \"clarity\": 4\n}",
+              "success": true,
+              "verifiability": 2
+            },
+            "ref_text": "1) The training process has some specific steps with the Sample Pairing intermittently disabled.\nThe number of epochs with enabled or disabled Sample Pairing changes depending on the dataset.\nHow much si the method robust/sensitive to variations on these choices?\n\n2) There is no specific analysis on the results besides showing the validation and training errors: would it\nbe possible to see the results per class? Would the confusion matrices reveal something more about the\neffect of the method?  Does Sample Pairing help to differentiate similar categories even if they are mixed\nat trainign time?\n\nThere are a couple of choices that would benefit from more explanation / analysis:  a) averaging, then forcing the classifier to pick one of the two classes present; why not pick both? b) the choice of hard-switching between sample pairing and regular training - it would be interesting if sample-pairing as an augmentation meshed better with other augmentations implementation-wise, so that it could be easier to integrate in other frameworks.\n\nThe paper misses an in-depth analysis of the proposed practical strategy.",
+            "test_text": "- QUAL: The experimental design is comprehensive, utilizing standard benchmarks (ILSVRC, CIFAR-10/100, SVHN) and appropriate baselines (standard data augmentation) to validate the method's effectiveness across different dataset sizes and class counts. Evidence anchors: SRC-008, SRC-007.\n\n- Suggested revision for ORIG opinion 2: Include a theoretical analysis or a more detailed empirical investigation into the regularization properties of SamplePairing to deepen the understanding of its effectiveness.\n\n- ORIG: The experimental setup includes a valuable evaluation of the method's performance under data scarcity, showing that the technique yields larger improvements when the number of training samples is reduced, which highlights its utility for low-data regimes. Evidence anchors: SRC-011.\n\n- Suggested revision for ORIG opinion 4: Provide ablation studies that isolate the contribution of SamplePairing when combined with other techniques to better articulate the synergy."
+          },
+          "QUAL-MET": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 2,
+              "average": 3.25,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 2,
+              "grounding_specificity": 4,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 4,\n  \"verifiability\": \"X\",\n  \"alignment\": 2,\n  \"completeness\": 2,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "- the method is presented as a heuristic technique.\n\nThere are a couple of choices that would benefit from more explanation / analysis:  a) averaging, then forcing the classifier to pick one of the two classes present; why not pick both? b) the choice of hard-switching between sample pairing and regular training - it would be interesting if sample-pairing as an augmentation meshed better with other augmentations implementation-wise, so that it could be easier to integrate in other frameworks.",
+            "test_text": "- QUAL: The proposed SamplePairing method is technically sound, mathematically consistent, and correctly implemented as a simple averaging operation with a specific training schedule. Evidence anchors: SRC-006."
+          },
+          "SIGN-BRD": {
+            "judge_scores": {
+              "actionability": "X",
+              "alignment": 4,
+              "average": 3.5,
+              "claim_extraction": "normal",
+              "clarity": 5,
+              "completeness": 2,
+              "grounding_specificity": 3,
+              "raw_response": "\n\n{\n  \"claim_extraction\": \"normal\",\n  \"actionability\": \"X\",\n  \"grounding_specificity\": 3,\n  \"verifiability\": \"X\",\n  \"alignment\": 4,\n  \"completeness\": 2,\n  \"clarity\": 5\n}",
+              "success": true,
+              "verifiability": "X"
+            },
+            "ref_text": "This is quite interesting. The paper is also straightforward to read and clear, which is positive.\nOverall i think the finding is of sufficient interest for acceptance.",
+            "test_text": "- SIGN: The work addresses the broadly important problem of overfitting in deep learning and introduces a simple, orthogonal regularization technique that is likely to influence multiple research areas due to its ease of implementation and compatibility with existing pipelines. Evidence anchors: SRC-002, SRC-004."
+          }
+        },
+        "only_ref_tag": [],
+        "only_test_tag": [
+          "CLAR-NOT",
+          "ORIG-COM",
+          "ORIG-PROB",
+          "POL-ANO",
+          "POL-DAT",
+          "POL-ETH",
+          "POL-IMP",
+          "POL-PLG",
+          "QUAL-CMP",
+          "QUAL-STA",
+          "SIGN-DOM",
+          "SIGN-IMP"
+        ]
+      },
+      "full_text_metrics": {
+        "bertscore_f1": 0.8151969909667969,
+        "bertscore_precision": 0.8013631701469421,
+        "bertscore_recall": 0.8304210305213928,
+        "bleu": 0.00478953067154214,
+        "rougeL": 0.09080459770114942
+      },
+      "paper_judge_scores": {
+        "actionability": 4,
+        "alignment": 3,
+        "average": 3.8333333333333335,
+        "claim_extraction": "claim",
+        "clarity": 4,
+        "completeness": 3,
+        "grounding_specificity": 5,
+        "raw_response": "\n\n{\n  \"claim_extraction\": \"claim\",\n  \"actionability\": 4,\n  \"grounding_specificity\": 5,\n  \"verifiability\": 4,\n  \"alignment\": 3,\n  \"completeness\": 3,\n  \"clarity\": 4\n}",
+        "success": true,
+        "verifiability": 4
+      },
+      "raw_table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.47,
+          "BERT-F1": 81.51969909667969,
+          "BERT.": null,
+          "BLEU": 0.478953067154214,
+          "Clarity": 4.6,
+          "Complete.": 233.33333333333334,
+          "Correct.": null,
+          "Correctness": 3.2,
+          "Ground.": null,
+          "Grounding": 4.0,
+          "Paper.": 3.8,
+          "ROUGE-L": 9.080459770114942,
+          "Thoro.": null,
+          "Thoroughness": 2.6,
+          "Verifiability": 2.6666666666666665,
+          "Verify.": null
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 233.33333333333334
+          }
+        },
+        "input_label": "SJn0sLgRb",
+        "paper_counts": {
+          "Average": 1,
+          "BERT-F1": 1,
+          "BERT.": 0,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 0,
+          "Correctness": 1,
+          "Ground.": 0,
+          "Grounding": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 0,
+          "Thoroughness": 1,
+          "Verifiability": 1,
+          "Verify.": 0
+        }
+      },
+      "table_1_summary": {
+        "absolute_scores": {
+          "Average": 3.47,
+          "BERT.": 81.51969909667969,
+          "BLEU": 0.478953067154214,
+          "Clarity": 4.6,
+          "Complete.": 233.33333333333334,
+          "Correct.": 3.2,
+          "Ground.": 4.0,
+          "Paper.": 3.8,
+          "ROUGE-L": 9.080459770114942,
+          "Thoro.": 2.6,
+          "Verify.": 2.6666666666666665
+        },
+        "category_coverage": {
+          "item_count": 1,
+          "metric_counts": {
+            "Complete.": 1
+          },
+          "metrics": {
+            "Complete.": 233.33333333333334
+          }
+        },
+        "input_label": "SJn0sLgRb",
+        "paper_counts": {
+          "Average": 1,
+          "BERT.": 1,
+          "BLEU": 1,
+          "Clarity": 1,
+          "Complete.": 1,
+          "Correct.": 1,
+          "Ground.": 1,
+          "Paper.": 1,
+          "ROUGE-L": 1,
+          "Thoro.": 1,
+          "Verify.": 1
+        }
+      }
+    }
+  },
+  "raw_table_1_summary": {
+    "absolute_scores": {
+      "Average": 3.5749999999999997,
+      "BERT-F1": 81.71299894650778,
+      "BERT.": null,
+      "BLEU": 0.5063770153039457,
+      "Clarity": 4.7,
+      "Complete.": 190.30303030303028,
+      "Correct.": null,
+      "Correctness": 3.3666666666666667,
+      "Ground.": null,
+      "Grounding": 4.3,
+      "Paper.": 3.266666666666667,
+      "ROUGE-L": 12.114264386510126,
+      "Thoro.": null,
+      "Thoroughness": 2.3000000000000003,
+      "Verifiability": 2.8333333333333335,
+      "Verify.": null
+    },
+    "category_coverage": {
+      "item_count": 3,
+      "metric_counts": {
+        "Complete.": 3
+      },
+      "metrics": {
+        "Complete.": 190.30303030303028
+      }
+    },
+    "input_label": "candidate",
+    "paper_counts": {
+      "Average": 3,
+      "BERT-F1": 3,
+      "BERT.": 0,
+      "BLEU": 3,
+      "Clarity": 3,
+      "Complete.": 3,
+      "Correct.": 0,
+      "Correctness": 3,
+      "Ground.": 0,
+      "Grounding": 3,
+      "Paper.": 3,
+      "ROUGE-L": 3,
+      "Thoro.": 0,
+      "Thoroughness": 3,
+      "Verifiability": 3,
+      "Verify.": 0
+    }
+  },
+  "request": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/assessments/e0/no-memory-vector_search/r0/coco/request.json",
+    "sha256": "71f7278465792dd16b76321b60e80c84afeee04658850065cffcc5ea5ca9be69"
+  },
+  "service_runtime": {
+    "argv_sha256": "a9c5647f6b9f7d3de0303092da51285603b7ec383e1b7dcd1209146a491e7052",
+    "base_url": "http://127.0.0.1:18001/v1",
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "model_root": "/data/xyj/models/Qwen3.8-27B",
+    "pid": 2440320,
+    "start_identity": "505048484"
+  },
+  "table_1_summary": {
+    "absolute_scores": {
+      "Average": 3.5749999999999997,
+      "BERT.": 81.71299894650778,
+      "BLEU": 0.5063770153039457,
+      "Clarity": 4.7,
+      "Complete.": 190.30303030303028,
+      "Correct.": 3.3666666666666667,
+      "Ground.": 4.3,
+      "Paper.": 3.266666666666667,
+      "ROUGE-L": 12.114264386510126,
+      "Thoro.": 2.3000000000000003,
+      "Verify.": 2.8333333333333335
+    },
+    "category_coverage": {
+      "item_count": 3,
+      "metric_counts": {
+        "Complete.": 3
+      },
+      "metrics": {
+        "Complete.": 190.30303030303028
+      }
+    },
+    "input_label": "candidate",
+    "paper_counts": {
+      "Average": 3,
+      "BERT.": 3,
+      "BLEU": 3,
+      "Clarity": 3,
+      "Complete.": 3,
+      "Correct.": 3,
+      "Ground.": 3,
+      "Paper.": 3,
+      "ROUGE-L": 3,
+      "Thoro.": 3,
+      "Verify.": 3
+    }
+  }
+}

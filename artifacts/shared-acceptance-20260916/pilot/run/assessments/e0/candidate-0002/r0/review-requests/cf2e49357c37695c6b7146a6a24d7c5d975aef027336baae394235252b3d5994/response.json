@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all mathematical symbols are defined upon first use and remain consistent throughout the manuscript. Specifically, resolve inconsistencies in loss function definitions (e.g., distinguishing between $CE(c(x'), y)$ and $CE(x', y)$) and avoid overloading variables (e.g., using the same symbol for different concepts like input images and rotation angles).\n*   **Disambiguate Terminology:** Clearly distinguish between similar but distinct concepts, such as \"latent perturbation\" versus \"image perturbation.\" Update definitions in early sections to prevent confusion in subsequent text and figure captions.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Syntax:** Correct grammatical errors, typos, and sentence fragments. Pay close attention to articles (e.g., \"a technique\" vs. \"an technique\") and prepositions.\n*   **Consistent Terminology:** Enforce consistent usage of technical terms. Avoid capitalization inconsistencies and vague phrasing (e.g., replace \"parameter equivalent\" with specific filter counts or architectural details).\n*   **Logical Flow:** Reorganize disjointed sections, particularly in results, to group related comparisons logically. Ensure that the narrative flow supports the reader’s comprehension of complex arguments.\n\n**3. Reproducibility & Experimental Details (CLAR-WRT)**\n*   **Explicit Specifications:** Provide detailed hyperparameters (learning rate, optimizer, batch size, epochs) and explicit architectural specifications (layers, activations) for all models used. Vague descriptions hinder reproducibility.\n*   **Protocol Clarity:** Clearly state training protocols and experimental conditions. If specific components (like classifiers attached to generative models) are used, their exact architecture and training procedure must be documented.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure all figures are legible. All labels, arrows, and legends must strictly match the notation defined in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, and subplot contexts. Clarify the relationship between multiple figures (e.g., explicitly stating what each figure illustrates regarding specific variables or perturbations).\n*   **Textual Integration:** Add brief textual descriptions in the main text to guide the reader through complex figures, ensuring that visual elements are not isolated from the narrative.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined consistently and unambiguously?\n2.  Are experimental details sufficient for full reproducibility?\n3.  Do figure captions and labels align perfectly with the text notation?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789591159,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-883a1a8cc0bd3402",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 573,
+      "completion_tokens_details": null,
+      "prompt_tokens": 1246,
+      "prompt_tokens_details": null,
+      "total_tokens": 1819
+    }
+  },
+  "raw_model_output": "**Reusable Peer-Review Guidance: Clarity (CLAR)**\n\n**1. Notation & Mathematical Consistency (CLAR-NOT)**\n*   **Standardize Symbols:** Ensure all mathematical symbols are defined upon first use and remain consistent throughout the manuscript. Specifically, resolve inconsistencies in loss function definitions (e.g., distinguishing between $CE(c(x'), y)$ and $CE(x', y)$) and avoid overloading variables (e.g., using the same symbol for different concepts like input images and rotation angles).\n*   **Disambiguate Terminology:** Clearly distinguish between similar but distinct concepts, such as \"latent perturbation\" versus \"image perturbation.\" Update definitions in early sections to prevent confusion in subsequent text and figure captions.\n\n**2. Writing Quality & Terminology (CLAR-WRT)**\n*   **Grammar & Syntax:** Correct grammatical errors, typos, and sentence fragments. Pay close attention to articles (e.g., \"a technique\" vs. \"an technique\") and prepositions.\n*   **Consistent Terminology:** Enforce consistent usage of technical terms. Avoid capitalization inconsistencies and vague phrasing (e.g., replace \"parameter equivalent\" with specific filter counts or architectural details).\n*   **Logical Flow:** Reorganize disjointed sections, particularly in results, to group related comparisons logically. Ensure that the narrative flow supports the reader’s comprehension of complex arguments.\n\n**3. Reproducibility & Experimental Details (CLAR-WRT)**\n*   **Explicit Specifications:** Provide detailed hyperparameters (learning rate, optimizer, batch size, epochs) and explicit architectural specifications (layers, activations) for all models used. Vague descriptions hinder reproducibility.\n*   **Protocol Clarity:** Clearly state training protocols and experimental conditions. If specific components (like classifiers attached to generative models) are used, their exact architecture and training procedure must be documented.\n\n**4. Figures & Visuals (CLAR-FIG)**\n*   **Legibility & Labels:** Ensure all figures are legible. All labels, arrows, and legends must strictly match the notation defined in the main text.\n*   **Comprehensive Captions:** Captions must fully define experimental conditions, axis definitions, and subplot contexts. Clarify the relationship between multiple figures (e.g., explicitly stating what each figure illustrates regarding specific variables or perturbations).\n*   **Textual Integration:** Add brief textual descriptions in the main text to guide the reader through complex figures, ensuring that visual elements are not isolated from the narrative.\n\n**Key Review Questions:**\n1.  Are all mathematical symbols defined consistently and unambiguously?\n2.  Are experimental details sufficient for full reproducibility?\n3.  Do figure captions and labels align perfectly with the text notation?",
+  "tokens": {
+    "input_tokens": 1246,
+    "max_model_len": 65536
+  }
+}

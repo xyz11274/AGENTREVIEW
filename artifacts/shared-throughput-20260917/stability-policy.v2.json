@@ -1,0 +1,27 @@
+{
+  "protocol": "throughput-stability-policy-v2",
+  "user_decision": "以 Paper. 为主门槛；分类指标保证完整并如实报告波动（推荐）",
+  "primary_metric": "Paper.",
+  "paper_per_item_max_absolute_delta": 0.2,
+  "paper_cohort_mean_max_absolute_delta": 0.1,
+  "secondary_metrics": "Report all category score deltas; all required scores and classifications must be complete. No secondary numerical tolerance as a promotion gate.",
+  "untuned_fixed_input_control": {
+    "per_paper_deltas": [
+      -0.2,
+      0.2
+    ],
+    "cohort_mean_delta": 0.0,
+    "status": "passes_primary_gate; category drift remains reported"
+  },
+  "previous_policy_and_failure_preserved": [
+    "tuning-plan.json",
+    "stability-failure.json"
+  ],
+  "unchanged_constraints": [
+    "no truncated output",
+    "full original CoCo semantics",
+    "no missing required category or Paper. scores",
+    "no admission from diagnostic replay",
+    "no sealed test execution"
+  ]
+}

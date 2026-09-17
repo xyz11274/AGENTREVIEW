@@ -1,0 +1,37 @@
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=4 hits=4 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:01<00:03,  1.03s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:02<00:02,  1.04s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:03<00:01,  1.06s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:03<00:00,  1.23it/s]
+[QWEN3 EMBEDDING] device=cpu dtype=float32 attention=sdpa max_length=32768
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=4 hits=4 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=3 hits=3 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=4 hits=4 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=3 hits=3 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=1 misses=0
+[EMBED CACHE] provider=qwen3_embedding fingerprint=f5fd62cb75e4 requested=1 hits=0 misses=1
+[EMBED CACHE] progress=1/1 committed=1

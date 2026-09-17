@@ -1,0 +1,160 @@
+{
+  "created_at": "2026-09-16T19:43:19.545120+00:00",
+  "generation_config": {
+    "attempts": 1,
+    "completion_contract": "complete-stop-v1",
+    "enable_thinking": false,
+    "max_tokens": 8192,
+    "preparation_sha256": "171908d7bd813210416250d69f5a6fdaf306559b872b558707c1f3f4024edeae",
+    "request_sha256": "07ed70bbe8963e9757df4ddd6e02fedeae292445c0ff9b12e5512b9c7d8a6c5b",
+    "retry": {
+      "max_attempts": 2,
+      "protocol": "identical-request-at-most-two-v1",
+      "sdk_max_retries": 0
+    },
+    "temperature": 0.0
+  },
+  "memory_snapshot_id": "8828f24b9b620f9a3b274a6a05ded0c2e3109b9f802d9e25867007358eef2c84",
+  "model_identity": {
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "enable_thinking": false,
+    "max_model_len": 65536,
+    "model": "qwen3.8-27b",
+    "precision": "BF16",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source_model": "Qwen/Qwen3.8-27B",
+    "temperature": 0.0,
+    "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "transformers_version": "5.15.1",
+    "vllm_version": "0.27.1"
+  },
+  "paper_id": "B1-Hhnslg",
+  "program_version": "seed-llm_summarizer",
+  "raw_model_output": "```\nReviewer dimension: CLAR\nPaper summary: The paper introduces prototypical networks, a simple and scalable approach for few-shot learning. The method learns an embedding space where classes are represented by prototypes (the mean of support set examples), and classification is performed by computing Euclidean distances to these prototypes. The authors demonstrate the method's effectiveness on Omniglot, miniImageNet, and CUB-200 (for zero-shot learning), showing competitive or state-of-the-art results with a simpler architecture than matching networks.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-structured and clearly written, with a logical flow from introduction to method, experiments, and conclusion. The core idea is explained concisely and intuitively.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The mathematical notation is consistent and well-defined. Key equations (1-4) are clearly presented, and the derivation showing the equivalence to a linear classifier is easy to follow.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: The only figure (Figure 1, t-SNE visualization) lacks a legend or color key to distinguish between different bird species, making it difficult for the reader to verify the claim that \"images belonging to the same species of bird should ideally be clustered together.\"\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Add a legend or color-coding scheme to Figure 1 to clearly indicate which clusters correspond to which bird species, or provide a zoomed-in inset showing a few labeled examples.\n- subcategory: CLAR-WRT\n  polarity: neutral\n  claim: The paper could benefit from a more explicit description of the training procedure (e.g., number of episodes, learning rate, optimizer) in the main text or a dedicated \"Implementation Details\" section to aid reproducibility.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 3\n  actionable_suggestion: Include a brief paragraph or appendix section detailing the hyperparameters and training setup for each experiment.\n\nKey questions for the authors:\n- Can you provide a version of Figure 1 with a legend or color key to help readers interpret the t-SNE visualization?\n- Could you specify the exact training hyperparameters (e.g., number of episodes, learning rate, batch size) used for the Omniglot and miniImageNet experiments?\n\nRecommendation: Weak Accept\n```",
+  "retrieval_provenance": {
+    "assembly": {
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "paper_context_sha256": "09fd6a647cb4b3a98db80d7b19f86f100dd2ff78843dd5b4285630a3eedd70ac",
+      "prompt_sha256": "07ed70bbe8963e9757df4ddd6e02fedeae292445c0ff9b12e5512b9c7d8a6c5b"
+    },
+    "memory": {
+      "always_on_knowledge": "The summary is guidance, not evidence about the Frozen Paper.",
+      "context": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Precision**\n*   **Audit Symbol Definitions:** Verify that mathematical symbols are defined before use and remain consistent throughout the manuscript. Flag instances where arguments in equations do not match textual descriptions (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$ vs. $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$).\n*   **Distinguish Similar Concepts:** Ensure distinct terms are used for related but different concepts (e.g., \"latent perturbation\" $\\epsilon$ vs. \"image perturbation\" $x'-x$). If symbols are reused, explicitly state the distinction in the notation section.\n*   **Standardize Function Notation:** Check for consistency in function application (e.g., ensuring $CE(c(x), y)$ is used consistently rather than switching to $CE(x, y)$).\n\n**2. Writing Quality & Grammar**\n*   **Proofread for Professionalism:** Identify and flag grammatical errors, typos, and awkward phrasings that hinder readability (e.g., \"create an technique,\" missing prepositions, sentence fragments).\n*   **Terminology Consistency:** Ensure consistent capitalization and spelling of technical terms (e.g., \"Standard CNNs\" vs. \"StdCNNs,\" \"upto\" vs. \"up to\").\n\n**3. Figure & Table Clarity**\n*   **Caption Completeness:** Critique captions that fail to explicitly describe all subplots, axes, or legends. Ensure captions explain *what* is plotted (e.g., \"trajectories of eigenvalues\") rather than just referencing the figure number.\n*   *",
+      "instruction_response": "Summarize only the already frozen retrieved Review Experience.",
+      "logs": [
+        {
+          "event": "retrieval_hits",
+          "payload": [
+            {
+              "id": "bb890c5501f5619d3510066f118708f70c9cd6f719d54a4bbbc7c1f1894f39e7",
+              "role": "CLAR",
+              "score": 0.4126145955928455
+            },
+            {
+              "id": "2807825349c238bafdcb666a3374e4871348588367397f387d3a42ce268324f7",
+              "role": "CLAR",
+              "score": 0.38482892443959826
+            },
+            {
+              "id": "9683fc87486381fa3eee6e441e862c54afd59fab78ec9edf8b2275a3c518b5af",
+              "role": "CLAR",
+              "score": 0.37538060281571706
+            },
+            {
+              "id": "6812d597a58544653828ad2f7532b43cd63931f98b98d199eda18fbe975fecb9",
+              "role": "CLAR",
+              "score": 0.35434010664382537
+            }
+          ]
+        },
+        {
+          "event": "summarizer_output",
+          "payload": "**Reusable Peer-Review Guidance: CLAR (Clarity)**\n\n**1. Notation Consistency & Precision**\n*   **Audit Symbol Definitions:** Verify that mathematical symbols are defined before use and remain consistent throughout the manuscript. Flag instances where arguments in equations do not match textual descriptions (e.g., $\\hat{\\Theta}_t(x, \\mathcal{X})$ vs. $\\hat{\\Theta}_t(\\mathcal{X},\\mathcal{X})$).\n*   **Distinguish Similar Concepts:** Ensure distinct terms are used for related but different concepts (e.g., \"latent perturbation\" $\\epsilon$ vs. \"image perturbation\" $x'-x$). If symbols are reused, explicitly state the distinction in the notation section.\n*   **Standardize Function Notation:** Check for consistency in function application (e.g., ensuring $CE(c(x), y)$ is used consistently rather than switching to $CE(x, y)$).\n\n**2. Writing Quality & Grammar**\n*   **Proofread for Professionalism:** Identify and flag grammatical errors, typos, and awkward phrasings that hinder readability (e.g., \"create an technique,\" missing prepositions, sentence fragments).\n*   **Terminology Consistency:** Ensure consistent capitalization and spelling of technical terms (e.g., \"Standard CNNs\" vs. \"StdCNNs,\" \"upto\" vs. \"up to\").\n\n**3. Figure & Table Clarity**\n*   **Caption Completeness:** Critique captions that fail to explicitly describe all subplots, axes, or legends. Ensure captions explain *what* is plotted (e.g., \"trajectories of eigenvalues\") rather than just referencing the figure number.\n*   **Visual-Text Alignment:** Verify that figure labels and arrows correspond exactly to the notation defined in the text. If a figure is complex, require a brief textual description in the main body to guide the reader.\n*   **Distinguish Similar Figures:** If multiple figures show similar data (e.g., predictions on reconstructed vs. perturbed images), explicitly explain the relationship and difference between them in the text.\n\n**4. Experimental Reproducibility**\n*   **Hyperparameter Detail:** Flag insufficient experimental setup details. Require explicit specification of architectures, optimizers, learning rates, and training protocols.\n*   **Clarify \"Parameter Equivalence\":** If comparing models of different architectures, explicitly define how parameter counts were matched (e.g., specific filter counts) rather than using vague descriptions.\n\n**5. Logical Flow & Assumptions**\n*   **Justify Key Transitions:** Ensure that major simplifications or assumptions (e.g., NTK reducing to identity) are briefly justified in the main text, not just deferred to appendices.\n*   **Structure:** Assess if the paper flows logically from problem definition to theoretical analysis to empirical validation.\n\n**Actionable Review Checklist:**\n1.  Are all symbols defined and used consistently?\n2.  Are figure captions self-contained and descriptive?\n3.  Is the writing free of significant grammatical errors?\n4.  Are experimental details sufficient for reproduction?\n5.  Are key theoretical assumptions clearly stated in the main text?"
+        }
+      ],
+      "memory_enabled": true,
+      "memory_runtime": {
+        "build_llm_calls": 2,
+        "max_tokens": 4096,
+        "query_mode": "instruction",
+        "read_llm_calls": 2
+      },
+      "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77",
+      "program_version": "seed-llm_summarizer",
+      "query": {
+        "query_text": "Role: CLAR\nTitle: Prototypical Networks for Few-shot Learning\nAbstract: A recent approach to few-shot classification called matching networks has demonstrated the benefits of coupling metric learning with a training procedure that mimics test. This approach relies on a complicated fine-tuning procedure and an attention scheme that forms a distribution over all points in the support set, scaling poorly with its size. We propose a more streamlined approach, prototypical networks, that learns a metric space in which few-shot classification can be performed by computing Euclidean distances to prototype representations of each class, rather than individual points. Our method is competitive with state-of-the-art one-shot classification approaches while being much simpler and more scalable with the size of the support set. We empirically demonstrate the performance of our approach on the Omniglot and mini-ImageNet datasets. We further demonstrate that a similar idea can be used for zero-shot learning, where each class is described by a set of attributes, and achieve state-of-the-art results on the Caltech UCSD bird dataset.",
+        "reviewer_dimension": "CLAR"
+      },
+      "resources": {
+        "completion_chars": 4214,
+        "completion_tokens": 0,
+        "llm_call_count": 2,
+        "llm_latency_seconds": 20.655537765473127,
+        "prompt_chars": 18514,
+        "prompt_tokens": 0,
+        "s2_call_count": 1,
+        "s2_result_count": 0
+      },
+      "seed_kind": "llm_summarizer",
+      "snapshot_id": "8828f24b9b620f9a3b274a6a05ded0c2e3109b9f802d9e25867007358eef2c84"
+    },
+    "protocol": "retrieval-provenance-v2",
+    "s2": {
+      "candidate_evidence": [],
+      "candidate_ids": [],
+      "capability_available": false,
+      "capability_manifest": {
+        "interface_version": "evolvable-review-plan-v1",
+        "memory_ast_sha256": "2770b060967f7f99864d4884f52f34458f301e32f37280d7c6426f90e7446f72",
+        "policy_ast_sha256": "027bb41d6243266bb45ff3b432ce2c9f90a8c2cc28a60af7eee98df484bbbd3c",
+        "program_sha256": "a04f45b7af1f1258af7b3e8397b5ba8ac3050efc595b637f55a03b3e87b9de77"
+      },
+      "context_order": [
+        "memory",
+        "s2",
+        "strategy"
+      ],
+      "context_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126",
+      "decision_label": "seed_always_consult_top5",
+      "dropped_ids": [],
+      "evidence": [],
+      "injected_ids": [],
+      "intervention": {
+        "label": "shared-frozen-off-v1",
+        "mode": "forced_off",
+        "protocol": "s2-intervention-v1"
+      },
+      "lookup_count": 1,
+      "plan_sha256": "23a4a8993a5e08244bf9a6fbd74e36b8c316787bc6a0600b6f55a7f94c22718c",
+      "pool_path": null,
+      "pool_sha256": null,
+      "pool_version": null,
+      "requested_limits": [
+        5
+      ],
+      "review_strategy": "Review the Frozen Paper for the assigned specialist dimension. Apply Memory conditionally and keep current-paper claims grounded in the paper.",
+      "s2_disposition": "consulted_no_use",
+      "selected_ids": [],
+      "usage_instruction": "Use selected frozen S2 evidence only for related-work context; cite its IDs and do not treat it as evidence for claims about the current paper."
+    }
+  },
+  "review_id": "70cd22e0a152d140c47cfbd3d7d3cc353f135f91740db69fe063cb726513a02f",
+  "review_text": "```\nReviewer dimension: CLAR\nPaper summary: The paper introduces prototypical networks, a simple and scalable approach for few-shot learning. The method learns an embedding space where classes are represented by prototypes (the mean of support set examples), and classification is performed by computing Euclidean distances to these prototypes. The authors demonstrate the method's effectiveness on Omniglot, miniImageNet, and CUB-200 (for zero-shot learning), showing competitive or state-of-the-art results with a simpler architecture than matching networks.\n\nDimension score (1-10): 8\nConfidence (1-5): 4\n\nOpinions:\n- subcategory: CLAR-WRT\n  polarity: strength\n  claim: The paper is well-structured and clearly written, with a logical flow from introduction to method, experiments, and conclusion. The core idea is explained concisely and intuitively.\n  evidence_anchors: [SRC-001, SRC-006]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-NOT\n  polarity: strength\n  claim: The mathematical notation is consistent and well-defined. Key equations (1-4) are clearly presented, and the derivation showing the equivalence to a linear classifier is easy to follow.\n  evidence_anchors: [SRC-006, SRC-007]\n  confidence: 5\n  actionable_suggestion: N/A\n- subcategory: CLAR-FIG\n  polarity: weakness\n  claim: The only figure (Figure 1, t-SNE visualization) lacks a legend or color key to distinguish between different bird species, making it difficult for the reader to verify the claim that \"images belonging to the same species of bird should ideally be clustered together.\"\n  evidence_anchors: [SRC-011]\n  confidence: 4\n  actionable_suggestion: Add a legend or color-coding scheme to Figure 1 to clearly indicate which clusters correspond to which bird species, or provide a zoomed-in inset showing a few labeled examples.\n- subcategory: CLAR-WRT\n  polarity: neutral\n  claim: The paper could benefit from a more explicit description of the training procedure (e.g., number of episodes, learning rate, optimizer) in the main text or a dedicated \"Implementation Details\" section to aid reproducibility.\n  evidence_anchors: [SRC-009, SRC-010]\n  confidence: 3\n  actionable_suggestion: Include a brief paragraph or appendix section detailing the hyperparameters and training setup for each experiment.\n\nKey questions for the authors:\n- Can you provide a version of Figure 1 with a legend or color key to help readers interpret the t-SNE visualization?\n- Could you specify the exact training hyperparameters (e.g., number of episodes, learning rate, batch size) used for the Omniglot and miniImageNet experiments?\n\nRecommendation: Weak Accept\n```",
+  "reviewer_identity": {
+    "identity_version": "frozen-specialist-identity-v3",
+    "name": "Reviewer CLAR",
+    "request_protocol_version": "specialist-review-request-v2",
+    "request_template_sha256": "3c56e5bcf6f71488f34515192c625162c028ce09e726c207d3ac99618d295dc5",
+    "source_sha256": "28c975c55fb2594346d52d0e548e9d6fe87d7f189d06189113c2f531a18ea3e2",
+    "suite_identity_sha256": "99c3a7938b4357b2cf748d188a8d2176e5510d62214773b17424abb22db0d130",
+    "system_prompt_sha256": "4cb71fbb0d85ba878c46cd6549ddf1815990ac5a527b6c47692cfbe0a7ee1ee8",
+    "task_id": "CLAR"
+  },
+  "role": "CLAR",
+  "run_id": "feedback-0001-e0",
+  "schema_version": "research-core-v2-artifact-v1"
+}

@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "**Peer-Review Guidance: Significance (SIGN)**\n\n**1. Scope and Domain Impact (SIGN-DOM)**\n*   **Scale Validation:** Theoretical or algorithmic claims must be validated on benchmarks representative of real-world deployment. Avoid accepting results limited to small-scale datasets (e.g., MNIST, CIFAR-10, STL-10) or simple backbones (e.g., VGG11) as sufficient proof of generalizability.\n*   **Complexity Requirements:** For methods claiming efficiency, robustness, or generalization, require experiments on larger, high-dimensional datasets (e.g., ImageNet, complex tabular data) and standard modern architectures (e.g., ResNet-50).\n*   **Niche Justification:** If a method underperforms standard baselines on general benchmarks, authors must clearly define the specific niche (e.g., non-i.i.d. data, temporal sequences) where it excels, supported by targeted experiments.\n\n**2. State-of-the-Art Comparison (SIGN-SOT)**\n*   **Quantitative Baselines:** Claims of improvement or novelty require rigorous quantitative comparison against current SOTA methods. Diagnostic observations or qualitative improvements are insufficient without objective metrics (e.g., accuracy, faithfulness, stability).\n*   **Performance Gains:** Modest or inconsistent gains over baselines do not constitute a substantial SOTA contribution. Reviewers should flag cases where proposed methods fail to match or exceed standard baselines (e.g., Random Forest, standard SSL architectures) unless a clear theoretical trade-off is justified.\n*   **Novelty vs. Analysis:** Distinguish between proposing a new algorithm and providing an empirical analysis of existing ones. The latter has lower significance unless it reveals fundamental tensions or actionable insights that change practice.\n\n**3. Broader Research Impact (SIGN-BRD)**\n*   **Fundamental Questions:** High significance is attributed to work that reconciles distinct theoretical families or addresses fundamental tensions (e.g., robustness vs. symmetry, i.i.d. assumptions).\n*   **Practical Simplification:** Methods that reduce computational overhead or hyperparameter complexity (e.g., removing EMA networks) have high domain impact if validated at scale.\n*   **Theoretical Utility:** Conceptually interesting ideas (e.g., new impurity measures) require theoretical analysis or strong empirical evidence to prove practical utility beyond conceptual novelty.\n\n**4. Practical and Societal Implications (SIGN-IMP)**\n*   **Deployment Feasibility:** Assess computational costs and scalability. Lack of complexity analysis or timing comparisons limits practical impact.\n*   **Real-World Relevance:** Discuss implications for safety-critical or high-stakes applications. For interpretability or robustness papers, address risks (e.g., misleading explanations, adversarial vulnerability) and fairness considerations.\n*   **Mitigation Strategies:** If a paper identifies a vulnerability or trade-off, it should offer or discuss potential mitigation strategies to enhance its practical value.\n\n**Key Review Questions:**\n*   Do the results hold on larger, more complex benchmarks?\n*   How does the method compare quantitatively to established SOTA baselines?\n*   What is the computational overhead, and is it justified by the gains?\n*   What are the specific deployment scenarios where this work is most relevant?",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789582655,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-883569124078b004",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 682,
+      "completion_tokens_details": null,
+      "prompt_tokens": 2940,
+      "prompt_tokens_details": null,
+      "total_tokens": 3622
+    }
+  },
+  "raw_model_output": "**Peer-Review Guidance: Significance (SIGN)**\n\n**1. Scope and Domain Impact (SIGN-DOM)**\n*   **Scale Validation:** Theoretical or algorithmic claims must be validated on benchmarks representative of real-world deployment. Avoid accepting results limited to small-scale datasets (e.g., MNIST, CIFAR-10, STL-10) or simple backbones (e.g., VGG11) as sufficient proof of generalizability.\n*   **Complexity Requirements:** For methods claiming efficiency, robustness, or generalization, require experiments on larger, high-dimensional datasets (e.g., ImageNet, complex tabular data) and standard modern architectures (e.g., ResNet-50).\n*   **Niche Justification:** If a method underperforms standard baselines on general benchmarks, authors must clearly define the specific niche (e.g., non-i.i.d. data, temporal sequences) where it excels, supported by targeted experiments.\n\n**2. State-of-the-Art Comparison (SIGN-SOT)**\n*   **Quantitative Baselines:** Claims of improvement or novelty require rigorous quantitative comparison against current SOTA methods. Diagnostic observations or qualitative improvements are insufficient without objective metrics (e.g., accuracy, faithfulness, stability).\n*   **Performance Gains:** Modest or inconsistent gains over baselines do not constitute a substantial SOTA contribution. Reviewers should flag cases where proposed methods fail to match or exceed standard baselines (e.g., Random Forest, standard SSL architectures) unless a clear theoretical trade-off is justified.\n*   **Novelty vs. Analysis:** Distinguish between proposing a new algorithm and providing an empirical analysis of existing ones. The latter has lower significance unless it reveals fundamental tensions or actionable insights that change practice.\n\n**3. Broader Research Impact (SIGN-BRD)**\n*   **Fundamental Questions:** High significance is attributed to work that reconciles distinct theoretical families or addresses fundamental tensions (e.g., robustness vs. symmetry, i.i.d. assumptions).\n*   **Practical Simplification:** Methods that reduce computational overhead or hyperparameter complexity (e.g., removing EMA networks) have high domain impact if validated at scale.\n*   **Theoretical Utility:** Conceptually interesting ideas (e.g., new impurity measures) require theoretical analysis or strong empirical evidence to prove practical utility beyond conceptual novelty.\n\n**4. Practical and Societal Implications (SIGN-IMP)**\n*   **Deployment Feasibility:** Assess computational costs and scalability. Lack of complexity analysis or timing comparisons limits practical impact.\n*   **Real-World Relevance:** Discuss implications for safety-critical or high-stakes applications. For interpretability or robustness papers, address risks (e.g., misleading explanations, adversarial vulnerability) and fairness considerations.\n*   **Mitigation Strategies:** If a paper identifies a vulnerability or trade-off, it should offer or discuss potential mitigation strategies to enhance its practical value.\n\n**Key Review Questions:**\n*   Do the results hold on larger, more complex benchmarks?\n*   How does the method compare quantitatively to established SOTA baselines?\n*   What is the computational overhead, and is it justified by the gains?\n*   What are the specific deployment scenarios where this work is most relevant?",
+  "tokens": {
+    "input_tokens": 2940,
+    "max_model_len": 65536
+  }
+}

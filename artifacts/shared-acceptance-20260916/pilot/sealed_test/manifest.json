@@ -1,0 +1,27 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/references.json",
+          "sha256": "b36c20483d7561072a3b27acf4527e9aa40a0fddd23f4a95e4957b6ebdeb369a"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/papers/--rcOeCKRh.json",
+          "sha256": "4144ed30b508a6818c4a0a4b9100f0604feb30d44fb9d36db236b4dca16f8611"
+        }
+      },
+      "content_sha256": "e2865f83fdf2e88509aa2be677bb4fccb2676a425f6ea7364b6ffcc5b581ddcf",
+      "normalized_content_sha256": "a69c87082179945446d3152d30f07f41cde50b74502da94764f29f1a4fab9fbd",
+      "paper_id": "--rcOeCKRh",
+      "source_partition": "sealed_test",
+      "title": "CROSS-SUPERVISED OBJECT DETECTION",
+      "version_ids": [
+        "--rcOeCKRh"
+      ],
+      "work_family": "coco-title-52489dd70cd03bdc24601753061f08b7cc65bb40c431426b984828fa577dfef9"
+    }
+  ],
+  "split": "sealed_test"
+}

@@ -1,0 +1,90 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+          "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/SkYXvCR6W.json",
+          "sha256": "bf371ebe4c1e8b369b85178ecbb068b498c4bf0bb93e004a5a21f399c58fff2b"
+        }
+      },
+      "content_sha256": "d1bbe98dbd168ec7f3cb9baa9414a2bb21c6c299e9e54fb2b844e4939d5ca357",
+      "normalized_content_sha256": "44b98128c487f0adfab291ea65bce987ea84ab8fa69d5fc7b7f9d5a1bf07b641",
+      "paper_id": "SkYXvCR6W",
+      "source_partition": "rotating",
+      "title": "Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification",
+      "version_ids": [
+        "SkYXvCR6W"
+      ],
+      "work_family": "coco-title-2ebb9009e20f8a6b40347b50e196be3c3b559154e926f8329766247c1812ec8b"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+          "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/-cII-Vju5C.json",
+          "sha256": "178d13cd237417d4ba24cc24511e4c0478f447bfb91f7d05ac42b7582ee902df"
+        }
+      },
+      "content_sha256": "24367c645112256953b9319de66675a644140559c3507cf9e8fb8d924762f6ef",
+      "normalized_content_sha256": "bee267e3bb3701930baea4bdceeb6d19452e2f50a5d46e2e98824a4c26810a57",
+      "paper_id": "-cII-Vju5C",
+      "source_partition": "rotating",
+      "title": "Orthogonalising gradients to speedup neural network optimisation",
+      "version_ids": [
+        "-cII-Vju5C"
+      ],
+      "work_family": "coco-title-4be8a9bcfc1da1a7ce245fc8da42ac6738677702cf059307a4f914d0f8d73275"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+          "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/B1-Hhnslg.json",
+          "sha256": "b77bad37b6cd68debac913245fd6e51d9b01c347715ddbfb0be97cd3fa11aa6f"
+        }
+      },
+      "content_sha256": "3ee2fb92c74d8d80028d3d2e1bd6610bfcfa364439cc19ab597bb0754c7f9299",
+      "normalized_content_sha256": "46a42ede4afbfb9ffbcdc9f116fb6360c36e31a495ee396cd07eceee67787330",
+      "paper_id": "B1-Hhnslg",
+      "source_partition": "rotating",
+      "title": "Prototypical Networks for Few-shot Learning",
+      "version_ids": [
+        "B1-Hhnslg"
+      ],
+      "work_family": "coco-title-a3839ac655bbe8c9cd7ea928962ef0ad9e1400cf70b6d75b4b47ffb9ab4d1dfc"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+          "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/SJk01vogl.json",
+          "sha256": "6aacc3c709a50d08fabbb5c84ef16e6c76a476da3f0af3b0e148b097e35cb455"
+        }
+      },
+      "content_sha256": "ff570e928e605d4e2db9729892dfa0de4a2ab6176163443e90a81939d3c3a174",
+      "normalized_content_sha256": "0fc069ea3c8810cc6bbad23438c1c2917de8bc2214d45edc4c59faeb968caa64",
+      "paper_id": "SJk01vogl",
+      "source_partition": "rotating",
+      "title": "Adversarial examples for generative models",
+      "version_ids": [
+        "SJk01vogl"
+      ],
+      "work_family": "coco-title-cca3db2f4afee13e2a31d423fe89a9847c3114fc9a370b22b3ba5922e532e38a"
+    }
+  ],
+  "split": "rotating"
+}

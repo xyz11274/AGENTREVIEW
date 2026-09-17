@@ -30,6 +30,16 @@ def command(config, role):
               "--max-model-len", str({"split": 65536, "classify": 32768, "judge": 65536}[role]),
               "--gpu-memory-utilization", str(service.get("gpu_memory_utilization", 0.9)),
               "--max-num-seqs", str(service.get("max_num_seqs", 8))]
+    for name in ("max_num_batched_tokens",):
+        if name in service:
+            if type(service[name]) is not int or service[name] <= 0:
+                raise ValueError(f"{role}: {name} requires a positive integer")
+            result += ["--" + name.replace("_", "-"), str(service[name])]
+    for name in ("enable_chunked_prefill", "enable_prefix_caching"):
+        if name in service:
+            if type(service[name]) is not bool:
+                raise ValueError(f"{role}: {name} requires an explicit boolean")
+            result.append("--" + ("" if service[name] else "no-") + name.replace("_", "-"))
     if role == "split":
         # Current vLLM accepts the original YaRN setting via HF overrides.
         result += ["--hf-overrides", json.dumps({"rope_scaling": {
@@ -51,6 +61,16 @@ def manage(config, role, action):
         if recorded:
             try:
                 live = process_identity(recorded["process"]["pid"])
+                state_value = (Path(f"/proc/{live['pid']}") / "stat").read_text().rsplit(") ", 1)[1].split()[0]
+                if state_value == "Z" and all(live[key] == recorded["process"][key] for key in ("pid", "uid", "start_time")) and live["uid"] == os.getuid():
+                    # An owned, exited process has an empty cmdline. Its UID
+                    # and start time still prove identity; do not confuse that
+                    # terminal state with a recycled PID or signal it again.
+                    try:
+                        os.waitpid(live["pid"], os.WNOHANG)
+                    except ChildProcessError:
+                        pass
+                    live = None
             except FileNotFoundError:
                 pass
             if live and (live != recorded["process"] or live["uid"] != os.getuid()):
@@ -69,6 +89,9 @@ def manage(config, role, action):
             return {"role": role, "argv": args, "gpus": config["services"][role]["gpus"]}
         service = config["services"][role]
         with socket.socket() as probe:
+            # Match the HTTP server's bind semantics: a completed connection in
+            # TIME_WAIT is not a live listener and must not block a safe restart.
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind(("127.0.0.1", service["port"]))
         environment = dict(os.environ, CUDA_VISIBLE_DEVICES=",".join(map(str, service["gpus"])),
                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")

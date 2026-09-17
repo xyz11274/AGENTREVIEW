@@ -1,0 +1,362 @@
+{
+  "config_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/paper2-protocol.json",
+  "document": {
+    "claim_scope": "development-only; no sealed test execution or generalization claim",
+    "deduplication": {
+      "family_audit": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/family-audit.json",
+        "sha256": "9a7c6de7d0d6b66050523660b2a436ba46cc07cd1874a1329b811c4b8f1c8b5e"
+      },
+      "policy": "identity-family-normalized-content-v1"
+    },
+    "embedding": {
+      "cache_path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/embedding.sqlite3",
+      "device": "cpu",
+      "model": "Qwen/Qwen3-Embedding-8B",
+      "provider": "qwen3_embedding",
+      "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+    },
+    "evolution": {
+      "attempts": 3,
+      "max_reflection_tokens": 16384,
+      "mutable_scope": "memory",
+      "parent_temperature": 0.5,
+      "random_seed": 20260916,
+      "reflection_scope": "scores_and_traces",
+      "rotating_sample_size": 2
+    },
+    "execution_profile": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/execution-paper2.json",
+      "sha256": "8492ababf333ab9fc588f3986d66753e6fdd5b8e436f7a9385ffc6961a53e604"
+    },
+    "experiment_id": "shared-throughput-paper2-20260917",
+    "failure_policy": {
+      "candidate_failures": 1,
+      "candidate_repairs": 2,
+      "request_attempts": 2,
+      "round_repairs": 5
+    },
+    "generation": {
+      "input_max_tokens": 49152,
+      "memory_build_llm_calls": 2,
+      "memory_max_tokens": 4096,
+      "memory_query_mode": "instruction",
+      "memory_read_llm_calls": 2,
+      "meta_max_tokens": 16384,
+      "native_max_tokens": 8192,
+      "native_num_fewshot": 0,
+      "paper_context_max_chars": null,
+      "review_max_tokens": 8192
+    },
+    "historical_exposure_manifests": [
+      {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/historical-exposure.json",
+        "sha256": "986965beedc7a87a28edbf2cb4a7aff5e9d8dbc697e005fda99ebe1eb238ecfc"
+      }
+    ],
+    "launch_policy": {
+      "derived_from": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/protocol.json",
+        "sha256": "71dd4389ca6ce6864f4af0eecce17c1a110f8d3f833dde22a6ea17b67a09a583"
+      },
+      "reason": "Stop the pilot at the first candidate still failing after bounded repairs; do not skip it."
+    },
+    "model": {
+      "api_key_env": "OPENAI_API_KEY",
+      "base_url": "http://127.0.0.1:18001/v1",
+      "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+      "enable_thinking": false,
+      "max_model_len": 65536,
+      "max_num_seqs": 8,
+      "model": "qwen3.8-27b",
+      "precision": "BF16",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "source_model": "Qwen/Qwen3.8-27B",
+      "temperature": 0.0,
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "transformers_version": "5.15.1",
+      "vllm_version": "0.27.1"
+    },
+    "non_memory_conditions": {
+      "final_mode": "meta",
+      "frozen_s2": {},
+      "review_policy_program": {
+        "path": "/data/xyj/shengao/AgentReview_0915/AgentReview/agentreview/research_v2/seeds/vector_search.py",
+        "sha256": "b69845c9d7f0aa0928509e75a3e9504e34c5f0d758bb272acfd2d795f13fd7bc"
+      },
+      "s2_mode": "off"
+    },
+    "protocol": "shared-memory-experiment-v1",
+    "scoring_config": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/deployment/original-coco/scoring.frozen.json",
+      "sha256": "9186ebf747904975279b9063987f30cbc1976001fb969082755173bc11427391"
+    },
+    "splits": {
+      "build": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/build/manifest.json",
+        "sha256": "73fdfa74d49e30cb469a02f93dbd58d1f92a6ecacf59ebfc503b083ff5a9f8b9"
+      },
+      "rotating": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/manifest.json",
+        "sha256": "54f70f0157eef5ad42d8988323f9df5b809736af61c5b71c7cd8c98e0ac85202"
+      },
+      "sealed_test": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/manifest.json",
+        "sha256": "243dde2bafdeebaf9eb0e05e084ffa47072a6f7841c0f6478d99b90e313b2bde"
+      },
+      "static": {
+        "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/manifest.json",
+        "sha256": "582377ee00aef2458f2d6f841961d8a43bba7c6242167840a5da12a677bfb0bd"
+      }
+    },
+    "status": "frozen"
+  },
+  "protocol": "shared-memory-experiment-receipt-v1",
+  "protocol_sha256": "fb6955bc533d6b3f09d97f29b7cff17d08c8092d2336254d3c0ddf335c307221",
+  "split_identities": {
+    "build": [
+      {
+        "assets": {
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/build/papers/Ske25sC9FQ.json",
+            "sha256": "813b32e81dcdc6a9f8d3c29513e7adc37be243191f9d6a157a18a7cfa905283e"
+          }
+        },
+        "content_sha256": "605f875599c82cdac4fa172e407003dc17751e32d9a12c0ead0ab0db6a8f332f",
+        "normalized_content_sha256": "5019663751f4f3c8f8b49d401d58be3c4bc0cff4a165829b338d69c258587d9f",
+        "paper_id": "Ske25sC9FQ",
+        "source_partition": "build",
+        "title": "Robustness and Equivariance of Neural Networks",
+        "version_ids": [
+          "Ske25sC9FQ"
+        ],
+        "work_family": "coco-title-6211e91945c4684d37434e754afad6e0053295c05850609bb1d10d65dd9013d9"
+      },
+      {
+        "assets": {
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/build/papers/S1EzRgb0W.json",
+            "sha256": "fd8675f16110bdbad195a4a2311fc655b75348673977bb7171169417c1df751f"
+          }
+        },
+        "content_sha256": "26423f5ff695eb0d60e0c9bf81b33997bb4f54c7e378376ada93fa3aea684d32",
+        "normalized_content_sha256": "4cf03add19bc0e85c2cbb8118b900fce270c14e27636bc896dec22adf82bc136",
+        "paper_id": "S1EzRgb0W",
+        "source_partition": "build",
+        "title": "Explaining the Mistakes of Neural Networks with Latent Sympathetic Examples",
+        "version_ids": [
+          "S1EzRgb0W"
+        ],
+        "work_family": "coco-title-37eecf0337d78c859875afeee24dbf28b150811f89d0be74d99c7a07d2b77a5f"
+      },
+      {
+        "assets": {
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/build/papers/zMNUNd9zs1.json",
+            "sha256": "d96f7d133fa1b61b89b4ef01acfe5897ea24700fd4a4713905d1d60cdf157560"
+          }
+        },
+        "content_sha256": "409566c67681bb974daa4d3b28e8bf5262445c964fffc63212cb0e9988147f5d",
+        "normalized_content_sha256": "6595c92f13820072a8c1c564564cc48c94ea3bdf946ef3b598e215bdab0b3597",
+        "paper_id": "zMNUNd9zs1",
+        "source_partition": "build",
+        "title": "Implicit variance regularization in non-contrastive SSL",
+        "version_ids": [
+          "zMNUNd9zs1"
+        ],
+        "work_family": "coco-title-23b90f4aeb6abfba3de3ba2f4b5c0724ce40efc6626e967b158c418f1fab688c"
+      },
+      {
+        "assets": {
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/build/papers/2MRz5bSnan.json",
+            "sha256": "dc20504ffa302f0fe4659989ea58cf2c8264c655fbfe5195d5fd5b6c0d78fd99"
+          }
+        },
+        "content_sha256": "2d555e48a953aca83f5a1e0b7cf4f9439d8e08a202c26e98b747f4d2d35706d7",
+        "normalized_content_sha256": "9f28db30273092f1b90b34a90456b675df252667fb06f958b1898aaf45908fdf",
+        "paper_id": "2MRz5bSnan",
+        "source_partition": "build",
+        "title": "Permutation Decision Trees using Structural Impurity",
+        "version_ids": [
+          "2MRz5bSnan"
+        ],
+        "work_family": "coco-title-cb883ef8c7dc2c326f2c60a1c147b26493cb7d8cd6d160d1dddd37c106a97871"
+      }
+    ],
+    "rotating": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+            "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/SkYXvCR6W.json",
+            "sha256": "bf371ebe4c1e8b369b85178ecbb068b498c4bf0bb93e004a5a21f399c58fff2b"
+          }
+        },
+        "content_sha256": "d1bbe98dbd168ec7f3cb9baa9414a2bb21c6c299e9e54fb2b844e4939d5ca357",
+        "normalized_content_sha256": "44b98128c487f0adfab291ea65bce987ea84ab8fa69d5fc7b7f9d5a1bf07b641",
+        "paper_id": "SkYXvCR6W",
+        "source_partition": "rotating",
+        "title": "Compact Encoding of Words for Efficient Character-level Convolutional Neural Networks Text Classification",
+        "version_ids": [
+          "SkYXvCR6W"
+        ],
+        "work_family": "coco-title-2ebb9009e20f8a6b40347b50e196be3c3b559154e926f8329766247c1812ec8b"
+      },
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+            "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/-cII-Vju5C.json",
+            "sha256": "178d13cd237417d4ba24cc24511e4c0478f447bfb91f7d05ac42b7582ee902df"
+          }
+        },
+        "content_sha256": "24367c645112256953b9319de66675a644140559c3507cf9e8fb8d924762f6ef",
+        "normalized_content_sha256": "bee267e3bb3701930baea4bdceeb6d19452e2f50a5d46e2e98824a4c26810a57",
+        "paper_id": "-cII-Vju5C",
+        "source_partition": "rotating",
+        "title": "Orthogonalising gradients to speedup neural network optimisation",
+        "version_ids": [
+          "-cII-Vju5C"
+        ],
+        "work_family": "coco-title-4be8a9bcfc1da1a7ce245fc8da42ac6738677702cf059307a4f914d0f8d73275"
+      },
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+            "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/B1-Hhnslg.json",
+            "sha256": "b77bad37b6cd68debac913245fd6e51d9b01c347715ddbfb0be97cd3fa11aa6f"
+          }
+        },
+        "content_sha256": "3ee2fb92c74d8d80028d3d2e1bd6610bfcfa364439cc19ab597bb0754c7f9299",
+        "normalized_content_sha256": "46a42ede4afbfb9ffbcdc9f116fb6360c36e31a495ee396cd07eceee67787330",
+        "paper_id": "B1-Hhnslg",
+        "source_partition": "rotating",
+        "title": "Prototypical Networks for Few-shot Learning",
+        "version_ids": [
+          "B1-Hhnslg"
+        ],
+        "work_family": "coco-title-a3839ac655bbe8c9cd7ea928962ef0ad9e1400cf70b6d75b4b47ffb9ab4d1dfc"
+      },
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/references.json",
+            "sha256": "a5f9bdaef72867cc086f1d04aac30d90af4bb8ee7a3d32427983a8740bbf6faf"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/rotating/papers/SJk01vogl.json",
+            "sha256": "6aacc3c709a50d08fabbb5c84ef16e6c76a476da3f0af3b0e148b097e35cb455"
+          }
+        },
+        "content_sha256": "ff570e928e605d4e2db9729892dfa0de4a2ab6176163443e90a81939d3c3a174",
+        "normalized_content_sha256": "0fc069ea3c8810cc6bbad23438c1c2917de8bc2214d45edc4c59faeb968caa64",
+        "paper_id": "SJk01vogl",
+        "source_partition": "rotating",
+        "title": "Adversarial examples for generative models",
+        "version_ids": [
+          "SJk01vogl"
+        ],
+        "work_family": "coco-title-cca3db2f4afee13e2a31d423fe89a9847c3114fc9a370b22b3ba5922e532e38a"
+      }
+    ],
+    "sealed_test": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/references.json",
+            "sha256": "b36c20483d7561072a3b27acf4527e9aa40a0fddd23f4a95e4957b6ebdeb369a"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/sealed_test/papers/--rcOeCKRh.json",
+            "sha256": "4144ed30b508a6818c4a0a4b9100f0604feb30d44fb9d36db236b4dca16f8611"
+          }
+        },
+        "content_sha256": "e2865f83fdf2e88509aa2be677bb4fccb2676a425f6ea7364b6ffcc5b581ddcf",
+        "normalized_content_sha256": "a69c87082179945446d3152d30f07f41cde50b74502da94764f29f1a4fab9fbd",
+        "paper_id": "--rcOeCKRh",
+        "source_partition": "sealed_test",
+        "title": "CROSS-SUPERVISED OBJECT DETECTION",
+        "version_ids": [
+          "--rcOeCKRh"
+        ],
+        "work_family": "coco-title-52489dd70cd03bdc24601753061f08b7cc65bb40c431426b984828fa577dfef9"
+      }
+    ],
+    "static": [
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/references.json",
+            "sha256": "b212eea545fe316c2652ab0802f0798c4f6a8faf7881f53bbb2f7c22509e26fc"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/papers/-EHqoysUYLx.json",
+            "sha256": "8935e96699560afe8785ba382f2d8d017ee04897a0a958b4df4eac862348f6d7"
+          }
+        },
+        "content_sha256": "b205f7406d6a6521d8fba511fb897182e9e5571b21b90f6582b5ee11d7f75f23",
+        "normalized_content_sha256": "ac2137686c3caee340dc0e6dc934b353bb436dcef28f23e1b63ecd358c3db255",
+        "paper_id": "-EHqoysUYLx",
+        "source_partition": "static",
+        "title": "Generalization Bounds for Federated Learning: Fast Rates, Unparticipating Clients and Unbounded Losses",
+        "version_ids": [
+          "-EHqoysUYLx"
+        ],
+        "work_family": "coco-title-13349fb631e78c513f5440f7046f3978c6650f21c27cd4855e1ae6cffa569058"
+      },
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/references.json",
+            "sha256": "b212eea545fe316c2652ab0802f0798c4f6a8faf7881f53bbb2f7c22509e26fc"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/papers/SJn0sLgRb.json",
+            "sha256": "8f754c1fe44ff57b04d108046a9c2a06f12d27ea3bf7c1e99194a6ab026a8205"
+          }
+        },
+        "content_sha256": "5abcd70b2f34a35b50737e4e8f2dd9caa480545bf2c6bf78f1cbbbe99c5cfe6b",
+        "normalized_content_sha256": "8f6b382faf81f4b076d7486d5f0776f01aa6772a4d86e5e62163a3df52800347",
+        "paper_id": "SJn0sLgRb",
+        "source_partition": "static",
+        "title": "Data Augmentation by Pairing Samples for Images Classification",
+        "version_ids": [
+          "SJn0sLgRb"
+        ],
+        "work_family": "coco-title-39fcd9b8086da777477aa9457e5e9d0d32bdadd6e25e65e85a9ab9b7498deaa4"
+      },
+      {
+        "assets": {
+          "coco_reference": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/references.json",
+            "sha256": "b212eea545fe316c2652ab0802f0798c4f6a8faf7881f53bbb2f7c22509e26fc"
+          },
+          "paper": {
+            "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/static/papers/BJKYvt5lg.json",
+            "sha256": "35df87b7970fe7831da33595d6d3f53f9cf0561aac2a57533d3cfc33bfdd76c3"
+          }
+        },
+        "content_sha256": "2060003d698acb81d91fca89fd150722a74159891110ea088a5bd9ee84503db2",
+        "normalized_content_sha256": "a4e1f8fd6b7372460a0e51e060befa95d405b2168f69127e298093615529708f",
+        "paper_id": "BJKYvt5lg",
+        "source_partition": "static",
+        "title": "PixelVAE: A Latent Variable Model for Natural Images",
+        "version_ids": [
+          "BJKYvt5lg"
+        ],
+        "work_family": "coco-title-023212bd215eb4c579c97ea59376b3fc810893f926376bb188af7f76fd3f763c"
+      }
+    ]
+  }
+}

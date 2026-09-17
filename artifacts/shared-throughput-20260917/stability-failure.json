@@ -1,0 +1,31 @@
+{
+  "status": "failed",
+  "unchanged_service_parameters": true,
+  "identical_payloads": 16,
+  "raw_aggregate_differences": {
+    "Average": -0.08111111111111136,
+    "BERT.": 0.0,
+    "BLEU": 1.1102230246251565e-16,
+    "Clarity": 0.011111111111111072,
+    "Complete.": 0.0,
+    "Correct.": -0.2111111111111108,
+    "Ground.": 0.011111111111111072,
+    "Paper.": 0.0,
+    "ROUGE-L": 0.0,
+    "Thoro.": 0.0,
+    "Verify.": -0.26666666666666705
+  },
+  "paper_delta": {
+    "-EHqoysUYLx": -0.2,
+    "SJn0sLgRb": 0.2
+  },
+  "reason": "Fixed-input reference already exceeds the predeclared 0.2 category metric tolerance. Do not promote tuning or scale-up yet.",
+  "source_assessment": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/baseline/run/assessments/e0/throughput-champion/r0/coco/assessment.json",
+    "sha256": "cc340f99bf5aa7ad9a624e5aea3bab9267c4dbc1e5c1309e70cd1aca01f7d06a"
+  },
+  "repeat_result": {
+    "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-throughput-20260917/judge-reference-r1/result.json",
+    "sha256": "1083c2ec9faa04d3c3c7415d69e0bdc79e413056d76a3a94f3d89cdcad37bb4a"
+  }
+}

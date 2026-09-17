@@ -1,0 +1,29 @@
+{
+  "candidate": {
+    "candidate_id": "candidate-0002",
+    "change": "Refactored KnowledgeBase to strictly enforce the build_llm_calls budget by reserving one call for host induction and limiting write operations to the remaining budget. Optimized the read process to use a single LLM call for summarization, respecting the read_llm_calls=2 budget (1 for retrieval logic if needed, 1 for summary). Enhanced instruction constants to explicitly guide the LLM on the distinction between guidance and evidence, and to enforce the 6000-character limit on read results. Updated KnowledgeItem and Query schemas to include a 'source' field for traceability. Preserved the plan_review function and its imports exactly as required.",
+    "lineage": [
+      "seed-llm_summarizer",
+      "candidate-0001"
+    ],
+    "parent_id": "candidate-0001",
+    "program": {
+      "path": "/data/xyj/shengao/AgentReview_0915/artifacts/shared-acceptance-20260916/pilot/run/proposals/a2-e0/program.py",
+      "sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701"
+    },
+    "program_sha256": "b55e00c32caa4db58483ad26d5ece24d09041d4488c11b012d28a3750add1701",
+    "revision": 0,
+    "round": 2,
+    "seed": "llm_summarizer",
+    "seed_kind": "evolved"
+  },
+  "key": "candidate-0002",
+  "kind": "candidate",
+  "memory_enabled": true,
+  "paper_ids": [
+    "-EHqoysUYLx",
+    "SJn0sLgRb",
+    "BJKYvt5lg"
+  ],
+  "split": "static"
+}

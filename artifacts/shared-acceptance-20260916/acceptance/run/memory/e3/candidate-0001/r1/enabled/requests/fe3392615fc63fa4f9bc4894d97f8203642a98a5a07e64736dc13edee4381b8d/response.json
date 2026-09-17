@@ -1,0 +1,49 @@
+{
+  "attempt": 1,
+  "completion": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "annotations": null,
+          "audio": null,
+          "content": "{\n  \"topic\": \"CLAR\",\n  \"content\": \"Check for grammatical errors, typos, and inconsistent terminology (capitalization, abbreviations). Ensure experimental setups and hyperparameters are detailed for reproducibility, including specific architecture modifications. Verify mathematical symbols are consistent and defined before use; flag variable name collisions. Ensure figure captions are complete, defining axes, legends, and subplot conditions, and check for ambiguous labels in multi-panel figures. Avoid disjointed results sections (e.g., scattering by attack vs. network type) and vague descriptions of parameter equivalence. Suggest restructuring results for logical flow (grouping by attack or network type), providing summary tables, and performing thorough language edits.\"\n}",
+          "function_call": null,
+          "reasoning": null,
+          "refusal": null,
+          "role": "assistant",
+          "tool_calls": null
+        },
+        "routed_experts": null,
+        "stop_reason": null,
+        "token_ids": null
+      }
+    ],
+    "created": 1789577548,
+    "ec_transfer_params": null,
+    "id": "chatcmpl-ae5d7bc15a8afee3",
+    "kv_transfer_params": null,
+    "metrics": null,
+    "model": "qwen3.8-27b",
+    "object": "chat.completion",
+    "prompt_logprobs": null,
+    "prompt_text": null,
+    "prompt_token_ids": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.27.1-tp4-a9661186",
+    "usage": {
+      "completion_tokens": 145,
+      "completion_tokens_details": null,
+      "prompt_tokens": 277,
+      "prompt_tokens_details": null,
+      "total_tokens": 422
+    }
+  },
+  "raw_model_output": "{\n  \"topic\": \"CLAR\",\n  \"content\": \"Check for grammatical errors, typos, and inconsistent terminology (capitalization, abbreviations). Ensure experimental setups and hyperparameters are detailed for reproducibility, including specific architecture modifications. Verify mathematical symbols are consistent and defined before use; flag variable name collisions. Ensure figure captions are complete, defining axes, legends, and subplot conditions, and check for ambiguous labels in multi-panel figures. Avoid disjointed results sections (e.g., scattering by attack vs. network type) and vague descriptions of parameter equivalence. Suggest restructuring results for logical flow (grouping by attack or network type), providing summary tables, and performing thorough language edits.\"\n}",
+  "tokens": {
+    "input_tokens": 277,
+    "max_model_len": 65536
+  }
+}
