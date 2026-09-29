@@ -1,0 +1,233 @@
+{
+  "count": 25,
+  "records": [
+    {
+      "canonical_title": "multi label learning with semantic embeddings",
+      "group": "ICLR 2017",
+      "md_sha256": "aa56245838b4cd0410d139c7815c40eb3283b2f7d6f1aa6405d26670280e1912",
+      "paper_asset_id": "1ca67c757833b42deb869921767e43cf45cc0097898cbecc477a6e3398309b26",
+      "paper_id": "ryAe2WBee",
+      "paperhash": "jing|multilabel_learning_with_semantic_embeddings",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ryAe2WBee.json"
+    },
+    {
+      "canonical_title": "the kanerva machine a generative distributed memory",
+      "group": "ICLR 2018",
+      "md_sha256": "05381fe78a4132f8d3c1f2d2d2a40d23c1f16afe32ee85f81a8a19863101b788",
+      "paper_asset_id": "01b50ce9ca9826437fb65611053c4c03187f646b289ea14e55b4a3e778365e61",
+      "paper_id": "S1HlA-ZAZ",
+      "paperhash": "wu|the_kanerva_machine_a_generative_distributed_memory",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1HlA-ZAZ.json"
+    },
+    {
+      "canonical_title": "actrce augmenting experience via teacher s advice",
+      "group": "ICLR 2019",
+      "md_sha256": "769d87ed09a8c25b2cc7da6964fff22fc09ec8157b311e6748830ec7370a949d",
+      "paper_asset_id": "4f02f33208a56469e512da133058f86ab51cb85e1a4397c230ece80ea387b448",
+      "paper_id": "HyM8V2A9Km",
+      "paperhash": "wu|actrce_augmenting_experience_via_teachers_advice",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/HyM8V2A9Km.json"
+    },
+    {
+      "canonical_title": "federated learning with matched averaging",
+      "group": "ICLR 2020",
+      "md_sha256": "f227aaa13e3f7731a411276bf0e6652f52e2ee1a34850a5e0a17c6a72e4c9e2e",
+      "paper_asset_id": "96e6450c7394908bba8435bac2ff0ffb3104d405c2b7d19a620830821456bb05",
+      "paper_id": "BkluqlSFDS",
+      "paperhash": "wang|federated_learning_with_matched_averaging",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BkluqlSFDS.json"
+    },
+    {
+      "canonical_title": "incorporating symmetry into deep dynamics models for improved generalization",
+      "group": "ICLR 2021",
+      "md_sha256": "84d6e008b3e570244710f809614c2da8c7274155257cf35d6eec0a1e95f43ecf",
+      "paper_asset_id": "5b582cd6beecf5f8dfd29f8b0571112036bb6b08de2a37076b3d1f1dc1ce8d2b",
+      "paper_id": "wta_8Hx2KD",
+      "paperhash": "wang|incorporating_symmetry_into_deep_dynamics_models_for_improved_generalization",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/wta_8Hx2KD.json"
+    },
+    {
+      "canonical_title": "bit wise training of neural network weights",
+      "group": "ICLR 2022",
+      "md_sha256": "5ed21c304cf68c8c7bce2a70e439a4b62caab63db40e4c5638a26f10f5684d6a",
+      "paper_asset_id": "039e6b4caf939d143510516f7990a11a66ff47a391c5fb8527ec2c335502d6b7",
+      "paper_id": "gxk4-rVATDA",
+      "paperhash": "ivan|bitwise_training_of_neural_network_weights",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/gxk4-rVATDA.json"
+    },
+    {
+      "canonical_title": "data efficient finetuning using cross task nearest neighbors",
+      "group": "ICLR 2023",
+      "md_sha256": "6ffb8221f5dbd8fb0d5b9e8ab822ccb1f0ed8e2b328c718f47640abf461d6d4c",
+      "paper_asset_id": "47ec20dea480a705b0a840e8474b77ab75a8f1f2656ad83c107a184cfb6fd063",
+      "paper_id": "WtW_s7EDWPe",
+      "paperhash": "ivison|dataefficient_finetuning_using_crosstask_nearest_neighbors",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/WtW_s7EDWPe.json"
+    },
+    {
+      "canonical_title": "pded revitalize physics laws submerged in data information for traffic state estimation",
+      "group": "ICLR 2024",
+      "md_sha256": "84b7ac007089e6c476bc68946a85b9eccdeadc4beb32079353c412a7cbd8a227",
+      "paper_asset_id": "203592884d9a47a78bdca256650356ccd7b5544a36dc967f0f155dfaa67d175b",
+      "paper_id": "GszBQ3ZTzk",
+      "paperhash": "fu|pded_revitalize_physics_laws_submerged_in_data_information_for_traffic_state_estimation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/GszBQ3ZTzk.json"
+    },
+    {
+      "canonical_title": "provably efficient and practical self play for better llm alignment",
+      "group": "ICLR 2025",
+      "md_sha256": "e5b4c7559479a51212de931a7348f5bdf616ac9456c4e73132810f5a28cfb049",
+      "paper_asset_id": "d2d74d4565b4967da9a5c357681090e83066545c2dfc92f1874a112a62576713",
+      "paper_id": "ed75tWzgt0",
+      "paperhash": "wang|provably_efficient_and_practical_selfplay_for_better_llm_alignment",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ed75tWzgt0.json"
+    },
+    {
+      "canonical_title": "teaching via best case counterexamples in the learning with equivalence queries paradigm",
+      "group": "NeurIPS 2021",
+      "md_sha256": "b7dda6c00a11135c8bce7f60bca05cb8695254e2a222e7b7d3e2983f13cd0ff1",
+      "paper_asset_id": "402f76bc6ef7f4436d60073ce621ab19728e1c6e47254350d3f3aec0e714d552",
+      "paper_id": "Ee7IOrpLwT",
+      "paperhash": "kumar|teaching_via_bestcase_counterexamples_in_the_learningwithequivalencequeries_paradigm",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Ee7IOrpLwT.json"
+    },
+    {
+      "canonical_title": "hub pathway transfer learning from a hub of pre trained models",
+      "group": "NeurIPS 2022",
+      "md_sha256": "2d06c966cc2709e4e0223d14e17e59caa0e89a027031b34c01cdca8e6c43cc62",
+      "paper_asset_id": "98907c43079582a1e1a443eb99e94ebd6f3e1dc5f16221efe1eac2df6fc0e333",
+      "paper_id": "L8ESR8IQ7Gb",
+      "paperhash": "shu|hubpathway_transfer_learning_from_a_hub_of_pretrained_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/L8ESR8IQ7Gb.json"
+    },
+    {
+      "canonical_title": "improving few shot generalization by exploring and exploiting auxiliary data",
+      "group": "NeurIPS 2023",
+      "md_sha256": "d7ec4db8aab32c72a85ab30286f166dc580e4bc2d5b44e4896e8a7d6ec84f9d2",
+      "paper_asset_id": "51b73bea5ba1c03872966df49de1244ab3474299e0d27d60b21c4d0a60c7a3d5",
+      "paper_id": "JDnLXc4NOn",
+      "paperhash": "albalak|improving_fewshot_generalization_by_exploring_and_exploiting_auxiliary_data",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/JDnLXc4NOn.json"
+    },
+    {
+      "canonical_title": "advancing cross domain discriminability in continual learning of vision language models",
+      "group": "NeurIPS 2024",
+      "md_sha256": "3100a228a51656e2fc4e43e0dcff03190f6861507a02df21b0058f7756db5bfb",
+      "paper_asset_id": "d9776476725b66fde8a78e790dd426768215fb0aa42eecc8a70e4d5a9396092c",
+      "paper_id": "boGxvYWZEq",
+      "paperhash": "xu|advancing_crossdomain_discriminability_in_continual_learning_of_visionlanguage_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/boGxvYWZEq.json"
+    },
+    {
+      "canonical_title": "paleo a performance model for deep neural networks",
+      "group": "ICLR 2017",
+      "md_sha256": "b4091abba5b81a88ea8d6adbac3c6786302db54ac194851a9a0b7906b9c1e433",
+      "paper_asset_id": "7e955464d2ceb07c32dd13f33457c87d15f73e25090d3eaa34ba2ad0da4d6010",
+      "paper_id": "SyVVJ85lg",
+      "paperhash": "qi|paleo_a_performance_model_for_deep_neural_networks",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SyVVJ85lg.json"
+    },
+    {
+      "canonical_title": "learning to multi task by active sampling",
+      "group": "ICLR 2018",
+      "md_sha256": "1c9ac363fedfdabdbac61f03fd31aff2cceef18ee5f0d953a613eb75302ac613",
+      "paper_asset_id": "ceb5f5cf21f855f06c3f35fd140f8b89a9a6661d0c46cc50f3f0002144bed8ea",
+      "paper_id": "B1nZ1weCZ",
+      "paperhash": "sharma|learning_to_multitask_by_active_sampling",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/B1nZ1weCZ.json"
+    },
+    {
+      "canonical_title": "efficient augmentation via data subsampling",
+      "group": "ICLR 2019",
+      "md_sha256": "d03b7e5701e0223b04e68cc0e6168c81e945a62095489434808ca4838db9fb5d",
+      "paper_asset_id": "5fd3eda607f37485d033acfdea5c0a5ddbe9afb315c4f7dbe027e9d097446186",
+      "paper_id": "Byxpfh0cFm",
+      "paperhash": "kuchnik|efficient_augmentation_via_data_subsampling",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Byxpfh0cFm.json"
+    },
+    {
+      "canonical_title": "deep variational semi supervised novelty detection",
+      "group": "ICLR 2020",
+      "md_sha256": "51551e2dd9c11cc32cceb5e3e24b33d430962581971c52f8ecae62dcfe85547c",
+      "paper_asset_id": "9c3b470b2bdb09859a8d30422c8abf60660ab843a5bf97a15c17eb300b2362e8",
+      "paper_id": "Hkxp3JHtPr",
+      "paperhash": "daniel|deep_variational_semisupervised_novelty_detection",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Hkxp3JHtPr.json"
+    },
+    {
+      "canonical_title": "analysing the update step in graph neural networks via sparsification",
+      "group": "ICLR 2021",
+      "md_sha256": "e0434e57b5218d3e4f3c964938bcca736c069ddb2e284bdde196372306af05c2",
+      "paper_asset_id": "f3217a7dad8a132b04064d4857d64cb1d373d1b2a47e4bb1ca4bde156a6c07cd",
+      "paper_id": "R43miizWtUN",
+      "paperhash": "wu|analysing_the_update_step_in_graph_neural_networks_via_sparsification",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/R43miizWtUN.json"
+    },
+    {
+      "canonical_title": "stransgan an empirical study on transformer in gans",
+      "group": "ICLR 2022",
+      "md_sha256": "0dafd405e8b17e1ab0f675803df4916e41fbabf3d29208cc829bab46f1b58c42",
+      "paper_asset_id": "2f362de24d96010ad92f145f3bf481978b32ea61de49fe82e281982799ce6518",
+      "paper_id": "eoShjXqWkr",
+      "paperhash": "xu|stransgan_an_empirical_study_on_transformer_in_gans",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/eoShjXqWkr.json"
+    },
+    {
+      "canonical_title": "removing backdoors in pre trained models by regularized continual pre training",
+      "group": "ICLR 2023",
+      "md_sha256": "8b12a5c1e042b27ee082796ec55838c85645712662edbe6c2905fabb74bc804c",
+      "paper_asset_id": "7ef519949af89b52f09c0713bd1a2abfb7f938ddb1bd464bdf2f5bd72de7b535",
+      "paper_id": "JKuBOuzntQ",
+      "paperhash": "zhu|removing_backdoors_in_pretrained_models_by_regularized_continual_pretraining",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/JKuBOuzntQ.json"
+    },
+    {
+      "canonical_title": "conditional instrumental variable regression with representation learning for causal inference",
+      "group": "ICLR 2024",
+      "md_sha256": "54daf7768c776088374b22756f3dbecae485bf1d5b2d38c927cd2ecf05b96c92",
+      "paper_asset_id": "b313f82d1ea3d1237c1dad29a35ddf475ef05171f7cee65045391a9ea4106495",
+      "paper_id": "qDhq1icpO8",
+      "paperhash": "cheng|conditional_instrumental_variable_regression_with_representation_learning_for_causal_inference",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/qDhq1icpO8.json"
+    },
+    {
+      "canonical_title": "automated zonal level implant loosening detection from hip x ray using a multi staged approach",
+      "group": "ICLR 2025",
+      "md_sha256": "30d10b211f7d7c541770fab44284967f00cf8f7d5188165424b2276b96b22bea",
+      "paper_asset_id": "e33d3ecfe41fbf80fa77bdba51e2dac67d0c4e681a197f6e63f54b1bf05da58c",
+      "paper_id": "IFOgfaX2Fj",
+      "paperhash": "bhatia|automated_zonal_level_implant_loosening_detection_from_hip_xray_using_a_multistaged_approach",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/IFOgfaX2Fj.json"
+    },
+    {
+      "canonical_title": "improving robustness using generated data",
+      "group": "NeurIPS 2021",
+      "md_sha256": "89df8b21adcad32ab156089d71d6971832295d4af521fb97c05bcd33f2d831c1",
+      "paper_asset_id": "82dffae7d9cba3ec066a5de5912c198c58e1129d85f020cd5b423f70250153d3",
+      "paper_id": "0NXUSlb6oEu",
+      "paperhash": "gowal|improving_robustness_using_generated_data",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/0NXUSlb6oEu.json"
+    },
+    {
+      "canonical_title": "merging models with fisher weighted averaging",
+      "group": "NeurIPS 2022",
+      "md_sha256": "931a3d344ea3a205d90f012ff5f049951cd4a984e6b4f022bc5ce394745405ae",
+      "paper_asset_id": "063ebce6bfe023469aed2a5cecf3f0f1d3f32882ebc845211177b94a49f4c549",
+      "paper_id": "LSKlp_aceOC",
+      "paperhash": "matena|merging_models_with_fisherweighted_averaging",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/LSKlp_aceOC.json"
+    },
+    {
+      "canonical_title": "an optimization based approach to node role discovery in networks approximating equitable partitions",
+      "group": "NeurIPS 2023",
+      "md_sha256": "cb7cf69fdd0ef719293e3fb4947782258f725b8ebb0519367bc96ffe2d1b1888",
+      "paper_asset_id": "65541838756e5c45495117b8f93718adc3f8b005f92a81c6e3691b2c869c0194",
+      "paper_id": "ztDxO15N7f",
+      "paperhash": "scholkemper|an_optimizationbased_approach_to_node_role_discovery_in_networks_approximating_equitable_partitions",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ztDxO15N7f.json"
+    }
+  ],
+  "seed": 0,
+  "split": "evolution_static",
+  "split_sha256": "183b97d0bfb80293e199075596410ac77d021c1a39725bdc751556976a33d979"
+}

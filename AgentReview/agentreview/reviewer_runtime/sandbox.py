@@ -309,6 +309,8 @@ class SandboxSession:
                 value = self.toolkit.embed(*args, **kwargs)
             elif name == "retrieve_current_s2":
                 value = self.toolkit.retrieve_current_s2(*args, **kwargs)
+            elif name in {"count_tokens", "memory_token_limit", "select_memory_entries"}:
+                value = getattr(self.toolkit, name)(*args, **kwargs)
             elif name == "log":
                 self.logs.append(
                     {"event": args[0], "payload": args[1] if len(args) > 1 else None}

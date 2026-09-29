@@ -1,5 +1,0 @@
-{
-  "cause": "Meta markdown v2 emitted a standalone # Final Review heading. Original CoCo Split treated it as an opinion; all three classifier penalties returned no recognized taxonomy label. Original CoCo then filled N/A. The strict adapter correctly rejected this incomplete classification. Epoch 0 scores remain null and no candidate was admitted.",
-  "repair": "Meta markdown v3 emits role names inline on actual opinion bullets, with no standalone decorative headings. All statements, evidence anchors, revision suggestions and the recommendation are preserved. Original CoCo source, prompts, parsers, retry choices and score formulas remain unchanged. Replay the entire affected seed assessment in a new evaluation epoch; retain failed epoch artifacts.",
-  "validation": "The new stock-CoCo splitting regression failed before the rendering change, then passed. Repair regression: 46 tests and 8 subtests passed (repair-tests.xml). Completion, budget, role-isolation and strict stage evidence checks remain enabled. Real epoch 1 must independently pass validate_assessment_receipt before admission."
-}

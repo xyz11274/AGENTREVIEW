@@ -37,6 +37,14 @@ def test_shared_candidate_validation_obeys_memory_call_budget(tmp_path, operatio
         "memory_query_mode": "instruction", "memory_read_llm_calls": 2,
         "memory_build_llm_calls": 2 + int(seed_kind == "evolved"), "memory_max_tokens": 200,
     }
+    # This fixture isolates operation call budgets; real tokenizer identity and
+    # whole-entry budgets are exercised in test_memory_feedback_budget.py.
+    backend.memory_runtime = lambda: {
+        "query_mode": backend.generation["memory_query_mode"],
+        "read_llm_calls": backend.generation["memory_read_llm_calls"],
+        "build_llm_calls": backend.generation["memory_build_llm_calls"],
+        "max_tokens": backend.generation["memory_max_tokens"],
+    }
     candidate = {"program": binding(program), "seed_kind": seed_kind}
     backend._candidate_check(candidate)
     field = "memory_read_llm_calls" if operation == "read" else "memory_build_llm_calls"

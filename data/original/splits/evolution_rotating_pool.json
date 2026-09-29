@@ -1,0 +1,1133 @@
+{
+  "count": 125,
+  "records": [
+    {
+      "canonical_title": "enforcing constraints on outputs with unconstrained inference",
+      "group": "ICLR 2017",
+      "md_sha256": "3d2123373f39842859ac76decc797df6ea31e42b63ae31908b993dc995e87d43",
+      "paper_asset_id": "95dcc523a7c1fb3838841df499376c093c4654bc43cdbd054a7fe1c9aea428eb",
+      "paper_id": "S1Jhfftgx",
+      "paperhash": "lee|enforcing_constraints_on_outputs_with_unconstrained_inference",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1Jhfftgx.json"
+    },
+    {
+      "canonical_title": "automatic goal generation for reinforcement learning agents",
+      "group": "ICLR 2018",
+      "md_sha256": "638d9553d83adfa0473e80e0421619665f1cac8603c4020050ee787a2e85a925",
+      "paper_asset_id": "40bf9ac10889c22b5fc00506ba05ed5a51937c9b46bf51c403678affa0191c36",
+      "paper_id": "SyhRVm-Rb",
+      "paperhash": "held|automatic_goal_generation_for_reinforcement_learning_agents",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SyhRVm-Rb.json"
+    },
+    {
+      "canonical_title": "stochastic learning of additive second order penalties with applications to fairness",
+      "group": "ICLR 2019",
+      "md_sha256": "bea4cbf0a27b51fd5d45d04e2fe1d79516e21ff83c9ede2a6e5e63918e00e269",
+      "paper_asset_id": "66d37dd7151e58f3b9a1ac07c31dba26dc94160c7266d85105071611aa280ef1",
+      "paper_id": "Bke0rjR5F7",
+      "paperhash": "jiang|stochastic_learning_of_additive_secondorder_penalties_with_applications_to_fairness",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Bke0rjR5F7.json"
+    },
+    {
+      "canonical_title": "towards understanding the true loss surface of deep neural networks using random matrix theory and iterative spectral methods",
+      "group": "ICLR 2020",
+      "md_sha256": "a1fd73293b3e6c6b35b8b309eea57ab8e3217e49b3dcd003d7344a6fc383af09",
+      "paper_asset_id": "8c846c433865d441958cb3ae6f9890b8fd3347b4ae54a928e97df5badf771d9f",
+      "paper_id": "H1gza2NtwH",
+      "paperhash": "granziol|towards_understanding_the_true_loss_surface_of_deep_neural_networks_using_random_matrix_theory_and_iterative_spectral_methods",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/H1gza2NtwH.json"
+    },
+    {
+      "canonical_title": "interpretable neural architecture search via bayesian optimisation with weisfeiler lehman kernels",
+      "group": "ICLR 2021",
+      "md_sha256": "f9ce05762dc5308afb6fa152de7ba6a8a11d7db755d8d901583cebad96e1c80e",
+      "paper_asset_id": "e25fa4f8ca27ba4cc50c9499ae6946d73d0ab83a2a47dd76577ca56137f23e71",
+      "paper_id": "j9Rv7qdXjd",
+      "paperhash": "ru|interpretable_neural_architecture_search_via_bayesian_optimisation_with_weisfeilerlehman_kernels",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/j9Rv7qdXjd.json"
+    },
+    {
+      "canonical_title": "digrac digraph clustering based on flow imbalance",
+      "group": "ICLR 2022",
+      "md_sha256": "6aa2963550c540301571ca7fefad808e7eb9b020a47d171db465b59278609cdd",
+      "paper_asset_id": "a293a1bb6e8a0e993f6b5daa37e94b16debd0838154b44694f4568c4e1780ed3",
+      "paper_id": "QmKblFEgQJ",
+      "paperhash": "he|digrac_digraph_clustering_based_on_flow_imbalance",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/QmKblFEgQJ.json"
+    },
+    {
+      "canonical_title": "l2b learning to bootstrap for combating label noise",
+      "group": "ICLR 2023",
+      "md_sha256": "58ce35a82c68c440334614445d45e3a8005c5200b61c6159ec27a18994abc642",
+      "paper_asset_id": "8c689f2e73a119976afe2c7275efb3a5c6836490c5ae06d40816efa3a9dda0d4",
+      "paper_id": "qVI1MqX52Xm",
+      "paperhash": "zhou|l2b_learning_to_bootstrap_for_combating_label_noise",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/qVI1MqX52Xm.json"
+    },
+    {
+      "canonical_title": "counterfactual data augmentation with contrastive learning",
+      "group": "ICLR 2024",
+      "md_sha256": "a2f7ac68e2d0d48909c19ae54cba211c2c4ef89e44f1fa984b92bf86b9c45e6e",
+      "paper_asset_id": "b3be0d553a1d45f0032593518743903c33b468b462f3c34cfbd17ad0b82fa05a",
+      "paper_id": "7mR83Q12cJ",
+      "paperhash": "aloui|counterfactual_data_augmentation_with_contrastive_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/7mR83Q12cJ.json"
+    },
+    {
+      "canonical_title": "pooling and attention what are effective designs for llm based embedding models",
+      "group": "ICLR 2025",
+      "md_sha256": "2d1ffe29d68364bb27808ed2a9fca5456bc85bcd0b040607d71d9cd4cfce7be5",
+      "paper_asset_id": "cb47d749ab1ea46689b547708d237e1ab08f4bc892308ad57f848c5495e9b71b",
+      "paper_id": "CWAvMSNUqT",
+      "paperhash": "tang|pooling_and_attention_what_are_effective_designs_for_llmbased_embedding_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/CWAvMSNUqT.json"
+    },
+    {
+      "canonical_title": "residual relaxation for multi view representation learning",
+      "group": "NeurIPS 2021",
+      "md_sha256": "9a57a77e73cc0ff3af9d0568556925655c95a4d1761a8e7c38d8f2aa568879fb",
+      "paper_asset_id": "54ceb847563b2b0a96a082a1feb33d19a79ad083b4d240f191f0bcbbde98a92b",
+      "paper_id": "rEBScZF6G70",
+      "paperhash": "wang|residual_relaxation_for_multiview_representation_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/rEBScZF6G70.json"
+    },
+    {
+      "canonical_title": "lst ladder side tuning for parameter and memory efficient transfer learning",
+      "group": "NeurIPS 2022",
+      "md_sha256": "c991c675b4cf764132ce40af7ff76a6d32cfece495266f197775a84acf1f7660",
+      "paper_asset_id": "dc5e18d4eeb8ded81364a5c8434f67ee8bdf569cd2c8f9a43896d2f715f725c0",
+      "paper_id": "isPnnaTZaP5",
+      "paperhash": "sung|lst_ladder_sidetuning_for_parameter_and_memory_efficient_transfer_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/isPnnaTZaP5.json"
+    },
+    {
+      "canonical_title": "provable benefits of score matching",
+      "group": "NeurIPS 2023",
+      "md_sha256": "048b83f88858d4ad3a9ef2a78be5244f23f1e673ed6cefda43dea9e486b9f3a1",
+      "paper_asset_id": "51418131de772648f994a62a5ce8d74e69506278f6cc3a53353a7b297c6a530d",
+      "paper_id": "waXoG35kbb",
+      "paperhash": "pabbaraju|provable_benefits_of_score_matching",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/waXoG35kbb.json"
+    },
+    {
+      "canonical_title": "on the convergence of loss and uncertainty based active learning algorithms",
+      "group": "NeurIPS 2024",
+      "md_sha256": "26e1758e8944abf9bac150efde1cab417d24b893f915a6c5569373a002f8505d",
+      "paper_asset_id": "54737bb85c08925c543fbaa9bd6e84e202eb781e0098d0a871927bea2888816b",
+      "paper_id": "GLUIuli3Sm",
+      "paperhash": "haimovich|on_the_convergence_of_loss_and_uncertaintybased_active_learning_algorithms",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/GLUIuli3Sm.json"
+    },
+    {
+      "canonical_title": "deep symbolic representation learning for heterogeneous time series classification",
+      "group": "ICLR 2017",
+      "md_sha256": "228289a4b17af66acdd818558c0e0b6e3aa541a59f8b6361dbd94e7068c3b620",
+      "paper_asset_id": "34229efadd4fb2151ea0e42803ea0a6cb963a7e40f8d454bfa7302fbe1fbdc7f",
+      "paper_id": "Hy8X3aKee",
+      "paperhash": "zhang|deep_symbolic_representation_learning_for_heterogeneous_timeseries_classification",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Hy8X3aKee.json"
+    },
+    {
+      "canonical_title": "on the generalization effects of densenet model structures",
+      "group": "ICLR 2018",
+      "md_sha256": "e5b00f66219012146baa2d71b02859026c7a833bdf8bd3388e6b2d5ca55bd554",
+      "paper_asset_id": "0d9966a9e43940e8e807b16ce65f5df31e1507d74f09b61e856d4d6faa8e01bf",
+      "paper_id": "rJbs5gbRW",
+      "paperhash": "liu|on_the_generalization_effects_of_densenet_model_structures",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/rJbs5gbRW.json"
+    },
+    {
+      "canonical_title": "learning representations of sets through optimized permutations",
+      "group": "ICLR 2019",
+      "md_sha256": "950c8076d0e3e06db232fd66d40fba3db0d833ed1a26311eaefef26857046f9b",
+      "paper_asset_id": "745fd18fb9fa564e5d2195fbb0fbb53e1df14660a70b7d293e996a43b7ba3294",
+      "paper_id": "HJMCcjAcYX",
+      "paperhash": "zhang|learning_representations_of_sets_through_optimized_permutations",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/HJMCcjAcYX.json"
+    },
+    {
+      "canonical_title": "ecological reinforcement learning",
+      "group": "ICLR 2020",
+      "md_sha256": "dd581da0d52a84b2e43c4641b85a6b61cdd6f0a57c22d70121e7e538b69b9762",
+      "paper_asset_id": "d1df16d1bc293e1bb6ed5613d29cb17b675cee2e3b0996f998f9946f556daac7",
+      "paper_id": "S1xxx64YwH",
+      "paperhash": "coreyes|ecological_reinforcement_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1xxx64YwH.json"
+    },
+    {
+      "canonical_title": "joint learning of full structure noise in hierarchical bayesian regression models",
+      "group": "ICLR 2021",
+      "md_sha256": "08aa6d16843179683df91ae69860095b609e6be75049d5b0feb078beac84c7cd",
+      "paper_asset_id": "9514ac4b18871a49c3d4031b26c159cf27eccd8ac11cfe2321d10b585ac26377",
+      "paper_id": "yRP4_BOxdu",
+      "paperhash": "hashemi|joint_learning_of_fullstructure_noise_in_hierarchical_bayesian_regression_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/yRP4_BOxdu.json"
+    },
+    {
+      "canonical_title": "towards deployment efficient reinforcement learning lower bound and optimality",
+      "group": "ICLR 2022",
+      "md_sha256": "80e99da3dd94b940e0f3e41c01bf444f3a6561f83789122d007bad42ed72f2ef",
+      "paper_asset_id": "3ba20f14512143ebb2e2db1ce57d8812e2cc08df41b9e214110349e8ccff0009",
+      "paper_id": "ccWaPGl9Hq",
+      "paperhash": "huang|towards_deploymentefficient_reinforcement_learning_lower_bound_and_optimality",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ccWaPGl9Hq.json"
+    },
+    {
+      "canonical_title": "learning relu networks to high uniform accuracy is intractable",
+      "group": "ICLR 2023",
+      "md_sha256": "73aa24222c8cbc8cce223dfb6a212cf381ce0936416769e62470dfbb01ab3b55",
+      "paper_asset_id": "eff04994c871404601b24534680966bd54e9f0fdab0cde6805856050197b99e6",
+      "paper_id": "nchvKfvNeX0",
+      "paperhash": "berner|learning_relu_networks_to_high_uniform_accuracy_is_intractable",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/nchvKfvNeX0.json"
+    },
+    {
+      "canonical_title": "aroid improving adversarial robustness through online instance wise data augmentation",
+      "group": "ICLR 2024",
+      "md_sha256": "3e35f7afc50c2ef5e60903398fa00dafa1a17aae1898e26f481c5707fbcc94da",
+      "paper_asset_id": "06e74163769e7828ac94e51b658daab1cb28354e06c39a24467572b8b57fe65c",
+      "paper_id": "ufZp6pvOvE",
+      "paperhash": "li|aroid_improving_adversarial_robustness_through_online_instancewise_data_augmentation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ufZp6pvOvE.json"
+    },
+    {
+      "canonical_title": "recurformer not all transformer heads need self attention",
+      "group": "ICLR 2025",
+      "md_sha256": "4a0a2e9172c099502c85b7cd3ef9176664a58b1ada1a86ded7c9d54261b447f8",
+      "paper_asset_id": "da138c333704da7a45a9d33b47ef4e8cc96062d97038c7b7ab0c6101caff4f5c",
+      "paper_id": "FyJaV0TVF2",
+      "paperhash": "ruiqingyan|recurformer_not_all_transformer_heads_need_selfattention",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/FyJaV0TVF2.json"
+    },
+    {
+      "canonical_title": "think big teach small do language models distil occam s razor",
+      "group": "NeurIPS 2021",
+      "md_sha256": "e3edf1552ec688f2adfc1b9bee6414c7688f24aa0c432265070ee4045acf48c0",
+      "paper_asset_id": "2db1d842ced7e75233f4fdb5d97294026f30484cfa49185ea33d9345aab04caf",
+      "paper_id": "F6gvhOgTM-4",
+      "paperhash": "jaimovitchlopez|think_big_teach_small_do_language_models_distil_occams_razor",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/F6gvhOgTM-4.json"
+    },
+    {
+      "canonical_title": "optimal weak to strong learning",
+      "group": "NeurIPS 2022",
+      "md_sha256": "02203083b70c7065380253228c4c67dff1f8ed0ba759b2e2222d22174556e31b",
+      "paper_asset_id": "680e793e7e891eba39492328dff2b71a5e0e64c15cceb46632071782c95d8dbc",
+      "paper_id": "6OLBVpoxrbW",
+      "paperhash": "larsen|optimal_weak_to_strong_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/6OLBVpoxrbW.json"
+    },
+    {
+      "canonical_title": "gradient strikes back how filtering out high frequencies improves explanations",
+      "group": "NeurIPS 2023",
+      "md_sha256": "677fe3c52e80a7f1a72c1389189bd1cd7a2982db24a871ee8654fe268ba82963",
+      "paper_asset_id": "1a56ffc9f2300d00ee1876700eba53dbd11d2f3e5aae0e4b9f9772ab5a7d508e",
+      "paper_id": "IQ6GI7fM2z",
+      "paperhash": "muzellec|gradient_strikes_back_how_filtering_out_high_frequencies_improves_explanations",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/IQ6GI7fM2z.json"
+    },
+    {
+      "canonical_title": "identifying and solving conditional image leakage in image to video diffusion model",
+      "group": "NeurIPS 2024",
+      "md_sha256": "13884e9febe601b202e66bfa1f0d304ae645b058b30ddf94752effbe04e071ec",
+      "paper_asset_id": "85d4440d5ffe76f844d5dfb4aa08d2e39c969066e6465c9760466cc2b4d481fe",
+      "paper_id": "o9Lkiv1qpc",
+      "paperhash": "zhao|identifying_and_solving_conditional_image_leakage_in_imagetovideo_diffusion_model",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/o9Lkiv1qpc.json"
+    },
+    {
+      "canonical_title": "learning similarity preserving representations with neural similarity and context encoders",
+      "group": "ICLR 2017",
+      "md_sha256": "bbe3db6c0fe8bf6ea2baae85fca8349e46f2d5cf3eeb6d6f643ae2fa51e83693",
+      "paper_asset_id": "a1192b4907808fa07ae1e342af92d9ee8724a31b08afa2c465bf41ee018a0048",
+      "paper_id": "SkBsEQYll",
+      "paperhash": "horn|learning_similarity_preserving_representations_with_neural_similarity_and_context_encoders",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SkBsEQYll.json"
+    },
+    {
+      "canonical_title": "latent constraints learning to generate conditionally from unconditional generative models",
+      "group": "ICLR 2018",
+      "md_sha256": "942fa994a1f06863cbb2f976d760b9520de08ce7e2707f60a4014db6a112bb60",
+      "paper_asset_id": "8ae5eda4d1653b477d0d5e7b4ebc746e790251432b13d10f9221de072a37cfcc",
+      "paper_id": "Sy8XvGb0-",
+      "paperhash": "engel|latent_constraints_learning_to_generate_conditionally_from_unconditional_generative_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Sy8XvGb0-.json"
+    },
+    {
+      "canonical_title": "stable recurrent models",
+      "group": "ICLR 2019",
+      "md_sha256": "b6dd7e6933cd29e1a17edac0f83e5ea46a2b78673cff8409f132aae120e876de",
+      "paper_asset_id": "29c5d8ab4cbb2e6c3319b557a944acbacc81816b2f5e331fe253db6c0d02c7dc",
+      "paper_id": "Hygxb2CqKm",
+      "paperhash": "miller|stable_recurrent_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Hygxb2CqKm.json"
+    },
+    {
+      "canonical_title": "ride rewarding impact driven exploration for procedurally generated environments",
+      "group": "ICLR 2020",
+      "md_sha256": "68c5b0a15ee0cd27e8442d7a86c8d67fd2df14c4bdfec95354cb2eadca1f7afa",
+      "paper_asset_id": "f79659ef6717c34610b10847125b0316b141e9c1731c65c01bc3879e4734468e",
+      "paper_id": "rkg-TJBFPB",
+      "paperhash": "raileanu|ride_rewarding_impactdriven_exploration_for_procedurallygenerated_environments",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/rkg-TJBFPB.json"
+    },
+    {
+      "canonical_title": "privacy preserving recalibration under domain shift",
+      "group": "ICLR 2021",
+      "md_sha256": "381f42c2098fb7974550f68ffcb5b7b435208599de356fca19dee6782d7020d3",
+      "paper_asset_id": "469c56f3e97b6694afff5a3fd12197932e88c7879e43ce6374d97791337f6202",
+      "paper_id": "m08OHhXxl-5",
+      "paperhash": "luo|privacy_preserving_recalibration_under_domain_shift",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/m08OHhXxl-5.json"
+    },
+    {
+      "canonical_title": "on robust prefix tuning for text classification",
+      "group": "ICLR 2022",
+      "md_sha256": "6a1f4202a6642644db291c7f2ab42df6cb959421821437d65805985eef9a6530",
+      "paper_asset_id": "74fe08b94930e4f2b7de5ba16b074f0fe1793fd58eac97a9c81ff64a95d6be08",
+      "paper_id": "eBCmOocUejf",
+      "paperhash": "yang|on_robust_prefixtuning_for_text_classification",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/eBCmOocUejf.json"
+    },
+    {
+      "canonical_title": "dadao decoupled accelerated decentralized asynchronous optimization",
+      "group": "ICLR 2023",
+      "md_sha256": "a9d3a552a66458756f83c81c81c993c95a9555ffe8133fb8abbb8754d2ac709d",
+      "paper_asset_id": "ed5485af40222a16a310c00104f8d818fba0df4f42ab3bb69dcc57891edb161e",
+      "paper_id": "Siln8xpTMrZ",
+      "paperhash": "nabli|dadao_decoupled_accelerated_decentralized_asynchronous_optimization",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Siln8xpTMrZ.json"
+    },
+    {
+      "canonical_title": "reconcile round table conference improves reasoning via consensus among diverse llms",
+      "group": "ICLR 2024",
+      "md_sha256": "eb042a0d1975c204f0f404733804bd2f462ffa11bb41a71f8603f9cea1021586",
+      "paper_asset_id": "575f000ea4f02fbe0a218398de78d42aad29b4ac32a4983db4258213701b02d8",
+      "paper_id": "Yol6nUVIJD",
+      "paperhash": "chen|reconcile_roundtable_conference_improves_reasoning_via_consensus_among_diverse_llms",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Yol6nUVIJD.json"
+    },
+    {
+      "canonical_title": "a second order perspective on model compositionality and incremental learning",
+      "group": "ICLR 2025",
+      "md_sha256": "f4c363d7183a7e85818974223ec8dbba5683145f8db40b75cc3ed1c50bb02c83",
+      "paper_asset_id": "b112aa77532197283a6a95b707ae6dc30284ab0e361e6a3572c3e5bbd5af34f2",
+      "paper_id": "OZVTqoli2N",
+      "paperhash": "porrello|a_secondorder_perspective_on_model_compositionality_and_incremental_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/OZVTqoli2N.json"
+    },
+    {
+      "canonical_title": "decaf generating fair synthetic data using causally aware generative networks",
+      "group": "NeurIPS 2021",
+      "md_sha256": "37ceb0af3e8e52f3fc3234a8185c614a0cc82f1c769d86c000ce269698ab7381",
+      "paper_asset_id": "6d70db0dfb402fca8aabe2c0c4950b138d84da984c57c061e5b8b354932a30a7",
+      "paper_id": "XN1M27T6uux",
+      "paperhash": "breugel|decaf_generating_fair_synthetic_data_using_causallyaware_generative_networks",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/XN1M27T6uux.json"
+    },
+    {
+      "canonical_title": "fast distance oracles for any symmetric norm",
+      "group": "NeurIPS 2022",
+      "md_sha256": "c423b42e1f28c5c3fb8fa14b3cc773228af69c3e018d88ad13bc15bd651539d4",
+      "paper_asset_id": "e2c03862c99f7f23dd7aca90b7d471041ba6973bd940f7aee84814e1609206f0",
+      "paper_id": "ZCGDqdK0zG",
+      "paperhash": "deng|fast_distance_oracles_for_any_symmetric_norm",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ZCGDqdK0zG.json"
+    },
+    {
+      "canonical_title": "bayesian metric learning for uncertainty quantification in image retrieval",
+      "group": "NeurIPS 2023",
+      "md_sha256": "cb45f6fa78b07f31f646bcee214d24ea18c2c11b2ef45cf0fe69869229bff1ed",
+      "paper_asset_id": "19c5c2bb1e26fb042a26c470ea66b706964801ae40eabd71d12edd7e53ef4502",
+      "paper_id": "58XMiu8kot",
+      "paperhash": "warburg|bayesian_metric_learning_for_uncertainty_quantification_in_image_retrieval",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/58XMiu8kot.json"
+    },
+    {
+      "canonical_title": "graph based unsupervised disentangled representation learning via multimodal large language models",
+      "group": "NeurIPS 2024",
+      "md_sha256": "6e3075d90989967ab22290b4b874fda5577a4e9ed9e28e3a92e17ea290e9d9a7",
+      "paper_asset_id": "cce42ccf936acd7715ea1e191edc94e459bf6207401148fe28e9ed2aeeb6a47f",
+      "paper_id": "a1wf2N967T",
+      "paperhash": "xie|graphbased_unsupervised_disentangled_representation_learning_via_multimodal_large_language_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/a1wf2N967T.json"
+    },
+    {
+      "canonical_title": "wav2letter an end to end convnet based speech recognition system",
+      "group": "ICLR 2017",
+      "md_sha256": "8c1ebe519df7235e9cad0e8dde60eb75ea3dcb3d38a34a78dccf6931bfea9485",
+      "paper_asset_id": "4be0dc77ad97348b9e3eb8e4d52a6311c3df664740e7a81ad574b41d10184a5b",
+      "paper_id": "BkUDvt5gg",
+      "paperhash": "collobert|wav2letter_an_endtoend_convnetbased_speech_recognition_system",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BkUDvt5gg.json"
+    },
+    {
+      "canonical_title": "automata guided hierarchical reinforcement learning for zero shot skill composition",
+      "group": "ICLR 2018",
+      "md_sha256": "2e7d3c04b137204a0756c324a7573a56a5620c72e4b2aa803f969000939c8c5d",
+      "paper_asset_id": "df7fed86f4fa5a06cc1650150974a4be3c1f5bec73750dac4c820d39e2e37466",
+      "paper_id": "BJgVaG-Ab",
+      "paperhash": "li|automata_guided_hierarchical_reinforcement_learning_for_zeroshot_skill_composition",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BJgVaG-Ab.json"
+    },
+    {
+      "canonical_title": "geometry aware convolutional filters for omnidirectional images representation",
+      "group": "ICLR 2019",
+      "md_sha256": "7c9423e3af2ecc7864f3ee4d754da1be6921a1b5d0ffdda212cfaaf860a25e55",
+      "paper_asset_id": "39e3dc689081e9d2af783f5e1cca6a1a470b66b3f6984447fd4a045254e42ae1",
+      "paper_id": "H1fF0iR9KX",
+      "paperhash": "khasanova|geometry_aware_convolutional_filters_for_omnidirectional_images_representation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/H1fF0iR9KX.json"
+    },
+    {
+      "canonical_title": "non autoregressive dialog state tracking",
+      "group": "ICLR 2020",
+      "md_sha256": "5ac0cecd0c0ea9d340f6c8bc5fb242125bdc6199fab8d168b263574981ad3699",
+      "paper_asset_id": "4102711bc52c1ce29a77914709d0142a3c680385f3116678bfd9842df0d4c746",
+      "paper_id": "H1e_cC4twS",
+      "paperhash": "le|nonautoregressive_dialog_state_tracking",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/H1e_cC4twS.json"
+    },
+    {
+      "canonical_title": "first order optimization algorithms via discretization of finite time convergent flows",
+      "group": "ICLR 2021",
+      "md_sha256": "cd6b5132d9be7330f1353969febafb80eb3d9151e56ed9e2da244a54d7696c21",
+      "paper_asset_id": "a311af6041db8454166428605776482eafd4d2acef0154408bbb98db71dbdbeb",
+      "paper_id": "OSynkDOWbk2",
+      "paperhash": "benosman|firstorder_optimization_algorithms_via_discretization_of_finitetime_convergent_flows",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/OSynkDOWbk2.json"
+    },
+    {
+      "canonical_title": "optimization and adaptive generalization of three layer neural networks",
+      "group": "ICLR 2022",
+      "md_sha256": "b6db575d936eb71c293a653f28f97ff1cdc5e02aea6e7e796e1d6e68719258ae",
+      "paper_asset_id": "b255252a93b3593ae17348ed8de58d1608af83f51f775dffb6b20f7b7cf1ced0",
+      "paper_id": "dPyRNUlttBv",
+      "paperhash": "gatmiry|optimization_and_adaptive_generalization_of_three_layer_neural_networks",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/dPyRNUlttBv.json"
+    },
+    {
+      "canonical_title": "semi supervised semantic segmentation via boosting uncertainty on unlabeled data",
+      "group": "ICLR 2023",
+      "md_sha256": "3011cd50c161e48b9d4e33e1cec3fa0151ca68690a8613e7395082df1794a193",
+      "paper_asset_id": "9babdbbd6b472dbb31dc34e4113e9ef82fb04a74a0d8e7ed91d2a299835a4dc2",
+      "paper_id": "88Z7kxbZLL3",
+      "paperhash": "zhang|semisupervised_semantic_segmentation_via_boosting_uncertainty_on_unlabeled_data",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/88Z7kxbZLL3.json"
+    },
+    {
+      "canonical_title": "the entity deduction arena a playground for probing the conversational reasoning and planning capabilities of llms",
+      "group": "ICLR 2024",
+      "md_sha256": "9a80e538b0344be1bb5394b7b418232ba2c6639636b6adfde1b07f102946b44a",
+      "paper_asset_id": "b074743ae835e9e4b3d0b9d1cf8e698d6d633d848dc8e85e94387e115494fff0",
+      "paper_id": "PfrpYGKGPL",
+      "paperhash": "zhang|the_entitydeduction_arena_a_playground_for_probing_the_conversational_reasoning_and_planning_capabilities_of_llms",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/PfrpYGKGPL.json"
+    },
+    {
+      "canonical_title": "exact community recovery under side information optimality of spectral algorithms",
+      "group": "ICLR 2025",
+      "md_sha256": "df22dd3b850ac6991ff802113ea94004c5037d85e255f71b7b3f742de95b00c8",
+      "paper_asset_id": "91573516fa6e793e7bfadfe8229d18d4093036be3120d6550ce6bb2dc85a9d91",
+      "paper_id": "zhFyKgqxlz",
+      "paperhash": "gaudio|exact_community_recovery_under_side_information_optimality_of_spectral_algorithms",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/zhFyKgqxlz.json"
+    },
+    {
+      "canonical_title": "adversarial neuron pruning purifies backdoored deep models",
+      "group": "NeurIPS 2021",
+      "md_sha256": "693de931056f8e001fb3b89c194da9cd4b8163d0c62358457855c4d31c477859",
+      "paper_asset_id": "33793dac69f8f1e00497872542fd832ca85b845b4a1bfbc515f04a34d3e9f67b",
+      "paper_id": "4cEapqXfP30",
+      "paperhash": "wu|adversarial_neuron_pruning_purifies_backdoored_deep_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/4cEapqXfP30.json"
+    },
+    {
+      "canonical_title": "repairing neural networks by leaving the right past behind",
+      "group": "NeurIPS 2022",
+      "md_sha256": "2a310e400a57239943ab98083a042d38eda87353662c836d9f01495537552d63",
+      "paper_asset_id": "8833c389d027ae0990f7cb30bb849cf03665250e7cfa27474e4b4f3f169805e6",
+      "paper_id": "XiwkvDTU10Y",
+      "paperhash": "tanno|repairing_neural_networks_by_leaving_the_right_past_behind",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/XiwkvDTU10Y.json"
+    },
+    {
+      "canonical_title": "difftraj generating gps trajectory with diffusion probabilistic model",
+      "group": "NeurIPS 2023",
+      "md_sha256": "02bc33a85340d5859f045e07bc5539ca3eb2a0d7a8fbfd38bb62e28296765331",
+      "paper_asset_id": "bbf2e03f85ec7ab576c3df3aca025731dd9e6ab15bb310735f2336e0aa32f13d",
+      "paper_id": "ykMdzevPkJ",
+      "paperhash": "zhu|difftraj_generating_gps_trajectory_with_diffusion_probabilistic_model",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ykMdzevPkJ.json"
+    },
+    {
+      "canonical_title": "langevin unlearning a new perspective of noisy gradient descent for machine unlearning",
+      "group": "NeurIPS 2024",
+      "md_sha256": "c0ff5bb287eb7b681a355d92db2e888f4872430cd52f1ef0ed1e714a990cf6f3",
+      "paper_asset_id": "6179790a3549bc3e4302321f11ec7b496043d10f4ea1a2028e3a2256f32bbdfe",
+      "paper_id": "3LKuC8rbyV",
+      "paperhash": "chien|langevin_unlearning_a_new_perspective_of_noisy_gradient_descent_for_machine_unlearning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/3LKuC8rbyV.json"
+    },
+    {
+      "canonical_title": "b gan unified framework of generative adversarial networks",
+      "group": "ICLR 2017",
+      "md_sha256": "75d086497ebe1a42f30dfde031a394b3514fc1db52a8c6373bb0840ef7cf24be",
+      "paper_asset_id": "f9836ec8c6f842e19809a057af1f7039cab88d15829037a144fe169432180e11",
+      "paper_id": "S1JG13oee",
+      "paperhash": "uehara|bgan_unified_framework_of_generative_adversarial_networks",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1JG13oee.json"
+    },
+    {
+      "canonical_title": "learning to write by learning the objective",
+      "group": "ICLR 2018",
+      "md_sha256": "988a3ccfc861ff41600eccbd9b9430e07bc60574c7f3107d46a379863a029e67",
+      "paper_asset_id": "ddcfce94b822453571d620de895baed74c006ed5e68acbc9c59440b0cc762c53",
+      "paper_id": "r1lfpfZAb",
+      "paperhash": "holtzman|learning_to_write_by_learning_the_objective",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/r1lfpfZAb.json"
+    },
+    {
+      "canonical_title": "backplay man muss immer umkehren",
+      "group": "ICLR 2019",
+      "md_sha256": "ec8eab3202e8991446f28b091ac75d5f966f87da79024d93a32b6f2fc17bd8d9",
+      "paper_asset_id": "36dd553ce5fdcd5ec4c67d7601d6836f91e103ad93c43c0c850c319ca1fbe217",
+      "paper_id": "H1xk8jAqKQ",
+      "paperhash": "resnick|backplay_man_muss_immer_umkehren",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/H1xk8jAqKQ.json"
+    },
+    {
+      "canonical_title": "inducing stronger object representations in deep visual trackers",
+      "group": "ICLR 2020",
+      "md_sha256": "49a7a24a14d09092cba0e0f4ef1ed414b998efb8d2506b6494cf440ce9ea4ec5",
+      "paper_asset_id": "4def87224579a6919cd5b4cf213ae0559eaef526fabfe5c7b922956281e9d97d",
+      "paper_id": "BygfiAEtwS",
+      "paperhash": "goroshin|inducing_stronger_object_representations_in_deep_visual_trackers",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BygfiAEtwS.json"
+    },
+    {
+      "canonical_title": "robust multi view representation learning",
+      "group": "ICLR 2021",
+      "md_sha256": "55610258fa557fa47f1a1f5d9959f0ce84046e0a56bdee325b9c1209f50cce49",
+      "paper_asset_id": "fd37a9743f53a93973c45e8c5a4f5bf522cb4f80dd961443c0c720815c134f4d",
+      "paper_id": "ERAQ5ZCP9t",
+      "paperhash": "venkatesan|robust_multiview_representation_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ERAQ5ZCP9t.json"
+    },
+    {
+      "canonical_title": "learning 3d representations of molecular chirality with invariance to bond rotations",
+      "group": "ICLR 2022",
+      "md_sha256": "90a0fbe74d6ca81099194bee7deb92e342cf20293f538629813fb4c3c2dfca3e",
+      "paper_asset_id": "7d557c0e59a3fa92bb325cae43c707b18cf73b41387d2cd31a855210b050747e",
+      "paper_id": "hm2tNDdgaFK",
+      "paperhash": "adams|learning_3d_representations_of_molecular_chirality_with_invariance_to_bond_rotations",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/hm2tNDdgaFK.json"
+    },
+    {
+      "canonical_title": "codet code generation with generated tests",
+      "group": "ICLR 2023",
+      "md_sha256": "78dff0e89f37b87647ee1a22e214b6c1ccfe757e7a75fad93b186c7052f5be0c",
+      "paper_asset_id": "3af5b365013a82eb792944b7b793bae071b8f69b3aa91ff520c063778a555659",
+      "paper_id": "ktrw68Cmu9c",
+      "paperhash": "chen|codet_code_generation_with_generated_tests",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ktrw68Cmu9c.json"
+    },
+    {
+      "canonical_title": "enhancing graph injection attacks through over smoothing amplification",
+      "group": "ICLR 2024",
+      "md_sha256": "b32c35af85cfc7b2e3079e604683afa47b73e6142da87aed8afaab96605d8e0f",
+      "paper_asset_id": "4869497265c8729c5dc981df59a9f6cc1ad3f55640e6866a74285288eae06b98",
+      "paper_id": "lATusnzNRT",
+      "paperhash": "zhang|enhancing_graph_injection_attacks_through_oversmoothing_amplification",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/lATusnzNRT.json"
+    },
+    {
+      "canonical_title": "disentangling the roles of representation and selection in data pruning for fine tuning",
+      "group": "ICLR 2025",
+      "md_sha256": "e1b2d1ae8d0e0884bf9b63b1993e2ee33ebc627ca6329ceae9d1f8dc0f4402da",
+      "paper_asset_id": "5bc2f243ed81c7a17c61a3f055f3f91cbc59c6f6e1f83f324739ea1d2d3a61f9",
+      "paper_id": "EOPLy80bBm",
+      "paperhash": "du|disentangling_the_roles_of_representation_and_selection_in_data_pruning_for_finetuning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/EOPLy80bBm.json"
+    },
+    {
+      "canonical_title": "teachable reinforcement learning via advice distillation",
+      "group": "NeurIPS 2021",
+      "md_sha256": "aca6f122b68bef26ea710e1682a7d79cc5e86d889622afdcb208b16b0991a6e3",
+      "paper_asset_id": "a8c5fc780efdd4fef5867422c3de16dbff9a5cf24e1539a2c593d7a76135d8ac",
+      "paper_id": "PPh6lqP5BO",
+      "paperhash": "watkins|teachable_reinforcement_learning_via_advice_distillation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/PPh6lqP5BO.json"
+    },
+    {
+      "canonical_title": "recursive reinforcement learning",
+      "group": "NeurIPS 2022",
+      "md_sha256": "07938863bafae6b1aacf0558697d01554920342eaa697a146fecad528589fb6a",
+      "paper_asset_id": "60721c4c4cbcdb131ba83a28484ace38a2be1ccec3f924be98f583fc1ab471f0",
+      "paper_id": "ZXoSAAlBnW8",
+      "paperhash": "hahn|recursive_reinforcement_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ZXoSAAlBnW8.json"
+    },
+    {
+      "canonical_title": "plastic improving input and label plasticity for sample efficient reinforcement learning",
+      "group": "NeurIPS 2023",
+      "md_sha256": "f95c070acb8c822d137b0c6e0352849fa663b2acc1dbbe985f59d308a33766db",
+      "paper_asset_id": "3cf6b6dd55b20b51e956840dd6f5b94a3d1bedd8126fb4f0c4afe9ad888ecad3",
+      "paper_id": "c5WOU7p4ES",
+      "paperhash": "lee|plastic_improving_input_and_label_plasticity_for_sample_efficient_reinforcement_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/c5WOU7p4ES.json"
+    },
+    {
+      "canonical_title": "improved generation of adversarial examples against safety aligned llms",
+      "group": "NeurIPS 2024",
+      "md_sha256": "b08c7bc9c2d018a51257876f2d8edf0657e4c50678cd563aa0374e9883e44471",
+      "paper_asset_id": "c6d904aa2d4b4616fd4f4b6f03860c46df10f997d38a6582db519362b17350c4",
+      "paper_id": "8hBc843g1p",
+      "paperhash": "li|improved_generation_of_adversarial_examples_against_safetyaligned_llms",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/8hBc843g1p.json"
+    },
+    {
+      "canonical_title": "deep biaffine attention for neural dependency parsing",
+      "group": "ICLR 2017",
+      "md_sha256": "527e6e2d1751584da7e42a42fb8c850a19feb62e8c8579995e646046ee165ed6",
+      "paper_asset_id": "73dba70bd47f4e5a290df0f6f3868d07edd498125c00ddbc34f0b3e04c407890",
+      "paper_id": "Hk95PK9le",
+      "paperhash": "dozat|deep_biaffine_attention_for_neural_dependency_parsing",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Hk95PK9le.json"
+    },
+    {
+      "canonical_title": "latent topic conversational models",
+      "group": "ICLR 2018",
+      "md_sha256": "4b9028c0ab3c313f2f9972df8b3a38df9fdd2dc8202380bf433ac0ee8e1c666d",
+      "paper_asset_id": "de19641f6f1c47bc565bc8dae6a2a64427b68b91ccad71ea1534186fdbbfd13c",
+      "paper_id": "S1GUgxgCW",
+      "paperhash": "wen|latent_topic_conversational_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1GUgxgCW.json"
+    },
+    {
+      "canonical_title": "deep recurrent gaussian process with variational sparse spectrum approximation",
+      "group": "ICLR 2019",
+      "md_sha256": "207bc6a4d99ae59ff03c465849ad558dc8a81e7fec54befd54dff0e48e054ba5",
+      "paper_asset_id": "e49d5271713e68ef9963a3d7158fc742ecde6c64b7991662540af31086931973",
+      "paper_id": "BkgosiRcKm",
+      "paperhash": "föll|deep_recurrent_gaussian_process_with_variational_sparse_spectrum_approximation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BkgosiRcKm.json"
+    },
+    {
+      "canonical_title": "structbert incorporating language structures into pre training for deep language understanding",
+      "group": "ICLR 2020",
+      "md_sha256": "c2939c961debeb675f781944c72c65fe342ed3e3a76c8d9788d53fcc71df2d5f",
+      "paper_asset_id": "55c175cdb279bf63d8db1262cdd0188bf1e6279909f333dc0872862c86725258",
+      "paper_id": "BJgQ4lSFPH",
+      "paperhash": "wang|structbert_incorporating_language_structures_into_pretraining_for_deep_language_understanding",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BJgQ4lSFPH.json"
+    },
+    {
+      "canonical_title": "stochastic canonical correlation analysis a riemannian approach",
+      "group": "ICLR 2021",
+      "md_sha256": "277f57943a77a257c394bf90b2f3ad84d0fba84b4f0434eed61245dde1ac99c9",
+      "paper_asset_id": "0f30e8f2c7cab1e241f6d805674b811856a114aee8b0e507e5234640141b651f",
+      "paper_id": "pAq1h9sQhqd",
+      "paperhash": "meng|stochastic_canonical_correlation_analysis_a_riemannian_approach",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/pAq1h9sQhqd.json"
+    },
+    {
+      "canonical_title": "self supervised representation learning via latent graph prediction",
+      "group": "ICLR 2022",
+      "md_sha256": "a418ec40943a02bd4020aa96353a8dd78e890f76795b9b493c2c0b6c2873eacc",
+      "paper_asset_id": "66848752e442802eaf19d7a700e9612f31efc8688c9e184abc7db5a62a764ff9",
+      "paper_id": "Da3ZcbjRWy",
+      "paperhash": "xie|selfsupervised_representation_learning_via_latent_graph_prediction",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Da3ZcbjRWy.json"
+    },
+    {
+      "canonical_title": "artificial neuronal ensembles with learned context dependent gating",
+      "group": "ICLR 2023",
+      "md_sha256": "e31bf02115abd76625d01127e244a7466a7012442672067a8001dfa2bf5e8de3",
+      "paper_asset_id": "0c3aae0fa210fb7c13723238b43c06adc04fb40c4ff22424bce916bcf8c3cc63",
+      "paper_id": "dBk3hsg-n6",
+      "paperhash": "tilley|artificial_neuronal_ensembles_with_learned_context_dependent_gating",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/dBk3hsg-n6.json"
+    },
+    {
+      "canonical_title": "constructing sparse neural architecture with deterministic ramanujan graphs",
+      "group": "ICLR 2024",
+      "md_sha256": "deb9b87303bf742258d16a08d063ab1e58bcf550172f2edae5e4e33c4ab03250",
+      "paper_asset_id": "1757e8a4a9c6ec252b07de6bde1a5e3ece226f4ee8da32814ba6b6610bb643d6",
+      "paper_id": "x6gnuUXpxM",
+      "paperhash": "biswas|constructing_sparse_neural_architecture_with_deterministic_ramanujan_graphs",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/x6gnuUXpxM.json"
+    },
+    {
+      "canonical_title": "instruction contrastive tuning for zero shot composed image retrieval",
+      "group": "ICLR 2025",
+      "md_sha256": "fa90078dd5a696c08c23758200a7906ad215b714eb51933d5be0c118d9b4762d",
+      "paper_asset_id": "5ed56a67b0155f92b582e41b2d22669851e7ad4ed08cb151b9ce8861abf715ad",
+      "paper_id": "OZdr2mV5EI",
+      "paperhash": "zhong|instruction_contrastive_tuning_for_zeroshot_composed_image_retrieval",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/OZdr2mV5EI.json"
+    },
+    {
+      "canonical_title": "on contrastive representations of stochastic processes",
+      "group": "NeurIPS 2021",
+      "md_sha256": "f75d9c5188be24c4cd589234492f544a540db4caab80f0206616600ee67c9dd5",
+      "paper_asset_id": "d2d155df907da74c6e3aec1509b79c672fd5b5f1dd2f39da59698d0072fe1bb3",
+      "paper_id": "sAaymAJB_OW",
+      "paperhash": "mathieu|on_contrastive_representations_of_stochastic_processes",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/sAaymAJB_OW.json"
+    },
+    {
+      "canonical_title": "not too little not too much a theoretical analysis of graph over smoothing",
+      "group": "NeurIPS 2022",
+      "md_sha256": "bf32a85c13dba7564e40ed41496aa40dbdc7b47acfc1f5938aeb3e7ee5586c84",
+      "paper_asset_id": "e099a2eae212afeadd9ba0c4621ff5ef39302b0c7d88f0c73628ac02c0cf4e03",
+      "paper_id": "-Lm0B9UYMy6",
+      "paperhash": "keriven|not_too_little_not_too_much_a_theoretical_analysis_of_graph_oversmoothing",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/-Lm0B9UYMy6.json"
+    },
+    {
+      "canonical_title": "interpretability at scale identifying causal mechanisms in alpaca",
+      "group": "NeurIPS 2023",
+      "md_sha256": "350d4b90dd625fcf36b33121b0111ce8b01ba6eac26141949ac37d42c9d963de",
+      "paper_asset_id": "da6cfc5483feddd9ba0130c7cdda76774e8c003fb164c8f55adb7ab5fb655763",
+      "paper_id": "nRfClnMhVX",
+      "paperhash": "wu|interpretability_at_scale_identifying_causal_mechanisms_in_alpaca",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/nRfClnMhVX.json"
+    },
+    {
+      "canonical_title": "identifying equivalent training dynamics",
+      "group": "NeurIPS 2024",
+      "md_sha256": "cdd4e1e5090d32c039cef5ec02a7bf1131c2867e3a11864e8d81e9ebec36e5e5",
+      "paper_asset_id": "1a04c75cc59cb127bf14e4a203b431048b38fd96c86b1cfef7dda71537ac4b3e",
+      "paper_id": "bOYVESX7PK",
+      "paperhash": "redman|identifying_equivalent_training_dynamics",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/bOYVESX7PK.json"
+    },
+    {
+      "canonical_title": "learning recurrent span representations for extractive question answering",
+      "group": "ICLR 2017",
+      "md_sha256": "3e0595727f7262964608f1e18f0d9286f1c7d3337acc169600714a709a0af1a9",
+      "paper_asset_id": "ca8aa6da72a898ee09063367523b6251f0b6ff75849d7a45546a5802e6008d12",
+      "paper_id": "HkIQH7qel",
+      "paperhash": "lee|learning_recurrent_span_representations_for_extractive_question_answering",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/HkIQH7qel.json"
+    },
+    {
+      "canonical_title": "data driven feature sampling for deep hyperspectral classification and segmentation",
+      "group": "ICLR 2018",
+      "md_sha256": "bce4bd764fe41d5fd6a1d0508acf9dc802300fe39fe8b7af78c3369fb74cb13a",
+      "paper_asset_id": "80d3f8883e6f248631686653fee66ed9e2969ec0ccb89174d89da5fcf1d30304",
+      "paper_id": "HkanP0lRW",
+      "paperhash": "severa|datadriven_feature_sampling_for_deep_hyperspectral_classification_and_segmentation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/HkanP0lRW.json"
+    },
+    {
+      "canonical_title": "polycnn learning seed convolutional filters",
+      "group": "ICLR 2019",
+      "md_sha256": "1ed3080eeac8c646ad6ee3db1fd435e151dc933b993eb5a51ed68b2b3df8a5ef",
+      "paper_asset_id": "f49fdb370f25a29ac8881a75a9e7ff87a311915d1c919019620454d777c001c7",
+      "paper_id": "B1GHb2RqYX",
+      "paperhash": "juefeixu|polycnn_learning_seed_convolutional_filters",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/B1GHb2RqYX.json"
+    },
+    {
+      "canonical_title": "on the need for topology aware generative models for manifold based defenses",
+      "group": "ICLR 2020",
+      "md_sha256": "83e7d7dd695afd3825f6096419eced29926a4d76b144b50c76e66d6d6e1a4b62",
+      "paper_asset_id": "6b5d0a6ef407195c343e9e2df2b579465e98c2b62758adaaf2512deefcbf698b",
+      "paper_id": "r1lF_CEYwS",
+      "paperhash": "jang|on_the_need_for_topologyaware_generative_models_for_manifoldbased_defenses",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/r1lF_CEYwS.json"
+    },
+    {
+      "canonical_title": "isotropy in the contextual embedding space clusters and manifolds",
+      "group": "ICLR 2021",
+      "md_sha256": "005e11805514aecb4d178889147db1c0f64c3082cbcb273e2421bd42fcaa2407",
+      "paper_asset_id": "dcbd2b54c75fd174964aaa4ccca6c6fbb45bdda1a019ed35a6bb17cbc8b530ba",
+      "paper_id": "xYGNO86OWDH",
+      "paperhash": "cai|isotropy_in_the_contextual_embedding_space_clusters_and_manifolds",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/xYGNO86OWDH.json"
+    },
+    {
+      "canonical_title": "ontoprotein protein pretraining with gene ontology embedding",
+      "group": "ICLR 2022",
+      "md_sha256": "e347038b2085bb428a89ff504691daf5a79edb218d59efee0c9b069e7241e92c",
+      "paper_asset_id": "a91fac066143abbddec36d9520fc1b28463f22fc82e84f8e3cd3cb9fb7c54b1c",
+      "paper_id": "yfe1VMYAXa4",
+      "paperhash": "zhang|ontoprotein_protein_pretraining_with_gene_ontology_embedding",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/yfe1VMYAXa4.json"
+    },
+    {
+      "canonical_title": "music to text synaesthesia generating descriptive text from music recordings",
+      "group": "ICLR 2023",
+      "md_sha256": "431856499941b7df08e2b0e74d30e7eee59cef3fa9370c45930c87788654feb6",
+      "paper_asset_id": "9ccd83ee9d854e8366312ee1b15cc6e9271d9a42a52c77faaf2579a199058bb6",
+      "paper_id": "1FsLDqHivn4",
+      "paperhash": "kuang|musictotext_synaesthesia_generating_descriptive_text_from_music_recordings",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/1FsLDqHivn4.json"
+    },
+    {
+      "canonical_title": "unisemi toward unified semi supervised medical image segmentation",
+      "group": "ICLR 2024",
+      "md_sha256": "4facf4e1fa57f3029f41c5b82fa0f6167e045a0f1dd9372bc18cca6e2234e343",
+      "paper_asset_id": "b357fef8b607e97dc840d699b4963892b0a60025078eca2b7ec7c2f13d6388eb",
+      "paper_id": "qqb62iqPv1",
+      "paperhash": "zeng|unisemi_toward_unified_semisupervised_medical_image_segmentation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/qqb62iqPv1.json"
+    },
+    {
+      "canonical_title": "swiss army knife synergizing biases in knowledge from vision foundation models for multi task learning",
+      "group": "ICLR 2025",
+      "md_sha256": "eef2d6c09d23356235886bc73a3f95b0277d7961d2416bd5500e14c9c7d8d68f",
+      "paper_asset_id": "7b79d32d0aac349a089fe15a1267e5f2f4ee00fe1bfc62cd493bc02c5300b7a5",
+      "paper_id": "eePww5u7J3",
+      "paperhash": "lu|swiss_army_knife_synergizing_biases_in_knowledge_from_vision_foundation_models_for_multitask_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/eePww5u7J3.json"
+    },
+    {
+      "canonical_title": "salkg learning from knowledge graph explanations for commonsense reasoning",
+      "group": "NeurIPS 2021",
+      "md_sha256": "720f5ac87a118658ef7c3690f1a4dbf82fa610809aeeea23158e18c3543f43c0",
+      "paper_asset_id": "6886279f713156e7f8e2dd240de196c755cf5f4e42d21842c11a6888634d0bc7",
+      "paper_id": "FUxXaBop-J_",
+      "paperhash": "chan|salkg_learning_from_knowledge_graph_explanations_for_commonsense_reasoning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/FUxXaBop-J_.json"
+    },
+    {
+      "canonical_title": "elias end to end learning to index and search in large output spaces",
+      "group": "NeurIPS 2022",
+      "md_sha256": "174209695c093b023761d229aacb071b8a00cac7112b82317a39607aca4b9cce",
+      "paper_asset_id": "ce9157075472e4981ac6d1a68ba7a20e0595f7fe2cc842eba9044196e8e0fa0a",
+      "paper_id": "RF5Lb6NaZp",
+      "paperhash": "gupta|elias_endtoend_learning_to_index_and_search_in_large_output_spaces",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/RF5Lb6NaZp.json"
+    },
+    {
+      "canonical_title": "leveraging locality and robustness to achieve massively scalable gaussian process regression",
+      "group": "NeurIPS 2023",
+      "md_sha256": "a9d0983f96bdfee19f493e489db4dc622b0fad3c629185c20e095374e4ce4d50",
+      "paper_asset_id": "d099a9b708d18973acf76a18314c147121c18bb63788e5f65b5d90d3eca81e20",
+      "paper_id": "SQP1H9Jy8W",
+      "paperhash": "allison|leveraging_locality_and_robustness_to_achieve_massively_scalable_gaussian_process_regression",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SQP1H9Jy8W.json"
+    },
+    {
+      "canonical_title": "a label is worth a thousand images in dataset distillation",
+      "group": "NeurIPS 2024",
+      "md_sha256": "39f7c24febfb2c3eb6b25e397fb564d242a76701650defe06d246a71c52aad97",
+      "paper_asset_id": "659b93ebc794700eca73b6073bee23c8c35805afedbc89fd429a67726e7297ea",
+      "paper_id": "oNMnR0NJ2e",
+      "paperhash": "qin|a_label_is_worth_a_thousand_images_in_dataset_distillation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/oNMnR0NJ2e.json"
+    },
+    {
+      "canonical_title": "learning to protect communications with adversarial neural cryptography",
+      "group": "ICLR 2017",
+      "md_sha256": "22ffe48057f50846120bdfeb63a98a0b709137c41e54f31b571d69663b4d2e99",
+      "paper_asset_id": "6557e5a1b6aff25f25edf445f7a59c1301d69a05868dcf61097f5c79d3159b62",
+      "paper_id": "S1HEBe_Jl",
+      "paperhash": "m|learning_to_protect_communications_with_adversarial_neural_cryptography",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/S1HEBe_Jl.json"
+    },
+    {
+      "canonical_title": "generative adversarial networks using adaptive convolution",
+      "group": "ICLR 2018",
+      "md_sha256": "febf94346a99dd924a5b95c050318274efc338e05882e1167a21c5d8442d7f57",
+      "paper_asset_id": "6cc7987ad4e81e54f912d23a3e5102396471a58402bdc5eac18ee9c877dee80d",
+      "paper_id": "rkQsMCJCb",
+      "paperhash": "nguyen|generative_adversarial_networks_using_adaptive_convolution",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/rkQsMCJCb.json"
+    },
+    {
+      "canonical_title": "context aware forecasting for multivariate stationary time series",
+      "group": "ICLR 2019",
+      "md_sha256": "e98ce14572901e984779c14ea9d5dd3a9fafc3dc27e45ff2c7b2f97b93e9028f",
+      "paper_asset_id": "3dc6a835fd5fbc14efa33f9c80f016167fa0331f8ab0df3ff742515b2f866bc2",
+      "paper_id": "B1xHUiC5tm",
+      "paperhash": "guiguet|contextaware_forecasting_for_multivariate_stationary_timeseries",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/B1xHUiC5tm.json"
+    },
+    {
+      "canonical_title": "conditional learning of fair representations",
+      "group": "ICLR 2020",
+      "md_sha256": "e4c8f52a09099bfcb7155101221c26624323682353710ba9a3439a4272fcef60",
+      "paper_asset_id": "a28658cb5504be8d0b5fcb7880eaadce341f877a99c2ad12fd3fe53098c2f522",
+      "paper_id": "Hkekl0NFPr",
+      "paperhash": "zhao|conditional_learning_of_fair_representations",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Hkekl0NFPr.json"
+    },
+    {
+      "canonical_title": "neural subgraph matching",
+      "group": "ICLR 2021",
+      "md_sha256": "575a138a4d92b693e8458168b6447171690a47d7bce99556931149e1391fc41b",
+      "paper_asset_id": "5931cc242e3207174c407a3ae6eb374d8f301d76005aabc9cfcc469870e35a4e",
+      "paper_id": "LMslR3CTzE_",
+      "paperhash": "ying|neural_subgraph_matching",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/LMslR3CTzE_.json"
+    },
+    {
+      "canonical_title": "linear algebra with transformers",
+      "group": "ICLR 2022",
+      "md_sha256": "0018be4d294d88c168d1a2efb46620f08cd1e5b630781ecd92760a7a1073c09e",
+      "paper_asset_id": "21fe2b047f2345b4fb269adbe5d59d44f18cdbf80ee73b68dc4ed9ae81d9e12b",
+      "paper_id": "L2a_bcarHcF",
+      "paperhash": "charton|linear_algebra_with_transformers",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/L2a_bcarHcF.json"
+    },
+    {
+      "canonical_title": "neuromechanical autoencoders learning to couple elastic and neural network nonlinearity",
+      "group": "ICLR 2023",
+      "md_sha256": "7387c67dbfc874ac6d9cf44e16c44169321aad1ef9001b15caa41941075fd122",
+      "paper_asset_id": "dcdefc48192de3faa17cc80235ff626b15575d06da5f53c96ee697d3dd51e4a0",
+      "paper_id": "QubsmJT_A0",
+      "paperhash": "oktay|neuromechanical_autoencoders_learning_to_couple_elastic_and_neural_network_nonlinearity",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/QubsmJT_A0.json"
+    },
+    {
+      "canonical_title": "decomposition ascribed synergistic learning for unified image restoration",
+      "group": "ICLR 2024",
+      "md_sha256": "82c5e27f395f20adc907531c70e17a910bccb3482e273839a505be8a450297ac",
+      "paper_asset_id": "b696f17223a006799feb45bd27e910f1aea9590cb38368168089ce6ab92d147e",
+      "paper_id": "6W35Wcs077",
+      "paperhash": "zhang|decomposition_ascribed_synergistic_learning_for_unified_image_restoration",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/6W35Wcs077.json"
+    },
+    {
+      "canonical_title": "s 2 gs self supervised gaussian segmentation for automatic 3d object scanning",
+      "group": "ICLR 2025",
+      "md_sha256": "d2d81d661d1b03741e1cf345a4df96fff336a28b1ea56c67bdfeb654af8bb669",
+      "paper_asset_id": "67b2346d8c1d9f80c930d23c973fb4c5796c9ce3d832a4d6c2271986aca912c3",
+      "paper_id": "pQJi9EsmCc",
+      "paperhash": "tong|s^2gs_selfsupervised_gaussian_segmentation_for_automatic_3d_object_scanning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/pQJi9EsmCc.json"
+    },
+    {
+      "canonical_title": "sharp impossibility results for hyper graph testing",
+      "group": "NeurIPS 2021",
+      "md_sha256": "d645725098a7b3743e64fa6bb471946c86838958703e001acad13b5fbbd6630d",
+      "paper_asset_id": "2c9ff94daf6ff91bf5ad3b8bfcdf8b849253161bef56e7ca61c88ad2198c1452",
+      "paper_id": "bYIddUC7AYO",
+      "paperhash": "jin|sharp_impossibility_results_for_hypergraph_testing",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/bYIddUC7AYO.json"
+    },
+    {
+      "canonical_title": "boosting out of distribution detection with typical features",
+      "group": "NeurIPS 2022",
+      "md_sha256": "a85951ca316473a2a9ab088024df3dfe0df2215f917353fb5d79038952c27963",
+      "paper_asset_id": "9935d86067a4fc82a321516069de146561f29bcef720aa7b841b4428505782d1",
+      "paper_id": "4maAiUt0A4",
+      "paperhash": "zhu|boosting_outofdistribution_detection_with_typical_features",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/4maAiUt0A4.json"
+    },
+    {
+      "canonical_title": "learning a neuron by a shallow relu network dynamics and implicit bias for correlated inputs",
+      "group": "NeurIPS 2023",
+      "md_sha256": "7b9bc6d8b735b808595c10e4b2714c796da921c17b106db95bc114c19a357b81",
+      "paper_asset_id": "7ca5398e3d571fa868e180470d124be45c03080b140bd6e1173900751edf77e9",
+      "paper_id": "xgY4QcOiEZ",
+      "paperhash": "chistikov|learning_a_neuron_by_a_shallow_relu_network_dynamics_and_implicit_bias_for_correlated_inputs",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/xgY4QcOiEZ.json"
+    },
+    {
+      "canonical_title": "asyncdiff parallelizing diffusion models by asynchronous denoising",
+      "group": "NeurIPS 2024",
+      "md_sha256": "88b6e26e40a920f45bffad510e50b25658e397ff41a230325b7bba89240b48f7",
+      "paper_asset_id": "f4c6506d223ae0160ecd67d4315f565c2d0248317643ce6666bc173cc3287a72",
+      "paper_id": "46jtDC6gXu",
+      "paperhash": "chen|asyncdiff_parallelizing_diffusion_models_by_asynchronous_denoising",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/46jtDC6gXu.json"
+    },
+    {
+      "canonical_title": "investigating different context types and representations for learning word embeddings",
+      "group": "ICLR 2017",
+      "md_sha256": "4b191dc24e5a52961e1c1228aa46d777b25997425e7f91aa89760d542956e8bf",
+      "paper_asset_id": "17ae08a3713a9c4c3f90fbf1c863712ac1693921983db76b83920ffb2a60c722",
+      "paper_id": "Bkfwyw5xg",
+      "paperhash": "li|investigating_different_context_types_and_representations_for_learning_word_embeddings",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Bkfwyw5xg.json"
+    },
+    {
+      "canonical_title": "an ensemble of retrieval based and generation based human computer conversation systems",
+      "group": "ICLR 2018",
+      "md_sha256": "ede697542a6e145d61e8cb0256fd93bbdb0874e59213299296145ccceeeca536",
+      "paper_asset_id": "636d6774d2dfc8bbc4d8aac2a7541aa5ac51ca6908f0b46e0e12f96dd3e1c7fa",
+      "paper_id": "Sk03Yi10Z",
+      "paperhash": "song|an_ensemble_of_retrievalbased_and_generationbased_humancomputer_conversation_systems",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Sk03Yi10Z.json"
+    },
+    {
+      "canonical_title": "monge amp ere flow for generative modeling",
+      "group": "ICLR 2019",
+      "md_sha256": "5e5adaa31bbe62b84d2c70a4b86c9ec2e13351f5ef5838c79ceab7952c7ba9e0",
+      "paper_asset_id": "0ad16836c6098be61422e23e4c297123c254aa89fefc2b256e9eb08419ad09c6",
+      "paper_id": "rkeUrjCcYQ",
+      "paperhash": "zhang|mongeamp\\`ere_flow_for_generative_modeling",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/rkeUrjCcYQ.json"
+    },
+    {
+      "canonical_title": "differentiable reasoning over a virtual knowledge base",
+      "group": "ICLR 2020",
+      "md_sha256": "965ef5f06133d457f8ecfdf0eada3a608a9c50e8dc31aaacc7f19641b15163fa",
+      "paper_asset_id": "15057dad10812fd61d64153d2b8cd75a001577e5a2afc368de2025433e4343d6",
+      "paper_id": "SJxstlHFPH",
+      "paperhash": "dhingra|differentiable_reasoning_over_a_virtual_knowledge_base",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SJxstlHFPH.json"
+    },
+    {
+      "canonical_title": "robust learning rate selection for stochastic optimization via splitting diagnostic",
+      "group": "ICLR 2021",
+      "md_sha256": "99e4d413f0aad16880698cc000d66271fe6ccd4ce16933c831028008413629fd",
+      "paper_asset_id": "4eb5bdde02ef9712cfecb58ee20a09c15ec9bce32d92475355f5ede5dc4ceec5",
+      "paper_id": "9t0CV2iD5gE",
+      "paperhash": "sordello|robust_learning_rate_selection_for_stochastic_optimization_via_splitting_diagnostic",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/9t0CV2iD5gE.json"
+    },
+    {
+      "canonical_title": "robust and data efficient q learning by composite value estimation",
+      "group": "ICLR 2022",
+      "md_sha256": "e7a0be693ae045a98619a14a12bf0254d731412c22286b3231562d9574bfb4a4",
+      "paper_asset_id": "271a3342f861b22e2176c8e91f1ce514a6fe79101fc55e45718b04ba09000676",
+      "paper_id": "KJHH22zIFxi",
+      "paperhash": "kalweit|robust_and_dataefficient_qlearning_by_composite_valueestimation",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/KJHH22zIFxi.json"
+    },
+    {
+      "canonical_title": "towards understanding how machines can learn causal overhypotheses",
+      "group": "ICLR 2023",
+      "md_sha256": "944ec5340acdade64015c83a13ced3fac9a8367217b5dfe935196a211cc44e62",
+      "paper_asset_id": "165d77dba42cb05862cbaa57803c4ec3075eb6ddfbe1cda721f22c380c7e904e",
+      "paper_id": "bGC7Ai125lR",
+      "paperhash": "kosoy|towards_understanding_how_machines_can_learn_causal_overhypotheses",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/bGC7Ai125lR.json"
+    },
+    {
+      "canonical_title": "dynvideo e harnessing dynamic nerf for large scale motion and view change human centric video editing",
+      "group": "ICLR 2024",
+      "md_sha256": "c12a973252de1286d54ebab324d92559ce2b478d19f2bf914b41cd5db50fa440",
+      "paper_asset_id": "2ceff68191b1f20f955d707d4362b21474952a51c7f47a4692cdc9057606069f",
+      "paper_id": "Z73ymB1C7G",
+      "paperhash": "liu|dynvideoe_harnessing_dynamic_nerf_for_largescale_motion_and_viewchange_humancentric_video_editing",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Z73ymB1C7G.json"
+    },
+    {
+      "canonical_title": "prompt injection benchmark for foundation model integrated systems",
+      "group": "ICLR 2025",
+      "md_sha256": "6b31749a96601986a51a24896b951f7e7d9e5a941bf9f44c9884b4113b4f4e1d",
+      "paper_asset_id": "30ddc881f8cb0eb1370ccc8beb05ef6c8ee4256f04462f222c0254b377263aae",
+      "paper_id": "MsRdq0ePTR",
+      "paperhash": "wang|prompt_injection_benchmark_for_foundation_model_integrated_systems",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/MsRdq0ePTR.json"
+    },
+    {
+      "canonical_title": "a topological perspective on causal inference",
+      "group": "NeurIPS 2021",
+      "md_sha256": "32e2985fc7cc4d90384bdf459721759f4091a062ef0ae089b106478e47f67280",
+      "paper_asset_id": "64b949904cc64d68cb1b249682f766450028260dc9434bd87e6b2070872f8884",
+      "paper_id": "pMvBiSLGTeU",
+      "paperhash": "ibeling|a_topological_perspective_on_causal_inference",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/pMvBiSLGTeU.json"
+    },
+    {
+      "canonical_title": "causality preserving chaotic transformation and classification using neurochaos learning",
+      "group": "NeurIPS 2022",
+      "md_sha256": "546be16e6c16e9a7928fe118752ac99bc337b7b20f09f759f2c5d2ce89d75b3e",
+      "paper_asset_id": "444284d22fc297e2202466c5759ca025d73d5cce7c04f5eaa584fde4ec219765",
+      "paper_id": "XdMusblCkB",
+      "paperhash": "b|causality_preserving_chaotic_transformation_and_classification_using_neurochaos_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/XdMusblCkB.json"
+    },
+    {
+      "canonical_title": "paxion patching action knowledge in video language foundation models",
+      "group": "NeurIPS 2023",
+      "md_sha256": "f32f0ea5fb2b3fd6fce163dc5c87fb869d395bf2d9b553b6daf885c88b51684a",
+      "paper_asset_id": "47d6dfa8fd391520ffc1a4b733cb13d4b6f0c9662fbcd5accc87eee1d64c3109",
+      "paper_id": "blm1pqiOXe",
+      "paperhash": "wang|paxion_patching_action_knowledge_in_videolanguage_foundation_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/blm1pqiOXe.json"
+    },
+    {
+      "canonical_title": "weisfeiler and leman go loopy a new hierarchy for graph representational learning",
+      "group": "NeurIPS 2024",
+      "md_sha256": "a05543b21038405d98bb572cf263daa143959bd9eeff9c436e03ce9a52ec198d",
+      "paper_asset_id": "6d8a67c7899385d3b18009cdc22ca5b03ffcd0ef1d6031cef9313d7df4b1d3ef",
+      "paper_id": "9O2sVnEHor",
+      "paperhash": "paolino|weisfeiler_and_leman_go_loopy_a_new_hierarchy_for_graph_representational_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/9O2sVnEHor.json"
+    },
+    {
+      "canonical_title": "representation stability as a regularizer for improved text analytics transfer learning",
+      "group": "ICLR 2017",
+      "md_sha256": "2bc1b79a8fbaba882f1158a12530687c2806840c3c8447339db883914e6e2f6f",
+      "paper_asset_id": "bdcb98bce071fad479038a4385013b21d92da84166e82d915698560fe20f7ba3",
+      "paper_id": "HyenWc5gx",
+      "paperhash": "riemer|representation_stability_as_a_regularizer_for_improved_text_analytics_transfer_learning",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/HyenWc5gx.json"
+    },
+    {
+      "canonical_title": "learning to cluster in order to transfer across domains and tasks",
+      "group": "ICLR 2018",
+      "md_sha256": "941f2f7aac7bef921d9245e8b25fbf73dd4a18e63f96c8ec1465a1019f54d328",
+      "paper_asset_id": "040223949cc956a52efd01759472670157cd26fa1e904b2e05b1f9c9b8ad74f9",
+      "paper_id": "ByRWCqvT-",
+      "paperhash": "hsu|learning_to_cluster_in_order_to_transfer_across_domains_and_tasks",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ByRWCqvT-.json"
+    },
+    {
+      "canonical_title": "bias reduced uncertainty estimation for deep neural classifiers",
+      "group": "ICLR 2019",
+      "md_sha256": "2331b25aeaf6cf2edde51ad2262a59f48c279a8f8711b0579de8668187426520",
+      "paper_asset_id": "7c57a308ea7928857591239fddb73f6ef4806901719e688a6ac3564e191a180f",
+      "paper_id": "SJfb5jCqKm",
+      "paperhash": "geifman|biasreduced_uncertainty_estimation_for_deep_neural_classifiers",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/SJfb5jCqKm.json"
+    },
+    {
+      "canonical_title": "decoupling weight regularization from batch size for model compression",
+      "group": "ICLR 2020",
+      "md_sha256": "d1f2e87c595bf39429dc648578460761b12ea02ac3329277943f297bc5724ed6",
+      "paper_asset_id": "4ec348cf84e7dc230abab8797493436bae42c3e0772a1050a056f1d0aea1f552",
+      "paper_id": "BJlaG0VFDH",
+      "paperhash": "lee|decoupling_weight_regularization_from_batch_size_for_model_compression",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/BJlaG0VFDH.json"
+    },
+    {
+      "canonical_title": "bros a pre trained language model for understanding texts in document",
+      "group": "ICLR 2021",
+      "md_sha256": "d7ca58dc474c7a16f9b78a40e2ac10839b1f844d428064ed4d7ee336563d997e",
+      "paper_asset_id": "e2bb7fc655e6cb5cf4966364b8894b645f4a3d9814f7cdc8f2335f30ebf4b529",
+      "paper_id": "punMXQEsPr0",
+      "paperhash": "hong|bros_a_pretrained_language_model_for_understanding_texts_in_document",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/punMXQEsPr0.json"
+    },
+    {
+      "canonical_title": "chext knowledge guided cross attention transformer for abnormality classification and localization in chest x rays",
+      "group": "ICLR 2022",
+      "md_sha256": "6aaffe145c2b4a8b8db548ae4befe34e8f0ab0437132b72e3e60d10fe3d44747",
+      "paper_asset_id": "9ed0b68dd173a64898a3d307029c953f08dfcfeb4ad83ec5b455edd7f824236e",
+      "paper_id": "Y9FNtYulBE0",
+      "paperhash": "han|chext_knowledgeguided_crossattention_transformer_for_abnormality_classification_and_localization_in_chest_xrays",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/Y9FNtYulBE0.json"
+    },
+    {
+      "canonical_title": "curriculum reinforcement learning via morphology environment co evolution",
+      "group": "ICLR 2023",
+      "md_sha256": "ed2f83921ac063f7562f5287721e443705ff371e8426f35e15765fdb5be6e9ca",
+      "paper_asset_id": "9e7e9399e67ec1139cc93a7e816120aa7988ad1255a465b22ba9880878808a5f",
+      "paper_id": "ZytN-E8vZk",
+      "paperhash": "ao|curriculum_reinforcement_learning_via_morphologyenvironment_coevolution",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/ZytN-E8vZk.json"
+    },
+    {
+      "canonical_title": "seer language instructed video prediction with latent diffusion models",
+      "group": "ICLR 2024",
+      "md_sha256": "ce9783c4636e299f7f4e7aedf064bced9a706b8b460c5ed5da2113c1878e2199",
+      "paper_asset_id": "5c27f6aa6d1f8086f3e4f6512d92f239cbd05e49c23adc26aa45aca3a4564de5",
+      "paper_id": "qHGgNyQk31",
+      "paperhash": "gu|seer_language_instructed_video_prediction_with_latent_diffusion_models",
+      "path": "/data/xyj/shengao/AgentReview_0930/data/original/papers/qHGgNyQk31.json"
+    }
+  ],
+  "seed": 0,
+  "split": "evolution_rotating_pool",
+  "split_sha256": "afbd8b84b3e221f9e4daedd85fcd1bc30d815a9f038eb6b4c019fd85b194290c"
+}

@@ -1,0 +1,275 @@
+{"canonical_query_title": "Adding Gradient Noise Improves Learning for Very Deep Networks", "paper_id": "rkjZ2Pcxe"}
+{"canonical_query_title": "Kronecker-factored Curvature Approximations for Recurrent Neural Networks", "paper_id": "HyMTkQZAb"}
+{"canonical_query_title": "Overcoming catastrophic forgetting through weight consolidation and long-term memory", "paper_id": "BJlSHsAcK7"}
+{"canonical_query_title": "Abstractive Dialog Summarization with Semantic Scaffolds", "paper_id": "B1eibJrtwr"}
+{"canonical_query_title": "Information Theoretic Meta Learning with Gaussian Processes", "paper_id": "0vO-u0sucRF"}
+{"canonical_query_title": "Building the Building Blocks: From Simplification to Winning Trees in Genetic Programming", "paper_id": "CC-BbehJKTe"}
+{"canonical_query_title": "Rarity Score : A New Metric to Evaluate the Uncommonness of Synthesized Images", "paper_id": "JTGimap_-F"}
+{"canonical_query_title": "Subgraph Diffusion for 3D Molecular Representation Learning: Combining Continuous and Discrete", "paper_id": "9g8h5HwZMy"}
+{"canonical_query_title": "CapeX: Category-Agnostic Pose Estimation from Textual Point Explanation", "paper_id": "scKAXgonmq"}
+{"canonical_query_title": "Introspective Distillation for Robust Question Answering", "paper_id": "OBLl2xoDHPw"}
+{"canonical_query_title": "Cache-Augmented Inbatch Importance Resampling for Training Recommender Retriever", "paper_id": "vt516zga8m"}
+{"canonical_query_title": "Transformers learn through gradual rank increase", "paper_id": "qieeNlO3C7"}
+{"canonical_query_title": "Cryptographic Hardness of Score Estimation", "paper_id": "URQXbwM0Md"}
+{"canonical_query_title": "Deep Convolutional Neural Network Design Patterns", "paper_id": "SJQNqLFgl"}
+{"canonical_query_title": "Deep Voice 3: Scaling Text-to-Speech with Convolutional Sequence Learning", "paper_id": "HJtEm4p6Z"}
+{"canonical_query_title": "Explainable Adversarial Learning: Implicit Generative Modeling of Random Noise during Training for Adversarial Robustness", "paper_id": "rkMk9j0qYm"}
+{"canonical_query_title": "Policy path programming", "paper_id": "ByliZgBKPH"}
+{"canonical_query_title": "The Importance of Pessimism in Fixed-Dataset Policy Optimization", "paper_id": "E3Ys6a1NTGT"}
+{"canonical_query_title": "Implicit Regularization of Bregman Proximal Point Algorithm and Mirror Descent on Separable Data", "paper_id": "BkIV7EOXkSs"}
+{"canonical_query_title": "SkillS: Adaptive Skill Sequencing for Efficient Temporally-Extended Exploration", "paper_id": "Hyan74saltV"}
+{"canonical_query_title": "GPT-4 Is Too Smart To Be Safe: Stealthy Chat with LLMs via Cipher", "paper_id": "MbfAK4s61A"}
+{"canonical_query_title": "CompassDock: Comprehensive Accurate Assessment Approach for Deep Learning-Based Molecular Docking in Inference and Fine-Tuning", "paper_id": "nWO75tVjfp"}
+{"canonical_query_title": "On the Validity of Modeling SGD with Stochastic Differential Equations (SDEs)", "paper_id": "goEdyJ_nVQI"}
+{"canonical_query_title": "Algorithms and Hardness for Learning Linear Thresholds from Label Proportions", "paper_id": "4LZo68TuF-4"}
+{"canonical_query_title": "Towards Characterizing the First-order Query Complexity of Learning (Approximate) Nash Equilibria in Zero-sum Matrix Games", "paper_id": "IPNg84RF1k"}
+{"canonical_query_title": "Who Evaluates the Evaluations? Objectively Scoring Text-to-Image Prompt Coherence Metrics with T2IScoreScore (TS2)", "paper_id": "S4YRCLbUK1"}
+{"canonical_query_title": "Spatio-Temporal Abstractions in Reinforcement Learning Through Neural Encoding", "paper_id": "r1yjkAtxe"}
+{"canonical_query_title": "Understanding GANs: the LQG Setting", "paper_id": "r1CE9GWR-"}
+{"canonical_query_title": "Differentiable Expected BLEU for Text Generation", "paper_id": "S1x2aiRqFX"}
+{"canonical_query_title": "Neural Architecture Search by Learning Action Space for Monte Carlo Tree Search", "paper_id": "SklR6aEtwH"}
+{"canonical_query_title": "Optimal Conversion of Conventional Artificial Neural Networks to Spiking Neural Networks", "paper_id": "FZ1oTwcXchK"}
+{"canonical_query_title": "Personalized Federated Learning with Clustered Generalization", "paper_id": "dJk1vpEFYF0"}
+{"canonical_query_title": "Scaling Laws For Deep Learning Based Image Reconstruction", "paper_id": "op-ceGueqc4"}
+{"canonical_query_title": "Understanding the Robustness of Multi-modal Contrastive Learning to Distribution Shift", "paper_id": "rtl4XnJYBh"}
+{"canonical_query_title": "RecFlow: An Industrial Full Flow Recommendation Dataset", "paper_id": "vVHc8bGRns"}
+{"canonical_query_title": "How Fine-Tuning Allows for Effective Meta-Learning", "paper_id": "4HDwT8l12UK"}
+{"canonical_query_title": "Learning to Find Proofs and Theorems by Learning to Refine Search Strategies: The Case of Loop Invariant Synthesis", "paper_id": "Hb37zNk14e5"}
+{"canonical_query_title": "Contrast, Attend and Diffuse to Decode High-Resolution Images from Brain Activities", "paper_id": "YZSLDEE0mw"}
+{"canonical_query_title": "A Huber Loss Minimization Approach to Mean Estimation under User-level Differential Privacy", "paper_id": "TutGINeJzZ"}
+{"canonical_query_title": "Neural Machine Translation with Latent Semantic of Image and Text", "paper_id": "B1G9tvcgx"}
+{"canonical_query_title": "Using Deep Reinforcement Learning to Generate Rationales for Molecules", "paper_id": "HkJ1rgbCb"}
+{"canonical_query_title": "Transformer-XL: Language Modeling with Longer-Term Dependency", "paper_id": "HJePno0cYm"}
+{"canonical_query_title": "DIVA: Domain Invariant Variational Autoencoder", "paper_id": "rJxotpNYPS"}
+{"canonical_query_title": "NAS-Bench-301 and the Case for Surrogate Benchmarks for Neural Architecture Search", "paper_id": "1flmvXGGJaa"}
+{"canonical_query_title": "Improving Generative Adversarial Networks via Adversarial Learning in Latent Space", "paper_id": "0kNbTghw7q"}
+{"canonical_query_title": "Gated Domain Units for Multi-source Domain Generalization", "paper_id": "hPRxEcEZJyp"}
+{"canonical_query_title": "DisFormer: Disentangled Object Representations for Learning Visual Dynamics Via Transformers", "paper_id": "AOSsLRKQrX"}
+{"canonical_query_title": "OmniRe: Omni Urban Scene Reconstruction", "paper_id": "11xgiMEI5o"}
+{"canonical_query_title": "Reinforcement Learning Enhanced Explainer for Graph Neural Networks", "paper_id": "nUtLCcV24hL"}
+{"canonical_query_title": "DeepMed: Semiparametric Causal Mediation Analysis with Debiased Deep Learning", "paper_id": "m_JSC3r9td7"}
+{"canonical_query_title": "Lightweight Vision Transformer with Bidirectional Interaction", "paper_id": "492Hfmgejy"}
+{"canonical_query_title": "ARC: A Generalist Graph Anomaly Detector with In-Context Learning", "paper_id": "IdIVfzjPK4"}
+{"canonical_query_title": "Iterative Refinement for Machine Translation", "paper_id": "r1y1aawlg"}
+{"canonical_query_title": "Mixed Precision Training", "paper_id": "r1gs9JgRZ"}
+{"canonical_query_title": "Verification of Non-Linear Specifications for Neural Networks", "paper_id": "HyeFAsRctQ"}
+{"canonical_query_title": "RNA Secondary Structure Prediction By Learning Unrolled Algorithms", "paper_id": "S1eALyrYDH"}
+{"canonical_query_title": "Adversarial Synthetic Datasets for Neural Program Synthesis", "paper_id": "aI8VuzSvCPn"}
+{"canonical_query_title": "Hopular: Modern Hopfield Networks for Tabular Data", "paper_id": "3zJVXU311-Q"}
+{"canonical_query_title": "DIMENSION-REDUCED ADAPTIVE GRADIENT METHOD", "paper_id": "Xp-__WzXiBy"}
+{"canonical_query_title": "TPE: Towards Better Compositional Reasoning over Conceptual Tools with Multi-persona Collaboration", "paper_id": "KZaEdLM4Gn"}
+{"canonical_query_title": "CogniPair - Dynamic LLM Matching Algorithm in Chaotic Environments Mimicking Human Cognitive Processes for Relationship Pairing", "paper_id": "Xz5J6Hj9cH"}
+{"canonical_query_title": "PLUR: A Unifying, Graph-Based View of Program Learning, Understanding, and Repair", "paper_id": "GEm4o9A6Jfb"}
+{"canonical_query_title": "Spherization Layer: Representation Using Only Angles", "paper_id": "OXourTLd9UO"}
+{"canonical_query_title": "Crystal Structure Prediction by Joint Equivariant Diffusion", "paper_id": "DNdN26m2Jk"}
+{"canonical_query_title": "Collaborative Video Diffusion: Consistent Multi-video Generation with Camera Control", "paper_id": "arHJlYiY2J"}
+{"canonical_query_title": "Understanding trained CNNs by indexing neuron selectivity", "paper_id": "SJBr9Mcxl"}
+{"canonical_query_title": "Universality, Robustness, and Detectability of Adversarial Perturbations under Adversarial Training", "paper_id": "SyjsLqxR-"}
+{"canonical_query_title": "Efficient Lifelong Learning with A-GEM", "paper_id": "Hkf2_sC5FX"}
+{"canonical_query_title": "Pay Attention to Features, Transfer Learn Faster CNNs", "paper_id": "ryxyCeHtPB"}
+{"canonical_query_title": "Overinterpretation reveals image classification model pathologies", "paper_id": "cP2fJWhYZe0"}
+{"canonical_query_title": "Integrating Large Circular Kernels into CNNs through Neural Architecture Search", "paper_id": "P3SQi2EWeR"}
+{"canonical_query_title": "Holistically Explainable Vision Transformers", "paper_id": "jw37FUa_Aw9"}
+{"canonical_query_title": "Who’s Harry Potter? Approximate Unlearning for LLMs", "paper_id": "PDct7vrcvT"}
+{"canonical_query_title": "Tackling Decision Processes with Non-Cumulative Objectives using Reinforcement Learning", "paper_id": "y9e1tcWlme"}
+{"canonical_query_title": "Beyond Value-Function Gaps: Improved Instance-Dependent Regret Bounds for Episodic Reinforcement Learning", "paper_id": "CU8qQMhB3dh"}
+{"canonical_query_title": "Let Images Give You More: Point Cloud Cross-Modal Training for Shape Analysis", "paper_id": "1qXIyIxLbEu"}
+{"canonical_query_title": "On the impact of activation  and normalization in obtaining  isometric embeddings at initialization", "paper_id": "rY4sA9qYKy"}
+{"canonical_query_title": "Memory-Efficient Gradient Unrolling for Large-Scale Bi-level Optimization", "paper_id": "MI8Z9gutIn"}
+{"canonical_query_title": "Unsupervised Learning of State Representations for Multiple Tasks", "paper_id": "r1aGWUqgg"}
+{"canonical_query_title": "Diffusing Policies : Towards Wasserstein Policy Gradient Flows", "paper_id": "rk3mjYRp-"}
+{"canonical_query_title": "Dynamic Channel Pruning: Feature Boosting and Suppression", "paper_id": "BJxh2j0qYm"}
+{"canonical_query_title": "Deep Multi-View Learning via Task-Optimal CCA", "paper_id": "SkgRW64twr"}
+{"canonical_query_title": "Revisiting Graph Neural Networks for Link Prediction", "paper_id": "8q_ca26L1fz"}
+{"canonical_query_title": "Gaussian Mixture Convolution Networks", "paper_id": "Oxeka7Z7Hor"}
+{"canonical_query_title": "Catastrophic overfitting is a bug but it is caused by features", "paper_id": "n0okuXMlI7V"}
+{"canonical_query_title": "Class-Incremental Learning with Parameter-Efficient Cross-Task Prompts", "paper_id": "4lqo5Jwfnq"}
+{"canonical_query_title": "Fast Multi-Mode Adaptive Generative Distillation for Continually Learning Diffusion Models", "paper_id": "PvvQlhBbgu"}
+{"canonical_query_title": "Episodic Multi-agent Reinforcement Learning with Curiosity-driven Exploration", "paper_id": "cLYyCXHU7g1n"}
+{"canonical_query_title": "What Can Transformers Learn In-Context? A Case Study of Simple Function Classes", "paper_id": "flNZJ2eOet"}
+{"canonical_query_title": "Graph Denoising Diffusion for Inverse Protein Folding", "paper_id": "u4YXKKG5dX"}
+{"canonical_query_title": "Approximation Rate of the Transformer Architecture for Sequence Modeling", "paper_id": "ZwS2y21mZV"}
+{"canonical_query_title": "Maximum Entropy Flow Networks", "paper_id": "H1acq85gx"}
+{"canonical_query_title": "Mitigating Adversarial Effects Through Randomization", "paper_id": "Sk9yuql0Z"}
+{"canonical_query_title": "Modeling Evolution of Language Through Time with Neural Networks", "paper_id": "rylBZ305KQ"}
+{"canonical_query_title": "Attention on Abstract Visual Reasoning", "paper_id": "Bkel1krKPS"}
+{"canonical_query_title": "Collective Robustness Certificates: Exploiting Interdependence in Graph Neural Networks", "paper_id": "ULQdiUTHe3y"}
+{"canonical_query_title": "Sparse MoEs meet Efficient Ensembles", "paper_id": "TD-5kgf13mH"}
+{"canonical_query_title": "DeepDFA: Dataflow Analysis-Guided Efficient Graph Learning for Vulnerability Detection", "paper_id": "HVvqbDQdhW2"}
+{"canonical_query_title": "Free-style and Fast 3D Portrait Synthesis", "paper_id": "ULsnvrTB9Y"}
+{"canonical_query_title": "BEATS: Optimizing LLM Mathematical Capabilities with BackVerify and Adaptive Disambiguate based Efficient Tree Search", "paper_id": "03u7pbpyeN"}
+{"canonical_query_title": "Interactive Label Cleaning with Example-based Explanations", "paper_id": "T6m9bNI7C__"}
+{"canonical_query_title": "Factored Adaptation for Non-Stationary Reinforcement Learning", "paper_id": "VQ9fogN1q6e"}
+{"canonical_query_title": "TransHP: Image Classification with Hierarchical Prompting", "paper_id": "vpQuCsZXz2"}
+{"canonical_query_title": "Drones Help Drones: A Collaborative Framework for Multi-Drone Object Trajectory Prediction and Beyond", "paper_id": "20QgErW5zH"}
+{"canonical_query_title": "MS MARCO: A Human-Generated MAchine Reading COmprehension Dataset", "paper_id": "Hk1iOLcle"}
+{"canonical_query_title": "Dynamically Learning the Learning Rates:  Online Hyperparameter Optimization", "paper_id": "HJtPtdqQG"}
+{"canonical_query_title": "Convolutional CRFs for Semantic Segmentation", "paper_id": "H1xEwsR9FX"}
+{"canonical_query_title": "Dynamically Balanced Value Estimates for Actor-Critic Methods", "paper_id": "r1xyayrtDS"}
+{"canonical_query_title": "Dynamic Feature Selection for Efficient and Interpretable Human Activity Recognition", "paper_id": "mPmCP2CXc7p"}
+{"canonical_query_title": "Learning Representation from Neural Fisher Kernel with Low-rank Approximation", "paper_id": "J1rhANsCY9"}
+{"canonical_query_title": "Volumetric Optimal Transportation by Fast Fourier Transform", "paper_id": "EVrz7UM-ZDm"}
+{"canonical_query_title": "Regret Rates for $\\epsilon$-Greedy Strategies for Nonparametric Bandits with Delayed Rewards", "paper_id": "4hqe5fgmfj"}
+{"canonical_query_title": "Spread Preference Annotation: Direct Preference Judgment for Efficient LLM Alignment", "paper_id": "BPgK5XW1Nb"}
+{"canonical_query_title": "Estimating the Unique Information of Continuous Variables", "paper_id": "LeW4XOVCrl"}
+{"canonical_query_title": "GLIPv2: Unifying Localization and Vision-Language Understanding", "paper_id": "wiBEFdAvl8L"}
+{"canonical_query_title": "Convergence of mean-field Langevin dynamics: time-space discretization, stochastic gradient, and variance reduction", "paper_id": "9STYRIVx6u"}
+{"canonical_query_title": "Analysis of Corrected Graph Convolutions", "paper_id": "MSsQDWUWpd"}
+{"canonical_query_title": "Tree-Structured Variational Autoencoder", "paper_id": "Hy0L4t5el"}
+{"canonical_query_title": "Spontaneous Symmetry Breaking in Deep Neural Networks", "paper_id": "SkiCjzNTZ"}
+{"canonical_query_title": "Hierarchical Generative Modeling for Controllable Speech Synthesis", "paper_id": "rygkk305YQ"}
+{"canonical_query_title": "The Blessing of Dimensionality: An Empirical Study of Generalization", "paper_id": "r1xQH0EtvH"}
+{"canonical_query_title": "Better sampling in explanation methods can prevent dieselgate-like deception", "paper_id": "s0Chrsstpv2"}
+{"canonical_query_title": "Benchmarking the Spectrum of Agent Capabilities", "paper_id": "1W0z96MFEoH"}
+{"canonical_query_title": "BSTT: A Bayesian Spatial-Temporal Transformer for Sleep Staging", "paper_id": "ZxdkjTgK_Dl"}
+{"canonical_query_title": "Elevating Augmentation: Boosting Performance via Sub-Model Training", "paper_id": "49CGs58v0J"}
+{"canonical_query_title": "Multi-label learning with semantic embeddings", "paper_id": "ryAe2WBee"}
+{"canonical_query_title": "The Kanerva Machine: A Generative Distributed Memory", "paper_id": "S1HlA-ZAZ"}
+{"canonical_query_title": "ACTRCE: Augmenting Experience via Teacher’s Advice", "paper_id": "HyM8V2A9Km"}
+{"canonical_query_title": "Federated Learning with Matched Averaging", "paper_id": "BkluqlSFDS"}
+{"canonical_query_title": "Incorporating Symmetry into Deep Dynamics Models for Improved Generalization", "paper_id": "wta_8Hx2KD"}
+{"canonical_query_title": "Bit-wise Training of Neural Network Weights", "paper_id": "gxk4-rVATDA"}
+{"canonical_query_title": "Data-Efficient Finetuning Using Cross-Task Nearest Neighbors", "paper_id": "WtW_s7EDWPe"}
+{"canonical_query_title": "PDED: Revitalize physics laws submerged in data information for Traffic State Estimation", "paper_id": "GszBQ3ZTzk"}
+{"canonical_query_title": "Provably Efficient and Practical Self-Play for Better LLM Alignment", "paper_id": "ed75tWzgt0"}
+{"canonical_query_title": "Teaching via Best-Case Counterexamples in the Learning-with-Equivalence-Queries Paradigm", "paper_id": "Ee7IOrpLwT"}
+{"canonical_query_title": "Hub-Pathway: Transfer Learning from A Hub of Pre-trained Models", "paper_id": "L8ESR8IQ7Gb"}
+{"canonical_query_title": "Improving Few-Shot Generalization by Exploring and Exploiting Auxiliary Data", "paper_id": "JDnLXc4NOn"}
+{"canonical_query_title": "Advancing Cross-domain Discriminability in Continual Learning of Vision-Language Models", "paper_id": "boGxvYWZEq"}
+{"canonical_query_title": "Paleo: A Performance Model for Deep Neural Networks", "paper_id": "SyVVJ85lg"}
+{"canonical_query_title": "Learning to Multi-Task by Active Sampling", "paper_id": "B1nZ1weCZ"}
+{"canonical_query_title": "Efficient Augmentation via Data Subsampling", "paper_id": "Byxpfh0cFm"}
+{"canonical_query_title": "Deep Variational Semi-Supervised Novelty Detection", "paper_id": "Hkxp3JHtPr"}
+{"canonical_query_title": "Analysing the Update step in Graph Neural Networks via Sparsification", "paper_id": "R43miizWtUN"}
+{"canonical_query_title": "STransGAN: An Empirical Study on Transformer in GANs", "paper_id": "eoShjXqWkr"}
+{"canonical_query_title": "Removing Backdoors in Pre-trained Models by Regularized Continual Pre-training", "paper_id": "JKuBOuzntQ"}
+{"canonical_query_title": "Conditional Instrumental Variable Regression with Representation Learning for Causal Inference", "paper_id": "qDhq1icpO8"}
+{"canonical_query_title": "Automated Zonal level implant loosening detection from Hip X-ray using a multi-staged approach", "paper_id": "IFOgfaX2Fj"}
+{"canonical_query_title": "Improving Robustness using Generated Data", "paper_id": "0NXUSlb6oEu"}
+{"canonical_query_title": "Merging Models with Fisher-Weighted Averaging", "paper_id": "LSKlp_aceOC"}
+{"canonical_query_title": "An Optimization-based Approach To Node Role Discovery in Networks: Approximating Equitable Partitions", "paper_id": "ztDxO15N7f"}
+{"canonical_query_title": "Enforcing constraints on outputs with unconstrained inference", "paper_id": "S1Jhfftgx"}
+{"canonical_query_title": "Automatic Goal Generation for Reinforcement Learning Agents", "paper_id": "SyhRVm-Rb"}
+{"canonical_query_title": "Stochastic Learning of Additive Second-Order Penalties with  Applications to Fairness", "paper_id": "Bke0rjR5F7"}
+{"canonical_query_title": "Towards understanding the true loss surface of deep neural networks using random matrix theory and iterative spectral methods", "paper_id": "H1gza2NtwH"}
+{"canonical_query_title": "Interpretable Neural Architecture Search via Bayesian Optimisation with Weisfeiler-Lehman Kernels", "paper_id": "j9Rv7qdXjd"}
+{"canonical_query_title": "DIGRAC: Digraph Clustering Based on Flow Imbalance", "paper_id": "QmKblFEgQJ"}
+{"canonical_query_title": "L2B: Learning to Bootstrap for Combating Label Noise", "paper_id": "qVI1MqX52Xm"}
+{"canonical_query_title": "Counterfactual Data Augmentation with Contrastive Learning", "paper_id": "7mR83Q12cJ"}
+{"canonical_query_title": "Pooling And Attention: What Are Effective Designs For LLM-Based Embedding Models?", "paper_id": "CWAvMSNUqT"}
+{"canonical_query_title": "Residual Relaxation for Multi-view Representation Learning", "paper_id": "rEBScZF6G70"}
+{"canonical_query_title": "LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning", "paper_id": "isPnnaTZaP5"}
+{"canonical_query_title": "Provable benefits of score matching", "paper_id": "waXoG35kbb"}
+{"canonical_query_title": "On the Convergence of Loss and Uncertainty-based Active Learning Algorithms", "paper_id": "GLUIuli3Sm"}
+{"canonical_query_title": "Deep Symbolic Representation Learning for Heterogeneous Time-series Classification", "paper_id": "Hy8X3aKee"}
+{"canonical_query_title": "On the Generalization Effects of DenseNet Model Structures", "paper_id": "rJbs5gbRW"}
+{"canonical_query_title": "Learning Representations of Sets through Optimized Permutations", "paper_id": "HJMCcjAcYX"}
+{"canonical_query_title": "Ecological Reinforcement Learning", "paper_id": "S1xxx64YwH"}
+{"canonical_query_title": "Joint Learning of Full-structure Noise in Hierarchical Bayesian Regression Models", "paper_id": "yRP4_BOxdu"}
+{"canonical_query_title": "Towards Deployment-Efficient Reinforcement Learning: Lower Bound and Optimality", "paper_id": "ccWaPGl9Hq"}
+{"canonical_query_title": "Learning ReLU networks to high uniform accuracy is intractable", "paper_id": "nchvKfvNeX0"}
+{"canonical_query_title": "AROID: Improving Adversarial Robustness through Online Instance-wise Data Augmentation", "paper_id": "ufZp6pvOvE"}
+{"canonical_query_title": "RecurFormer: Not All Transformer Heads Need Self-Attention", "paper_id": "FyJaV0TVF2"}
+{"canonical_query_title": "Think Big, Teach Small: Do Language Models Distil Occam’s Razor?", "paper_id": "F6gvhOgTM-4"}
+{"canonical_query_title": "Optimal Weak to Strong Learning", "paper_id": "6OLBVpoxrbW"}
+{"canonical_query_title": "Gradient strikes back: How filtering out high frequencies improves explanations", "paper_id": "IQ6GI7fM2z"}
+{"canonical_query_title": "Identifying and Solving Conditional Image Leakage in Image-to-Video Diffusion Model", "paper_id": "o9Lkiv1qpc"}
+{"canonical_query_title": "Learning similarity preserving representations with neural similarity and context encoders", "paper_id": "SkBsEQYll"}
+{"canonical_query_title": "Latent Constraints: Learning to Generate Conditionally from Unconditional Generative Models", "paper_id": "Sy8XvGb0-"}
+{"canonical_query_title": "Stable Recurrent Models", "paper_id": "Hygxb2CqKm"}
+{"canonical_query_title": "RIDE: Rewarding Impact-Driven Exploration for Procedurally-Generated Environments", "paper_id": "rkg-TJBFPB"}
+{"canonical_query_title": "Privacy Preserving Recalibration under Domain Shift", "paper_id": "m08OHhXxl-5"}
+{"canonical_query_title": "On Robust Prefix-Tuning for Text Classification", "paper_id": "eBCmOocUejf"}
+{"canonical_query_title": "DADAO: Decoupled Accelerated Decentralized Asynchronous Optimization", "paper_id": "Siln8xpTMrZ"}
+{"canonical_query_title": "ReConcile: Round-Table Conference Improves Reasoning via Consensus among Diverse LLMs", "paper_id": "Yol6nUVIJD"}
+{"canonical_query_title": "A Second-Order Perspective on Model Compositionality and Incremental Learning", "paper_id": "OZVTqoli2N"}
+{"canonical_query_title": "DECAF:  Generating Fair Synthetic Data Using Causally-Aware Generative Networks", "paper_id": "XN1M27T6uux"}
+{"canonical_query_title": "Fast Distance Oracles for Any Symmetric Norm", "paper_id": "ZCGDqdK0zG"}
+{"canonical_query_title": "Bayesian Metric Learning for Uncertainty Quantification in Image Retrieval", "paper_id": "58XMiu8kot"}
+{"canonical_query_title": "Graph-based Unsupervised Disentangled Representation Learning via Multimodal Large Language Models", "paper_id": "a1wf2N967T"}
+{"canonical_query_title": "Wav2Letter: an End-to-End ConvNet-based Speech Recognition System", "paper_id": "BkUDvt5gg"}
+{"canonical_query_title": "AUTOMATA GUIDED HIERARCHICAL REINFORCEMENT LEARNING FOR ZERO-SHOT SKILL COMPOSITION", "paper_id": "BJgVaG-Ab"}
+{"canonical_query_title": "Geometry aware convolutional filters for omnidirectional images representation", "paper_id": "H1fF0iR9KX"}
+{"canonical_query_title": "Non-Autoregressive Dialog State Tracking", "paper_id": "H1e_cC4twS"}
+{"canonical_query_title": "First-Order Optimization Algorithms via Discretization of Finite-Time Convergent Flows", "paper_id": "OSynkDOWbk2"}
+{"canonical_query_title": "Optimization and Adaptive Generalization of Three layer Neural Networks", "paper_id": "dPyRNUlttBv"}
+{"canonical_query_title": "Semi-Supervised Semantic Segmentation via Boosting Uncertainty on Unlabeled Data", "paper_id": "88Z7kxbZLL3"}
+{"canonical_query_title": "The Entity-Deduction Arena: A playground for probing the conversational reasoning and planning capabilities of LLMs", "paper_id": "PfrpYGKGPL"}
+{"canonical_query_title": "Exact Community Recovery under Side Information: Optimality of Spectral Algorithms", "paper_id": "zhFyKgqxlz"}
+{"canonical_query_title": "Adversarial Neuron Pruning Purifies Backdoored Deep Models", "paper_id": "4cEapqXfP30"}
+{"canonical_query_title": "Repairing Neural Networks by Leaving the Right Past Behind", "paper_id": "XiwkvDTU10Y"}
+{"canonical_query_title": "DiffTraj: Generating GPS Trajectory with Diffusion Probabilistic Model", "paper_id": "ykMdzevPkJ"}
+{"canonical_query_title": "Langevin Unlearning: A New Perspective of Noisy Gradient Descent for Machine Unlearning", "paper_id": "3LKuC8rbyV"}
+{"canonical_query_title": "b-GAN: Unified Framework of Generative Adversarial Networks", "paper_id": "S1JG13oee"}
+{"canonical_query_title": "Learning to Write by Learning the Objective", "paper_id": "r1lfpfZAb"}
+{"canonical_query_title": "Backplay: 'Man muss immer umkehren'", "paper_id": "H1xk8jAqKQ"}
+{"canonical_query_title": "Inducing Stronger Object Representations in Deep Visual Trackers", "paper_id": "BygfiAEtwS"}
+{"canonical_query_title": "Robust Multi-view Representation Learning", "paper_id": "ERAQ5ZCP9t"}
+{"canonical_query_title": "Learning 3D Representations of Molecular Chirality with Invariance to Bond Rotations", "paper_id": "hm2tNDdgaFK"}
+{"canonical_query_title": "CodeT:  Code Generation with Generated Tests", "paper_id": "ktrw68Cmu9c"}
+{"canonical_query_title": "Enhancing Graph Injection Attacks Through Over-Smoothing Amplification", "paper_id": "lATusnzNRT"}
+{"canonical_query_title": "Disentangling the Roles of Representation and Selection in Data Pruning (for Fine-Tuning)", "paper_id": "EOPLy80bBm"}
+{"canonical_query_title": "Teachable Reinforcement Learning via Advice Distillation", "paper_id": "PPh6lqP5BO"}
+{"canonical_query_title": "Recursive Reinforcement Learning", "paper_id": "ZXoSAAlBnW8"}
+{"canonical_query_title": "PLASTIC: Improving Input and Label Plasticity for Sample Efficient Reinforcement Learning", "paper_id": "c5WOU7p4ES"}
+{"canonical_query_title": "Improved Generation of Adversarial Examples Against Safety-aligned LLMs", "paper_id": "8hBc843g1p"}
+{"canonical_query_title": "Deep Biaffine Attention for Neural Dependency Parsing", "paper_id": "Hk95PK9le"}
+{"canonical_query_title": "Latent Topic Conversational Models", "paper_id": "S1GUgxgCW"}
+{"canonical_query_title": "Deep Recurrent Gaussian Process with Variational Sparse Spectrum Approximation", "paper_id": "BkgosiRcKm"}
+{"canonical_query_title": "StructBERT: Incorporating Language Structures into Pre-training for Deep Language Understanding", "paper_id": "BJgQ4lSFPH"}
+{"canonical_query_title": "Stochastic Canonical Correlation Analysis: A Riemannian Approach", "paper_id": "pAq1h9sQhqd"}
+{"canonical_query_title": "Self-Supervised Representation Learning via Latent Graph Prediction", "paper_id": "Da3ZcbjRWy"}
+{"canonical_query_title": "Artificial Neuronal Ensembles with Learned Context Dependent Gating", "paper_id": "dBk3hsg-n6"}
+{"canonical_query_title": "Constructing Sparse Neural Architecture with Deterministic Ramanujan Graphs", "paper_id": "x6gnuUXpxM"}
+{"canonical_query_title": "Instruction Contrastive Tuning for Zero-shot Composed Image Retrieval", "paper_id": "OZdr2mV5EI"}
+{"canonical_query_title": "On Contrastive Representations of Stochastic Processes", "paper_id": "sAaymAJB_OW"}
+{"canonical_query_title": "Not too little, not too much: a theoretical analysis of graph (over)smoothing", "paper_id": "-Lm0B9UYMy6"}
+{"canonical_query_title": "Interpretability at Scale: Identifying Causal Mechanisms in Alpaca", "paper_id": "nRfClnMhVX"}
+{"canonical_query_title": "Identifying Equivalent Training Dynamics", "paper_id": "bOYVESX7PK"}
+{"canonical_query_title": "Learning Recurrent Span Representations for Extractive Question Answering", "paper_id": "HkIQH7qel"}
+{"canonical_query_title": "Data-driven Feature Sampling for Deep Hyperspectral Classification and Segmentation", "paper_id": "HkanP0lRW"}
+{"canonical_query_title": "PolyCNN: Learning Seed Convolutional Filters", "paper_id": "B1GHb2RqYX"}
+{"canonical_query_title": "On the Need for Topology-Aware Generative Models for Manifold-Based Defenses", "paper_id": "r1lF_CEYwS"}
+{"canonical_query_title": "Isotropy in the Contextual Embedding Space: Clusters and Manifolds", "paper_id": "xYGNO86OWDH"}
+{"canonical_query_title": "OntoProtein: Protein Pretraining With Gene Ontology Embedding", "paper_id": "yfe1VMYAXa4"}
+{"canonical_query_title": "Music-to-Text Synaesthesia: Generating Descriptive Text from Music Recordings", "paper_id": "1FsLDqHivn4"}
+{"canonical_query_title": "UniSeMi: Toward Unified Semi-supervised Medical Image Segmentation", "paper_id": "qqb62iqPv1"}
+{"canonical_query_title": "Swiss Army Knife: Synergizing Biases in Knowledge from Vision Foundation Models for Multi-Task Learning", "paper_id": "eePww5u7J3"}
+{"canonical_query_title": "SalKG: Learning From Knowledge Graph Explanations for Commonsense Reasoning", "paper_id": "FUxXaBop-J_"}
+{"canonical_query_title": "ELIAS: End-to-End Learning to Index and Search in Large Output Spaces", "paper_id": "RF5Lb6NaZp"}
+{"canonical_query_title": "Leveraging Locality and Robustness to Achieve Massively Scalable Gaussian Process Regression", "paper_id": "SQP1H9Jy8W"}
+{"canonical_query_title": "A Label is Worth A Thousand Images in Dataset Distillation", "paper_id": "oNMnR0NJ2e"}
+{"canonical_query_title": "Learning to Protect Communications with Adversarial Neural Cryptography", "paper_id": "S1HEBe_Jl"}
+{"canonical_query_title": "Generative Adversarial Networks using Adaptive Convolution", "paper_id": "rkQsMCJCb"}
+{"canonical_query_title": "Context-aware Forecasting for Multivariate Stationary Time-series", "paper_id": "B1xHUiC5tm"}
+{"canonical_query_title": "Conditional Learning of Fair Representations", "paper_id": "Hkekl0NFPr"}
+{"canonical_query_title": "Neural Subgraph Matching", "paper_id": "LMslR3CTzE_"}
+{"canonical_query_title": "Linear algebra with transformers", "paper_id": "L2a_bcarHcF"}
+{"canonical_query_title": "Neuromechanical Autoencoders: Learning to Couple Elastic and Neural Network Nonlinearity", "paper_id": "QubsmJT_A0"}
+{"canonical_query_title": "Decomposition Ascribed Synergistic Learning for Unified Image Restoration", "paper_id": "6W35Wcs077"}
+{"canonical_query_title": "S$^2$GS: Self-supervised Gaussian Segmentation for Automatic 3D Object Scanning", "paper_id": "pQJi9EsmCc"}
+{"canonical_query_title": "Sharp Impossibility Results for Hyper-graph Testing", "paper_id": "bYIddUC7AYO"}
+{"canonical_query_title": "Boosting Out-of-distribution Detection with Typical Features", "paper_id": "4maAiUt0A4"}
+{"canonical_query_title": "Learning a Neuron by a Shallow ReLU Network: Dynamics and Implicit Bias for Correlated Inputs", "paper_id": "xgY4QcOiEZ"}
+{"canonical_query_title": "AsyncDiff: Parallelizing Diffusion Models by Asynchronous Denoising", "paper_id": "46jtDC6gXu"}
+{"canonical_query_title": "Investigating Different Context Types and Representations for Learning Word Embeddings", "paper_id": "Bkfwyw5xg"}
+{"canonical_query_title": "An Ensemble of Retrieval-Based and Generation-Based Human-Computer Conversation Systems.", "paper_id": "Sk03Yi10Z"}
+{"canonical_query_title": "Monge-Amp\\`ere Flow for Generative Modeling", "paper_id": "rkeUrjCcYQ"}
+{"canonical_query_title": "Differentiable Reasoning over a Virtual Knowledge Base", "paper_id": "SJxstlHFPH"}
+{"canonical_query_title": "Robust Learning Rate Selection for Stochastic Optimization via Splitting Diagnostic", "paper_id": "9t0CV2iD5gE"}
+{"canonical_query_title": "Robust and Data-efficient Q-learning by Composite Value-estimation", "paper_id": "KJHH22zIFxi"}
+{"canonical_query_title": "Towards Understanding How Machines Can Learn Causal Overhypotheses", "paper_id": "bGC7Ai125lR"}
+{"canonical_query_title": "DynVideo-E: Harnessing Dynamic NeRF for Large-Scale Motion- and View-Change Human-Centric Video Editing", "paper_id": "Z73ymB1C7G"}
+{"canonical_query_title": "Prompt Injection Benchmark for Foundation Model Integrated Systems", "paper_id": "MsRdq0ePTR"}
+{"canonical_query_title": "A Topological Perspective on Causal Inference", "paper_id": "pMvBiSLGTeU"}
+{"canonical_query_title": "Causality Preserving Chaotic Transformation and Classification using Neurochaos Learning", "paper_id": "XdMusblCkB"}
+{"canonical_query_title": "Paxion: Patching Action Knowledge in Video-Language Foundation Models", "paper_id": "blm1pqiOXe"}
+{"canonical_query_title": "Weisfeiler and Leman Go Loopy: A New Hierarchy for Graph Representational Learning", "paper_id": "9O2sVnEHor"}
+{"canonical_query_title": "Representation Stability as a Regularizer for Improved Text Analytics Transfer Learning", "paper_id": "HyenWc5gx"}
+{"canonical_query_title": "Learning to cluster in order to transfer across domains and tasks", "paper_id": "ByRWCqvT-"}
+{"canonical_query_title": "Bias-Reduced Uncertainty Estimation for Deep Neural Classifiers", "paper_id": "SJfb5jCqKm"}
+{"canonical_query_title": "Decoupling Weight Regularization from Batch Size for Model Compression", "paper_id": "BJlaG0VFDH"}
+{"canonical_query_title": "BROS: A Pre-trained Language Model for Understanding Texts in Document", "paper_id": "punMXQEsPr0"}
+{"canonical_query_title": "CheXT: Knowledge-Guided Cross-Attention Transformer for Abnormality Classification and Localization in Chest X-rays", "paper_id": "Y9FNtYulBE0"}
+{"canonical_query_title": "Curriculum Reinforcement Learning via Morphology-Environment Co-Evolution", "paper_id": "ZytN-E8vZk"}
+{"canonical_query_title": "Seer: Language Instructed Video Prediction with Latent Diffusion Models", "paper_id": "qHGgNyQk31"}

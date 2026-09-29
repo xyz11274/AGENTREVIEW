@@ -60,15 +60,13 @@ class KnowledgeBase:
         self.seen = set()
 
     def write(self, item: KnowledgeItem, raw_text: str) -> None:
-        text = str(item.content or raw_text or "").strip()
+        text = str(raw_text or item.content or "").strip()
         role = str(item.reviewer_dimension or "").upper()
         if not text or not role:
             return
-        chunks = [
-            text[start : start + 1200].strip()
-            for start in range(0, len(text), 1200)
-            if text[start : start + 1200].strip()
-        ]
+        # An episode and its correction are one retrieval unit. Splitting them
+        # can recall the erroneous claim without its correction.
+        chunks = [text]
         fresh, ids, metadatas = [], [], []
         for index, chunk in enumerate(chunks):
             item_id = sha256(
@@ -101,6 +99,5 @@ class KnowledgeBase:
                 for item in selected
             ],
         )
-        return "\n\n".join(
-            f"[REVIEW EXPERIENCE {item['id']}]\n{item['text']}" for item in selected
-        )[:6000]
+        entries = [f"[REVIEW EXPERIENCE {item['id']}]\n{item['text']}" for item in selected]
+        return "\n\n".join(self.toolkit.select_memory_entries(entries))

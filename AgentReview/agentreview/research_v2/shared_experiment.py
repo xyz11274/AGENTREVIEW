@@ -45,6 +45,7 @@ def runtime_identity():
              "memory.py", "review.py", "review_preparation.py", "meta.py", "development_coco.py",
              "development_coco_worker.py", "experiment_protocol.py", "program_checks.py", "coco_native.py", "data.py", "llm.py", "config.py", "constants.py", "coco_integrity.py",
              "cohort_receipt.py", "model_watch.py", "request_admission.py", "execution_telemetry.py")]
+    paths.extend([root / "reflection_budget.py", root / "failure_policy.py"])
     paths.extend([root.parent / "reviewer_identity.py", root.parent / "paper_context.py", root.parent / "source_map.py"])
     paths.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))
     paths.extend(sorted((root.parents[1] / "memory_evolution").glob("embedding*.py")))
@@ -146,7 +147,11 @@ class LocalSharedBackend:
         return {"query_mode": self.generation["memory_query_mode"],
                 "read_llm_calls": self.generation["memory_read_llm_calls"],
                 "build_llm_calls": self.generation["memory_build_llm_calls"],
-                "max_tokens": self.generation["memory_max_tokens"]}
+                "max_tokens": self.generation["memory_max_tokens"],
+                "context_max_tokens": self.generation["memory_max_tokens"],
+                "summary_input_max_tokens": min(32768, self.generation["input_max_tokens"] // 2),
+                "tokenizer": {"path": str(Path(self.scoring["services"]["judge"]["model_identity"]["root"]) / "tokenizer.json"),
+                              "sha256": self.config["model"]["tokenizer_sha256"]}}
 
     def _write_program(self, path, code):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +165,8 @@ class LocalSharedBackend:
             handle.write(code)
 
     def seed(self, name):
-        source = seed_program_path(name)
+        frozen_seeds = self.config.get("initial_memory_programs")
+        source = bound(frozen_seeds[name]) if frozen_seeds is not None else seed_program_path(name)
         target = self.root / "programs" / f"seed-{name}" / "program.py"
         self._write_program(target, source.read_text(encoding="utf-8"))
         return {"candidate_id": f"seed-{name}", "seed": name, "seed_kind": name, "parent_id": None,
@@ -199,8 +205,10 @@ class LocalSharedBackend:
             snapshots[role] = path
         paths = {role: [] for role in ROLES}
         s2, intervention = self._s2("build")
-        with self.client(directory / "requests") as client:
-            for row in self.protocol.records("build"):
+        rows = self.protocol.records("build")
+        def generate_build_paper(row):
+            from .execution_telemetry import span
+            with span("build_paper", paper_id=row["paper_id"]), self.client(directory / "paper-requests" / value_sha256(row["paper_id"])) as client:
                 paper = self._paper(row)
                 for role in ROLES:
                     run_specialist_review(paper_path=paper, role=role, program_path=bound(source["program"]),
@@ -209,7 +217,34 @@ class LocalSharedBackend:
                         s2_intervention=intervention, embedding_client=embedding, embedding_identity=embedding_identity,
                         require_bubblewrap=self.require_bubblewrap, memory_enabled=False, memory_runtime=self.memory_runtime(),
                         max_tokens=self.generation["review_max_tokens"])
-                    paths[role].append(directory / "reviews" / "build" / row["paper_id"] / f"{role}.json")
+            return row["paper_id"]
+        workers = self.execution["paper_workers"] if self.execution else 1
+        completed = []
+        pending_rows = iter(rows)
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            pending = {executor.submit(generate_build_paper, row): row["paper_id"]
+                for row in [next(pending_rows, None) for _ in range(workers)] if row is not None}
+            try:
+                while pending:
+                    done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                    for future in done:
+                        pending.pop(future)
+                        completed.append(future.result())
+                    atomic_write_json(directory / "progress.json", {"status": "running" if pending or len(completed) < len(rows) else "complete",
+                        "completed_papers": completed, "expected_papers": len(rows), "complete_role_reviews": 5 * len(completed)}, immutable=False)
+                    for _ in done:
+                        row = next(pending_rows, None)
+                        if row is not None:
+                            pending[executor.submit(generate_build_paper, row)] = row["paper_id"]
+            except BaseException as exc:
+                for future in pending:
+                    future.cancel()
+                atomic_write_json(directory / "failure.json", {"status": "paused", "completed_papers": completed,
+                    "error": str(exc), "zero_imputation": False}, immutable=False)
+                raise
+        for row in rows:
+            for role in ROLES:
+                paths[role].append(directory / "reviews" / "build" / row["paper_id"] / f"{role}.json")
         return paths
 
     def _candidate_check(self, candidate):
@@ -441,6 +476,10 @@ class LocalSharedBackend:
             raise ValueError("Shared memory selection scores only the final complete review")
         return receipt
 
+    def reflection_scores(self, feedback):
+        receipt = validate_assessment_receipt(bound(feedback["assessment"]), expected_partition="rotating")
+        return [{"paper_id": row["paper_id"], "score": row["metrics"]["Paper."]} for row in receipt["rows"]]
+
     def propose(self, *, parent, feedback, history, directory):
         directory = Path(directory)
         source = bound(parent["program"])
@@ -448,10 +487,16 @@ class LocalSharedBackend:
                   "history": history}
         if "assessment" in feedback:
             receipt = read_json(bound(feedback["assessment"]))
+            validate_assessment_receipt(receipt)
+            if receipt.get("partition") != "rotating" or receipt.get("purpose") != "development":
+                raise ValueError("Reflection accepts complete rotating development receipts only")
             packet["current_rotating_feedback"] = [{**row, "final_review": read_json(bound(row["review"]))} for row in receipt["rows"]]
             packet["trajectories"] = {
                 role: [read_json(bound(value)) for value in reviews]
                 for role, reviews in feedback["identity"]["role_reviews"].items()}
+            if "reflection_case_ids" in feedback:
+                packet["reflection_case_ids"] = feedback["reflection_case_ids"]
+                packet["reflection_selection"] = feedback["reflection_selection"]
         else:
             packet["contract_failure"] = feedback
         atomic_write_json(directory / "feedback.json", packet)
@@ -469,7 +514,20 @@ class LocalSharedBackend:
                 for review in reviews] for role, reviews in packet["trajectories"].items()}
         else:
             prompt_packet["contract_failure"] = feedback
-        atomic_write_json(directory / "reflection-input.json", prompt_packet)
+        if "reflection_case_ids" in packet:
+            chosen = packet["reflection_case_ids"]
+            expected_count = self.config["evolution"]["detailed_reflection_cases"]
+            if len(chosen) != expected_count or len(set(chosen)) != expected_count:
+                raise ValueError("Reflection requires the frozen number of distinct detailed cases")
+            prompt_packet["required_case_ids"] = chosen
+            prompt_packet["rotating_overview"] = [
+                {key: row[key] for key in ("paper_id", "metrics", "paper_judge_scores", "review_artifact")}
+                for row in prompt_packet["current_rotating_feedback"]]
+            if not set(chosen) <= {row["paper_id"] for row in prompt_packet["rotating_overview"]}:
+                raise ValueError("Detailed cases must belong to this complete rotating evaluation")
+            prompt_packet["current_rotating_feedback"] = [row for row in prompt_packet["current_rotating_feedback"] if row["paper_id"] in chosen]
+            prompt_packet["trajectories"] = {role: [row for row in reviews if row["paper_id"] in chosen]
+                for role, reviews in prompt_packet["trajectories"].items()}
         prompt = ("Evolve one shared MemoryProgram for five fixed specialist reviewers. Optimize final complete-review "
                   "standard CoCo Table-1 Paper. using this iteration's development feedback. Modify KnowledgeItem and Query "
                   "schemas, KnowledgeBase read/write logic, and the four memory instruction constants. Preserve the exact "
@@ -480,15 +538,30 @@ class LocalSharedBackend:
                   "There is no toolkit.llm method. Other APIs include toolkit.embed(list_of_texts), "
                   "toolkit.create_vector_collection(name), and toolkit.log(event, payload). Never catch and hide "
                   "model, embedding, capability or budget failures. Keep any parsing fallback separate from "
-                  "the model call. Return read results "
-                  "within 6000 characters, and respect the configured memory call budgets. For evolved programs, "
+                  "the model call. Never slice review, feedback, memory or summary text by characters. "
+                  "Use toolkit.select_memory_entries(list_of_complete_text_entries, purpose='context') for reads "
+                  "or purpose='summary_input' before summarizing; join selected entries with two newlines. "
+                  "toolkit.memory_token_limit() and toolkit.count_tokens(text) expose host token accounting. "
+                  "Return complete read results within this token budget; over-budget or incomplete results fail. "
+                  "The raw_text of write contains the complete build experience with source IDs and any explicitly "
+                  "provided build correction; honor corrections instead of memorizing the erroneous claim. "
+                  "Empty build evaluation_paths is intentional: there are no role-level scores. Rotating CoCo "
+                  "feedback below is for program evolution only, never add it or test references to the build corpus. "
+                  "Respect the configured memory call budgets. For evolved programs, "
                   "reserve one build LLM call for host KnowledgeItem induction; KnowledgeBase.write may use only "
                   "the remaining build_llm_calls minus one calls. Program imports and methods "
                   "must satisfy the existing sandbox interface. Return a JSON object with change (text) and program "
                   "(the complete Python source).\n\nMemory runtime: " + json.dumps(self.memory_runtime()) +
                   "\n\nParent source:\n" + source.read_text(encoding="utf-8") +
-                  "\n\nDevelopment feedback:\n" + json.dumps(prompt_packet, ensure_ascii=False))
+                  "\n\nDevelopment feedback:\n")
         with self.client(directory / "requests") as client:
+            from .reflection_budget import pack_reflection_feedback
+            prompt, prompt_packet, budget = pack_reflection_feedback(prompt_packet, prefix=prompt,
+                count_chat_tokens=client.count_chat_tokens, input_limit=self.generation["input_max_tokens"],
+                output_budget=self.config["evolution"]["max_reflection_tokens"])
+            atomic_write_json(directory / "reflection-input.json", prompt_packet)
+            budget["source_feedback"] = binding(directory / "feedback.json")
+            atomic_write_json(directory / "reflection-budget.json", budget)
             raw = client.complete([{"role": "user", "content": prompt}],
                     max_tokens=self.config["evolution"]["max_reflection_tokens"], component="shared_mstar_reflection",
                     response_format={"type": "json_object"})
@@ -518,7 +591,7 @@ class LocalSharedBackend:
                  "experiment_protocol_sha256": self.protocol.protocol_sha256, "winner": winner,
                  "recipes": {key: state["recipes"][key] for key in assets}, "assessments": assets,
                  "runtime": runtime_identity(), "generation_identity": generation_identity(), "scoring_config": self.config["scoring_config"],
-                 "promotion_policy": {"path": str(self.root / "failure-policy.json"), "evaluation_epoch": winner["evaluation_epoch"]}}
+                 "promotion_policy": {**binding(self.root / "failure-policy.json"), "evaluation_epoch": winner["evaluation_epoch"]}}
         return {**value, "freeze_id": value_sha256(value)}
 
     def write_report_input(self, state):
@@ -592,11 +665,43 @@ def run_shared_experiment(*, protocol_path, output_root, repair_evidence=None):
     return SharedEvolution(protocol=protocol, output_root=output_root, backend=backend).run(repair_evidence=repair_evidence)
 
 
+def validate_study_freeze(protocol):
+    """No member of a multi-search study may open final evaluation early."""
+    study = protocol.document.get("study")
+    if study is None:
+        return
+    gate = read_json(study["freeze_manifest"])
+    expected = study["random_seeds"]
+    if gate.get("protocol") != "three-search-freeze-v1" or gate.get("status") != "all_frozen" or gate.get("random_seeds") != expected:
+        raise ValueError("Final evaluation requires all prespecified searches frozen")
+    systems = gate.get("systems", [])
+    if len(systems) != len(expected) or {row["seed"] for row in systems} != set(expected):
+        raise ValueError("Final evaluation cannot omit a search Champion")
+    current = generation_identity()
+    if gate.get("generation_identity") != current:
+        raise ValueError("All-search freeze requires the current frozen generator")
+    members = []
+    for member in systems:
+        other = load_experiment_protocol(bound(member["protocol"]))
+        frozen = read_json(bound(member["frozen_system"]))
+        body = {key: value for key, value in frozen.items() if key != "freeze_id"}
+        if (frozen.get("status") != "complete" or frozen.get("freeze_id") != value_sha256(body)
+                or frozen.get("experiment_protocol_sha256") != other.protocol_sha256
+                or frozen.get("generation_identity") != current
+                or other.document["evolution"]["random_seed"] != member["seed"]
+                or other.document["splits"] != protocol.document["splits"]):
+            raise ValueError("All-search gate requires each actual frozen system and the same cohort")
+        members.append(other.protocol_sha256)
+    if protocol.protocol_sha256 not in members:
+        raise ValueError("This run is not a member of the frozen study")
+
+
 def run_shared_final_test(*, protocol_path, output_root, frozen_system_path, repair_evidence=None):
     """Evaluate frozen variants on the sealed cohort; all test feedback stays here."""
     import fcntl
-    from .failure_policy import FailureController, FailureLimits, EvolutionBudgetExhausted, EvolutionPaused, failure_detail, validate_promotion_policy
+    from .failure_policy import FailureController, FailureLimits, EvolutionBudgetExhausted, EvolutionPaused, failure_detail, validate_frozen_policy
     protocol = load_experiment_protocol(protocol_path)
+    validate_study_freeze(protocol)
     frozen = read_json(frozen_system_path)
     body = {key: value for key, value in frozen.items() if key != "freeze_id"}
     if (frozen.get("protocol") == "research-v2-shared-frozen-system-v1" and frozen.get("status") == "complete"
@@ -605,8 +710,11 @@ def run_shared_final_test(*, protocol_path, output_root, frozen_system_path, rep
         pass
     else:
         raise ValueError("Final test requires the exact complete frozen shared system and runtime")
-    promotion_policy = read_json(frozen["promotion_policy"]["path"])
-    validate_promotion_policy(promotion_policy)
+    try:
+        promotion_policy = read_json(bound(frozen["promotion_policy"]) if "sha256" in frozen["promotion_policy"] else frozen["promotion_policy"]["path"])
+    except ValueError as exc:
+        raise ValueError("Promotion policy differs from the current verified freeze") from exc
+    validate_frozen_policy(promotion_policy)
     if promotion_policy["evaluation_epoch"] != frozen["promotion_policy"]["evaluation_epoch"]:
         raise ValueError("Final test requires the current verified evaluation epoch")
     backend = LocalSharedBackend(protocol=protocol, output_root=output_root)

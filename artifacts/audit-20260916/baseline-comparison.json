@@ -1,5 +1,0 @@
-{
-  "baseline_commit": "d65b6a1802a8331cabf314e187d284485c29117a",
-  "baseline_root": "/tmp/agentreview-head-audit-f4jvff8n",
-  "extraction": "tracked files excluding dataset symlinks; tests create fixture papers"
-}

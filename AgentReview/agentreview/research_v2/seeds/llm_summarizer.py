@@ -59,7 +59,7 @@ class KnowledgeBase:
         self.seen = set()
 
     def write(self, item: KnowledgeItem, raw_text: str) -> None:
-        text = str(item.content or raw_text or "").strip()
+        text = str(raw_text or item.content or "").strip()
         role = str(item.reviewer_dimension or "").upper()
         if not text or not role:
             return
@@ -92,14 +92,18 @@ class KnowledgeBase:
         self.toolkit.log("retrieval_hits", frozen_hits)
         if not selected:
             return ""
-        history = "\n\n".join(
-            f"[REVIEW EXPERIENCE {item['id']}]\n{item['text']}" for item in selected
-        )[:12000]
+        entries = [f"[REVIEW EXPERIENCE {item['id']}]\n{item['text']}" for item in selected]
+        entries = self.toolkit.select_memory_entries(entries, purpose="summary_input")
+        if not entries:
+            return ""
+        history = "\n\n".join(entries)
         prompt = (
             "Summarize the fixed Review Experience hits below into reusable peer-review "
             "guidance for the supplied query. Do not filter, add, or replace hits. Do not "
-            "claim that prior-paper facts apply to the current paper. Return at most 1500 "
-            "characters.\n\nRole:\n"
+            "claim that prior-paper facts apply to the current paper. Preserve explicit "
+            "corrections and distinguish them from the original erroneous claims. Cite "
+            "the source REVIEW EXPERIENCE IDs. Return complete guidance within "
+            + str(self.toolkit.memory_token_limit()) + " tokens.\n\nRole:\n"
             + role
             + "\n\nQuery:\n"
             + query.query_text
@@ -111,4 +115,4 @@ class KnowledgeBase:
             agent_name="Research v2 Memory Summarizer",
         )
         self.toolkit.log("summarizer_output", str(summary))
-        return str(summary)[:1500]
+        return str(summary)

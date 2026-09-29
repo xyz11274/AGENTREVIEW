@@ -384,7 +384,8 @@ def generate_final_review(
             "generation_config": generation_config,
             "request_sha256": request_sha256,
         }
-        for attempt in range(1, META_MAX_ATTEMPTS + 1):
+        outer_attempts = 1 if getattr(completion_client, "retry_policy", None) else META_MAX_ATTEMPTS
+        for attempt in range(1, outer_attempts + 1):
             raw_path = (
                 output
                 / "final_reviews"

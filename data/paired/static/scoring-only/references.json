@@ -1,0 +1,45 @@
+{
+  "benchmark_files": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/benchmark.jsonl",
+      "sha256": "f7510af67a6ce0749affa9fae205b0fe55d5ce263153d81bed9c3294bc360def"
+    }
+  ],
+  "complete_human_classify_file": {
+    "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/human.jsonl",
+    "sha256": "44ea598182aea5b60ffc9a9b3820ee6c3ffb2257cd214bf717e73addde9e9f7a"
+  },
+  "paper_ids": [
+    "0kPL3xO4R5",
+    "FYUzzBPh_j",
+    "qw674L9PfQE",
+    "BK-4qbGgIE3",
+    "TIdIXIpzhoI",
+    "C_vsGwEIjAr",
+    "06fUz_bJStS",
+    "DfUjyyRW90",
+    "SlxSY2UZQT",
+    "zLb9oSWy933",
+    "Sq0-tgDyHe4",
+    "-BTmxCddppP",
+    "iBBcRUlOAPR",
+    "kI_kL5vq6Oa",
+    "o4neHaKMlse",
+    "KieCChVB6mN",
+    "Z26xiZkbjgE",
+    "qf12cWVSksq",
+    "QYhUhMOI4C",
+    "2vYmjZVT29T",
+    "Wo1HF2wWNZb",
+    "JSBgIaxAXk9",
+    "f-FQE1fjPK",
+    "gtCPWaY5bNh",
+    "ocg4JWjYZ96"
+  ],
+  "partition": "static",
+  "protocol": "research-v2-coco-reference-manifest-v1",
+  "reviewer_selection_file": {
+    "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/selection.json",
+    "sha256": "3895c4a3482dc0ffa6751516e6bff22e843b051ba0098bceb4821d4c76de87a4"
+  }
+}

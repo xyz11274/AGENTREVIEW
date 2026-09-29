@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from pathlib import Path
 import copy
+import json
 import threading
 
 import pytest
@@ -116,8 +117,14 @@ def backend(monkeypatch):
         model_dir = fixture.root / "model"
         model_dir.mkdir()
         (model_dir / "weights").write_bytes(b"test frozen model")
+        from tokenizers import Tokenizer, models, pre_tokenizers
+        tokenizer = Tokenizer(models.WordLevel({"[UNK]": 0}, unk_token="[UNK]"))
+        tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+        tokenizer.save(str(model_dir / "tokenizer.json"))
+        fixture.config["model"]["tokenizer_sha256"] = binding(model_dir / "tokenizer.json")["sha256"]
         atomic_write_json(scoring, {"source_files": [], "coco_root": "/data0/xyj/shengao/CoCoReviewBench",
-            "bert_score_model": coco._model_identity(model_dir), "services": {}}, immutable=False)
+            "bert_score_model": coco._model_identity(model_dir),
+            "services": {"judge": {"model_identity": coco._model_identity(model_dir)}}}, immutable=False)
         fixture.config["scoring_config"] = binding(scoring)
         fixture.rewrite_config()
         protocol = load_experiment_protocol(fixture.config_path)
@@ -197,8 +204,27 @@ def test_role_scoring_is_never_called(backend, monkeypatch):
     assert not list(backend.root.rglob("role-coco"))
 
 
-def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypatch):
+@pytest.mark.parametrize("rotating_count", [1, 5])
+def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypatch, rotating_count):
     install_model_scores(monkeypatch)
+    template = backend.protocol.records("rotating")[0]
+    ids = [f"rotating-paper-{index}" for index in range(rotating_count)]
+    rows = []
+    reference_root = backend.root / "five-rotating"
+    benchmark = write_immutable_jsonl(reference_root / "benchmark.jsonl", [{"id": pid} for pid in ids])
+    human = write_immutable_jsonl(reference_root / "human.jsonl", [{"id": pid} for pid in ids])
+    selection = atomic_write_json(reference_root / "selection.json", dict.fromkeys(ids, "Reviewer 1"))
+    reference = atomic_write_json(reference_root / "references.json", {"protocol": coco.REFERENCE_MANIFEST_PROTOCOL,
+        "partition":"rotating", "paper_ids":ids, "benchmark_files":[binding(benchmark)],
+        "complete_human_classify_file":binding(human), "reviewer_selection_file":binding(selection)})
+    for pid in ids:
+        row = copy.deepcopy(template)
+        row["paper_id"] = pid
+        paper = read_json(template["assets"]["paper"]["path"])
+        paper["paper_id"] = pid
+        row["assets"].update(paper=binding(atomic_write_json(reference_root / f"{pid}.json", paper)), coco_reference=binding(reference))
+        rows.append(row)
+    backend.protocol.splits["rotating"] = rows
     class QueryCompletion(review_fixtures.FakeCompletion):
         def complete(self, messages, *, max_tokens, component, response_format=None):
             if response_format and response_format["json_schema"]["name"] == "Query":
@@ -210,9 +236,44 @@ def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypa
     monkeypatch.setattr(backend, "client", client)
     static = {**recipe(backend), "memory_enabled": True}
     first = backend.assess(static, epoch=0)
-    rotating = {**static, "key": "feedback-0001-e0", "kind": "parent_feedback", "split": "rotating", "paper_ids": ["rotating-paper"]}
+    rotating = {**static, "key": "feedback-0001-e0", "kind": "parent_feedback", "split": "rotating", "paper_ids": ids}
     second = backend.assess(rotating, epoch=0)
     backend.validate(second, recipe=rotating, epoch=0)
     assert first["identity"]["snapshots"] == second["identity"]["snapshots"]
     assert first["identity"]["role_reviews"] != second["identity"]["role_reviews"]
     assert first["assessment"] != second["assessment"]
+    prompts = []
+    class Reflector:
+        def count_chat_tokens(self, messages):
+            return {"input_tokens": len(messages[0]["content"]) // 4, "max_model_len": 131072}
+        def complete(self, messages, **kwargs):
+            prompts.append(messages[0]["content"])
+            return json.dumps({"change": "Use rotating diagnosis in the memory instruction.",
+                "program": seed_program_path("vector_search").read_text().replace(
+                    "Ground every judgment in the Frozen Paper.", "Verify each recalled heuristic against the Frozen Paper.")})
+    @contextmanager
+    def reflector(directory):
+        yield Reflector()
+    monkeypatch.setattr(backend, "client", reflector)
+    backend.generation["input_max_tokens"] = 114688
+    selected = ids[:min(2, rotating_count)]
+    backend.config["evolution"]["detailed_reflection_cases"] = len(selected)
+    proposal = backend.propose(parent=static["candidate"], feedback={**second,
+        "reflection_case_ids":selected, "reflection_selection":{"rule":"frozen test tie-break"}},
+        history={"0001": {"change": "COMPLETE_PRIOR_CHANGE"}}, directory=backend.root / "reflection")
+    assert len(prompts) == 1 and "COMPLETE_PRIOR_CHANGE" in prompts[0]
+    reflection_input = read_json(backend.root / "reflection/reflection-input.json")
+    full_feedback = read_json(backend.root / "reflection/feedback.json")
+    assert len(full_feedback["current_rotating_feedback"]) == rotating_count
+    assert len(reflection_input["rotating_overview"]) == rotating_count
+    assert reflection_input["required_case_ids"] == selected
+    assert [row["paper_id"] for row in reflection_input["current_rotating_feedback"]] == selected
+    assert reflection_input["current_rotating_feedback"][0]["metrics"]["Paper."] == 2.0
+    for role in ROLES:
+        assert len(full_feedback["trajectories"][role]) == rotating_count
+        assert [row["paper_id"] for row in reflection_input["trajectories"][role]] == selected
+        review = read_json(second["identity"]["role_reviews"][role][0]["path"])
+        assert review["review_text"] == reflection_input["trajectories"][role][0]["review_text"]
+    assert "Verify each recalled heuristic" in Path(proposal["program"]["path"]).read_text()
+    with pytest.raises(ValueError, match="rotating"):
+        backend.propose(parent=static["candidate"], feedback=first, history={}, directory=backend.root / "rejected-static")

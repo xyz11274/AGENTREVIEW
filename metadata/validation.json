@@ -1,0 +1,338 @@
+{
+  "source_0915": {
+    "suite": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "36",
+      "skipped": "9",
+      "tests": "723",
+      "time": "142.157",
+      "timestamp": "2026-09-29T10:21:05.668705+08:00",
+      "hostname": "ubun"
+    },
+    "failures": [
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_bounded_parallel_run_has_deterministic_order_and_resumes",
+        "message": "ValueError: Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_generation_policy_change_cannot_reuse_the_same_run",
+        "message": "AssertionError: \"different canonical bootstrap spec\" does not match \"Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_repeated_failure_is_retryable_and_partial_raw_is_reused",
+        "message": "ValueError: Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_crash_after_raw_promotion_resumes_without_a_second_llm_call",
+        "message": "AssertionError: False is not true"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_exact_batch_is_bounded_interleaves_meta_and_never_exposes_scores",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_arm_outputs_reject_parent_and_final_symlink_escape",
+        "message": "AssertionError: \"symbolic link\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_happy_path_is_self_hashed_immutable_and_idempotent",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_is_strictly_local_and_proxy_free",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_rejects_evaluation_prefix_symlink_escape_and_dangling",
+        "message": "AssertionError: \"escapes its sys.prefix\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_rejects_evaluation_prefix_symlink_escape_and_dangling",
+        "message": "AssertionError: \"dangling\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_spec_output_and_validation_reject_symlink_paths",
+        "message": "AssertionError: \"symbolic link\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_arm_output_and_cache_namespace_conflicts",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_dirty_repository_and_ignored_model_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_rehashed_json_type_substitutions",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_bound_source_change_prevents_final_system_commit",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_external_coco_commit_must_match_scoring_spec_before_commit",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_formal_roles_must_share_exact_data_sources",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_formal_run_id_must_be_one_path_safe_name",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_git_head_change_rejects_materialize_and_load",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materialized_spec_round_trips_into_a_frozen_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_revalidates_semantics_after_source_binding",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_missing_rotating_evidence_prevents_materialization",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_rehashed_scoring_spec_tamper_never_reaches_final_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_tampered_formal_spec_never_reaches_freeze_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_transition_validator_rejects_rehashed_winner_substitution",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_reviewer_identity.FrozenReviewerIdentityTest::test_meta_has_independent_prompt_and_manifest",
+        "message": "ValueError: Meta synthesis manifest differs from the rendered prompt: /data/xyj/shengao/AgentReview_0915/AgentReview/configs/frozen_meta_synthesis_v2.json"
+      }
+    ]
+  },
+  "target_0930": {
+    "suite": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "36",
+      "skipped": "9",
+      "tests": "723",
+      "time": "146.617",
+      "timestamp": "2026-09-29T10:18:15.522922+08:00",
+      "hostname": "ubun"
+    },
+    "failures": [
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_bounded_parallel_run_has_deterministic_order_and_resumes",
+        "message": "ValueError: Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_generation_policy_change_cannot_reuse_the_same_run",
+        "message": "AssertionError: \"different canonical bootstrap spec\" does not match \"Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_bootstrap.BootstrapRunnerTest::test_repeated_failure_is_retryable_and_partial_raw_is_reused",
+        "message": "ValueError: Canonical bootstrap found conflicting committed artifacts:"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_crash_after_raw_promotion_resumes_without_a_second_llm_call",
+        "message": "AssertionError: False is not true"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_exact_batch_is_bounded_interleaves_meta_and_never_exposes_scores",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_review_batch.CocoReviewBatchTest::test_resume_rejects_review_text_tampering_before_generation",
+        "message": "agentreview.research_v2.coco_review_batch.CocoReviewInfrastructureFailure: CoCo Review batch stopped after a shared infrastructure failure; resume with run_id 'formal-coco' after recovery"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_arm_outputs_reject_parent_and_final_symlink_escape",
+        "message": "AssertionError: \"symbolic link\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_happy_path_is_self_hashed_immutable_and_idempotent",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_is_strictly_local_and_proxy_free",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_rejects_evaluation_prefix_symlink_escape_and_dangling",
+        "message": "AssertionError: \"escapes its sys.prefix\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_materialization_rejects_evaluation_prefix_symlink_escape_and_dangling",
+        "message": "AssertionError: \"dangling\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_spec_output_and_validation_reject_symlink_paths",
+        "message": "AssertionError: \"symbolic link\" does not match \"CoCo judge model root is not a canonical directory\""
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_arm_output_and_cache_namespace_conflicts",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_dirty_repository_and_ignored_model_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_evaluation_prefix_regular_symlink_and_pyc_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_coco_scoring_spec.CocoScoringSpecTest::test_validation_rejects_rehashed_json_type_substitutions",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_bound_source_change_prevents_final_system_commit",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_external_coco_commit_must_match_scoring_spec_before_commit",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_formal_roles_must_share_exact_data_sources",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_formal_run_id_must_be_one_path_safe_name",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_git_head_change_rejects_materialize_and_load",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materialized_spec_round_trips_into_a_frozen_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_fails_closed_on_authoritative_identity_drift",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_materializer_revalidates_semantics_after_source_binding",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_missing_rotating_evidence_prevents_materialization",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_rehashed_scoring_spec_tamper_never_reaches_final_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_tampered_formal_spec_never_reaches_freeze_system",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_research_v2_formal_transition.FormalTransitionTest::test_transition_validator_rejects_rehashed_winner_substitution",
+        "message": "ValueError: CoCo judge model root is not a canonical directory"
+      },
+      {
+        "test": "AgentReview.tests.test_reviewer_identity.FrozenReviewerIdentityTest::test_meta_has_independent_prompt_and_manifest",
+        "message": "ValueError: Meta synthesis manifest differs from the rendered prompt: /data/xyj/shengao/AgentReview_0930/AgentReview/configs/frozen_meta_synthesis_v2.json"
+      }
+    ]
+  },
+  "new_failing_test_ids": [],
+  "resolved_test_ids": [],
+  "same_failing_test_ids": true,
+  "independent_data_check": {
+    "status": "passed",
+    "local_input_files": 3192,
+    "splits": {
+      "build": 125,
+      "static": 25,
+      "rotating": 125,
+      "sealed_test": 1300
+    },
+    "protocols": 3,
+    "full_papers_preserved": 1575,
+    "old_checkout_reads": 0,
+    "model_calls": 0,
+    "runtime_services_checked": false
+  },
+  "model_services_started": false,
+  "experiment_started": false
+}

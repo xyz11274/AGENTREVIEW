@@ -14,3 +14,9 @@ artifacts/research_v2/
 /artifacts/deployment/
 __pycache__/
 .pytest_cache/
+
+# 0930: tracked code, configuration and frozen datasets; generated state is local.
+/artifacts/
+/assets/hf/
+/AgentReview/cache/
+*.pyc

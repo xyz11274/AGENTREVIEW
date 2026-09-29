@@ -1,39 +1,0 @@
-Loading human full-text data...
-Loaded full-text for 3 test papers and 3 ref papers.
-Loading human review data...
-## Strengths
-## Strengths
-## Strengths
-Computing metrics for 3 samples...
-BLEU/ROUGE:   0%|          | 0/3 [00:00<?, ?it/s]BLEU/ROUGE:  33%|███▎      | 1/3 [00:00<00:00,  3.32it/s]BLEU/ROUGE: 100%|██████████| 3/3 [00:00<00:00,  7.55it/s]
-Some weights of RobertaModel were not initialized from the model checkpoint at roberta-large and are newly initialized: ['pooler.dense.bias', 'pooler.dense.weight']
-You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
-calculating scores...
-computing bert embedding.
-  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:01<00:00,  1.92s/it]100%|██████████| 1/1 [00:01<00:00,  1.92s/it]
-computing greedy matching.
-  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 113.30it/s]
-done in 1.93 seconds, 5.17 sentences/sec
-
-Starting category-level judging
-================================================================================
-Phase 1: preparing and submitting all judge tasks...
-Preparing category-level tasks:   0%|          | 0/3 [00:00<?, ?it/s]Preparing category-level tasks: 100%|██████████| 3/3 [00:00<00:00, 560.34it/s]
-Total tasks submitted: 13
-
-Phase 2: collecting all judge results...
-Getting category-level results:   0%|          | 0/13 [00:00<?, ?it/s]Getting category-level results:   8%|▊         | 1/13 [01:55<23:09, 115.79s/it]Getting category-level results:  15%|█▌        | 2/13 [02:11<10:25, 56.84s/it] Getting category-level results: 100%|██████████| 13/13 [02:11<00:00, 10.11s/it]
-
-Processed 3 papers for category-level evaluation
-
-Starting full-text judge evaluation (full_judge)
-================================================================================
-Phase 1: preparing and submitting all judge tasks...
-Preparing full-judge tasks:   0%|          | 0/3 [00:00<?, ?it/s]Preparing full-judge tasks: 100%|██████████| 3/3 [00:00<00:00, 574.48it/s]
-Total tasks submitted: 3
-
-Phase 2: collecting all judge results...
-Getting full-judge results:   0%|          | 0/3 [00:00<?, ?it/s]Getting full-judge results:  33%|███▎      | 1/3 [01:22<02:45, 82.80s/it]Getting full-judge results: 100%|██████████| 3/3 [01:36<00:00, 26.36s/it]Getting full-judge results: 100%|██████████| 3/3 [01:36<00:00, 32.00s/it]
-
-Processed 3 papers for full-judge evaluation
-[LLM usage] prompt=61140, completion=30646, total=91786

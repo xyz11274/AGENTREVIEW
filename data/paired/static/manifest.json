@@ -1,0 +1,556 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/0kPL3xO4R5.json",
+          "sha256": "d0c3c961ff0198404f9d02130df6438f67db33241478712edb296b81e99495f6"
+        }
+      },
+      "content_sha256": "073e6df3c4c8df7808b56f84e27144fe3adb8165fc8e689a2591c50dbcb9c647",
+      "normalized_content_sha256": "c2b24afe04c0d8cac1cb7a46b48b59603bbf330b8edf9969fd61f599689b8a89",
+      "paper_id": "0kPL3xO4R5",
+      "source_partition": "static",
+      "title": "Fast topological clustering with Wasserstein distance",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "0kPL3xO4R5"
+      ],
+      "work_family": "db7e68f5493d695319b576f884538b0f1a204e71fcf56eb3a2adf5b0274adda2"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/FYUzzBPh_j.json",
+          "sha256": "3525e5ac15fc38897e347283081f1e4e4a575d77b9a8087fb8aa37eb5e0076aa"
+        }
+      },
+      "content_sha256": "42c4ed813e9d4b439ec2a76ce27118bb5c31591792ab3e0fa6cf0938fb1871df",
+      "normalized_content_sha256": "2c873eb953356ae264cb633310721c74afd9cd48ce51bc13718e599570bd4a7c",
+      "paper_id": "FYUzzBPh_j",
+      "source_partition": "static",
+      "title": "Communicating via Markov Decision Processes",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "FYUzzBPh_j"
+      ],
+      "work_family": "5dbadc333b089a5f3315c9cf287d800e246e8d147c184a948b7c350e11c5f4e0"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/qw674L9PfQE.json",
+          "sha256": "cbe84f0ed00b3f1953ea5b41a5f50963f266fbb077e3cfc547667caed761d561"
+        }
+      },
+      "content_sha256": "bab9f4ec5f6b09d7c2e9548da2e07e559353f130530cb468e4231f86349493e2",
+      "normalized_content_sha256": "ecc29c96004e3b263a4de390c1c7730455620f2797b85dcd80da0b7a409bfba8",
+      "paper_id": "qw674L9PfQE",
+      "source_partition": "static",
+      "title": "CLOOB: Modern Hopfield Networks with InfoLOOB Outperform CLIP",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "qw674L9PfQE"
+      ],
+      "work_family": "462e996c8e2b2f320f8524bd7f0ab3e2c413cd1c80bbf9ac1f729803de231de2"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/BK-4qbGgIE3.json",
+          "sha256": "3416b9a1740a348f1d7b8c3a19789f84ab6bc1ef81c28b2f5bba9a1fa6d63dd5"
+        }
+      },
+      "content_sha256": "422842e972d1c3547716f46d6b069b7fcb1a795c9355c03e24eafaa99df7f20b",
+      "normalized_content_sha256": "4f615a66b3961f3914439ae09b7beb6420da534cd0706f6b94ed5ee66d2fd50b",
+      "paper_id": "BK-4qbGgIE3",
+      "source_partition": "static",
+      "title": "No One Representation to Rule Them All: Overlapping Features of Training Methods",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "BK-4qbGgIE3"
+      ],
+      "work_family": "ff4aff492a73cc88ba4c83ec900d60d2e482f6a6c6c7fbc1cc7eb54f801b2370"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/TIdIXIpzhoI.json",
+          "sha256": "5600e45034d5408a406688b9f3633d5a266b0905ce7c435a59be09c05b13ca0c"
+        }
+      },
+      "content_sha256": "5eff14fd43e8b8ff5fbde6880aa2791ba3011d7e68f8f01e110a3e8f56a252f4",
+      "normalized_content_sha256": "4203151f2560f2840900a92b75c60856500c0359070a9156fdcf3d7719b4d9cb",
+      "paper_id": "TIdIXIpzhoI",
+      "source_partition": "static",
+      "title": "Progressive Distillation for Fast Sampling of Diffusion Models",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "TIdIXIpzhoI"
+      ],
+      "work_family": "77b5c87ac46c99a639c22ba64d192c435c9ccda906efd865c2047cc1d51da307"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/C_vsGwEIjAr.json",
+          "sha256": "ca19265512ba2909baae20c5c396627d1ced5e7fe9fd6f1a7f033504a3edfb8b"
+        }
+      },
+      "content_sha256": "cc6aedc02135fd04f45f68d11ba848e53454004e8ae1c2c3e71afcf87028c2e0",
+      "normalized_content_sha256": "d8632e47a3d811cc9f611a6c905fc27215d32b038695d3852d0cf8d3de6415b4",
+      "paper_id": "C_vsGwEIjAr",
+      "source_partition": "static",
+      "title": "Trivial or Impossible --- dichotomous data difficulty masks model differences (on ImageNet and beyond)",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "C_vsGwEIjAr"
+      ],
+      "work_family": "9caa1adf677c16f76ae2c23666a004e175369856aab17b4afd173c4c30eadb2c"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/06fUz_bJStS.json",
+          "sha256": "aa42136d2770ea9c7be5f408b14d9f8f7e2624617803cfa1262d39bed043b4bc"
+        }
+      },
+      "content_sha256": "da3dd5703911298593738fae0f9affcb2484d46e1bd3d6c05fc91484e551b48b",
+      "normalized_content_sha256": "f221725014398115f17cbd2b769931b01e214f8bdd0dfb2cfb5bb02884f95a75",
+      "paper_id": "06fUz_bJStS",
+      "source_partition": "static",
+      "title": "Differentially Private SGD with Sparse Gradients",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "06fUz_bJStS"
+      ],
+      "work_family": "13198a308e7e2217c9ab6521c0ad697f1d86fdda060e63a16346cb115b9fbf5b"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/DfUjyyRW90.json",
+          "sha256": "d0ec234314becd81bb6e505f4ee4cfae96f64a728a478669b8ce988a97bc0833"
+        }
+      },
+      "content_sha256": "c49fc9a636714dbfd9b27041b46f1b31f60a174ffb78e113dad2b2d578aa5be8",
+      "normalized_content_sha256": "ddd322b6497b61e7519c61698868df904acaf7f7f2c02b44bc05d23a0ee135bc",
+      "paper_id": "DfUjyyRW90",
+      "source_partition": "static",
+      "title": "Information Prioritization through Empowerment in Visual Model-based RL",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "DfUjyyRW90"
+      ],
+      "work_family": "8026a46f7ce20456f1e23a0b71a4cc4c18c193a3ff39552f03848c92d5783c67"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/SlxSY2UZQT.json",
+          "sha256": "6291d061bd147dbeb0f840b525ee2f64b814d3a6386178f9738661fc354b8c91"
+        }
+      },
+      "content_sha256": "0aac4db0d8df178d0d180567811be58f822f6e64cc3f79f6439b40fed672fe29",
+      "normalized_content_sha256": "c9628fd78feab3c76612914175e1c28f3d4639b8720ea2bb15279db489592d9d",
+      "paper_id": "SlxSY2UZQT",
+      "source_partition": "static",
+      "title": "Label-Efficient Semantic Segmentation with Diffusion Models",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "SlxSY2UZQT"
+      ],
+      "work_family": "76f5e61b5c630b6330e37398f71810b8029f3f84f29d0f891d17f04bc27851de"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/zLb9oSWy933.json",
+          "sha256": "db4b11df07144b7e0b645c6262b4fcc3bc2a69eb5fc3dd58964528eefb703c5e"
+        }
+      },
+      "content_sha256": "30597c4ed8a414f98b602fcc76d494de828f9cfb3089d5122e55200ba2e0a23a",
+      "normalized_content_sha256": "16101f04863483556984b13dcdd8759e83e771d456835946d1440fbd59ca6432",
+      "paper_id": "zLb9oSWy933",
+      "source_partition": "static",
+      "title": "Fast Finite Width Neural Tangent Kernel",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "zLb9oSWy933"
+      ],
+      "work_family": "3882bf2233c9884062c414b7ae8f21d5379c03651d3a550fa9eaed34df4f3a18"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/Sq0-tgDyHe4.json",
+          "sha256": "2289b70e5a41094a5c23e4d2ba6d2e0bfc247e78e48f9112da4c06a055e0000c"
+        }
+      },
+      "content_sha256": "064b098c20b2cca71d980c80e023130e0792256d5ead24efb3b2d16b3bbd8f7b",
+      "normalized_content_sha256": "76b808e3300e17e2e7b8dab3497ecc3d1d50ef0cb87f2aa32edc34a1ce47044a",
+      "paper_id": "Sq0-tgDyHe4",
+      "source_partition": "static",
+      "title": "Local Feature Swapping for Generalization in Reinforcement Learning",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "Sq0-tgDyHe4"
+      ],
+      "work_family": "8ab2964bf53b6e2cd94c966cf101be8cb3d4b3eaa7ba1ded0e19f3eb66776430"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/-BTmxCddppP.json",
+          "sha256": "b6ade68a6a94c059d6f1b978d6718cb447cd4b51d18de1f27fb94a276521ea67"
+        }
+      },
+      "content_sha256": "43776f988890b8609a4a5953970803831db8a9d368f13856e05889bdf8ac185e",
+      "normalized_content_sha256": "79146d29fd0cb5960c5d4a46541f2d90cdef6a8318f5be08e26cf5f10f48be45",
+      "paper_id": "-BTmxCddppP",
+      "source_partition": "static",
+      "title": "Revisiting Out-of-Distribution Detection: A Simple Baseline is Surprisingly Effective",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "-BTmxCddppP"
+      ],
+      "work_family": "c51071aac6d892b9decc1f7c8f2560f882072437878a57c802c5049b923ef3e4"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/iBBcRUlOAPR.json",
+          "sha256": "62d0c94b4b371beb32479b102aee290ba2b4565c0013cc165c11c4ab9fb1a8c4"
+        }
+      },
+      "content_sha256": "c6855db0b28750c2d7d8f7e27e2f592eda0ce075d584d7d7870451a629bb13e1",
+      "normalized_content_sha256": "bc3f44a52c3057739823c666a9f0f9e63ceec2e080ce7d58f475b4b81c2db5de",
+      "paper_id": "iBBcRUlOAPR",
+      "source_partition": "static",
+      "title": "An empirical analysis of compute-optimal large language model training",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "iBBcRUlOAPR"
+      ],
+      "work_family": "8be1536e77a70c569bfeef5a61448f07b2fd96fec88438e60693bd8bd8798706"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/kI_kL5vq6Oa.json",
+          "sha256": "3176019b5bdbe5444753e5d93a56e76b59bb00f44ed3b56a243fa89ddbc3ec3b"
+        }
+      },
+      "content_sha256": "80a2f8c7a60865507fe17389234342ba6bbf9eb87f0e343b05cd0020937b0e93",
+      "normalized_content_sha256": "390190878a85baf5b74ab051c00adf66f8c869c184c15fa79022e04877dfe467",
+      "paper_id": "kI_kL5vq6Oa",
+      "source_partition": "static",
+      "title": "Risk-Driven Design of Perception Systems",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "kI_kL5vq6Oa"
+      ],
+      "work_family": "f0e48bc178b0ef2d51ba8284870513c3d5010b548f5b29968079b2ce55ca4630"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/o4neHaKMlse.json",
+          "sha256": "3fc5809805a95d0624fac212c20d627df4d7407c1df6118e5bb5d7d0e5af55fb"
+        }
+      },
+      "content_sha256": "7e2325d459fd0d0745041102cc56a16c618a8a1642833c93785ea6e7d1780a71",
+      "normalized_content_sha256": "e1847e9f28e880e131133a6a9f8c46cdfef294fb29476403cb8a4e643311a8d6",
+      "paper_id": "o4neHaKMlse",
+      "source_partition": "static",
+      "title": "Coarse-to-Fine Vision-Language Pre-training with Fusion in the Backbone",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "o4neHaKMlse"
+      ],
+      "work_family": "9df751e400c3a702e4bfb4ee84acef3e875641d638a245cfe933512fbe90dae7"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/KieCChVB6mN.json",
+          "sha256": "cf11a14dfbf892ad48ca7115e9bd17610680ee5d69c6bc90ba2418f016eea5e3"
+        }
+      },
+      "content_sha256": "77ba0e845e813a5826b3b2977ed94e70c5c231c4425110d0a316076f44b20e17",
+      "normalized_content_sha256": "8f3bbef54f897f1386e36355dbac7a131c9a546ce61932a2360526db823a9862",
+      "paper_id": "KieCChVB6mN",
+      "source_partition": "static",
+      "title": "Sparse Probabilistic Circuits via Pruning and Growing",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "KieCChVB6mN"
+      ],
+      "work_family": "997bbd308ac0b16406b9798d8d6bddda21ebe17f4b9d3a89bf33d0c28cd6e735"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/Z26xiZkbjgE.json",
+          "sha256": "c819f35f14aea69d9fbdbd845ef37cdc0e3c00df3ffc90be47e18b83c036e2b5"
+        }
+      },
+      "content_sha256": "33eca6abb6dcd9459ee45bdbd503a2270952ba0f08a9a8a2a4435d5b49c289a7",
+      "normalized_content_sha256": "22954348fc73c55e862b1a59aab2dbcac18b4ec75933f83d836725a3f5aa7da6",
+      "paper_id": "Z26xiZkbjgE",
+      "source_partition": "static",
+      "title": "Why Robust Generalization in Deep Learning is Difficult: Perspective of Expressive Power",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "Z26xiZkbjgE"
+      ],
+      "work_family": "8db61a743e283c071433725e9f003fba69a70f9bd8b89199a8cf28bedbb5f27d"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/qf12cWVSksq.json",
+          "sha256": "eda973e66cd102fdb3349643343dd0268867058c9770a07cfa1642b98b9af2e1"
+        }
+      },
+      "content_sha256": "93be942782c4b6120fb04d8d1e31799c05f587cfc7a8225344c883625adcec90",
+      "normalized_content_sha256": "030548ac9afed101935f903efe81788d955b286c39704a9175c8a0ecad080e38",
+      "paper_id": "qf12cWVSksq",
+      "source_partition": "static",
+      "title": "Inception Transformer",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "qf12cWVSksq"
+      ],
+      "work_family": "cedfaf40e6be5ddc2eeadcb90cf19a8f65f9bd14e50e2a19c36fb4d726648419"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/QYhUhMOI4C.json",
+          "sha256": "9b104d2a6491a0fb0b30901f983f91fdc6439816b88986b0eb1f17b7f1dc2ea4"
+        }
+      },
+      "content_sha256": "fde26d5453706dec1a75f0e101b739e0ebfdc09801e382e2e9c26a3730c9b2b6",
+      "normalized_content_sha256": "bf2aadcbc361b92f1aff43bb9775ae2d4b528863b8c28931704160408a69949a",
+      "paper_id": "QYhUhMOI4C",
+      "source_partition": "static",
+      "title": "Uniqueness and Complexity of Inverse MDP Models",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "QYhUhMOI4C"
+      ],
+      "work_family": "c0b6d29995643d074f2169ee123e1faf86feaed4e2b988102796c546daa71ea8"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/2vYmjZVT29T.json",
+          "sha256": "01e2d858319f21d2764ae3e4d22c7a2a904e29091f88d1ac4279cc0f70a99ccf"
+        }
+      },
+      "content_sha256": "21b3cee1cad9cf61d87715cd8f6e2eeb301d37dc28d5635a18f559c283678158",
+      "normalized_content_sha256": "9852cb78d11d6d08012531ed07216b40bfa8d9aaa690edc5112d2daafc76d77c",
+      "paper_id": "2vYmjZVT29T",
+      "source_partition": "static",
+      "title": "Hamiltonian Latent Operators for content and motion disentanglement in image sequences",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "2vYmjZVT29T"
+      ],
+      "work_family": "6fea70a4b2fddcd37c0394cf72ca225d873bdcabde8f11ab158d12ae41290b3c"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/Wo1HF2wWNZb.json",
+          "sha256": "b770b79e791b53a43d38acdbf271e6df49ffef821c890adb35bb65e9bf86cef9"
+        }
+      },
+      "content_sha256": "7feac3e50ec1af683e34d59fe855bc34ce4f93d859ed0e15293c5ddc43c0834a",
+      "normalized_content_sha256": "e99a82b488f0be03bb54aab6f38b65a66744c7d213da8677827303b78c424c4a",
+      "paper_id": "Wo1HF2wWNZb",
+      "source_partition": "static",
+      "title": "On the Identifiability of Nonlinear ICA: Sparsity and Beyond",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "Wo1HF2wWNZb"
+      ],
+      "work_family": "114e31d479ce81a6c7f1447d664f9e47f3ba5ab5bdd8b6ca5562faa3e5701f10"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/JSBgIaxAXk9.json",
+          "sha256": "8814dfc486734755af6f9d98c518ee9f22b9e5484a7b194f9fe8d37a9e0b683f"
+        }
+      },
+      "content_sha256": "bbbf58110dbdd0a1088b2d4d9976e63192c645ae4380816c32838c1d2df3ec9f",
+      "normalized_content_sha256": "039bcd2169a479537f283a4c5695467f5fb0f0e2510b60d751e5f18ea2d369f9",
+      "paper_id": "JSBgIaxAXk9",
+      "source_partition": "static",
+      "title": "Differentially Private Linear Regression via Medians",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "JSBgIaxAXk9"
+      ],
+      "work_family": "1fc9ed3d3ee430b62fad90b4e0056b061d61ef8b480689f9e6db4dc690314ba0"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/f-FQE1fjPK.json",
+          "sha256": "55b802d19450c9dec39a39da77c5adca0e0d29d96668eacdd3e1df51e7f60246"
+        }
+      },
+      "content_sha256": "b1cd425b34fba759a49f1a164b5d9077d9e71996954861a2664e966b51ab751a",
+      "normalized_content_sha256": "76b1e9880c2c7f2fd82827c3f7b0b65c9c2bd8e62c8fe6ca5b5cd36124d54765",
+      "paper_id": "f-FQE1fjPK",
+      "source_partition": "static",
+      "title": "NSNet: A General Neural Probabilistic Framework for Satisfiability Problems",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "f-FQE1fjPK"
+      ],
+      "work_family": "b7d77b9c46a07d78a3f3b0942684d5418c3dd571c1afcac4a44ed605a5ce6369"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/gtCPWaY5bNh.json",
+          "sha256": "a30b429d570a6f8ab7507e7238c14c0ecddb16c1d5c9954d4e6600de40e535e1"
+        }
+      },
+      "content_sha256": "19545ff16bf4f1a1985f5f186a7cbc7f090db3b432c57819585352a028973859",
+      "normalized_content_sha256": "be5e2ba0f0d285b5ce872beb39f6e07c1a249d784b01067da2ac252fdd999e60",
+      "paper_id": "gtCPWaY5bNh",
+      "source_partition": "static",
+      "title": "Deep Model Reassembly",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "gtCPWaY5bNh"
+      ],
+      "work_family": "064e044611227839bcd56b23b7f336ce17ec3a621fdfa58b96d408abb5ab5625"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/scoring-only/references.json",
+          "sha256": "5c9acc5611fb8c235a338fa01cfbaee9f0fb9e268a88452fb39138409583653e"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/papers/ocg4JWjYZ96.json",
+          "sha256": "95e0aa6e07150de4b98f043192853df924318399c827b037a8f2bc8f8154f650"
+        }
+      },
+      "content_sha256": "9d74d5609f1aae8de0b6e3ebf49eda6813fb309891225711327f92b52cbdc3b4",
+      "normalized_content_sha256": "3ca0fdd94120d6f9ae63f2df08c5dec762a67df642f6a8725cb0e47244f9075f",
+      "paper_id": "ocg4JWjYZ96",
+      "source_partition": "static",
+      "title": "Debugging and Explaining Metric Learning Approaches: An Influence Function Based Perspective",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "ocg4JWjYZ96"
+      ],
+      "work_family": "c073ff48c0a389f8075a53b11f14390d43c26369f3a5131a3271f10c151d9d09"
+    }
+  ],
+  "split": "static"
+}

@@ -1,6 +1,0 @@
-{"time": 1789616389.6386185, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.0005305036902427673, "slot": 0}
-{"time": 1789616413.1182923, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.0005647838115692139, "slot": 0}
-{"time": 1789616439.090319, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.0005560535937547684, "slot": 0}
-{"time": 1789616457.7576067, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.0004981132224202156, "slot": 0}
-{"time": 1789616481.979334, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.00049600750207901, "slot": 0}
-{"time": 1789616503.2829483, "pid": 2915951, "thread": 140403567937344, "event": "admitted", "stage": "request_admission", "port": 18001, "wait_seconds": 0.0005271350964903831, "slot": 0}

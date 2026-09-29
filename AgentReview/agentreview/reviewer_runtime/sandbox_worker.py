@@ -327,6 +327,15 @@ class CapabilityToolkit:
     def llm_completion(self, messages, **kwargs):
         return str(_tool_call("llm_completion", messages, **kwargs))
 
+    def count_tokens(self, text):
+        return _tool_call("count_tokens", text)
+
+    def memory_token_limit(self, purpose="context"):
+        return _tool_call("memory_token_limit", purpose)
+
+    def select_memory_entries(self, entries, purpose="context"):
+        return _tool_call("select_memory_entries", entries, purpose)
+
     def embed(self, texts):
         texts = [str(text) for text in texts]
         embeddings = _tool_call("embed", texts)

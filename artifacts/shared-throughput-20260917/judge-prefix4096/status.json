@@ -1,6 +1,0 @@
-{
-  "status": "not_started",
-  "reason": "Safe service manager rejected an owned process that exited into transient zombie state; no scoring requests sent; fixed with UID/start-time-preserving terminal-state handling and two real-child tests",
-  "valid_full_flow_reviews": 0,
-  "failed_scores": null
-}

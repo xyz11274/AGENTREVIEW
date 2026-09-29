@@ -337,6 +337,13 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
     for field in ("candidate_repairs", "round_repairs", "candidate_failures"):
         _integer(failure.get(field), f"failure_policy.{field}")
     _integer(failure.get("request_attempts"), "failure_policy.request_attempts")
+    if "consecutive_candidate_failures" in failure:
+        _integer(failure["consecutive_candidate_failures"], "failure_policy.consecutive_candidate_failures")
+    if "random_streams_protocol" in evolution:
+        _choice(evolution["random_streams_protocol"], {"sha256-separated-python-random-v1"}, "evolution.random_streams_protocol")
+        _integer(evolution.get("detailed_reflection_cases"), "evolution.detailed_reflection_cases")
+        if evolution["detailed_reflection_cases"] > evolution["rotating_sample_size"]:
+            raise ExperimentProtocolError("Detailed cases cannot exceed rotating sample size")
     document["scoring_config"] = _reference(document.get("scoring_config"), source.parent, "scoring_config", read=True)
     embedding = _object(document.get("embedding"), "embedding")
     for field in ("provider", "model", "revision", "cache_path"):
@@ -349,6 +356,13 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
     _choice(non_memory.get("final_mode"), {"meta", "concat"}, "non_memory_conditions.final_mode")
     _choice(non_memory.get("s2_mode"), {"frozen", "off"}, "non_memory_conditions.s2_mode")
     non_memory["review_policy_program"] = _reference(non_memory.get("review_policy_program"), source.parent, "non_memory_conditions.review_policy_program", read=True)
+    if "initial_memory_programs" in document:
+        seeds = _object(document["initial_memory_programs"], "initial_memory_programs")
+        if set(seeds) != {"vector_search", "llm_summarizer", "experience_learner"}:
+            raise ExperimentProtocolError("Initial programs require exactly the three original memory seed families")
+        document["initial_memory_programs"] = {
+            name: _reference(ref, source.parent, f"initial_memory_programs.{name}", read=True)
+            for name, ref in seeds.items()}
     dedup = _object(document.get("deduplication"), "deduplication")
     _choice(dedup.get("policy"), {"identity-family-normalized-content-v1"}, "deduplication.policy")
     dedup["family_audit"] = _reference(dedup.get("family_audit"), source.parent, "deduplication.family_audit", read=True)
@@ -365,6 +379,12 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
         raise ExperimentProtocolError(f"splits requires exactly {SPLIT_NAMES}")
     splits: dict[str, list[dict[str, Any]]] = {}
     seen: dict[tuple[str, str], tuple[str, str]] = {}
+    design = document.get("evaluation_design", {})
+    retain_history = design.get("historical_overlap_policy") == "retain-label-no-test-feedback"
+    if retain_history:
+        if (design.get("strictly_unseen_claim") is not False or design.get("test_feedback_to_search") is not False
+                or design.get("all_arms_frozen_before_final") is not True):
+            raise ExperimentProtocolError("Existing-benchmark diagnostics require explicit non-blind and no-test-feedback boundaries")
     for split in SPLIT_NAMES:
         ref = _reference(split_refs[split], source.parent, f"splits.{split}", read=True)
         split_refs[split] = ref
@@ -380,9 +400,13 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
         else:
             raise ExperimentProtocolError(f"splits.{split}.records requires an explicit nonempty identity list")
         normalized = []
+        split_paper_ids = set()
         for index, raw_row in enumerate(rows):
             name = f"splits.{split}.records[{index}]"
             row = _identity(raw_row, name)
+            if row["paper_id"] in split_paper_ids:
+                raise ExperimentProtocolError("A split cannot duplicate the same paper ID")
+            split_paper_ids.add(row["paper_id"])
             if row.get("source_partition") == split:
                 pass
             else:
@@ -390,7 +414,8 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
             for key in _identity_keys(row):
                 if key in seen:
                     previous = seen[key]
-                    raise ExperimentProtocolError(f"Data identity overlap ({key[0]}): {previous} and {(split, row['paper_id'])}")
+                    if not (retain_history and split == previous[0] == "sealed_test"):
+                        raise ExperimentProtocolError(f"Data identity overlap ({key[0]}): {previous} and {(split, row['paper_id'])}")
                 seen[key] = (split, row["paper_id"])
             assets = _object(row.get("assets"), f"{name}.assets")
             required_assets = {"paper"} if split == "build" else {"paper", "coco_reference"}
@@ -431,8 +456,15 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
             row = _identity(raw_row, f"history[{index}].records[{row_index}]")
             history_records += 1
             overlap = _identity_keys(row) & sealed_keys
-            if overlap:
+            if overlap and not retain_history:
                 raise ExperimentProtocolError(f"Sealed test overlaps historical exposure for {row['paper_id']}: {sorted(overlap)}")
+    if retain_history:
+        basis = _reference(design.get("original_evaluation_basis"), source.parent, "original_evaluation_basis", read=True)
+        original = read_json(basis["path"])
+        ids = original.get("paper_ids") or [row["paper_id"] for row in original["records"]]
+        if ids != [row["paper_id"] for row in splits["sealed_test"]]:
+            raise ExperimentProtocolError("Diagnostic final cohort must retain the entire original ordered evaluation manifest")
+        _reference(design.get("historical_use_annotations"), source.parent, "historical_use_annotations", read=True)
     if history_records > 0:
         pass
     else:

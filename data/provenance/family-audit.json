@@ -1,0 +1,11 @@
+{
+  "method": "Relocation of unchanged 0915 ordered splits, full paper text and reference bytes; only source paths and enclosing hashes change; identities revalidated by the original loader.",
+  "source_family_audit_sha256": "a09d4aa41174c5b656aae94d547b4f8fd0a95b1a1d8cc6c9166f1c34b513e381",
+  "split_manifest_sha256": {
+    "build": "be95b6fdb194b6f97036d67a286c932ea67278fe67f1cc00b7ab9d3a69f9a140",
+    "rotating": "00f82ac4a329a7b7018b9b61e3ea981661b7a61d61cbebd062a01f286e972b28",
+    "sealed_test": "fb6ff261191a82c8508389a7b69d440b13d49093f42c31f27dd984aa8371eb7e",
+    "static": "c7a0d18232e36bf6413ed3345c86f79e7d6f2443ca881aa651bf1e06c60b15b1"
+  },
+  "status": "complete"
+}

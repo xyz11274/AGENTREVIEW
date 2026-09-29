@@ -49,3 +49,15 @@ def test_zombie_with_different_start_identity_is_still_rejected(tmp_path):
         assert Path(f"/proc/{child.pid}").exists()
     finally:
         child.wait()
+
+
+def test_explicit_context_capacity_is_not_silently_ignored():
+    config = {"serving_python":sys.executable,"services":{
+        "judge":{"gpus":[0,1,2,3],"model_root":"/models/judge","model":"judge","port":18001,
+                 "max_model_len":131072}}}
+    argv = services.command(config,"judge")
+    assert argv[argv.index("--max-model-len")+1] == "131072"
+    for invalid in (0,-1,True,"131072"):
+        config["services"]["judge"]["max_model_len"] = invalid
+        with pytest.raises(ValueError, match="max_model_len"):
+            services.command(config,"judge")

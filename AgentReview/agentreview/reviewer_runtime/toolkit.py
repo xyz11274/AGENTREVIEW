@@ -359,8 +359,18 @@ class MemoryToolkit:
         fallback_embedding_dimensions: int = 256,
         s2_retrieval_pool: dict[str, list[dict[str, Any]]] | None = None,
         s2_retrieval_pool_sha256: str = "",
+        memory_token_counter=None,
+        memory_tokenizer_identity=None,
+        memory_context_tokens: int = 4096,
+        memory_summary_input_tokens: int = 32768,
     ):
         self.llm_client = llm_client
+        self._memory_token_counter = memory_token_counter or (lambda text: len(text.encode("utf-8")))
+        self.memory_tokenizer_identity = memory_tokenizer_identity or {"provider": "utf8-byte-upper-bound"}
+        self._memory_limits = {"context": memory_context_tokens, "summary_input": memory_summary_input_tokens}
+        if any(type(v) is not int or v <= 0 for v in self._memory_limits.values()):
+            raise ValueError("Memory token limits must be positive integers")
+        self.memory_budget_trace = []
         self.embedding_client = embedding_client
         self.vector_store_factory = vector_store_factory
         self.llm_model = llm_model
@@ -388,6 +398,26 @@ class MemoryToolkit:
             "s2_call_count": 0,
             "s2_result_count": 0,
         }
+
+    def count_tokens(self, text):
+        return self._memory_token_counter(str(text))
+
+    def memory_token_limit(self, purpose="context"):
+        return self._memory_limits[purpose]
+
+    def select_memory_entries(self, entries, purpose="context"):
+        from .memory_budget import select_complete_entries
+        limit = self.memory_token_limit(purpose)
+        selected, trace = select_complete_entries(entries, limit=limit, count_tokens=self.count_tokens)
+        self.memory_budget_trace.append({"purpose": purpose, "limit_tokens": limit, "entries": trace,
+                                        "selected_tokens": self.count_tokens("\n\n".join(selected))})
+        return selected
+
+    def validate_memory_context(self, text):
+        from .memory_budget import MemoryBudgetError
+        tokens = self.count_tokens(text)
+        if tokens > self.memory_token_limit():
+            raise MemoryBudgetError(f"KnowledgeBase.read() exceeded memory token budget: {tokens} > {self.memory_token_limit()}")
 
     @contextmanager
     def operation(

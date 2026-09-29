@@ -1,3 +1,0 @@
-Traceback (most recent call last):
-  File "<string>", line 9, in <module>
-RuntimeError: Service transition failed; no diagnostic launched

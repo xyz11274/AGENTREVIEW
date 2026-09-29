@@ -14,6 +14,7 @@ from agentreview.reviewer_identity import load_reviewer_suite
 from agentreview.reviewer_runtime.sandbox import SandboxSession
 from agentreview.reviewer_runtime.task_agent import TaskAgent
 from agentreview.reviewer_runtime.toolkit import MemoryToolkit
+from agentreview.reviewer_runtime.memory_budget import MEMORY_CONTRACT, budget_options
 
 from .constants import ROLES, SUMMARIZER_MAX_TOKENS
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
@@ -190,8 +191,9 @@ def _deterministic_item(
     *,
     review: dict[str, Any],
     role: str,
+    raw_text: str | None = None,
 ) -> Any:
-    review_text = str(review.get("review_text") or "")
+    review_text = raw_text if raw_text is not None else _experience_source(review, None)
     title = str(
         (review.get("paper") or {}).get("title") or review.get("paper_title") or ""
     )
@@ -359,6 +361,8 @@ def build_memory_snapshot(
     )
     review_sources = [_load_hashed_json(path) for path in review_paths]
     reviews = [value["artifact"] for value in review_sources]
+    if any(value.get("partition", value.get("split")) in {"sealed_test", "test", "rotating"} for value in reviews):
+        raise ValueError("Memory build cannot ingest test or rotating feedback trajectories")
     if any(str(review.get("role")) != role for review in reviews):
         raise ValueError("Memory build received a cross-role Review")
     review_id_list = [str(review.get("review_id") or "") for review in reviews]
@@ -371,6 +375,8 @@ def build_memory_snapshot(
         loaded_source = _load_hashed_json(path)
         source = loaded_source["path"]
         artifact = loaded_source["artifact"]
+        if artifact.get("partition", artifact.get("split")) in {"sealed_test", "test", "rotating"}:
+            raise ValueError("Memory build cannot ingest test or rotating evaluations")
         review_id = str(artifact.get("review_id") or "")
         if not review_id:
             raise ValueError(
@@ -424,6 +430,7 @@ def build_memory_snapshot(
         llm_client=llm_adapter,
         embedding_client=embedding_client,
         max_llm_calls_per_operation=build_calls,
+        **budget_options(runtime),
     )
     item_records = []
     program_source = Path(program_path).expanduser().resolve()
@@ -436,6 +443,8 @@ def build_memory_snapshot(
     if seed_kind != "no_memory":
         build_identity = {
             "completion_contract": "complete-stop-v1",
+            "memory_contract": MEMORY_CONTRACT,
+            "tokenizer": toolkit.memory_tokenizer_identity,
             "protocol": "research-v2-memory-build-input-v1",
             "role": role,
             "program_path": str(program_source),
@@ -445,7 +454,7 @@ def build_memory_snapshot(
             "program_version": program_version,
             "embedding_identity": normalized_embedding_identity,
             "completion_identity": (
-                normalized_completion_identity if requires_item_induction else None
+                normalized_completion_identity if completion_client is not None else None
             ),
             "sources": [
                 {
@@ -543,7 +552,7 @@ def build_memory_snapshot(
                     else:
                         if seed_kind in {"vector_search", "llm_summarizer"}:
                             item = _deterministic_item(
-                                program, review=review, role=role
+                                program, review=review, role=role, raw_text=raw_text
                             )
                         else:
                             if completion_client is None:
@@ -567,6 +576,7 @@ def build_memory_snapshot(
                                 [evaluation_id] if evaluation_id else []
                             ),
                             "derivation_version": program_version,
+                            "experience_sha256": hashlib.sha256(raw_text.encode("utf-8")).hexdigest(),
                             "payload": _serializable(item),
                         }
                         checkpoint = {
@@ -636,6 +646,8 @@ def retrieve_memory(
         raise ValueError("Memory snapshot role mismatch")
     seed_kind = str(snapshot_artifact.get("seed_kind") or "")
     if memory_enabled and seed_kind != "no_memory":
+        if snapshot_artifact.get("build_identity", {}).get("memory_contract") != MEMORY_CONTRACT:
+            raise ValueError("Memory snapshot predates the complete-experience contract; rebuild from frozen build sources")
         runtime_embedding_identity = _runtime_embedding_identity(
             embedding_client=embedding_client,
             embedding_identity=embedding_identity,
@@ -674,7 +686,11 @@ def retrieve_memory(
         max_llm_calls_per_operation=max(read_calls, int(query_mode == "instruction")) if memory_enabled else 0,
         s2_retrieval_pool=s2_retrieval_pool,
         s2_retrieval_pool_sha256=s2_retrieval_pool_sha256,
+        **budget_options(runtime),
     )
+    if (memory_enabled and seed_kind != "no_memory" and
+            snapshot_artifact["build_identity"].get("tokenizer") != toolkit.memory_tokenizer_identity):
+        raise ValueError("Memory tokenizer differs from the frozen build identity")
     resources_before = toolkit.resource_snapshot()
     source = Path(program_path).expanduser().resolve()
     if file_sha256(source) != snapshot_artifact.get("program_sha256"):
@@ -707,8 +723,7 @@ def retrieve_memory(
                 query = _bind_host_role(query, role)
             with toolkit.operation("memory_read", max_llm_calls=read_calls):
                 context = sandbox.read(query)
-        if len(context) > 6000:
-            raise ValueError("KnowledgeBase.read() exceeded 6000 characters")
+        toolkit.validate_memory_context(context)
         review_plan = None
         s2_trace = {"paper_id": paper.paper_id, "calls": []}
         if prepare_review_plan:
@@ -725,6 +740,9 @@ def retrieve_memory(
         "query": _serializable(query),
         "context": context,
         "logs": logs,
+        "memory_contract": MEMORY_CONTRACT,
+        "tokenizer": toolkit.memory_tokenizer_identity,
+        "budget_trace": toolkit.memory_budget_trace,
         "snapshot_id": snapshot_artifact.get("snapshot_id"),
         "program_version": snapshot_artifact.get("program_version"),
         "program_sha256": snapshot_artifact.get("program_sha256"),

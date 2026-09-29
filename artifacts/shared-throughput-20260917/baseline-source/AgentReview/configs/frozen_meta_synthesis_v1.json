@@ -1,9 +1,0 @@
-{
-  "identity_version": "meta-synthesis-identity-v1",
-  "name": "Final Meta Synthesizer",
-  "system_prompt_sha256": "027644d0402a20b38e127c2b2e152053794a189b707d668d6fb061373ac9f1ec",
-  "source_path": "META_SYNTHESIS_Request_v1.md",
-  "source_sha256": "6beb7fb87506d9413ac1c3f8c7aee5915d130750794ec7fc647e806fbdd19fe5",
-  "request_protocol_version": "meta-synthesis-request-v1",
-  "request_template_sha256": "506bca31f25962ae3dd570f336f68a99a6c944fdca37a8a09d61782b5e3743f8"
-}

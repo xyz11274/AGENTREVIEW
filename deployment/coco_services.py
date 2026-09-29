@@ -23,11 +23,14 @@ def command(config, role):
     gpus = service.get("gpus", [])
     if not gpus or any(type(g) is not int or g < 0 for g in gpus):
         raise ValueError(f"{role}: explicitly allocated GPU IDs are required")
+    max_model_len = service.get("max_model_len", {"split":65536,"classify":32768,"judge":65536}[role])
+    if type(max_model_len) is not int or max_model_len <= 0:
+        raise ValueError(f"{role}: max_model_len requires a positive integer")
     result = [config["serving_python"], "-m", "vllm.entrypoints.openai.api_server",
               "--model", service["model_root"], "--served-model-name", service["model"],
               "--host", "127.0.0.1", "--port", str(service["port"]),
               "--dtype", "bfloat16", "--tensor-parallel-size", str(len(gpus)),
-              "--max-model-len", str({"split": 65536, "classify": 32768, "judge": 65536}[role]),
+              "--max-model-len", str(max_model_len),
               "--gpu-memory-utilization", str(service.get("gpu_memory_utilization", 0.9)),
               "--max-num-seqs", str(service.get("max_num_seqs", 8))]
     for name in ("max_num_batched_tokens",):

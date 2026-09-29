@@ -46,7 +46,7 @@ class SpecialistReviewInfrastructureFailure(SpecialistReviewFailure):
 
 def specialist_generation_identity(
     model_identity: dict[str, Any],
-    *, max_tokens: int = REVIEW_MAX_TOKENS,
+    *, max_tokens: int = REVIEW_MAX_TOKENS, retry_policy=None,
 ) -> dict[str, Any]:
     """Return the frozen invocation policy shared by raw artifacts and run specs."""
     return {
@@ -56,7 +56,7 @@ def specialist_generation_identity(
         "temperature": model_identity.get("temperature", TEMPERATURE),
         "enable_thinking": model_identity.get("enable_thinking", ENABLE_THINKING),
         "max_tokens": max_tokens,
-        "retry": {
+        "retry": retry_policy or {
             "protocol": SPECIALIST_RETRY_PROTOCOL,
             "max_attempts": SPECIALIST_MAX_ATTEMPTS,
             "sdk_max_retries": 0,
@@ -74,7 +74,8 @@ def _call_with_identical_retry(
     errors = []
     last_error: Exception | None = None
     infrastructure_failed = False
-    for attempt in range(1, SPECIALIST_MAX_ATTEMPTS + 1):
+    outer_attempts = 1 if getattr(client, "retry_policy", None) else SPECIALIST_MAX_ATTEMPTS
+    for attempt in range(1, outer_attempts + 1):
         try:
             value = client.complete(
                 messages,
@@ -100,7 +101,7 @@ def _call_with_identical_retry(
         else SpecialistReviewPaperFailure
     )
     raise failure_type(
-        f"{component} failed {SPECIALIST_MAX_ATTEMPTS} times with identical request: "
+        f"{component} failed {outer_attempts} wrapper calls with identical request: "
         f"{errors}"
     ) from last_error
 
@@ -510,7 +511,8 @@ def run_specialist_review(
             "s2": {**s2_provenance, "evidence": s2_values},
         }
     request_sha256 = value_sha256(messages)
-    generation_identity = specialist_generation_identity(model_identity, max_tokens=max_tokens)
+    generation_identity = specialist_generation_identity(model_identity, max_tokens=max_tokens,
+        retry_policy=getattr(completion_client, "retry_policy", None))
     raw_path = target_dir / f"{role}.raw.json"
     raw_artifact = _load_resumable_raw_artifact(
         raw_path,

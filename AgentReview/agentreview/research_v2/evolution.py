@@ -856,6 +856,7 @@ def validate_program(
     seed_kind: str | None = None,
 ) -> list[str]:
     from agentreview.reviewer_runtime.sandbox import SandboxError
+    from agentreview.reviewer_runtime.memory_budget import budget_options, MemoryBudgetError
     from .failure_policy import failure_detail
 
     source = Path(path).expanduser().resolve()
@@ -881,6 +882,7 @@ def validate_program(
 
     toolkit = MemoryToolkit(
         llm_client=SmokeLLM(),
+        **budget_options(runtime),
         max_llm_calls_per_operation=max(write_calls, read_calls),
         s2_retrieval_pool={
             "protocol-smoke-paper": [
@@ -904,8 +906,8 @@ def validate_program(
                 result = sandbox.read(query)
             if not isinstance(result, str):
                 errors.append("KnowledgeBase.read() did not return str")
-            elif len(result) > 6000:
-                errors.append("KnowledgeBase.read() exceeded 6000 characters")
+            else:
+                toolkit.validate_memory_context(result)
             with toolkit.paper_scope("protocol-smoke-paper"):
                 with toolkit.operation(
                     "review_plan",
@@ -932,7 +934,7 @@ def validate_program(
                 errors.append("plan_review disposition disagrees with capability trace")
             if not set(selected_ids).issubset(candidate_ids):
                 errors.append("plan_review selected an ID absent from capability results")
-    except SandboxError as exc:
+    except (SandboxError, MemoryBudgetError) as exc:
         detail = failure_detail(exc, phase="candidate_validation")
         if detail["category"] == "candidate":
             errors.append(f"protocol smoke failed: {type(exc).__name__}: {exc}")

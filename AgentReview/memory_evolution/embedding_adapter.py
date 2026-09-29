@@ -604,6 +604,7 @@ class Qwen3Embedding(CachedDenseEmbedding):
         self.batch_size = max(1, int(batch_size))
         spec = {
             "provider": self.provider,
+            "input_contract": "complete-input-no-truncation-v2",
             "model_id": str(model_name),
             "model_revision": str(revision),
             "dimension": int(expected_dimension),
@@ -775,6 +776,13 @@ class Qwen3Embedding(CachedDenseEmbedding):
         return self.truncation_stats
 
     def _embed_uncached_batch(self, batch: list[str]) -> list[list[float]]:
+        audit = self.audit_token_lengths(batch)
+        if audit["truncated_count"]:
+            raise ValueError(
+                "Qwen3 embedding input exceeds its token budget; select complete entries "
+                "or create a traceable summary before encoding, never truncate: "
+                f"{audit}"
+            )
         import numpy as np
         import torch
 

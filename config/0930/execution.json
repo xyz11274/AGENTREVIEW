@@ -1,0 +1,11 @@
+{
+  "admission_root": "/data/xyj/shengao/AgentReview_0930/artifacts/admission",
+  "limits": {
+    "13098": 16,
+    "13099": 4,
+    "18001": 16
+  },
+  "note": "One global cap on 18001 includes reviewer, memory, Meta and original CoCo Judge; MSTAR rounds remain serial.",
+  "paper_workers": 2,
+  "protocol": "shared-execution-v1"
+}

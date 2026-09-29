@@ -1,17 +1,17 @@
 # 0915 共享 M★ 实验实现
 
-本实现承接 ADR-0011–0016。实验以一个共享 MemoryProgram、一个候选池和一条进化谱系运行；QUAL、CLAR、SIGN、ORIG、POL 分别构建和读取自己的记忆库。最终完整评审的标准 CoCo Table-1 `Paper.` 决定父代抽样和 Champion，五角色的 CoCo 分数保存为诊断。
+本实现承接 ADR-0011–0016，当前配对实验的数据用途规则由 [ADR-0019](adr/0019-existing-benchmark-paired-evolution.md) 更新。实验以一个共享 MemoryProgram、一个候选池和一条进化谱系运行；QUAL、CLAR、SIGN、ORIG、POL 分别构建和读取自己的记忆库。仅最终完整评审进入标准 CoCo，Table-1 `Paper.` 决定父代抽样和 Champion；不再单独评分五角色。
 
 ## 执行流程
 
-1. 读取显式冻结实验协议，检查 build、static、rotating、sealed_test 的身份、版本关系及各自资产。开发阶段检查封存测试身份清单，测试正文和参考资产在系统冻结后打开。
+1. 读取显式冻结实验协议，检查 build、static、rotating、sealed_test 的身份、版本关系及各自资产。本轮允许为用途/版本和完整输入预算核对读取资产；最终生成与评分必须等全部待比较系统冻结，测试参考评审只供 CoCo。
 2. 在 build 集生成相同固定审稿策略的无记忆角色经验。每个 seed 或新 MemoryProgram 从这些获准角色经验构建五个独立快照。
 3. 三个 memory seed 分别生成 static 集五角色评审及最终评审，按原标准 CoCo 评分。各 seed 的无 memory 对照保持审稿策略、S2、模型和生成条件相同，关闭记忆操作及注入。CoCo 原始提示基线单列。
 4. 在同一 static 集的完整 `Paper.` 成绩上进行 softmax 父代抽样。每轮重新评价所选父代的 rotating 样本，保存当前五角色轨迹、完整最终评审及标准反馈。
 5. 反思生成完整的新程序源码，搜索 KnowledgeItem/Query Schema、KnowledgeBase 读写逻辑和记忆交互指令。宿主验证固定非记忆审稿策略与角色库边界，再构建新快照、生成评审并执行标准评分。
 6. 完成有效评价的子代进入共享池，包括成绩下降的有效子代。候选契约错误按有限预算修复；公共故障暂停整轮，修复后在新 epoch 统一重评候选和对照。
 7. 完整比较后保存版本化 winner 与冻结系统。独立 final-test 入口复用冻结程序和开发记忆，在封存集生成、评分；测试结果进入测试产物与报告。
-8. 另外运行报告工具，读取预定论文清单与已保存评分，生成每个 seed、无 memory、Native、候选、Champion 的逐论文表、CoCo 汇总、谱系与角色诊断。
+8. 另外运行报告工具，读取预定论文清单与已保存评分，生成每个 seed、无 memory、Native、候选、Champion 的逐论文表、CoCo 汇总与谱系；配对入口另存逐篇差值和不确定性报告。
 
 论文正文完整进入审稿上下文；真实字符位置和已有来源 anchor 用于引用。请求超过冻结输入或模型总 token 预算时记录显式失败。生成记录包括模型输出、请求、来源与预算身份。
 
@@ -65,6 +65,6 @@ PYTHONPATH=AgentReview python3 -m agentreview.research_v2 experiment-report \
 - [共享搜索运行器](../AgentReview/agentreview/research_v2/shared_evolution.py)
 - [真实阶段适配与冻结测试](../AgentReview/agentreview/research_v2/shared_experiment.py)
 
-本轮自动化验证覆盖本地文件、真实 Sandbox、Memory/Review/Meta 逻辑、标准 CoCo 纯函数与完整评价凭据；模型返回使用测试替身。正式实验还需填写并确认剩余实验参数、准备对应分区资产，并完成部署模型的小规模全链路验收。
+本轮自动化验证覆盖本地文件、真实 Sandbox、Memory/Review/Meta 逻辑、标准 CoCo 纯函数与完整评价凭据；模型返回使用测试替身。2026-09-17 的反馈传递、token 预算及缓存修复见 [ADR-0020](adr/0020-complete-memory-experience-and-token-budgets.md)。复用已完成的真实全流程验收，本轮不新增 pilot；完整规模启动须使用明确的搜索数值预算。
 
 最终组合结果和可复现命令见 [实现验收记录](audit/20260915/SHARED_IMPLEMENTATION_VALIDATION.md)：28 文件组合 256 项测试、96 项子测试通过；最后变更相关 8 文件组合 84 项测试、25 项子测试通过。

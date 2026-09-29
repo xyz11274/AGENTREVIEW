@@ -77,12 +77,23 @@ def test_worker_and_original_direct_call_have_identical_requests_and_outputs(tmp
     class Client:
         def __init__(self):
             self.calls = []
+            self.audit_tasks = {}
+            self.cache_dir = tmp_path / "fixture-receipts"
+            self.cache_dir.mkdir(exist_ok=True)
         def submit_task(self, *args, **kwargs):
             self.calls.append((args, kwargs))
             return len(self.calls) - 1
         def get_result(self, key):
             # Preserve the original N/A priority when a retry later returns a category.
             content = "Part 1: Label 1" if stage == "split" else ("</think>N/A" if key == 0 else "</think>QUAL-MTH")
+            args, kwargs = self.calls[key]
+            prompt = args[0] if args else kwargs["prompt"]
+            messages = prompt if isinstance(prompt, list) else [{"role": "user", "content": prompt}]
+            receipt = {"status": "complete", "messages": messages, "payload": kwargs,
+                "completion": {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]},
+                "tokens": {"input_tokens": 200, "output_budget": kwargs["max_completion_tokens"], "max_model_len": 65536}}
+            self.audit_tasks[key] = receipt
+            (self.cache_dir / f"{key}.audit.json").write_text(json.dumps(receipt))
             return {"status": "done", "content": content}
         def shutdown(self):
             pass

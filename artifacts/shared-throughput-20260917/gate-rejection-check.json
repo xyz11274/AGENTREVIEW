@@ -1,6 +1,0 @@
-{
-  "status": "passed",
-  "rejected_diagnostic": "judge-seqs16",
-  "reason": "ValueError: Selected configuration has not passed fixed-input Paper. and completeness gates",
-  "frozen_gate_created": false
-}

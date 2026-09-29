@@ -142,6 +142,7 @@ def test_concrete_backend_report_index_generates_seed_champion_and_role_tables(b
     result = backend.assess(candidate_recipe, epoch=0)
     winner = {**candidate_recipe["candidate"], **result, "key": candidate_recipe["key"]}
     state = {"recipes": {candidate_recipe["key"]: candidate_recipe}, "results": {candidate_recipe["key"]: result}}
+    FailureController(backend.root / "failure-policy.json")
     state["winner"] = backend.freeze(winner, state)
     backend.write_report_input(state)
     manifest = backend.root / "report-input.json"

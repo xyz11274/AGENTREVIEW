@@ -1,11 +1,14 @@
 """Offline generated structured experience with deterministic read."""
 
 from dataclasses import dataclass
+from hashlib import sha256
 
 INSTRUCTION_KNOWLEDGE_ITEM = (
     "Produce one reusable review experience from the supplied complete Specialist "
     "Review and any explicitly supplied feedback. Preserve its source role and "
-    "express the experience as general review guidance."
+    "express the experience as general review guidance. When feedback corrects an "
+    "error, encode the correction and how to avoid that error; do not repeat the "
+    "original claim as a recommended practice. Do not invent absent feedback."
 )
 INSTRUCTION_QUERY = (
     "Use the deterministic title and abstract query supplied by the host."
@@ -70,13 +73,14 @@ class KnowledgeBase:
         if not role:
             return
         record = {
+            "source_sha256": sha256(raw_text.encode("utf-8")).hexdigest(),
             "trigger": item.trigger.strip(),
             "review_heuristic": item.review_heuristic.strip(),
             "evidence_to_check": item.evidence_to_check.strip(),
             "failure_mode": item.failure_mode.strip(),
             "why_it_matters": item.why_it_matters.strip(),
         }
-        if any(record.values()):
+        if any(value for key, value in record.items() if key != "source_sha256"):
             self.by_role.setdefault(role, []).append(record)
 
     def read(self, query: Query) -> str:
@@ -94,7 +98,7 @@ class KnowledgeBase:
             sections.append(
                 "\n".join(
                     [
-                        f"[REVIEW EXPERIENCE {role}:{index}]",
+                        f"[REVIEW EXPERIENCE {role}:{index} SOURCE {record['source_sha256']}]",
                         f"Trigger: {record['trigger']}",
                         f"Heuristic: {record['review_heuristic']}",
                         f"Evidence to check: {record['evidence_to_check']}",
@@ -103,4 +107,4 @@ class KnowledgeBase:
                     ]
                 )
             )
-        return "\n\n".join(sections)[:6000]
+        return "\n\n".join(self.toolkit.select_memory_entries(sections))

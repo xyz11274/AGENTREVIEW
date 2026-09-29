@@ -25,8 +25,8 @@ from agentreview.research_v2.shared_evolution import SharedEvolution, select_par
 from agentreview.research_v2.failure_policy import validate_promotion_policy
 
 ASSETS = REPO / "artifacts/shared-acceptance-20260916"
-COCO = Path("/data/xyj/shengao/CoCoReviewBench")
-HISTORY = Path("/data/xyj/shengao/AgentReview_0831/artifacts/research_v2/data/coco_1300/papers")
+COCO = REPO.parent / "CoCoReviewBench"
+HISTORY = REPO / "data/original/coco_1300/papers"
 
 
 def identity(paper):

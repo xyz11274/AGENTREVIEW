@@ -1,0 +1,185 @@
+{
+  "all_searches_frozen_before_any_test": true,
+  "cohort": {
+    "path": "/data/xyj/shengao/AgentReview_0930/data/provenance/evaluation-cohort.json",
+    "sha256": "2dee80f171f1f1383b4ab2972324971a81f913801370cc0591944757704dd7ad"
+  },
+  "implementation": {
+    "launcher": {
+      "path": "/data/xyj/shengao/AgentReview_0930/deployment/three_search_study.py",
+      "sha256": "41aaae0ecda5800220bc763f6af917d445e3b1896ba080ff61547c0ed20c12ae"
+    },
+    "reporter": {
+      "path": "/data/xyj/shengao/AgentReview_0930/deployment/paired_benchmark_report.py",
+      "sha256": "25188881a4c6f33c981d44f6aaefacf680b73ae0d2b8a64a3510ec39c97295e4"
+    },
+    "runtime": [
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/shared_experiment.py",
+        "sha256": "6e003879371986f625ade83bdf866e0922b1732eabcd7b7b19d66a5a37c326cb"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/shared_evolution.py",
+        "sha256": "78fd80bb7d606a86d93e0f40d8f58332a3d7695c75c40c9ddb0416a9928c8f94"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/experiment_requests.py",
+        "sha256": "4bbb72d7eda3ca8fb1caaf946848f729ee3d038cc09a4a79270c9da9d7f8a012"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/memory.py",
+        "sha256": "42b64fa1ad81512850f7862391aea81dffb494056895750dec145be1921071c2"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/review.py",
+        "sha256": "9fc977affe76b3e437fd71f06ea5b4cec0b319fba849e8488afb1f9e8bdc1d1c"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/review_preparation.py",
+        "sha256": "da14d4d4fa97f5d060749d97f53dc86f6c606b2dfdf6d9e1da43d66a318cdb03"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/meta.py",
+        "sha256": "e1e0b975826a3311e4981c29b6c5ab77f552da62e3d467f8a575901df65bc531"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/development_coco.py",
+        "sha256": "af3ddc55eba7fbc1056dd5da622e6be85feb6e08e781abb65c9ed3db2cd1b184"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/development_coco_worker.py",
+        "sha256": "3a6b8f1958a9c20f827411370200d5050712deda20baf26e106a8d2c179bb517"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/experiment_protocol.py",
+        "sha256": "b6e34bd259c3c6bb738e92adbec9bb9ed89fc36e82142f48584065af56ed212c"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/program_checks.py",
+        "sha256": "1559c98185d457892d3f244767f5f2ef1e28b526a3f490d37fafe31f835a317a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/coco_native.py",
+        "sha256": "558f0b811a0e6b81293053bb659dbd645273e283806cac9fd92d32ead335e5bc"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/data.py",
+        "sha256": "8b37268f17ed4804de7b63937032f898e94cbd9eb267011591d8b01d95446b99"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/llm.py",
+        "sha256": "7f64fba787d6039da09147300f008201d164d9cd6f2e7757af62379f58fe642a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/config.py",
+        "sha256": "a6d2b75b05093fdba68fcb966f275784d86a667b7f3372f6b77e34910ad57c1a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/constants.py",
+        "sha256": "fdfa6d53c2b8cfd45d8968ab52889fcb910e3a1ab8ef48849ab3d02c49c580bf"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/coco_integrity.py",
+        "sha256": "ac11ae0ddeb0fcc2f694cc72b7ebb89124d496367a79f2f2964a370d9e4fb8a6"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/cohort_receipt.py",
+        "sha256": "e64d47e2ca8a6649522c6568229ab875dbffa1382df308483f3da2976f383192"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/model_watch.py",
+        "sha256": "adcf80a987d2650b235b2bb02a3d7bf8f60e9d191185ed7cc1401f0162d0a6c5"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/request_admission.py",
+        "sha256": "2501b1beb30dbb50ad74e1d9e82d27dc9f5b515fd44f45a02dd7702345d39745"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/execution_telemetry.py",
+        "sha256": "528f156226d820884abcf8b58fbdedc454e39694c95b32993a3f8e77a709c05e"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/reflection_budget.py",
+        "sha256": "6f81472567879ffc61121b1269f05c5e2a6398500a2065dba0c8e99fc09eb2ed"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/failure_policy.py",
+        "sha256": "9315d158fa8229595bf47483ffebe12de7b93946eed4d72ee35e53acb6cd7a54"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_identity.py",
+        "sha256": "bab51f6bd7cac8a8bf63c8e19d75446091730e8c61ce4730be3a76aed1d0e478"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/paper_context.py",
+        "sha256": "5d1e26b9046b305aa455ac0adb89d4cfa1ff67a3aa4829702adb5c3da82dbe90"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/source_map.py",
+        "sha256": "ce9e9dba468289f198d63895aaaaa4192c0a24b1618f031ee3700f8434fc74ba"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/__init__.py",
+        "sha256": "e8be309af3f0cc8dbaaad46506b2942d11a1997fea5a99d87895a491a0c017c8"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/memory_budget.py",
+        "sha256": "a147219c7db18b88778b50424b45b2903f3e2bd7a33fa23151806efe54727a5a"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/sandbox.py",
+        "sha256": "62c398a6dacb8b27a486f59e3c939353f5416682fe98a3643d9d6252f06de27e"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py",
+        "sha256": "825273c1cced2365ed11b7747b6771d31a81b21c3b28d57a6c5850d5a08eec34"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/task_agent.py",
+        "sha256": "60585e95f240cb6878bc76c12e5c359b4aae3ecdb48d38a025cb7600a4cd0667"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/tasks.py",
+        "sha256": "2f1fa7b58c64bdd1c5165af32c534d6b81af6146f33074ec187074930553a30c"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/toolkit.py",
+        "sha256": "96c37a6e6f4b74f6ddb8d2b6e98a5eaa07f9e270b64a5c2009df1d02b00506f7"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/memory_evolution/embedding_adapter.py",
+        "sha256": "e2d22d89da9ba5956328f73f09b6edb0b9459ad8fbb18ba637e20cfaf595a249"
+      }
+    ]
+  },
+  "never_select_a_run_by_test_score": true,
+  "protocol": "three-search-study-v1",
+  "searches": [
+    {
+      "protocol": {
+        "path": "/data/xyj/shengao/AgentReview_0930/config/0930/protocol.seed-0.frozen.json",
+        "sha256": "897cf71e8980a69286620519ddfe524835f994d085eef1293f1464565ede158e"
+      },
+      "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/study-0930/runs/seed-0",
+      "seed": 0
+    },
+    {
+      "protocol": {
+        "path": "/data/xyj/shengao/AgentReview_0930/config/0930/protocol.seed-1000.frozen.json",
+        "sha256": "397b3f5379a3c4638f2f6480af1e04af0066c31d9249a2d322234a7689b86efe"
+      },
+      "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/study-0930/runs/seed-1000",
+      "seed": 1000
+    },
+    {
+      "protocol": {
+        "path": "/data/xyj/shengao/AgentReview_0930/config/0930/protocol.seed-2000.frozen.json",
+        "sha256": "de30997b9c8128caab75ae15293cda68b284555b20235920048789e3de480f42"
+      },
+      "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/study-0930/runs/seed-2000",
+      "seed": 2000
+    }
+  ],
+  "status": "frozen",
+  "study_id": "b4d3bc03b5a908fef79c6bf4935842e7140a6abb72fe38c8d6c4f3e003424d3c"
+}

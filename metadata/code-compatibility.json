@@ -1,0 +1,15 @@
+{
+  "core_python_files": 69,
+  "byte_identical_core_files": 68,
+  "path_only_changes": [
+    "AgentReview/agentreview/research_v2/coco_scoring_spec.py"
+  ],
+  "test_files_preserved": 54,
+  "unchanged_protocol_sections": [
+    "generation",
+    "evolution",
+    "model",
+    "failure_policy"
+  ],
+  "algorithm_logic_changed": false
+}

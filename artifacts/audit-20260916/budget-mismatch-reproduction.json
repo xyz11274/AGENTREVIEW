@@ -1,7 +1,0 @@
-{
-  "runtime_budget": 2,
-  "runtime_result": "bounded summary",
-  "candidate_check_errors": [
-    "protocol smoke failed: SandboxError: RuntimeError: RuntimeError: LLM call limit exceeded for protocol_smoke_read: 1"
-  ]
-}

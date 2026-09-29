@@ -21,6 +21,7 @@ class PersistentCompletionClient:
         self.identity = identity
         self.max_attempts = max_attempts
         self.input_max_tokens = input_max_tokens
+        self.retry_policy = {"owner": "persistent-logical-request", "max_attempts": max_attempts, "sdk_max_retries": 0}
         if type(max_attempts) is int and max_attempts > 0:
             return
         raise ValueError("Request attempts requires a positive integer")

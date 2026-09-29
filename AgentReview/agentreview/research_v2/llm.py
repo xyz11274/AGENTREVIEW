@@ -211,10 +211,13 @@ class ToolkitCompletionAdapter:
         self.component = component
 
     def llm_completion(self, messages: list[dict[str, str]], **_: Any) -> str:
+        requested = _.get("max_tokens", self.max_tokens)
+        if type(requested) is not int or not 0 < requested <= self.max_tokens:
+            raise ValueError("Memory max_tokens must be positive and within the frozen host output budget")
         return complete_with_response_format(
             self.client,
             messages,
-            max_tokens=self.max_tokens,
+            max_tokens=requested,
             component=self.component,
             response_format=_.get("response_format"),
         )

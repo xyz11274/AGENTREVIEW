@@ -69,9 +69,7 @@ FORMAL_JUDGE_TOKENIZER_SHA256 = (
 FORMAL_JUDGE_CHAT_TEMPLATE_SHA256 = (
     "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
 )
-FORMAL_JUDGE_WORKING_DIRECTORY = (
-    "/data0/xyj/shengao/AgentReview_0831/AgentReview"
-)
+FORMAL_JUDGE_WORKING_DIRECTORY = str(Path(__file__).resolve().parents[2])
 EVALUATION_REQUIRED_PACKAGES = {
     "bert-score": "bert_score",
     "nltk": "nltk",

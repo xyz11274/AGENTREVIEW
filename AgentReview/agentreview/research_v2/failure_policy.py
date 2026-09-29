@@ -43,8 +43,11 @@ class FailureLimits:
     candidate_repairs: int = 1
     round_repairs: int = 10
     candidate_failures: int = 5
+    consecutive_candidate_failures: int | None = None
 
     def __post_init__(self) -> None:
+        if self.consecutive_candidate_failures is not None and (type(self.consecutive_candidate_failures) is not int or self.consecutive_candidate_failures < 1):
+            raise ValueError("Consecutive candidate failure limit requires a positive integer")
         for value in (self.candidate_repairs, self.round_repairs, self.candidate_failures):
             if type(value) is int and value > 0:
                 continue
@@ -100,13 +103,28 @@ def validate_promotion_policy(value: dict[str, Any]) -> None:
     for name in ("repair_budget", "candidate_failure_budget"):
         budget = value.get(name, {})
         used, limit = budget.get("used"), budget.get("limit")
-        if type(used) is int and type(limit) is int and 0 <= used < limit:
+        inclusive = name == "repair_budget" and value.get("counting_contract") == "terminal-events-v2"
+        if type(used) is int and type(limit) is int and 0 <= used and (used <= limit if inclusive else used < limit):
             continue
         raise EvolutionBudgetExhausted(f"Promotion requires available {name}")
     epoch = value.get("evaluation_epoch")
     if type(epoch) is int and epoch >= 0:
         return
     raise ValueError("Promotion requires a valid evaluation epoch")
+
+
+def validate_frozen_policy(value):
+    """A bounded early stop may freeze its already validated Champion, never admit a new candidate."""
+    if value.get("status") != "ended" or value.get("counting_contract") != "terminal-events-v2":
+        return validate_promotion_policy(value)
+    if value.get("pending_candidates") or not value.get("champions"):
+        raise EvolutionPaused("Terminal freeze requires an intact validated comparison")
+    if value.get("end_reason") not in {"candidate_failure_budget", "repair_budget"}:
+        raise EvolutionPaused("Only a recorded bounded search stop can freeze its Champion")
+    for name in ("repair_budget", "candidate_failure_budget"):
+        budget = value[name]
+        if not 0 <= budget["used"] <= budget["limit"]:
+            raise ValueError("Invalid terminal failure accounting")
 
 
 class FailureController:
@@ -133,6 +151,9 @@ class FailureController:
             "events": {},
             "champions": {},
         }
+        if limits.consecutive_candidate_failures is not None:
+            self.value.update(counting_contract="terminal-events-v2",
+                consecutive_failures={"limit": limits.consecutive_candidate_failures, "used": 0})
         try:
             atomic_write_json(self.path, self.value)
         except FileExistsError:
@@ -149,6 +170,8 @@ class FailureController:
             raise EvolutionBudgetExhausted("Evolution round ended at its recorded budget")
         for name in ("repair_budget", "candidate_failure_budget"):
             budget = self.value[name]
+            if name == "repair_budget" and self.value.get("counting_contract") == "terminal-events-v2" and budget["used"] == budget["limit"]:
+                continue  # The tenth reserved repair may finish; an eleventh cannot start.
             if budget["used"] >= budget["limit"]:
                 self.end(name)
                 raise EvolutionBudgetExhausted(f"Evolution round reached {name}")
@@ -193,10 +216,44 @@ class FailureController:
         self.value["events"][operation_id] = {"kind": "candidate_failure", "candidate_id": candidate_id, **detail}
         budget = self.value["candidate_failure_budget"]
         budget["used"] += 1
+        streak = self.value.get("consecutive_failures")
+        if streak is not None:
+            streak["used"] += 1
         if budget["used"] >= budget["limit"]:
             self.value["status"] = "ended"
             self.value["end_reason"] = "candidate_failure_budget"
+        elif streak is not None and streak["used"] >= streak["limit"]:
+            self.value["status"] = "paused_candidate"
+            self.value["pause_reason"] = "consecutive_candidate_failures"
         self.save()
+
+    @_transaction
+    def candidate_succeeded(self, *, candidate_id: str) -> None:
+        if "consecutive_failures" not in self.value:
+            return
+        key = f"candidate-success:{candidate_id}"
+        if key in self.value["events"]:
+            return
+        self.value["events"][key] = {"kind": "candidate_success", "candidate_id": candidate_id}
+        self.value["consecutive_failures"]["used"] = 0
+        self.save()
+
+    @_transaction
+    def resume_candidate_diagnosis(self, *, evidence_path: str | Path) -> None:
+        if self.value["status"] != "paused_candidate":
+            raise EvolutionPaused("Candidate diagnosis requires its recorded pause")
+        record = read_json(evidence_path)
+        if any(not isinstance(record.get(k), str) or not record[k].strip() for k in ("cause", "repair", "validation")):
+            raise ValueError("Candidate diagnosis requires cause, repair and validation")
+        identity = {"path": str(Path(evidence_path).resolve()), "sha256": file_sha256(evidence_path),
+                    "repair_id":value_sha256({key:record[key].strip() for key in ("cause","repair","validation")})}
+        if any(old.get("repair_id") == identity["repair_id"] for old in self.value.get("candidate_diagnoses", [])):
+            raise ValueError("A new candidate diagnosis requires new verified repair evidence")
+        # Count the intervention against the same cumulative repair ceiling.
+        self.reserve_repair(operation_id="candidate-diagnosis:" + value_sha256({"evidence": identity, "failures": self.value["candidate_failure_budget"]["used"]}))
+        self.value.setdefault("candidate_diagnoses", []).append(identity)
+        self.value["status"] = "running"
+        self.save()  # Neither total failures nor the current streak is erased.
 
     @_transaction
     def pause(self, *, operation_id: str, detail: dict[str, Any], affected: list[str]) -> None:
@@ -249,6 +306,8 @@ class FailureController:
         if self.value["status"] == "reevaluating" and expected == set(completed_candidates):
             for name in ("repair_budget", "candidate_failure_budget"):
                 budget = self.value[name]
+                if name == "repair_budget" and self.value.get("counting_contract") == "terminal-events-v2" and budget["used"] == budget["limit"]:
+                    continue
                 if budget["used"] >= budget["limit"]:
                     self.end(name)
                     raise EvolutionBudgetExhausted("Recovery exhausted the round budget; Champion retained")
