@@ -80,6 +80,22 @@ def test_shared_pool_retains_valid_low_score_children_and_scores_all_seed_contro
     assert backend.calls == calls
 
 
+def test_exhausted_upstream_repairs_do_not_restart_an_outer_repair_loop(tmp_path):
+    from agentreview.research_v2.mstar_adapter import ReflectionFailure
+    backend = Backend()
+    calls = []
+    def exhausted(**kwargs):
+        calls.append(kwargs)
+        raise ReflectionFailure("Native compile-fix loop exhausted", reflection={"path": "trace.json", "sha256": "trace"})
+    backend.propose = exhausted
+    result = run(tmp_path, backend, protocol(attempts=1))
+    assert result["status"] == "complete"
+    assert result["results"]["candidate-0001"]["status"] == "candidate_failed"
+    assert len(calls) == 1
+    assert result["results"]["candidate-0001"]["failure"]["reflection"]["path"] == "trace.json"
+    assert read_json(tmp_path / "failure-policy.json")["repair_budget"]["used"] == 0
+
+
 def test_candidate_failure_is_bounded_and_preserves_other_population(tmp_path):
     backend = Backend()
     backend.invalid.add("candidate-0001")

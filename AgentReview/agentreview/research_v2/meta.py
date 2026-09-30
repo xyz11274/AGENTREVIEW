@@ -1,6 +1,7 @@
 """Stateless Meta synthesis and deterministic concat Final Reviews."""
 
 from __future__ import annotations
+from .execution_telemetry import timed
 
 import hashlib
 import json
@@ -315,6 +316,7 @@ def _load_resumable_final(
     return value
 
 
+@timed('meta_review', 'run_id')
 def generate_final_review(
     *,
     paper_path: str | Path,

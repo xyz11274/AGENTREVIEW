@@ -1,0 +1,81 @@
+{
+  "coco_official": {
+    "head": "2580687ee5d4ad2ac4b9730afb8f1dfda22e40db",
+    "status": ""
+  },
+  "mstar": {
+    "head": "09a8d34f69588a85fde78b20702d14f056267956",
+    "status": ""
+  },
+  "mstar_vendor_byte_identical": {
+    "LICENSE": true,
+    "patcher.py": true,
+    "prompts.py": true,
+    "reflector.py": true,
+    "types.py": true
+  },
+  "preserved_changed": [],
+  "preserved_files": {
+    "AgentReview/agentreview/research_v2/coco_integrity.py": "c0b879041d077c4bd5dc518ac98a14c7688eb09b0d5f157da0b1eb3cda96b132",
+    "AgentReview/agentreview/research_v2/coco_native.py": "577b2154d175df39dae6b98df3cecc3425a3a5edb8889fb270ed4c561dc60166",
+    "AgentReview/agentreview/research_v2/development_coco.py": "e17a1d1b71d612beb520d77f3ee8fdde8ecd69e2cda204e4ebc23b12923adeb1",
+    "AgentReview/agentreview/research_v2/development_coco_worker.py": "5346c5fc4ffb545d9c81820d9c7eb4979eadab3d7bc4f707a4ef799b520b805b",
+    "artifacts/pilot-0930-coco-upstream/pilot-state.json": "7d3785f0ce4deceb253e7a52c9a311674f070b6fae23a0e966839293b04a9cba",
+    "artifacts/pilot-0930-coco-upstream/protocol.frozen.json": "e461c002be7f4e95faef41ce15f24d6cc0863f7b3e04264b9e9bb3b33fd1eaf1",
+    "artifacts/pilot-0930-coco-upstream/search/failure-policy.json": "5f0c87829142086462baf79ae9061eadbdafb294b8e71e1a558cc6769f89a1ed",
+    "artifacts/pilot-0930-coco-upstream/search/search.json": "d0a922e1d861f15a2341588f638c5cceac8b11b1f4a347308f27fc73fd4ac523",
+    "config/0930-pilot-coco-upstream/protocol.frozen.json": "e461c002be7f4e95faef41ce15f24d6cc0863f7b3e04264b9e9bb3b33fd1eaf1",
+    "config/0930-pilot-coco-upstream/scoring.frozen.json": "2677d09edc14f53a1470fd77004db8a62f538ac2fce0b72e040bcfb9123869da",
+    "config/0930-pilot-hybrid/protocol.frozen.json": "4db608b7d5bb95892dfb4fd2185497d4b01fa61f0900a09704141fca20600026",
+    "config/0930-pilot-hybrid/remote-services.json": "43894b94bfbc0e2282ffc4449943bd8bd289d64d35f2988ff2dc178feb747a44",
+    "config/0930-pilot-hybrid/scoring.frozen.json": "231734f2281257969d2016a37e85fd041b3520231b66aca41df0840c268aa4fe",
+    "config/0930-pilot-hybrid/services.json": "bf3f0447990ca1e8a681e23bf8d5cccdc65e2336dd0c065d1ff1bb4417df2bd6",
+    "config/0930-pilot-model-capacity/protocol.frozen.json": "8619713238f99fde32df26271cbcc8a0442cc6837d2c5ea7fa0b3d1dd26d354c",
+    "config/0930-pilot/protocol.frozen.json": "f82ace842d6d649e86f11bb2e39177319cbd02522850d9ccba01f533e6d4d476",
+    "config/0930-pilot/remote-services.json": "f68d49280b7512bcee460b67158b5186a9b0e7f1c993820bd02aaab3382a6f24",
+    "config/0930-pilot/scoring.frozen.json": "d613ab1e09f11a415413c0a7bfa7df1b735164e263c4f1b6d679f0040c562acd",
+    "config/0930-pilot/services.json": "ee078aa31ac43cf5c946cb26350618d1e47846c9841133543a156004387af42c",
+    "config/0930/execution.json": "ddef1aafb3e3e00d3cb3f9dd03ddb41f6dca67759f236da548702463acb2779a",
+    "config/0930/protocol.seed-0.frozen.json": "7deea1f28c4740c0733045361c5ecfdfbd76f55c050f259b3f5972b9ccd0b1af",
+    "config/0930/protocol.seed-1000.frozen.json": "ac21434394ce7c9dcf6bb052c06e95096d4a2428b3e39c521dcdd9fcf51b38ec",
+    "config/0930/protocol.seed-2000.frozen.json": "fbe6c8f1f08a418460201b9133591b77dedf10fd9599de26daf67760d84442ee",
+    "config/0930/scoring.frozen.json": "f2eac81bf1dd4409e5548d9bd5801fe8eb3ca5a7a3c63b3491897cf780773a91",
+    "config/0930/services.json": "951d438b870abaad2a2e04e8bbb160753005375f59960766e632500dbbe58191",
+    "config/0930/study.frozen.json": "fe1ebeb6997e02e7d95ad55494221924676371c574fd8235946db438c0b4f785"
+  },
+  "source_bindings": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/reflector.py",
+      "sha256": "b03feab278ef9005a71a41e5a42083d3fa39977b314441556c97bdc02fb875bc"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/patcher.py",
+      "sha256": "52ba762712966cd0094de91378beeeb35638b0d68059109ae54aea1912b058af"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/prompts.py",
+      "sha256": "6dcbfcf20ccd01057d502e1b0955486903db78ce4d35b9c8bee0da006a3659c1"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/types.py",
+      "sha256": "6d06cd5ec27f7dd86d4461e22cf099c98c7c967669a05d1f1110fb6c024ee942"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/LICENSE",
+      "sha256": "9426c8f750a9609f9e6fb11cc4e2422e050d64fd88e2970134a265cb9939a668"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/codex_apply_patch.cpython-312-x86_64-linux-gnu.so",
+      "sha256": "c01a5d946083872f33cf75e661b56f2f2097a43e95cbb9a93e1a16dc60b2a1e7"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/.gitignore",
+      "sha256": "5c9aff029b0659718ea8f6aa03e67b46c9d9311d3bb06d216d33eeac9546140c"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/__init__.py",
+      "sha256": "f9cec16c509ecb2f0c957c0fc90e4dba2ec84a420aafb65537085e0c8e5bcf53"
+    }
+  ],
+  "verified_at": "2026-09-29T20:31:23.521537+08:00"
+}

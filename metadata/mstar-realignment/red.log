@@ -1,0 +1,23 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_markdown_fence_parsing_is_a_list_operation ________________
+
+    def test_markdown_fence_parsing_is_a_list_operation():
+        tree = ast.parse('''def parse(text):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        return "\\n".join(lines)
+    ''')
+>       assert _text_slice_errors(tree) == []
+E       AssertionError: assert ['Text or unk...ate material'] == []
+E         
+E         Left contains 2 more items, first extra item: 'Text or unknown slice at line 4: select complete entries with toolkit.select_memory_entries; never truncate material'
+E         Use -v to get more diff
+
+AgentReview/tests/test_mstar_list_parsing.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_mstar_list_parsing.py::test_markdown_fence_parsing_is_a_list_operation
+1 failed, 1 passed, 7 deselected in 0.12s

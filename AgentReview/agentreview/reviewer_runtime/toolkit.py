@@ -361,13 +361,18 @@ class MemoryToolkit:
         s2_retrieval_pool_sha256: str = "",
         memory_token_counter=None,
         memory_tokenizer_identity=None,
-        memory_context_tokens: int = 4096,
-        memory_summary_input_tokens: int = 32768,
+        memory_context_tokens: int | None = None,
+        memory_summary_input_tokens: int | None = None,
     ):
         self.llm_client = llm_client
         self._memory_token_counter = memory_token_counter or (lambda text: len(text.encode("utf-8")))
         self.memory_tokenizer_identity = memory_tokenizer_identity or {"provider": "utf8-byte-upper-bound"}
-        self._memory_limits = {"context": memory_context_tokens, "summary_input": memory_summary_input_tokens}
+        from agentreview.research_v2.config import ModelConfig
+        model_context = ModelConfig().max_model_len - 1
+        self._memory_limits = {
+            "context": model_context if memory_context_tokens is None else memory_context_tokens,
+            "summary_input": model_context if memory_summary_input_tokens is None else memory_summary_input_tokens,
+        }
         if any(type(v) is not int or v <= 0 for v in self._memory_limits.values()):
             raise ValueError("Memory token limits must be positive integers")
         self.memory_budget_trace = []

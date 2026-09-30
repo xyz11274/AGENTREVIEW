@@ -1,0 +1,68 @@
+{
+  "classify": {
+    "base_url": "http://127.0.0.1:13098/v1",
+    "process": {
+      "argv": [
+        "/usr/bin/ssh",
+        "-i",
+        "/data/xyj/.ssh/id_ed25519",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "ConnectTimeout=15",
+        "-o",
+        "ServerAliveInterval=30",
+        "-o",
+        "ServerAliveCountMax=3",
+        "-N",
+        "-T",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-L",
+        "127.0.0.1:13098:127.0.0.1:13098",
+        "xyj@10.249.45.139"
+      ],
+      "pid": 2098053,
+      "start_time": "614528960",
+      "uid": 1032
+    },
+    "target": "xyj@10.249.45.139"
+  },
+  "split": {
+    "base_url": "http://127.0.0.1:13099/v1",
+    "process": {
+      "argv": [
+        "/usr/bin/ssh",
+        "-i",
+        "/data/xyj/.ssh/id_ed25519",
+        "-o",
+        "IdentitiesOnly=yes",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "ConnectTimeout=15",
+        "-o",
+        "ServerAliveInterval=30",
+        "-o",
+        "ServerAliveCountMax=3",
+        "-N",
+        "-T",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-L",
+        "127.0.0.1:13099:127.0.0.1:13099",
+        "xyj@10.249.45.139"
+      ],
+      "pid": 2098052,
+      "start_time": "614528960",
+      "uid": 1032
+    },
+    "target": "xyj@10.249.45.139"
+  }
+}

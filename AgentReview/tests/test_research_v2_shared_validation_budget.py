@@ -4,7 +4,7 @@ import pytest
 
 from agentreview.research_v2.memory import seed_program_path
 from agentreview.research_v2.shared_experiment import (
-    CandidateContractError, LocalSharedBackend, binding,
+    CandidateContractError, APISharedBackend, binding,
 )
 
 
@@ -30,7 +30,7 @@ def test_shared_candidate_validation_obeys_memory_call_budget(tmp_path, operatio
         source = source.replace("from hashlib import sha256\n", "")
     program = tmp_path / "program.py"
     program.write_text(source)
-    backend = object.__new__(LocalSharedBackend)
+    backend = object.__new__(APISharedBackend)
     backend.require_bubblewrap = True
     backend.conditions = {"review_policy_program": binding(seed_program_path("vector_search"))}
     backend.generation = {

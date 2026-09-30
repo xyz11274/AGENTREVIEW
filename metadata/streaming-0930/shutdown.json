@@ -1,0 +1,20 @@
+{
+  "checked_at": 1790751457.5642998,
+  "official_coco_source_verified": true,
+  "services": "MainPID=0\nId=agentreview-0930-pilot.service\nActiveState=inactive\n\nMainPID=0\nId=agentreview-0930-coco-split.service\nActiveState=inactive\n\nMainPID=0\nId=agentreview-0930-coco-classify.service\nActiveState=inactive\n",
+  "gpus": "0, 18 MiB\n1, 18 MiB\n2, 18 MiB\n3, 18 MiB\n4, 1647 MiB\n5, 1647 MiB\n6, 1647 MiB\n7, 1647 MiB\n",
+  "operator_request": "Keep experiment paused; release local CoCo; implement streaming and timing",
+  "historical_state": {
+    "finished_at": 1790750547.4405692,
+    "phase": "search",
+    "pid": 232032,
+    "process_start_ticks": "621848662",
+    "protocol": {
+      "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+      "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+    },
+    "reason": "Search awaits a validated frozen winner",
+    "status": "paused",
+    "updated_at": 1790750547.4405706
+  }
+}

@@ -47,7 +47,7 @@ class _Completion:
         self.response = response
         self.calls = 0
 
-    def complete(self, messages, *, max_tokens, component):
+    def complete(self, messages, *, max_tokens, component, response_format=None):
         self.calls += 1
         return self.response
 

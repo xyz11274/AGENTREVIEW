@@ -7,5 +7,5 @@
   "request_protocol_version": "meta-synthesis-request-v2",
   "request_template_sha256": "36cb43f63ad3a9aa719135640bcf91e32a8f7ccdad75ac6a685a9c75891f8b9e",
   "output_protocol_version": "meta-synthesis-output-v2",
-  "rendering_protocol_version": "meta-opinion-markdown-v2"
+  "rendering_protocol_version": "meta-opinion-markdown-v3"
 }

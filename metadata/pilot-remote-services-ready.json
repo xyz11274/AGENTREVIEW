@@ -1,0 +1,50 @@
+{
+  "split": {
+    "pid": 2217740,
+    "start_identity": "584540997",
+    "uid": 1014,
+    "argv_sha256": "11b092cc09540d7a2bde4137c32b26d70d7c7aea3e16f31e83f6cc3a83eedab3",
+    "model_root": "/data0/xyj/shengao/CoCoReviewBench/model/split_model",
+    "model": "Qwen3-8B-Split",
+    "base_url": "http://127.0.0.1:13099/v1",
+    "max_model_len": 65536,
+    "verified_model_inventory": "f4d24a236757f351014b25c614bf87e05ba8bb915da1250abfabf513b82e55f2",
+    "model_watcher": {
+      "pid": 2220965,
+      "start_identity": "584567428"
+    },
+    "transport": "ssh",
+    "ssh_target": "xyj@10.249.45.139",
+    "remote_base_url": "http://127.0.0.1:13099/v1",
+    "tunnel": {
+      "pid": 2098052,
+      "start_identity": "614528960",
+      "uid": 1032,
+      "argv_sha256": "57d0519db4886a6b94b12ec0366df6eed9779ab719f9ebe7e9990f1cf5eb2ad1"
+    }
+  },
+  "classify": {
+    "pid": 2217741,
+    "start_identity": "584541005",
+    "uid": 1014,
+    "argv_sha256": "59efa9b15292a8922b10970aa8cf09b50a790a61069256bd37d3d9290a1e6752",
+    "model_root": "/data0/xyj/shengao/CoCoReviewBench/model/classify_model",
+    "model": "Qwen3-8B-Classify",
+    "base_url": "http://127.0.0.1:13098/v1",
+    "max_model_len": 32768,
+    "verified_model_inventory": "d719b3d71196d475eea6294ca7adb19798ff0adfbb8e3728a628ac921306c3c8",
+    "model_watcher": {
+      "pid": 2220965,
+      "start_identity": "584567428"
+    },
+    "transport": "ssh",
+    "ssh_target": "xyj@10.249.45.139",
+    "remote_base_url": "http://127.0.0.1:13098/v1",
+    "tunnel": {
+      "pid": 2098053,
+      "start_identity": "614528960",
+      "uid": 1032,
+      "argv_sha256": "ff368bf6a02760abeb09cb43ac6a11f48b901b0529b4e6720d0e4e8d2a2daf9b"
+    }
+  }
+}

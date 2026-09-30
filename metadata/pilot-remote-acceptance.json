@@ -1,0 +1,32 @@
+{
+  "assessment": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930/acceptance-native/assessments/e0/acceptance-native/r0/coco/assessment.json",
+    "sha256": "73913728a44170d6ed9cea9c0b9b4c609c2ad78c6d95b5e9be36ca11f34a58d7"
+  },
+  "complete_count": 1,
+  "metrics": {
+    "Average": 3.158333333333333,
+    "BERT.": 83.72536301612854,
+    "BLEU": 1.365813436151861,
+    "Clarity": 4.333333333333333,
+    "Complete.": 75.0,
+    "Correct.": 3.1666666666666665,
+    "Ground.": 4.333333333333333,
+    "Paper.": 3.2,
+    "ROUGE-L": 16.921508664627932,
+    "Thoro.": 1.5,
+    "Verify.": 1.75
+  },
+  "paper_id": "f-FQE1fjPK",
+  "remote_services": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-remote-services-ready.json",
+    "sha256": "aeea6cf61fd9af3c938ef8ee8b86cef66e88c00fa8d71821d7477c03af9febf3"
+  },
+  "scope": "Deployment acceptance only; not evolution performance",
+  "scoring_config": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot/scoring.frozen.json",
+    "sha256": "d613ab1e09f11a415413c0a7bfa7df1b735164e263c4f1b6d679f0040c562acd"
+  },
+  "seconds": 358.1968376636505,
+  "status": "complete"
+}

@@ -92,6 +92,25 @@ def test_complete_receipt_uses_paper_table_and_preserves_x(experiment, monkeypat
     assert calls == ["split", "classify", "evaluation"]
 
 
+def test_original_missing_paper_metric_is_preserved_before_fitness_admission(experiment, monkeypatch):
+    def missing(raw):
+        for detail in raw["papers"].values():
+            detail["table_1_summary"]["absolute_scores"]["Paper."] = None
+            detail["table_1_summary"]["paper_counts"]["Paper."] = 0
+            detail["paper_judge_scores"] = {"success": False}
+        raw["table_1_summary"]["absolute_scores"]["Paper."] = None
+        raw["table_1_summary"]["paper_counts"]["Paper."] = 0
+    fake_standard(monkeypatch, experiment, mutate=missing)
+    receipt = coco.evaluate_final_reviews(**experiment)
+    assert receipt["status"] == "complete"
+    assert receipt["mean_score"] is None
+    assert receipt["rows"][0]["metrics"]["BLEU"] == 2.0
+    assert receipt["rows"][0]["metric_counts"]["Paper."] == 0
+    coco.validate_evaluation_receipt(receipt)
+    with pytest.raises(ValueError, match="fitness"):
+        coco.validate_assessment_receipt(receipt)
+
+
 @pytest.mark.parametrize("mutate", [
     lambda raw: raw["papers"].pop("paper-b"),
     lambda raw: raw["papers"]["paper-a"]["table_1_summary"]["absolute_scores"].update({"Paper.": float("nan")}),

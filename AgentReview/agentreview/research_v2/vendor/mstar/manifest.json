@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/wbopan/mstar.git",
+  "local_reference": "/data/xyj/shengao/mstar",
+  "commit": "09a8d34f69588a85fde78b20702d14f056267956",
+  "upstream_files": {
+    "reflector.py": "b03feab278ef9005a71a41e5a42083d3fa39977b314441556c97bdc02fb875bc",
+    "patcher.py": "52ba762712966cd0094de91378beeeb35638b0d68059109ae54aea1912b058af",
+    "prompts.py": "6dcbfcf20ccd01057d502e1b0955486903db78ce4d35b9c8bee0da006a3659c1",
+    "types.py": "6d06cd5ec27f7dd86d4461e22cf099c98c7c967669a05d1f1110fb6c024ee942",
+    "LICENSE": "9426c8f750a9609f9e6fb11cc4e2422e050d64fd88e2970134a265cb9939a668"
+  },
+  "license": "LICENSE",
+  "implementation": "AgentReview API reflection loop and ordered program editing",
+  "dependency": {
+    "distribution": "codex-apply-patch",
+    "version": "0.4.0"
+  },
+  "adaptation": [
+    "Explicit provider and validator injection",
+    "Complete AgentReview feedback and model-capacity prompts",
+    "Ordered atomic program.py operations",
+    "Persistent candidate sources, diffs, errors and responses"
+  ]
+}

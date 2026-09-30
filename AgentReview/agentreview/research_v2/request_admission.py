@@ -5,7 +5,7 @@ import fcntl
 import os
 from pathlib import Path
 import time
-from urllib.parse import urlparse
+import hashlib
 
 from .io import atomic_write_json, file_sha256, read_json
 from .execution_telemetry import emit
@@ -18,16 +18,17 @@ def profile():
     if file_sha256(path) != os.environ.get("AGENTREVIEW_EXECUTION_PROFILE_SHA256"):
         raise ValueError("Execution profile differs from its frozen binding")
     value = read_json(path)
-    if (value.get("protocol") != "shared-execution-v1" or value.get("paper_workers") != 2
-            or set(value.get("limits", {})) != {"18001", "13099", "13098"}
-            or any(type(n) is not int or not 1 <= n <= 128 for n in value["limits"].values())):
-        raise ValueError("Invalid bounded execution profile")
+    if (value.get("protocol") != "shared-api-execution-v2"
+            or type(value.get("paper_workers")) is not int or value["paper_workers"] <= 0
+            or not value.get("limits")
+            or any(type(n) is not int or n <= 0 for n in value["limits"].values())):
+        raise ValueError("Execution profile requires positive concurrency values")
     return value
 
 
 class Slot:
     def __init__(self, root, port, limit):
-        self.root = Path(root) / str(port)
+        self.root = Path(root) / hashlib.sha256(str(port).encode()).hexdigest()
         self.root.mkdir(parents=True, exist_ok=True)
         self.port, self.limit, self.fd = port, limit, None
         self.started = time.monotonic()
@@ -69,10 +70,9 @@ def slot_for(base_url):
     config = profile()
     if config is None:
         return None
-    endpoint = urlparse(base_url)
-    if endpoint.hostname != "127.0.0.1" or str(endpoint.port) not in config["limits"]:
-        raise ValueError("Bounded execution only permits its three local services")
-    return Slot(config["admission_root"], endpoint.port, config["limits"][str(endpoint.port)])
+    endpoint = base_url.rstrip("/")
+    return Slot(config["admission_root"], endpoint, config["limits"][endpoint])
+
 
 
 @contextmanager

@@ -1,0 +1,27 @@
+{
+  "assessment": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/acceptance-native/assessments/e0/acceptance-native/r0/coco/assessment.json",
+    "sha256": "768e30da323c1063a8673f89c1bbf82344783f6b3d7a88bc8d6e09fa104e6875"
+  },
+  "metrics": {
+    "Average": 3.3,
+    "BERT.": 83.64995121955872,
+    "BLEU": 0.4256098994546518,
+    "Clarity": 4.6,
+    "Complete.": 75.0,
+    "Correct.": 3.2,
+    "Ground.": 4.2,
+    "Paper.": 3.4,
+    "ROUGE-L": 8.845208845208846,
+    "Thoro.": 1.8,
+    "Verify.": 2.3333333333333335
+  },
+  "paper_id": "f-FQE1fjPK",
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-hybrid/protocol.frozen.json",
+    "sha256": "4db608b7d5bb95892dfb4fd2185497d4b01fa61f0900a09704141fca20600026"
+  },
+  "scope": "Deployment acceptance only; excluded from evolution scores",
+  "seconds": 236.00089931488037,
+  "status": "complete"
+}

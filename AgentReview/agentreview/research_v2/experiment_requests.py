@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import fcntl
+import time
+
+from .retry import transient_error, retry_delay
 from pathlib import Path
 from typing import Any
 
 from .io import atomic_write_json, read_json, value_sha256
-from .llm import complete_with_response_format
+from .token_accounting import available_output_tokens
+from .execution_telemetry import RequestTrace, emit
 
 
 class ExperimentRequestFailure(RuntimeError):
@@ -15,12 +19,11 @@ class ExperimentRequestFailure(RuntimeError):
 
 
 class PersistentCompletionClient:
-    def __init__(self, client, root, *, identity, max_attempts, input_max_tokens):
+    def __init__(self, client, root, *, identity, max_attempts):
         self.client = client
         self.root = Path(root).resolve()
         self.identity = identity
         self.max_attempts = max_attempts
-        self.input_max_tokens = input_max_tokens
         self.retry_policy = {"owner": "persistent-logical-request", "max_attempts": max_attempts, "sdk_max_retries": 0}
         if type(max_attempts) is int and max_attempts > 0:
             return
@@ -33,7 +36,8 @@ class PersistentCompletionClient:
         identity = {"messages": messages, "max_tokens": max_tokens, "component": component,
                     "completion_contract": "complete-stop-v1",
                     "model": self.identity, "response_format": response_format,
-                    "max_attempts": self.max_attempts, "input_max_tokens": self.input_max_tokens}
+                    "max_attempts": self.max_attempts,
+                    "output_policy": "remaining-model-context-v1"}
         directory = self.root / value_sha256(identity)
         directory.mkdir(parents=True, exist_ok=True)
         with (directory / "request.lock").open("a+b") as lock:
@@ -42,7 +46,14 @@ class PersistentCompletionClient:
             result_path = directory / "response.json"
             failure_path = directory / "failure.json"
             if result_path.is_file():
-                return read_json(result_path)["raw_model_output"]
+                result = read_json(result_path)
+                body = {k: v for k, v in result.items() if k != "response_sha256"}
+                if (result.get("response_sha256") != value_sha256(body)
+                        or result.get("request_id") != directory.name
+                        or not isinstance(result.get("raw_model_output"), str)
+                        or not result["raw_model_output"].strip()):
+                    raise ExperimentRequestFailure("Cached response integrity check failed")
+                return result["raw_model_output"]
             if failure_path.is_file():
                 raise ExperimentRequestFailure(read_json(failure_path)["reason"])
             previous = None
@@ -59,23 +70,23 @@ class PersistentCompletionClient:
                     continue
                 atomic_write_json(reserve, {"attempt": attempt, "request_id": directory.name})
                 try:
-                    if type(max_tokens) is not int or max_tokens <= 0:
-                        raise ValueError("Output budget requires a positive integer")
                     tokens = self.client.count_chat_tokens(messages)
-                    if tokens["input_tokens"] <= self.input_max_tokens and tokens["input_tokens"] + max_tokens <= tokens["max_model_len"]:
-                        pass
-                    else:
-                        raise ValueError(f"Complete request exceeds the frozen input or model token budget: input={tokens['input_tokens']}, output={max_tokens}, input_limit={self.input_max_tokens}, context={tokens['max_model_len']}")
-                    response = complete_with_response_format(self.client, messages, max_tokens=max_tokens,
-                                                             component=component, response_format=response_format)
+                    output = available_output_tokens(tokens, max_tokens)
+                    with RequestTrace(directory / f'attempt-{attempt}.progress.json',
+                                      request_id=directory.name, attempt=attempt, component=component,
+                                      input_tokens=tokens['input_tokens'], output_budget=output):
+                        response = self.client.complete(messages, max_tokens=output,
+                                                       component=component, response_format=response_format)
                     if isinstance(response, str) and response.strip():
-                        atomic_write_json(result_path, {"raw_model_output": response, "attempt": attempt, "tokens": tokens,
-                                                       "completion": getattr(self.client, "last_completion", None)})
+                        result = {"request_id": directory.name, "raw_model_output": response,
+                                  "attempt": attempt, "tokens": tokens,
+                                  "effective_max_tokens": output,
+                                  "completion": getattr(self.client, "last_completion", None)}
+                        atomic_write_json(result_path, {**result, "response_sha256": value_sha256(result)})
                         return response
                     raise ValueError("Completion requires nonempty text")
                 except Exception as exc:
-                    status = getattr(exc, "status_code", None)
-                    transient = isinstance(exc, (TimeoutError, ConnectionError)) or status in {408, 429, 500, 502, 503, 504} or type(exc).__name__ in {"APITimeoutError", "APIConnectionError"}
+                    transient = transient_error(exc)
                     error = {"type": type(exc).__name__, "message": str(exc), "transient": transient}
                     if getattr(exc, "completion", None) is not None:
                         error["completion"] = exc.completion
@@ -85,6 +96,15 @@ class PersistentCompletionClient:
                     repeated = previous is not None and previous["fingerprint"] == error["fingerprint"]
                     if transient is False and repeated:
                         break
+                    if transient and attempt < self.max_attempts:
+                        delay = retry_delay(exc, attempt)
+                        atomic_write_json(directory / f"attempt-{attempt}.retry.json", {"delay_seconds": delay})
+                        emit(event='retry', stage='api_request', request_id=directory.name,
+                             component=component, attempt=attempt, next_attempt=attempt + 1,
+                             delay_seconds=delay, error_type=type(exc).__name__, error=str(exc))
+                        from .execution_telemetry import span
+                        with span('api_retry_wait', component=component, attempt=attempt):
+                            time.sleep(delay)
                     previous = error
             failure = {"status": "paused", "reason": "Request exhausted its finite attempts or repeated a deterministic error", "errors": errors}
             atomic_write_json(failure_path, failure)

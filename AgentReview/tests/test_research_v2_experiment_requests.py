@@ -16,8 +16,8 @@ class Client:
         return "complete review"
 
 
-def wrapped(tmp_path, client, input_max_tokens=50):
-    return PersistentCompletionClient(client, tmp_path, identity={"model": "qwen"}, max_attempts=3, input_max_tokens=input_max_tokens)
+def wrapped(tmp_path, client):
+    return PersistentCompletionClient(client, tmp_path, identity={"model": "qwen"}, max_attempts=3)
 
 
 def invoke(client):
@@ -44,8 +44,9 @@ def test_deterministic_repetition_stops_and_resume_has_zero_calls(tmp_path):
 
 def test_full_input_budget_failure_is_explicit_without_generation(tmp_path):
     client = Client()
+    client.count_chat_tokens = lambda messages: {"input_tokens": 100, "max_model_len": 100}
     with pytest.raises(ExperimentRequestFailure):
-        invoke(wrapped(tmp_path, client, input_max_tokens=10))
+        invoke(wrapped(tmp_path, client))
     assert client.calls == 0
 
 

@@ -1,0 +1,19 @@
+[Unit]
+Description=agentreview-0930-tunnel-split
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=/data/xyj/shengao/AgentReview_0930
+StandardInput=null
+StandardOutput=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/tunnels/split.systemd.log
+StandardError=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/tunnels/split.systemd.log
+Restart=always
+RestartSec=10
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=90
+ExecStart="/usr/bin/ssh" "-i" "/data/xyj/.ssh/id_ed25519" "-o" "IdentitiesOnly=yes" "-o" "BatchMode=yes" "-o" "StrictHostKeyChecking=yes" "-o" "ConnectTimeout=15" "-o" "ServerAliveInterval=30" "-o" "ServerAliveCountMax=3" "-N" "-T" "-o" "ExitOnForwardFailure=yes" "-L" "127.0.0.1:13099:127.0.0.1:13099" "xyj@10.249.45.139"
+
+[Install]
+WantedBy=default.target

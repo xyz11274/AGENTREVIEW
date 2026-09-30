@@ -1,11 +1,11 @@
 {
-  "admission_root": "/data/xyj/shengao/AgentReview_0930/artifacts/admission",
+  "admission_root": "/data/xyj/shengao/AgentReview_0930/artifacts/admission-api",
   "limits": {
-    "13098": 16,
-    "13099": 4,
-    "18001": 16
+    "http://127.0.0.1:13098/v1": 16,
+    "http://127.0.0.1:13099/v1": 4,
+    "https://ark.cn-beijing.volces.com/api/plan/v3": 8
   },
-  "note": "One global cap on 18001 includes reviewer, memory, Meta and original CoCo Judge; MSTAR rounds remain serial.",
+  "note": "Cloud concurrency is shared by generation, memory, reflection, Meta and CoCo Judge. Configure to account capacity; no guessed RPM/TPM quotas.",
   "paper_workers": 2,
-  "protocol": "shared-execution-v1"
+  "protocol": "shared-api-execution-v2"
 }

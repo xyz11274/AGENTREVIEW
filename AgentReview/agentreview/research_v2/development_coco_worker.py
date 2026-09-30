@@ -6,8 +6,6 @@ import argparse
 import importlib
 import json
 import sys
-import urllib.request
-from urllib.parse import urlparse
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -17,12 +15,11 @@ from agentreview.research_v2.development_coco import (  # noqa: E402
     _binding, _bound_file, _source_identity, _stage_failure, _validate_inputs,
 )
 from agentreview.research_v2.io import atomic_write_json, read_json, read_jsonl, value_sha256  # noqa: E402
-from agentreview.research_v2.judge_lease import Qwen27BModeLease  # noqa: E402
+from agentreview.research_v2.config import ModelConfig
+from agentreview.research_v2.llm import require_api_key, completion_payload
+from agentreview.research_v2.token_accounting import count_chat_tokens
 from agentreview.research_v2.execution_telemetry import span
 from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge  # noqa: E402
-from agentreview.research_v2.coco_service_runtime import (  # noqa: E402
-    _listening_sockets, _socket_owner_pids, _read_null_separated, _process_start_identity,
-)
 
 
 def _load_standard(root: Path, name: str) -> Any:
@@ -46,41 +43,63 @@ def normalize_table(table: dict[str, Any]) -> dict[str, Any]:
 
 
 def _service_ready(service: dict[str, Any]) -> dict[str, Any]:
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(service["base_url"].rstrip("/") + "/models", timeout=15) as response:
-        models = json.load(response)
-    if service["model"] in {item.get("id") for item in models.get("data", [])}:
-        endpoint = urlparse(service["base_url"])
-        sockets = [item for item in _listening_sockets() if item[1] == endpoint.port]
-        owners = _socket_owner_pids({item[2] for item in sockets})
-        pids = {pid for values in owners.values() for pid in values}
-        if len(sockets) == 1 and len(pids) == 1:
-            pid = next(iter(pids))
-            args = _read_null_separated(Path(f"/proc/{pid}/cmdline"), label="standard CoCo service")
-            def option(name):
-                values = [args[index + 1] for index, value in enumerate(args[:-1]) if value == name]
-                values += [value.split("=", 1)[1] for value in args if value.startswith(name + "=")]
-                if len(values) == 1:
-                    return values[0]
-                raise ValueError(f"Scoring service requires one explicit {name} argument")
-            model_root = Path(option("--model")).expanduser().resolve()
-            if model_root == Path(service["model_identity"]["root"]) and option("--served-model-name") == service["model"]:
-                return {"pid": pid, "start_identity": _process_start_identity(pid, proc_root=Path("/proc")),
-                        "argv_sha256": value_sha256(args), "model_root": str(model_root),
-                        "model": service["model"], "base_url": service["base_url"],
-                        "max_model_len": int(option("--max-model-len"))}
-            raise ValueError("Live scoring process model path differs from the frozen model identity")
-        raise ValueError("Local scoring endpoint requires one identifiable service process")
-    raise ValueError("Local scoring service model name differs from its frozen configuration")
+    if "ssh" in service:
+        from agentreview.research_v2.ssh_service import ssh_service_ready
+        return ssh_service_ready(service)
+    from agentreview.research_v2.local_service import local_service_ready
+    return local_service_ready(service)
 
 
 def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
     utils = importlib.import_module("src.utils")
     service = config["services"][stage]
-    return audited_client_class(utils.LLMClient)(api_key="local-vllm", base_url=service["base_url"], model_name=service["model"],
-        max_workers={"split": 64, "classify": 128, "judge": 128}[stage],
+    client_type = audited_client_class(utils.LLMClient)
+    api_key = "local-coco-no-auth"
+    if stage == "judge":
+        judge = ModelConfig(**service)
+        api_key = require_api_key(judge)
+        class ArkJudgeClient(client_type):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.client.timeout = judge.timeout_seconds
+                self.response_model = judge.response_model
+
+            async def _perform_completion(self, api_payload):
+                from .streaming import async_stream_completion
+                async with self._request_semaphore:
+                    return await async_stream_completion(self.client, api_payload)
+
+            def _prepare_request(self, prompt, system_prompt=None, msg_history=None,
+                                 temperature=0, max_completion_tokens=32768, **kwargs):
+                key, messages, original = super()._prepare_request(
+                    prompt, system_prompt, msg_history, temperature, max_completion_tokens, **kwargs)
+                payload = completion_payload(judge, messages,
+                    max_tokens=max_completion_tokens)
+                return key, messages, payload
+
+            def _token_budget(self, payload):
+                tokens = count_chat_tokens(payload["messages"], judge)
+                output = payload["max_tokens"]
+                if tokens["input_tokens"] + output > judge.max_model_len:
+                    raise ValueError("Complete CoCo Judge request exceeds API context")
+                return {**tokens, "output_budget": output}
+        client_type = ArkJudgeClient
+    return client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
+        max_workers=config["request_settings"][stage]["max_workers"],
         cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
-        cache_version=value_sha256({"request": request, "stage": stage, "integrity": "complete-v1"}))
+        cache_version=value_sha256({"request": request, "stage": stage, "service": service, "integrity": "upstream-observed-v1"}))
+
+
+def _runtime(config, stage):
+    service = config["services"][stage]
+    if stage == "judge":
+        model = ModelConfig(**service)
+        require_api_key(model)
+        return {"transport": "ark-chat-completions", "model_identity": model.identity()}
+    runtime = _service_ready(service)
+    if runtime["max_model_len"] < {"split": 65536, "classify": 32768}[stage]:
+        raise ValueError("Local CoCo service context is smaller than its original request budgets")
+    return runtime
 
 
 def _integrity(client, request, stage, checks):
@@ -111,10 +130,11 @@ def _split_or_classify(request: dict[str, Any], config: dict[str, Any], stage: s
     client = _client(config, stage, request)
     module.client = client
     try:
-        if stage == "split":
-            module.split_all(args)
-        else:
-            module.classify_opinions(args)
+        with span('coco_' + stage):
+            if stage == "split":
+                module.split_all(args)
+            else:
+                module.classify_opinions(args)
     finally:
         client.shutdown()
     checks = (audit_split if stage == "split" else audit_classify)(
@@ -173,17 +193,16 @@ def evaluate_loaded_standard(*, evaluation: Any, request: dict[str, Any], config
 def _evaluate(request: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     evaluation = _load_standard(Path(config["coco_root"]), "_4_evaluation")
     references = read_json(_bound_file(request["inputs"]["references"]))
-    with Qwen27BModeLease("judge"):
-        client = _client(config, "judge", request)
-        try:
-            classified = _previous_stage(request, "classify")
-            result = evaluate_loaded_standard(evaluation=evaluation, request=request, config=config,
-                references=references, input_file=classified, judge_client=client)
-            result["input"] = _binding(classified)
-            result["integrity"] = _integrity(client, request, "evaluation", result["completeness_checks"])
-            return result
-        finally:
-            client.shutdown()
+    client = _client(config, "judge", request)
+    try:
+        classified = _previous_stage(request, "classify")
+        result = evaluate_loaded_standard(evaluation=evaluation, request=request, config=config,
+            references=references, input_file=classified, judge_client=client)
+        result["input"] = _binding(classified)
+        result["integrity"] = _integrity(client, request, "evaluation", result["completeness_checks"])
+        return result
+    finally:
+        client.shutdown()
 
 
 def main() -> int:
@@ -201,14 +220,9 @@ def main() -> int:
             raise ValueError("Frozen standard CoCo source identity changed")
         _validate_inputs(_bound_file(request["inputs"]["reviews"]), _bound_file(request["inputs"]["references"]), request["partition"])
         service_role = "judge" if args.stage == "evaluation" else args.stage
-        before_runtime = _service_ready(config["services"][service_role])
-        required_context = {"split": 65536, "classify": 32768, "judge": 65536}[service_role]
-        if before_runtime["max_model_len"] == required_context:
-            pass
-        else:
-            raise ValueError("Scoring service context window differs from the original deployment contract")
+        before_runtime = _runtime(config, service_role)
         result = _evaluate(request, config) if args.stage == "evaluation" else _split_or_classify(request, config, args.stage, target)
-        after_runtime = _service_ready(config["services"][service_role])
+        after_runtime = _runtime(config, service_role)
         if before_runtime != after_runtime:
             raise ValueError("Scoring service instance changed during the stage")
         result["service_runtime"] = before_runtime

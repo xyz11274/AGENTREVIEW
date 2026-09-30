@@ -1,0 +1,25 @@
+{
+  "status": "blocked",
+  "counts": {
+    "build": 4,
+    "static": 3,
+    "rotating": 5,
+    "sealed_test": 3
+  },
+  "offline_protocol_and_scoring_validation": "passed",
+  "sandbox": "passed",
+  "credential_configured": true,
+  "services": {},
+  "blockers": [
+    {
+      "stage": "split",
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    },
+    {
+      "stage": "classify",
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    }
+  ],
+  "model_calls": 0,
+  "checked_at": 1790654764.601342
+}

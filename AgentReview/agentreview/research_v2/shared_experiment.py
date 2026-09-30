@@ -6,12 +6,13 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 
 from .config import ModelConfig, ResearchConfig
 from .constants import ROLES
 from .development_coco import evaluate_final_reviews, validate_evaluation_receipt, validate_assessment_receipt
-from .evolution import validate_program
+from .program_validation import validate_program
 from .experiment_protocol import load_experiment_protocol
 from .experiment_requests import PersistentCompletionClient
 from .io import atomic_write_json, file_sha256, read_json, value_sha256
@@ -21,6 +22,7 @@ from .meta import generate_final_review
 from .program_checks import program_capability_manifest
 from .review import run_specialist_review
 from .shared_evolution import SharedEvolution
+from .execution_telemetry import timed
 
 
 class CandidateContractError(ValueError):
@@ -41,15 +43,16 @@ def bound(value):
 
 def runtime_identity():
     root = Path(__file__).parent
-    paths = [root / name for name in ("shared_experiment.py", "shared_evolution.py", "experiment_requests.py",
-             "memory.py", "review.py", "review_preparation.py", "meta.py", "development_coco.py",
-             "development_coco_worker.py", "experiment_protocol.py", "program_checks.py", "coco_native.py", "data.py", "llm.py", "config.py", "constants.py", "coco_integrity.py",
-             "cohort_receipt.py", "model_watch.py", "request_admission.py", "execution_telemetry.py")]
-    paths.extend([root / "reflection_budget.py", root / "failure_policy.py"])
+    paths = sorted(root.glob("*.py"))
     paths.extend([root.parent / "reviewer_identity.py", root.parent / "paper_context.py", root.parent / "source_map.py"])
     paths.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))
     paths.extend(sorted((root.parents[1] / "memory_evolution").glob("embedding*.py")))
-    return [binding(path) for path in paths]
+    paths.extend(sorted((root / "vendor/deepseek_v41").glob("*.*")))
+    paths.extend(sorted((root / "vendor/mstar").glob("*")))
+    from .mstar_adapter import source_identity
+    identity = {str(path.resolve()): binding(path) for path in paths if path.is_file()}
+    identity.update({item["path"]: item for item in source_identity()})
+    return [identity[path] for path in sorted(identity)]
 
 
 def generation_identity():
@@ -57,12 +60,14 @@ def generation_identity():
     import ast
     from agentreview.reviewer_identity import load_reviewer_suite, load_meta_synthesizer
     root = Path(__file__).parent
-    sources = [root / name for name in ("memory.py", "review.py", "review_preparation.py", "meta.py", "coco_native.py", "experiment_requests.py", "llm.py", "config.py", "constants.py", "request_admission.py", "execution_telemetry.py")]
+    sources = [root / name for name in ("memory.py", "review.py", "review_preparation.py", "meta.py", "coco_native.py", "experiment_requests.py", "llm.py", "streaming.py", "config.py", "token_accounting.py", "retry.py", "embedding.py", "local_service.py", "constants.py", "request_admission.py", "execution_telemetry.py")]
+    sources.extend(root / name for name in ("io.py", "models.py", "s2.py", "data.py", "program_checks.py", "program_validation.py"))
     sources.extend([root.parent / name for name in ("reviewer_identity.py", "paper_context.py", "source_map.py")])
     sources.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))
     sources.extend(sorted((root.parents[1] / "memory_evolution").glob("embedding*.py")))
+    sources.extend(sorted((root / "vendor/deepseek_v41").glob("*.*")))
     tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
-    backend = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "LocalSharedBackend")
+    backend = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "APISharedBackend")
     methods = [node for node in backend.body if isinstance(node, ast.FunctionDef) and node.name in {"client", "embedding", "memory_runtime", "_paper", "_s2", "_bootstrap", "_candidate_check", "_generate_paper", "_assess_streaming"}]
     # The generation section of assess ends when the score manifest is committed.
     assess = next(node for node in backend.body if isinstance(node, ast.FunctionDef) and node.name == "assess")
@@ -77,7 +82,7 @@ def generation_identity():
             "meta": load_meta_synthesizer().identity()}
 
 
-class LocalSharedBackend:
+class APISharedBackend:
     def __init__(self, *, protocol, output_root):
         self.protocol = protocol
         self.config = protocol.document
@@ -125,17 +130,28 @@ class LocalSharedBackend:
     def client(self, directory):
         client = OpenAICompletionClient(self.model)
         wrapped = PersistentCompletionClient(client, directory, identity=self.model.identity(),
-                    max_attempts=self.config["failure_policy"]["request_attempts"], input_max_tokens=self.generation["input_max_tokens"])
+                    max_attempts=self.config["failure_policy"]["request_attempts"])
         try:
             yield wrapped
         finally:
             client.close()
 
+    @contextmanager
+    def reflection_client(self, directory):
+        # The upstream reflector requests high reasoning for mutation and fixes.
+        model = replace(self.model, enable_thinking=True, reasoning_effort="high")
+        client = OpenAICompletionClient(model)
+        try:
+            yield PersistentCompletionClient(client, directory, identity=model.identity(),
+                        max_attempts=self.config["failure_policy"]["request_attempts"])
+        finally:
+            client.close()
+
     def embedding(self):
         if self.embedding_client is None:
-            from .cli import _embedding_client
+            from .embedding import embedding_client
             config = self.config["embedding"]
-            self.embedding_client = _embedding_client(ResearchConfig(
+            self.embedding_client = embedding_client(ResearchConfig(
                 embedding_provider=config["provider"], embedding_model=config["model"],
                 embedding_revision=config["revision"], embedding_cache_path=config["cache_path"],
                 embedding_device=config["device"]))
@@ -147,11 +163,11 @@ class LocalSharedBackend:
         return {"query_mode": self.generation["memory_query_mode"],
                 "read_llm_calls": self.generation["memory_read_llm_calls"],
                 "build_llm_calls": self.generation["memory_build_llm_calls"],
-                "max_tokens": self.generation["memory_max_tokens"],
-                "context_max_tokens": self.generation["memory_max_tokens"],
-                "summary_input_max_tokens": min(32768, self.generation["input_max_tokens"] // 2),
-                "tokenizer": {"path": str(Path(self.scoring["services"]["judge"]["model_identity"]["root"]) / "tokenizer.json"),
-                              "sha256": self.config["model"]["tokenizer_sha256"]}}
+                "max_tokens": self.model.max_output_tokens,
+                "context_max_tokens": self.model.max_model_len - 1,
+                "summary_input_max_tokens": self.model.max_model_len - 1,
+                "tokenizer": self.model.identity()["token_accounting"]["tokenizer"]}
+
 
     def _write_program(self, path, code):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -192,6 +208,7 @@ class LocalSharedBackend:
             return None, {"protocol": "s2-intervention-v1", "mode": "forced_off", "label": "shared-frozen-off-v1"}
         return bound(self.conditions["frozen_s2"][split]), None
 
+    @timed('experience_build')
     def _bootstrap(self, epoch):
         source = self.seed("vector_search")
         directory = self.root / "bootstrap" / f"e{epoch}"
@@ -216,7 +233,7 @@ class LocalSharedBackend:
                         model_identity=self.model.identity(), program_version=source["candidate_id"], frozen_s2_path=s2,
                         s2_intervention=intervention, embedding_client=embedding, embedding_identity=embedding_identity,
                         require_bubblewrap=self.require_bubblewrap, memory_enabled=False, memory_runtime=self.memory_runtime(),
-                        max_tokens=self.generation["review_max_tokens"])
+                        max_tokens=self.model.max_output_tokens)
             return row["paper_id"]
         workers = self.execution["paper_workers"] if self.execution else 1
         completed = []
@@ -259,6 +276,7 @@ class LocalSharedBackend:
             return
         raise CandidateContractError("Memory evolution preserves the frozen non-memory review policy")
 
+    @timed('candidate_evaluation', 'epoch')
     def assess(self, recipe, *, epoch):
         candidate = recipe["candidate"]
         key, split = recipe["key"], recipe["split"]
@@ -304,7 +322,7 @@ class LocalSharedBackend:
                     from .coco_native import generate_native_review
                     result = generate_native_review(paper_path=paper, coco_root=self.scoring["coco_root"],
                         run_id=key, output_root=generation_dir / "native-raw" / value_sha256(row["paper_id"]), completion_client=client, model_identity=self.model.identity(),
-                        max_tokens=self.generation["native_max_tokens"], num_fewshot=self.generation["native_num_fewshot"])
+                        max_tokens=self.model.max_output_tokens, num_fewshot=self.generation["native_num_fewshot"])
                     path = atomic_write_json(generation_dir / "native" / f"{row['paper_id']}.json", result)
                 else:
                     paper_reviews = []
@@ -314,13 +332,13 @@ class LocalSharedBackend:
                             model_identity=self.model.identity(), program_version=candidate["candidate_id"], frozen_s2_path=s2,
                             s2_intervention=intervention, embedding_client=embedding, embedding_identity=embedding_identity,
                             require_bubblewrap=self.require_bubblewrap, memory_enabled=recipe["memory_enabled"],
-                            memory_runtime=self.memory_runtime(), max_tokens=self.generation["review_max_tokens"])
+                            memory_runtime=self.memory_runtime(), max_tokens=self.model.max_output_tokens)
                         path = generation_dir / "reviews" / key / row["paper_id"] / f"{role}.json"
                         paper_reviews.append(path)
                         role_reviews[role].append({"paper_id": row["paper_id"], **binding(path)})
                     generate_final_review(paper_path=paper, review_paths=paper_reviews, mode=self.conditions["final_mode"],
                         run_id=key, output_root=generation_dir, completion_client=client, model_identity=self.model.identity(),
-                        max_tokens=self.generation["meta_max_tokens"])
+                        max_tokens=self.model.max_output_tokens)
                     path = generation_dir / "final_reviews" / key / f"{row['paper_id']}.json"
                 reviews.append({"paper_id": row["paper_id"], **binding(path)})
         identity = {"experiment_protocol_sha256": self.protocol.protocol_sha256, "candidate": candidate,
@@ -355,7 +373,7 @@ class LocalSharedBackend:
                 result = generate_native_review(paper_path=paper, coco_root=self.scoring["coco_root"],
                     run_id=key, output_root=generation_dir / "native-raw" / value_sha256(row["paper_id"]),
                     completion_client=client, model_identity=self.model.identity(),
-                    max_tokens=self.generation["native_max_tokens"], num_fewshot=self.generation["native_num_fewshot"])
+                    max_tokens=self.model.max_output_tokens, num_fewshot=self.generation["native_num_fewshot"])
                 path = atomic_write_json(generation_dir / "native" / f"{row['paper_id']}.json", result)
             else:
                 paths = []
@@ -365,13 +383,13 @@ class LocalSharedBackend:
                         model_identity=self.model.identity(), program_version=candidate["candidate_id"], frozen_s2_path=s2,
                         s2_intervention=intervention, embedding_client=embedding, embedding_identity=embedding_identity,
                         require_bubblewrap=self.require_bubblewrap, memory_enabled=recipe["memory_enabled"],
-                        memory_runtime=self.memory_runtime(), max_tokens=self.generation["review_max_tokens"])
+                        memory_runtime=self.memory_runtime(), max_tokens=self.model.max_output_tokens)
                     path = generation_dir / "reviews" / key / row["paper_id"] / f"{role}.json"
                     paths.append(path)
                     role_reviews[role].append({"paper_id": row["paper_id"], **binding(path)})
                 generate_final_review(paper_path=paper, review_paths=paths, mode=self.conditions["final_mode"],
                     run_id=key, output_root=generation_dir, completion_client=client, model_identity=self.model.identity(),
-                    max_tokens=self.generation["meta_max_tokens"])
+                    max_tokens=self.model.max_output_tokens)
                 path = generation_dir / "final_reviews" / key / f"{row['paper_id']}.json"
         return {"paper_id": row["paper_id"], **binding(path)}, role_reviews
 
@@ -480,6 +498,7 @@ class LocalSharedBackend:
         receipt = validate_assessment_receipt(bound(feedback["assessment"]), expected_partition="rotating")
         return [{"paper_id": row["paper_id"], "score": row["metrics"]["Paper."]} for row in receipt["rows"]]
 
+    @timed('reflection', 'directory')
     def propose(self, *, parent, feedback, history, directory):
         directory = Path(directory)
         source = bound(parent["program"])
@@ -528,61 +547,39 @@ class LocalSharedBackend:
             prompt_packet["current_rotating_feedback"] = [row for row in prompt_packet["current_rotating_feedback"] if row["paper_id"] in chosen]
             prompt_packet["trajectories"] = {role: [row for row in reviews if row["paper_id"] in chosen]
                 for role, reviews in prompt_packet["trajectories"].items()}
-        prompt = ("Evolve one shared MemoryProgram for five fixed specialist reviewers. Optimize final complete-review "
-                  "standard CoCo Table-1 Paper. using this iteration's development feedback. Modify KnowledgeItem and Query "
-                  "schemas, KnowledgeBase read/write logic, and the four memory instruction constants. Preserve the exact "
-                  "plan_review function and its imports, the fixed host task, and role-local memory boundaries. Each revised "
-                  "program builds fresh role-local knowledge bases. Keep canonical Query query_text and reviewer_dimension "
-                  "fields for host planning. Toolkit model API: toolkit.llm_completion(messages, max_tokens=N), "
-                  "where messages is a list of objects with role and content; the return value is text. "
-                  "There is no toolkit.llm method. Other APIs include toolkit.embed(list_of_texts), "
-                  "toolkit.create_vector_collection(name), and toolkit.log(event, payload). Never catch and hide "
-                  "model, embedding, capability or budget failures. Keep any parsing fallback separate from "
-                  "the model call. Never slice review, feedback, memory or summary text by characters. "
-                  "Use toolkit.select_memory_entries(list_of_complete_text_entries, purpose='context') for reads "
-                  "or purpose='summary_input' before summarizing; join selected entries with two newlines. "
-                  "toolkit.memory_token_limit() and toolkit.count_tokens(text) expose host token accounting. "
-                  "Return complete read results within this token budget; over-budget or incomplete results fail. "
-                  "The raw_text of write contains the complete build experience with source IDs and any explicitly "
-                  "provided build correction; honor corrections instead of memorizing the erroneous claim. "
-                  "Empty build evaluation_paths is intentional: there are no role-level scores. Rotating CoCo "
-                  "feedback below is for program evolution only, never add it or test references to the build corpus. "
-                  "Respect the configured memory call budgets. For evolved programs, "
-                  "reserve one build LLM call for host KnowledgeItem induction; KnowledgeBase.write may use only "
-                  "the remaining build_llm_calls minus one calls. Program imports and methods "
-                  "must satisfy the existing sandbox interface. Return a JSON object with change (text) and program "
-                  "(the complete Python source).\n\nMemory runtime: " + json.dumps(self.memory_runtime()) +
-                  "\n\nParent source:\n" + source.read_text(encoding="utf-8") +
-                  "\n\nDevelopment feedback:\n")
-        with self.client(directory / "requests") as client:
+        from .mstar_adapter import MstarReflection
+        def validate_mutation(path):
+            try:
+                self._candidate_check({**parent, "program": binding(path), "seed_kind": "evolved"})
+            except CandidateContractError as exc:
+                return str(exc)
+            return None
+        with self.reflection_client(directory / "requests") as client:
+            runner = MstarReflection(client=client, model=self.model, runtime=self.memory_runtime(),
+                                     directory=directory, validator=validate_mutation)
+            code = source.read_text(encoding="utf-8")
+            score = float(feedback.get("static_score", parent.get("static_score") or 0))
+            iteration = int(parent.get("round", 0)) + 1
+            prefix = runner.prompt(code, score, iteration)
             from .reflection_budget import pack_reflection_feedback
-            prompt, prompt_packet, budget = pack_reflection_feedback(prompt_packet, prefix=prompt,
-                count_chat_tokens=client.count_chat_tokens, input_limit=self.generation["input_max_tokens"],
-                output_budget=self.config["evolution"]["max_reflection_tokens"])
+            prompt, prompt_packet, budget = pack_reflection_feedback(prompt_packet, prefix=prefix,
+                count_chat_tokens=client.count_chat_tokens, input_limit=self.model.max_model_len - 1,
+                output_budget=self.model.max_output_tokens)
             atomic_write_json(directory / "reflection-input.json", prompt_packet)
             budget["source_feedback"] = binding(directory / "feedback.json")
             atomic_write_json(directory / "reflection-budget.json", budget)
-            raw = client.complete([{"role": "user", "content": prompt}],
-                    max_tokens=self.config["evolution"]["max_reflection_tokens"], component="shared_mstar_reflection",
-                    response_format={"type": "json_object"})
-        atomic_write_json(directory / "response.json", {"raw_model_output": raw})
-        try:
-            parsed = json.loads(raw)
-            code, change = parsed["program"], parsed["change"]
-            if isinstance(code, str) and isinstance(change, str) and code.strip() and change.strip():
-                pass
-            else:
-                raise ValueError("Reflection requires complete source and a change description")
-        except (ValueError, TypeError, KeyError) as exc:
-            code, change = "", f"Reflection contract failure: {exc}"
+            violation = feedback.get("contract_failure")
+            code, change = runner.run(code=code, prompt=prompt, iteration=iteration, score=score,
+                                      violation=json.dumps(violation, ensure_ascii=False) if violation is not None else None)
         target = directory / "program.py"
         self._write_program(target, code)
         return {"program": binding(target), "program_sha256": file_sha256(target), "seed_kind": "evolved",
+                "reflection": binding(directory / "mstar-trace.json"),
                 "change": change, "seed": parent["seed"], "parent_id": parent["candidate_id"]}
 
     def freeze(self, winner, state):
         from .development_coco import _model_identity
-        for model in [self.scoring["bert_score_model"], *(service["model_identity"] for service in self.scoring["services"].values())]:
+        for model in [self.scoring["bert_score_model"], *(self.scoring["services"][stage]["model_identity"] for stage in ("split", "classify"))]:
             if _model_identity(model["root"], force_rehash=True) != model:
                 raise ValueError("Frozen model bytes changed before Champion freeze")
         assets = {key: result for key, result in state["results"].items()
@@ -661,7 +658,7 @@ class LocalSharedBackend:
 
 def run_shared_experiment(*, protocol_path, output_root, repair_evidence=None):
     protocol = load_experiment_protocol(protocol_path)
-    backend = LocalSharedBackend(protocol=protocol, output_root=output_root)
+    backend = APISharedBackend(protocol=protocol, output_root=output_root)
     return SharedEvolution(protocol=protocol, output_root=output_root, backend=backend).run(repair_evidence=repair_evidence)
 
 
@@ -717,7 +714,7 @@ def run_shared_final_test(*, protocol_path, output_root, frozen_system_path, rep
     validate_frozen_policy(promotion_policy)
     if promotion_policy["evaluation_epoch"] != frozen["promotion_policy"]["evaluation_epoch"]:
         raise ValueError("Final test requires the current verified evaluation epoch")
-    backend = LocalSharedBackend(protocol=protocol, output_root=output_root)
+    backend = APISharedBackend(protocol=protocol, output_root=output_root)
     backend.frozen_system = binding(frozen_system_path)
     for key, result in frozen["assessments"].items():
         recipe = frozen["recipes"][key]

@@ -1,0 +1,45 @@
+{
+  "compiled_and_sandbox_validated": true,
+  "diff": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930/reflection/program.diff",
+    "sha256": "04067db24f9076061b40757979d066586d57a9dd9d19b1ddb5da5d1955851c72"
+  },
+  "elapsed_seconds": 62.1,
+  "finished_at": 1790684625.9009442,
+  "fitness_evaluated": false,
+  "fixed_review_policy_preserved": true,
+  "native_patch_applied": true,
+  "parent": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/search/programs/seed-vector_search/program.py",
+    "sha256": "47e3f7581edeadd58ad89a6a726f2a4d87915d52d627e619cdb72bbe59491ba9"
+  },
+  "program_changed": true,
+  "proposal": {
+    "change": "Title: Steer the specialist-review task agent with a full dimension playbook and make memory retrieval budget-driven\n- Root cause: the memory instructions (especially ALWAYS_ON_KNOWLEDGE = \"Ground every judgment in the Frozen Paper.\") gave the task agent almost no behavioral or structural guidance. The retrieved experiences are same-dimension reviews from unrelated papers, so they only supply style — yet nothing told the agent which subcategories each dimension must cover, that weaknesses must be concrete and evidence-anchored, that omissions must be reported, or that it must not hallucinate numbers. Low Thoro./Correct./Complete. scores are consistent with generic, template-shaped or under-specified opinions rather than paper-specific, complete coverage.\n- Prompt optimization: rewrote INSTRUCTION_KNOWLEDGE_ITEM, INSTRUCTION_QUERY, INSTRUCTION_RESPONSE and expanded ALWAYS_ON_KNOWLEDGE into a per-dimension subcategory playbook (CLAR/ORIG/QUAL/POL/SIGN) plus behavioral rules: cite SRC anchors, be paper-specific, never invent facts, report omissions, pair weaknesses with actionable revisions, calibrate the recommendation, and treat memory only as a style template.\n- Memory design: added `subcategories` fields to KnowledgeItem and Query, stored richer scalar metadata (role/topic/reviewer_name/subcategories), kept each specialist review as one complete retrieval unit, and made read() over-fetch + role-filter without an arbitrary `[:5]` cap so `select_memory_entries(purpose=\"context\")` enforces the budget on whole entries.",
+    "parent_id": "seed-vector_search",
+    "program": {
+      "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930/reflection/program.py",
+      "sha256": "986256518c8c1a615a6fe4b17fc8e4da78f1d1088f67880fca91c59157e3d9ca"
+    },
+    "program_sha256": "986256518c8c1a615a6fe4b17fc8e4da78f1d1088f67880fca91c59157e3d9ca",
+    "reflection": {
+      "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930/reflection/mstar-trace.json",
+      "sha256": "aedce71439ef9c8ad92636100b4c01c54a6de74eaa5a94dc6c094a3434f73841"
+    },
+    "seed": "vector_search",
+    "seed_kind": "evolved"
+  },
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-mstar-native/protocol.frozen.json",
+    "sha256": "693c00a87dca6beca17162150118cef7cf27ce927edd9ea2ec2bf2f14990670b"
+  },
+  "real_api_calls": 1,
+  "scoring_services_started": false,
+  "search_started": false,
+  "source_state": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/search/search.json",
+    "sha256": "d0a922e1d861f15a2341588f638c5cceac8b11b1f4a347308f27fc73fd4ac523"
+  },
+  "started_at": 1790684563.8005557,
+  "status": "complete"
+}

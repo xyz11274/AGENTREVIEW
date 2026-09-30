@@ -1,0 +1,42 @@
+{
+  "assessment": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/acceptance-failed-paper/assessment.json",
+  "elapsed_seconds": 233.437,
+  "finished_at": 1790676463.5444787,
+  "mean_score": 4.0,
+  "metrics": {
+    "absolute_scores": {
+      "Average": 3.6999999999999997,
+      "BERT.": 81.36319518089294,
+      "BLEU": 0.49196307477087825,
+      "Clarity": 4.666666666666667,
+      "Complete.": 191.66666666666669,
+      "Correct.": 3.3333333333333335,
+      "Ground.": 5.0,
+      "Paper.": 4.0,
+      "ROUGE-L": 7.905929447085313,
+      "Thoro.": 2.0,
+      "Verify.": 3.4
+    },
+    "paper_counts": {
+      "Average": 1,
+      "BERT.": 1,
+      "BLEU": 1,
+      "Clarity": 1,
+      "Complete.": 1,
+      "Correct.": 1,
+      "Ground.": 1,
+      "Paper.": 1,
+      "ROUGE-L": 1,
+      "Thoro.": 1,
+      "Verify.": 1
+    }
+  },
+  "official_commit": "2580687ee5d4ad2ac4b9730afb8f1dfda22e40db",
+  "old_request": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-model-capacity/search/assessments/e0/seed-llm_summarizer/r0/coco/parts/26f83a96501af9239d32dce1cee1dde4cde63558ef4ce1e5ecf769ac72ee90bd/request.json",
+  "output_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/acceptance-failed-paper",
+  "paper_ids": [
+    "f-FQE1fjPK"
+  ],
+  "started_at": 1790676230.1073666,
+  "status": "complete"
+}

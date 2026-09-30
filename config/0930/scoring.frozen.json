@@ -30,11 +30,24 @@
     "tree_sha256": "11b188d1351cd057003fac235e72b7bbabfe565ab98a1ae605ca13a845445a48"
   },
   "coco_root": "/data/xyj/shengao/CoCoReviewBench",
-  "config_id": "399c7a9a7fd7f759d4688439d71bf8c7a5845bd2bc52b49e310d9d3366d4e7e0",
+  "config_id": "6f277184f7f47cae40eaf0bd0daed43054001dd105865b14026e0182fb17ba7c",
   "hf_home": "/data/xyj/shengao/AgentReview_0930/assets/hf",
-  "lease_path": "/data/xyj/shengao/AgentReview_0930/artifacts/research_v2/runtime/qwen38_27b_mode.lock",
+  "judge_substitution": {
+    "comparability": "CoCo metrics with a substituted Judge; not the original-paper Judge scores",
+    "expected_response_model": "deepseek-v4-1-flash-260910",
+    "original_model": "GPT-5-Mini",
+    "original_temperature": 0,
+    "paper": {
+      "path": "/data/xyj/shengao/CoCoReviewBench_2605.07905v2.pdf",
+      "sha256": "06c29b7879bb40be15d5611ceca4cf2cde6634e1fc9a3fa89d26ed2e34e00da5"
+    },
+    "preserved": "Original trained Qwen3-8B Split/Classify weights, prompts, parsers, metrics and human references",
+    "reasoning_mapping": "Upstream medium mapped explicitly to Ark high; thinking enabled",
+    "replacement_model": "deepseek-v4.1-flash",
+    "section": "5.1"
+  },
   "max_stage_attempts": 1,
-  "protocol": "research-v2-development-coco-config-v1",
+  "protocol": "research-v2-coco-api-judge-config-v2",
   "python_executable": "/data/xyj/envs/coco-original/bin/python",
   "python_runtime": {
     "executable_sha256": "5c8e75cf8a297c6bd47595539e4696efb2d2662a9e3afb9741541d155ca9e5fd",
@@ -288,218 +301,16 @@
       }
     },
     "judge": {
-      "base_url": "http://127.0.0.1:18001/v1",
-      "model": "qwen3.8-27b",
-      "model_identity": {
-        "files": [
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/.gitignore",
-            "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/CACHEDIR.TAG",
-            "sha256": "f6572428f6d5e1575e73a1502895a8731f10757dfbb634909c6e154b849af91d"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/.gitattributes.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/LICENSE.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/README.md.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/chat_template.jinja.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/config.json.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/crc32.txt.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/generation_config.json.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/merges.txt.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/download/model-00001-of-00018.safetensors.lock",
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.cache/huggingface/trees/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0.json",
-            "sha256": "5b8b30bdf9a39e0da8a5c9a4adca5385e0e1f4afd73e21a5f39b2dab443285be"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.gitattributes",
-            "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/download.log",
-            "sha256": "51bb3510dbe78bef17de9d7906bbc18cdcb997d05a73fe022934840b92c4468c"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/filelist_stats",
-            "sha256": "c8a4fbfb23b26c08a533158bd60ed7607b216adaf81d9c8b57deb907dc8e4e00"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/last_download_command",
-            "sha256": "96718348eed2454a89f03e085465f57cc1029417a4192e1f81cf1083e5a83f80"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/manifest",
-            "sha256": "bcb3146b8ddf2187249fc4e5c4907024e8b38499cc5bb42d418d33d482a9152c"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/repo_info",
-            "sha256": "76a30255060a7f77e20d8648a6d6226e7b6939237ee7a6199498a4a323efa757"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/repo_metadata.json",
-            "sha256": "5c5f5c97fb9d37fcb0e5524696ee065e243a78e41410f5ff4865eff07c952f10"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/.hfd/wget_urls.txt",
-            "sha256": "aa999484b90e041bf12c26eead2f3c2cf21030e6c246f8705e6a490d9822dc31"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/LICENSE",
-            "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/README.md",
-            "sha256": "57e4bdb258ee1a7d2635c5174ebd4e56abe392505cdb5f8bbb356b0dc4293641"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/chat_template.jinja",
-            "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/config.json",
-            "sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/crc32.txt",
-            "sha256": "b42dd291f5f98b05807e458f5b47849969a9b3326acbf0c97d28b05826740b83"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/generation_config.json",
-            "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/merges.txt",
-            "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00001-of-00018.safetensors",
-            "sha256": "ba0ce20aae489ad196733da5064bcdf159a1fe84f53336648196e1ebb7751b1c"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00002-of-00018.safetensors",
-            "sha256": "06a148c01bfbe3faa14a5f184a7ff29a706f7ae1c8b2705d2058e26d17a001fb"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00003-of-00018.safetensors",
-            "sha256": "2e1bf62cbcd406eaa64b60d10353e1f0ef4039d0976e56f05cabe953454f9968"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00004-of-00018.safetensors",
-            "sha256": "511e34063187882659753c4d93f3859f93c019fd438d8813071921c81d9a3f1a"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00005-of-00018.safetensors",
-            "sha256": "635cb53446dc74f219740fc59e18b774f877b803b9722e289ca62575a6efa701"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00006-of-00018.safetensors",
-            "sha256": "0bc5214fac607f0e6cc92eec3789d4b8559410ef9fce66621ba8158e8410dae0"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00007-of-00018.safetensors",
-            "sha256": "80b0c49033e9a0d5762562aa12f4acdb7f54da586f3d0110f28c48d91cf07892"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00008-of-00018.safetensors",
-            "sha256": "7192c5b66185d3592927daabee1cc19e6f6e0ce75988ee20e824b624765fda79"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00009-of-00018.safetensors",
-            "sha256": "af3c48cc37af44f3db6ae0579baf019180d48d9c527caa0a1f03ff85813a56d8"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00010-of-00018.safetensors",
-            "sha256": "163490a76f3bea3a40855b7efc04ce6d27afaf1a34f0bbde495b9491f76457c9"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00011-of-00018.safetensors",
-            "sha256": "5f3ae1b948aeee39da77aec558e8236cd65fe4d7cb7686a76bb007acc563c6d8"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00012-of-00018.safetensors",
-            "sha256": "a3de1c7114677a8f5ac5c4892c90e8238ea5c1e2038c80e757dfc87c3902ca55"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00013-of-00018.safetensors",
-            "sha256": "06ab79a41f74c9c5cb734816feb0c7fc364104b227165ee7391231e1155aa02a"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00014-of-00018.safetensors",
-            "sha256": "4138ed94603065ba884bbcadedb04d7718bb40117e85e6f5c6fc5b9c05b7a85b"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00015-of-00018.safetensors",
-            "sha256": "69224e27b9de4e7dbf6fc936c6eaae08447bda3b80a6c31a871ab451173afd22"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00016-of-00018.safetensors",
-            "sha256": "73cb9a1089fb6155cb648609478d6633be8a5c7d9ca5a05bc8925ce8a553cefe"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00017-of-00018.safetensors",
-            "sha256": "beb51f01056142ac4984bd800507b0dd0fd18de57f8e9ef6ea41d1a3598983a8"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model-00018-of-00018.safetensors",
-            "sha256": "1d3479509e21494658f9b64d317f5ea8e55c4025d28c702d6c4d0b356ce8ea06"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/model.safetensors.index.json",
-            "sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/preprocessor_config.json",
-            "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/tokenizer.json",
-            "sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/tokenizer_config.json",
-            "sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/video_preprocessor_config.json",
-            "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13"
-          },
-          {
-            "path": "/data/xyj/models/Qwen3.8-27B/vocab.json",
-            "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
-          }
-        ],
-        "root": "/data/xyj/models/Qwen3.8-27B",
-        "tree_sha256": "ebd7f89791f5070c95308c4dadc1468bc369b17725e3e7d9be812f2cf8a33ead"
-      }
+      "api_key_env": "ARK_API_KEY",
+      "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+      "enable_thinking": true,
+      "max_model_len": 1048576,
+      "max_output_tokens": 131072,
+      "model": "deepseek-v4.1-flash",
+      "reasoning_effort": "high",
+      "response_model": "deepseek-v4-1-flash-260910",
+      "temperature": 0.0,
+      "timeout_seconds": 600.0
     },
     "split": {
       "base_url": "http://127.0.0.1:13099/v1",

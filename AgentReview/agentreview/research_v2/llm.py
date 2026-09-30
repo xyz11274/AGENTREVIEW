@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import inspect
-import ipaddress
-import json
 import os
-import urllib.error
-import urllib.request
-from urllib.parse import urlparse
+from contextlib import ExitStack
 from typing import Any, Protocol
 
 from .config import ModelConfig
-from .judge_lease import Qwen27BModeLease
-from .request_admission import profile as execution_profile, request_slot
+from .request_admission import request_slot
+from .token_accounting import count_chat_tokens, available_output_tokens
+from .streaming import stream_completion
+from .execution_telemetry import span, current_request
 
 
 class EmptyCompletionOutput(RuntimeError):
@@ -28,8 +25,11 @@ class IncompleteCompletionOutput(RuntimeError):
         self.completion = completion
 
 
-def validate_completion(response: Any, *, component: str) -> dict[str, Any]:
+def validate_completion(response: Any, *, component: str, expected_model: str) -> dict[str, Any]:
     receipt = response.model_dump(mode="json")
+    if receipt.get("model") != expected_model:
+        raise IncompleteCompletionOutput(
+            f"{component} returned model {receipt.get('model')!r}; expected {expected_model!r}", receipt)
     choices = receipt.get("choices", [])
     if len(choices) != 1 or choices[0].get("finish_reason") != "stop":
         raise IncompleteCompletionOutput(
@@ -52,124 +52,40 @@ class CompletionClient(Protocol):
     ) -> str: ...
 
 
-def complete_with_response_format(
-    client: Any,
-    messages: list[dict[str, str]],
-    *,
-    max_tokens: int,
-    component: str,
-    response_format: dict[str, Any] | None = None,
-) -> str:
-    """Use structured output when supported without breaking strict test clients."""
-    arguments: dict[str, Any] = {
-        "max_tokens": max_tokens,
-        "component": component,
-    }
+def require_api_key(config: ModelConfig) -> str:
+    key = os.environ.get(config.api_key_env, "").strip()
+    if not key:
+        raise ValueError(f"Missing API credential: set {config.api_key_env}")
+    return key
+
+
+def completion_payload(config, messages, *, max_tokens, response_format=None):
+    if type(max_tokens) is not int or not 0 < max_tokens <= config.max_output_tokens:
+        raise ValueError("Output budget exceeds the configured API output capacity")
+    output = available_output_tokens(count_chat_tokens(messages, config), max_tokens)
+    payload = {"model": config.model, "messages": messages,
+               "temperature": config.temperature, "max_tokens": output,
+               "stream": True, "stream_options": {"include_usage": True},
+               "extra_body": {"thinking": {"type": "enabled" if config.enable_thinking else "disabled"}}}
+    if config.enable_thinking:
+        payload["reasoning_effort"] = config.reasoning_effort
     if response_format is not None:
-        try:
-            parameters = inspect.signature(client.complete).parameters.values()
-        except (TypeError, ValueError):
-            parameters = ()
-        if any(
-            parameter.name == "response_format"
-            or parameter.kind is inspect.Parameter.VAR_KEYWORD
-            for parameter in parameters
-        ):
-            arguments["response_format"] = response_format
-    return client.complete(messages, **arguments)
+        payload["response_format"] = response_format
+    return payload
 
 
 class OpenAICompletionClient:
     def __init__(self, config: ModelConfig):
-        from openai import DefaultHttpxClient, OpenAI
-
+        from openai import OpenAI
         self.config = config
-        self._mode_lease: Qwen27BModeLease | None = None
-        if (
-            config.base_url.rstrip("/") == "http://127.0.0.1:18001/v1"
-            and config.model == "qwen3.8-27b"
-        ):
-            self._mode_lease = Qwen27BModeLease("judge" if execution_profile() else "reviewer")
-        api_key = os.environ.get(config.api_key_env) or "local-not-required"
-        try:
-            hostname = urlparse(config.base_url).hostname or ""
-            local = hostname == "localhost"
-            try:
-                local = local or ipaddress.ip_address(hostname).is_loopback
-            except ValueError:
-                pass
-            self.client = OpenAI(
-                base_url=config.base_url,
-                api_key=api_key,
-                max_retries=0,
-                http_client=DefaultHttpxClient(trust_env=False) if local else None,
-            )
-        except BaseException:
-            lease = self._mode_lease
-            self._mode_lease = None
-            if lease is not None:
-                lease.close()
-            raise
+        self.client = OpenAI(base_url=config.base_url, api_key=require_api_key(config),
+                             max_retries=0, timeout=config.timeout_seconds)
 
     def close(self) -> None:
-        lease = self._mode_lease
-        self._mode_lease = None
-        try:
-            client = getattr(self, "client", None)
-            self.client = None
-            close = getattr(client, "close", None)
-            if callable(close):
-                close()
-        finally:
-            if lease is not None:
-                lease.close()
+        self.client.close()
 
-    def __del__(self) -> None:
-        try:
-            self.close()
-        except Exception:
-            pass
-
-    def count_chat_tokens(
-        self, messages: list[dict[str, str]]
-    ) -> dict[str, int]:
-        base_url = self.config.base_url.rstrip("/")
-        if base_url.endswith("/v1"):
-            base_url = base_url[:-3]
-        payload = json.dumps(
-            {
-                "model": self.config.model,
-                "messages": messages,
-                "add_generation_prompt": True,
-                "chat_template_kwargs": {
-                    "enable_thinking": self.config.enable_thinking,
-                },
-            },
-            ensure_ascii=False,
-        ).encode("utf-8")
-        request = urllib.request.Request(
-            f"{base_url}/tokenize",
-            data=payload,
-            headers={
-                "Authorization": "Bearer "
-                + (os.environ.get(self.config.api_key_env) or "local-not-required"),
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        try:
-            with opener.open(request, timeout=30.0) as response:
-                value = json.loads(response.read().decode("utf-8"))
-        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
-            raise RuntimeError(
-                f"Frozen model tokenization endpoint failed: {type(exc).__name__}: {exc}"
-            ) from exc
-        count = value.get("count") if isinstance(value, dict) else None
-        max_model_len = value.get("max_model_len") if isinstance(value, dict) else None
-        if not isinstance(count, int) or not isinstance(max_model_len, int):
-            raise RuntimeError("Frozen model tokenization response is invalid")
-        return {"input_tokens": count, "max_model_len": max_model_len}
+    def count_chat_tokens(self, messages):
+        return count_chat_tokens(messages, self.config)
 
     def complete(
         self,
@@ -180,26 +96,18 @@ class OpenAICompletionClient:
         response_format: dict[str, Any] | None = None,
     ) -> str:
         self.last_completion = None
-        request: dict[str, Any] = {
-            "model": self.config.model,
-            "messages": messages,
-            "temperature": self.config.temperature,
-            "max_tokens": max_tokens,
-            "extra_body": {
-                "chat_template_kwargs": {
-                    "enable_thinking": self.config.enable_thinking,
-                }
-            },
-        }
-        if response_format is not None:
-            request["response_format"] = response_format
-        with request_slot(self.config.base_url):
-            response = self.client.chat.completions.create(**request)
-        self.last_completion = validate_completion(response, component=component)
-        text = response.choices[0].message.content
-        if not isinstance(text, str) or not text.strip():
-            raise EmptyCompletionOutput(f"{component} returned an empty response")
-        return text.strip()
+        request = completion_payload(self.config, messages, max_tokens=max_tokens,
+                                     response_format=response_format)
+        trace = current_request()
+        if trace is not None:
+            trace.update(model=self.config.model, read_timeout_seconds=self.config.timeout_seconds)
+        with ExitStack() as resources:
+            with span('api_admission', component=component):
+                resources.enter_context(request_slot(self.config.base_url))
+            response = stream_completion(self.client, request)
+        self.last_completion = validate_completion(response, component=component,
+                                                   expected_model=self.config.response_model)
+        return response.choices[0].message.content.strip()
 
 
 class ToolkitCompletionAdapter:
@@ -214,8 +122,7 @@ class ToolkitCompletionAdapter:
         requested = _.get("max_tokens", self.max_tokens)
         if type(requested) is not int or not 0 < requested <= self.max_tokens:
             raise ValueError("Memory max_tokens must be positive and within the frozen host output budget")
-        return complete_with_response_format(
-            self.client,
+        return self.client.complete(
             messages,
             max_tokens=requested,
             component=self.component,

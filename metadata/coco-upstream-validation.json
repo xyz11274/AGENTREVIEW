@@ -1,0 +1,35 @@
+{
+  "adapter_diff": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/coco-upstream-adapter.diff",
+    "sha256": "1d2c50bfe029c370ec8a48fe8d4cafb405d62a0ade87eeb35bae182a26eb95af"
+  },
+  "checked_at": 1790676654.2597728,
+  "embedding_model_changed": false,
+  "failed_paper_live_recheck": {
+    "Paper.": 4.0,
+    "paper_id": "f-FQE1fjPK",
+    "status": "complete"
+  },
+  "full_experiment_started": false,
+  "official_commit": "2580687ee5d4ad2ac4b9730afb8f1dfda22e40db",
+  "official_source_changes": 0,
+  "old_preserved_artifact_bindings": 20,
+  "original_source_hashes_match": true,
+  "prior_evolution_attempts": 0,
+  "runtime_matches_frozen_protocol": true,
+  "small_pilot_state": {
+    "phase": "search",
+    "pid": 2588665,
+    "protocol": {
+      "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-coco-upstream/protocol.frozen.json",
+      "sha256": "e461c002be7f4e95faef41ce15f24d6cc0863f7b3e04264b9e9bb3b33fd1eaf1"
+    },
+    "status": "running",
+    "updated_at": 1790676616.7561252
+  },
+  "status": "passed",
+  "tests": {
+    "passed": 299,
+    "subtests_passed": 101
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "created_at": 1790736552.7336948,
+  "data_preserved": {
+    "build": 4,
+    "rotating": 5,
+    "sealed_test": 3,
+    "static": 3
+  },
+  "embedding": "Existing Qwen3-Embedding-8B CPU model and keyed cache",
+  "host": "ubun",
+  "predecessor_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/current-pilot/protocol.frozen.json",
+    "sha256": "9b347f95221c7132071085d4c220fed63c271b43df4e7f6c176d05dd15351f22"
+  },
+  "reason": "Deploy both original CoCo models on the local server and start the authorized small pilot",
+  "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local",
+  "scoring_source_preserved": true,
+  "services": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/services.json",
+    "sha256": "de95e6adea54d9fd0632b97c47c27302a90c0fb1d474ebc0d6f7e5dcf2240777"
+  },
+  "source_runtime_preserved": true
+}

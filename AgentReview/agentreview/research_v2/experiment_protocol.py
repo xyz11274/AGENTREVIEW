@@ -8,14 +8,12 @@ authorizes final evaluation. Experimental sizes and budgets come from JSON.
 from __future__ import annotations
 
 import hashlib
-import ipaddress
 import math
 import re
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 from .config import ModelConfig
 from .data import canonical_title
@@ -180,43 +178,10 @@ def _validate_s2_asset(ref: dict[str, str], split: str, splits: dict[str, list[d
 
 def _validate_model(value: Any) -> dict[str, Any]:
     model = dict(_object(value, "model"))
-    for field in (
-        "base_url", "api_key_env", "model", "source_model", "revision", "precision",
-        "vllm_version", "transformers_version",
-    ):
-        _text(model.get(field), f"model.{field}")
-    if model["model"].casefold() == "qwen3.8-27b" and model["source_model"].casefold() == "qwen/qwen3.8-27b":
-        pass
-    else:
-        raise ExperimentProtocolError("model requires the local Qwen3.8-27B model identity")
-    endpoint = urlparse(model["base_url"])
-    local = endpoint.hostname == "localhost"
     try:
-        address = ipaddress.ip_address(endpoint.hostname or "")
-        local = address.is_loopback or address.is_private
-    except ValueError:
-        pass
-    if endpoint.scheme in {"http", "https"} and local and endpoint.username is None:
-        pass
-    else:
-        raise ExperimentProtocolError("model.base_url requires a local deployment endpoint")
-    for field in ("tokenizer_sha256", "chat_template_sha256"):
-        _digest(model.get(field), f"model.{field}")
-    for field in ("max_model_len", "max_num_seqs"):
-        _integer(model.get(field), f"model.{field}")
-    if type(model.get("temperature")) in {int, float} and math.isfinite(model["temperature"]) and model["temperature"] >= 0:
-        pass
-    else:
-        raise ExperimentProtocolError("model.temperature requires a finite nonnegative number")
-    if type(model.get("enable_thinking")) is bool:
-        pass
-    else:
-        raise ExperimentProtocolError("model.enable_thinking requires a boolean")
-    try:
-        ModelConfig(**model)
-    except TypeError as exc:
-        raise ExperimentProtocolError(f"model has unsupported fields: {exc}") from exc
-    return model
+        return ModelConfig(**model).protocol_config()
+    except (TypeError, ValueError) as exc:
+        raise ExperimentProtocolError(f"Invalid API model configuration: {exc}") from exc
 
 
 @dataclass(frozen=True)
@@ -295,11 +260,7 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
     model = _validate_model(document.get("model"))
     document["model"] = model
     generation = _object(document.get("generation"), "generation")
-    for field in (
-        "review_max_tokens", "meta_max_tokens", "memory_max_tokens", "native_max_tokens",
-        "input_max_tokens", "memory_build_llm_calls",
-    ):
-        _integer(generation.get(field), f"generation.{field}")
+    _integer(generation.get("memory_build_llm_calls"), "generation.memory_build_llm_calls")
     if "paper_context_max_chars" in generation and generation["paper_context_max_chars"] is None:
         pass
     else:
@@ -314,18 +275,9 @@ def load_experiment_protocol(path: str | Path) -> FrozenExperimentProtocol:
             "positive counts require a partition-audited few-shot study identity inventory"
         )
     _choice(generation.get("memory_query_mode"), {"deterministic", "instruction"}, "generation.memory_query_mode")
-    maximum_output = max(generation[name] for name in ("review_max_tokens", "meta_max_tokens", "memory_max_tokens", "native_max_tokens"))
-    if generation["input_max_tokens"] + maximum_output <= model["max_model_len"]:
-        pass
-    else:
-        raise ExperimentProtocolError("generation input and output budgets require capacity within model.max_model_len")
     evolution = _object(document.get("evolution"), "evolution")
-    for field, minimum in (("attempts", 0), ("rotating_sample_size", 1), ("random_seed", 0), ("max_reflection_tokens", 1)):
+    for field, minimum in (("attempts", 0), ("rotating_sample_size", 1), ("random_seed", 0)):
         _integer(evolution.get(field), f"evolution.{field}", minimum)
-    if generation["input_max_tokens"] + evolution["max_reflection_tokens"] <= model["max_model_len"]:
-        pass
-    else:
-        raise ExperimentProtocolError("Reflection input and output budgets require capacity within model.max_model_len")
     temperature = evolution.get("parent_temperature")
     if type(temperature) in {int, float} and math.isfinite(temperature) and temperature > 0:
         pass
@@ -491,15 +443,14 @@ def pending_experiment_template() -> dict[str, Any]:
         "protocol": EXPERIMENT_PROTOCOL,
         "status": "pending",
         "experiment_id": None,
-        "model": {**ModelConfig().identity(), **ModelConfig().runtime_config(), "api_key_env": "OPENAI_API_KEY", "temperature": None, "enable_thinking": None},
+        "model": {**ModelConfig().protocol_config(), "api_key_env": "ARK_API_KEY", "temperature": None, "enable_thinking": None},
         "generation": {name: None for name in (
-            "review_max_tokens", "meta_max_tokens", "memory_max_tokens", "native_max_tokens",
-            "input_max_tokens", "paper_context_max_chars", "memory_build_llm_calls",
+            "paper_context_max_chars", "memory_build_llm_calls",
             "memory_read_llm_calls", "memory_query_mode", "native_num_fewshot",
         )},
         "evolution": {
             "attempts": None, "rotating_sample_size": None, "parent_temperature": None,
-            "random_seed": None, "max_reflection_tokens": None,
+            "random_seed": None,
             "mutable_scope": "memory", "reflection_scope": "scores_and_traces",
         },
         "failure_policy": {"candidate_repairs": None, "round_repairs": None, "candidate_failures": None, "request_attempts": None},

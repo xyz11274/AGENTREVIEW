@@ -1,0 +1,13 @@
+{
+  "current_pilot_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot/protocol.frozen.json",
+    "sha256": "f82ace842d6d649e86f11bb2e39177319cbd02522850d9ccba01f533e6d4d476"
+  },
+  "full_experiment_started": false,
+  "previous_pilot_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot/protocol.frozen.json",
+    "sha256": "5555ad4497454b1c582d824dbcd9d7b9a83062979db9e669aa5a96a1c556750b"
+  },
+  "reason": "Explicit remote deployment before any run; unchanged model weights, data partitions, prompts, metrics and five evolution attempts. Runtime now verifies SSH forward, remote process and continuous model mutation watch.",
+  "runtime_bindings": 51
+}

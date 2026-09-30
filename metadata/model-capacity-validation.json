@@ -1,0 +1,66 @@
+{
+  "evolution_effect_not_yet_measured": true,
+  "full_experiment_started": false,
+  "full_suite": {
+    "log": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/model-capacity-regression.log",
+      "sha256": "bbddcb82e63bbbce4a311a2efdced4ef9d7a99f72e58a7293bfd96086ed8bfc1"
+    },
+    "passed": 295,
+    "seconds": 86.29,
+    "subtests": 101
+  },
+  "live_replay": [
+    {
+      "complete_memory_tokens": 3274,
+      "downstream_memory_context": "accepted_whole",
+      "finish_reason": "stop",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/repairs/model-capacity/live-replay/0ebf035a817c71ecd56e3fb203a925f85ce714a87a67c94772f54360e3a79132/21ba487e0ad78e0d87e81ea4d42fbb832b0c8cd0bfdbe96c789d7b5da2ab920c/response.json",
+        "sha256": "f0b920f648fc010e3f77a0dcc774a38fbd2e86ed3ee61362c05eb1476ce4b8da"
+      }
+    },
+    {
+      "complete_memory_tokens": 6611,
+      "downstream_memory_context": "accepted_whole",
+      "finish_reason": "stop",
+      "response": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/repairs/model-capacity/live-replay/fa82d25dd431663f605ba46aa38ca3ae57e5005fa70c50616e655724b174cf3a/8c015b489665a89b1da8588290a5de181ce045bfd987059398402e62e4bc3a91/response.json",
+        "sha256": "e13db5988c27bb70e195fe14029045a7508ee394e3cff43830c4f0497ae7b596"
+      }
+    }
+  ],
+  "live_run": {
+    "checked_at": 1790671574.8485978,
+    "complete_responses": 12,
+    "failures": 0,
+    "pilot_state": {
+      "phase": "search",
+      "pid": 2335783,
+      "protocol": {
+        "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-model-capacity/protocol.frozen.json",
+        "sha256": "8619713238f99fde32df26271cbcc8a0442cc6837d2c5ea7fa0b3d1dd26d354c"
+      },
+      "status": "running",
+      "updated_at": 1790671489.1155307
+    }
+  },
+  "new_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-model-capacity/protocol.frozen.json",
+    "sha256": "8619713238f99fde32df26271cbcc8a0442cc6837d2c5ea7fa0b3d1dd26d354c"
+  },
+  "old_protocol_search_failure_archive_preserved": true,
+  "readiness": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-model-capacity/readiness.json",
+    "sha256": "fc190bf87395af9e1e968e5bb1d109a488ee02418b4870af33e22741a3ac64c3"
+  },
+  "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-model-capacity",
+  "run_service": "agentreview-0930-pilot-model-capacity.service",
+  "same_coco_scoring_binding": true,
+  "same_cohort": true,
+  "status": "passed",
+  "targeted_tests": {
+    "passed": 74,
+    "subtests": 45
+  }
+}

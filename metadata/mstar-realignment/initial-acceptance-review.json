@@ -1,0 +1,11 @@
+{
+  "initial_acceptance": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/live-acceptance.json",
+    "sha256": "97d0ffe1ed4427eb70a6096bc36fd1a048937aa42aff67083f9d178a7579dc3f"
+  },
+  "reason": "Repeated file update header discarded the first hunk group; empty smoke defaults skipped write/read; no fitness evaluation was performed.",
+  "revalidation_errors": [
+    "protocol smoke failed: SandboxError: AttributeError: 'KnowledgeItem' object has no attribute 'subcategories'"
+  ],
+  "status": "rejected_after_source_review"
+}

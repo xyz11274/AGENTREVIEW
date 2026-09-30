@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "local_input_files": 3192,
+  "splits": {
+    "build": 125,
+    "static": 25,
+    "rotating": 125,
+    "sealed_test": 1300
+  },
+  "protocols": 3,
+  "full_papers_preserved": 1575,
+  "old_checkout_reads": 0,
+  "model_calls": 0,
+  "runtime_services_checked": false
+}

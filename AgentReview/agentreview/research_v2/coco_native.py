@@ -19,7 +19,7 @@ from .models import Paper
 
 PROTOCOL = "research-v2-coco-native-review-v1"
 REQUEST_PROTOCOL = "research-v2-coco-native-request-v1"
-NATIVE_MODE = "qwen3.8-27b"
+NATIVE_MODE = "ai-scientist"
 
 
 class NativeReviewFailure(RuntimeError):
@@ -105,10 +105,10 @@ def _request(*, paper_path: Path, coco_root: str | Path, run_id: str, model_iden
         raise ValueError("CoCo native generation requires a run ID and positive completion budget")
     model = model_identity.get("model")
     thinking = model_identity.get("enable_thinking")
-    if isinstance(model, str) and model.lower() == NATIVE_MODE and type(thinking) is bool:
+    if isinstance(model, str) and bool(model) and type(thinking) is bool:
         pass
     else:
-        raise ValueError("CoCo native generation requires local qwen3.8-27b and explicit enable_thinking")
+        raise ValueError("CoCo native generation requires an API model and explicit enable_thinking")
     paper_bytes = paper_path.read_bytes()
     paper = Paper.from_dict(json.loads(paper_bytes))
     paper_binding = {"path": str(paper_path), "sha256": hashlib.sha256(paper_bytes).hexdigest()}

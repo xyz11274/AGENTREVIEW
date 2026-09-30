@@ -8,7 +8,7 @@ import pytest
 from agentreview.research_v2 import development_coco as coco
 from agentreview.research_v2 import development_coco_worker as worker
 
-ROOT = Path(__file__).resolve().parents[3] / "CoCoReviewBench"
+ROOT = Path(__file__).resolve().parents[3] / "CoCoReviewBench_official_2580687"
 
 
 def test_upstream_source_identity_does_not_require_added_runner():
@@ -17,15 +17,20 @@ def test_upstream_source_identity_does_not_require_added_runner():
     assert str(ROOT / "src/evaluation/_4_evaluation.py") in {x["path"] for x in identity}
 
 
-def test_original_client_constructor_and_judge_defaults(tmp_path):
+def test_original_client_constructor_and_judge_defaults(tmp_path, monkeypatch):
     worker._load_standard(ROOT, "_4_evaluation")
-    config = {"services": {"judge": {"base_url": "http://127.0.0.1:18001/v1", "model": "qwen3.8-27b"}}}
+    from agentreview.research_v2.config import ModelConfig
+    monkeypatch.setenv("ARK_API_KEY", "fixture-key")
+    config = {"services": {"judge": ModelConfig(enable_thinking=True).protocol_config()},
+              "request_settings": coco.ORIGINAL_REQUEST_SETTINGS}
     client = worker._client(config, "judge", {"output_root": str(tmp_path)})
     try:
         assert client.max_workers == 128
         _, _, payload = client._prepare_request("review", temperature=0, reasoning_effort="medium")
         assert payload["max_tokens"] == 32768
-        assert payload["extra_body"]["chat_template_kwargs"]["enable_thinking"] is True
+        assert payload["extra_body"]["thinking"]["type"] == "enabled"
+        assert payload["reasoning_effort"] == "high"
+        assert "max_completion_tokens" not in payload
     finally:
         client.shutdown()
 

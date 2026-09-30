@@ -1,0 +1,969 @@
+{
+  "bert_score_model": {
+    "files": [
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/b92478606f827116a06a51500cdf1fccb3b96af1",
+        "sha256": "82ba49810e6441735e696033ac2512ee09da555507b2917ac3865b202d592cc3"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/226b0752cac7789c48f0cb3ec53eda48b7be36cc",
+        "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/047c85f0b96269cd62e6f732644f067004eebd95af5b5d35965ae2528f13bf38",
+        "sha256": "047c85f0b96269cd62e6f732644f067004eebd95af5b5d35965ae2528f13bf38"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/ad0bcbeb288f0d1373d88e0762e66357f55b8311",
+        "sha256": "847bbeab6174d66a88898f729d52fa8d355fafe1bea101cf960dd404581df70e"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead",
+        "sha256": "994f46754c5bf4014f1aa92d34b1374319c3a6b3f702105cd5b742beaecd18ce"
+      },
+      {
+        "path": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/blobs/5606f48548d99a9829d10a96cd364b816b02cd21",
+        "sha256": "9e7f63c2d15d666b52e21d250d2e513b87c9b713cfa6987a82ed89e5e6e50655"
+      }
+    ],
+    "root": "/data/xyj/shengao/AgentReview_0930/assets/hf/hub/models--roberta-large/snapshots/722cf37b1afa9454edce342e7895e588b6ff1d59",
+    "tree_sha256": "11b188d1351cd057003fac235e72b7bbabfe565ab98a1ae605ca13a845445a48"
+  },
+  "coco_root": "/data/xyj/shengao/CoCoReviewBench_official_2580687",
+  "config_id": "d028d53fd9179d168d737ad2b62cbe69623242f54ae4ec6d93b7884990fdd905",
+  "hf_home": "/data/xyj/shengao/AgentReview_0930/assets/hf",
+  "judge_substitution": {
+    "comparability": "CoCo metrics with a substituted Judge; not the original-paper Judge scores",
+    "expected_response_model": "deepseek-v4-1-flash-260910",
+    "original_model": "GPT-5-Mini",
+    "original_temperature": 0,
+    "paper": {
+      "path": "/data/xyj/shengao/CoCoReviewBench_2605.07905v2.pdf",
+      "sha256": "06c29b7879bb40be15d5611ceca4cf2cde6634e1fc9a3fa89d26ed2e34e00da5"
+    },
+    "preserved": "Original trained Qwen3-8B Split/Classify weights, prompts, parsers, metrics and human references",
+    "reasoning_mapping": "Upstream medium mapped explicitly to Ark high; thinking enabled",
+    "replacement_model": "deepseek-v4.1-flash",
+    "section": "5.1"
+  },
+  "max_stage_attempts": 1,
+  "protocol": "research-v2-coco-api-judge-config-v2",
+  "python_executable": "/data/xyj/envs/coco-original/bin/python",
+  "python_runtime": {
+    "executable_sha256": "5c8e75cf8a297c6bd47595539e4696efb2d2662a9e3afb9741541d155ca9e5fd",
+    "packages": {
+      "bert-score": "0.3.13",
+      "nltk": "3.9.3",
+      "numpy": "2.2.6",
+      "openai": "2.6.0",
+      "requests": "2.32.5",
+      "rouge-score": "0.1.2",
+      "torch": "2.7.1+cu126",
+      "transformers": "4.57.1"
+    },
+    "python": "3.12.13 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:38:16) [GCC 14.3.0]"
+  },
+  "request_settings": {
+    "classify": {
+      "effort": "medium",
+      "max_completion_tokens": 12288,
+      "max_workers": 128
+    },
+    "judge": {
+      "effort": "medium",
+      "max_completion_tokens": 32768,
+      "max_workers": 128,
+      "temperature": 0
+    },
+    "split": {
+      "effort": "medium",
+      "max_completion_tokens": 32768,
+      "max_workers": 64
+    }
+  },
+  "services": {
+    "classify": {
+      "base_url": "http://127.0.0.1:13098/v1",
+      "model": "Qwen3-8B-Classify",
+      "model_identity": {
+        "files": [
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/.gitignore",
+            "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/CACHEDIR.TAG",
+            "sha256": "e8893e2dcb3f4545ef67a0a5b7b769113d38eef1aa61c7c7ba14659b02af955f"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/.gitattributes.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/.gitattributes.metadata",
+            "sha256": "923890a22c1bf740bbcead075cf77499ee3bded53768698a0dd2ee1435ef17e8"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/IO4xwqmZYzFmxznkwkiNSBwO1H0=.207c09de0316b2ae4b802e620e1732b7aaa1fb913aea77a89f01579b40994301.incomplete",
+            "sha256": "a9e4e7f0656594229f5704d7dbd168f3440933db5d94bfa54f81d9325c9dec0b"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/README.md.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/README.md.metadata",
+            "sha256": "0a889baa7265de965fdd0549c454560b5705480a49f2acfee9c102b512b68eb0"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/added_tokens.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/added_tokens.json.metadata",
+            "sha256": "5d8308bb5fde57d2ce5331f6df9ee6e27e568fa5d7dacd04a6c838661638ef3f"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/chat_template.jinja.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/chat_template.jinja.metadata",
+            "sha256": "af3a115aeadd3053cac32e26abbc2466c4eddde24a4a307c1ec1f90eb99a7376"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/config.json.metadata",
+            "sha256": "dbf761b8406c75256ef83debd9ca65ecc1ca15b4b6557596d521f174af51516b"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/generation_config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/generation_config.json.metadata",
+            "sha256": "b89bf1fc43cee248aef7c73572f28ac075a87d32b23a54dc74975ae08316983d"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/merges.txt.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/merges.txt.metadata",
+            "sha256": "a6bb43e394d6ea973442155302abce3a5e20014542b446fb4db77b898ec99613"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+            "sha256": "d96fde38e13d58bf181c71ba1c7ccc1091b1eb4689e40f2c0e8023ef3cb4251f"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+            "sha256": "b3d3c1649612a933c79e83fd805c8d06d2285391d805ab2624a36c80c0ccb3ae"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+            "sha256": "fc11216940f54bcbc575a3d931651834670e4c96900e63f7373b6635aee632fd"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+            "sha256": "1311ed64df550d4e1688a34df0fbce399c2b628369a744fabc9ad47e4d698a42"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model.safetensors.index.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/model.safetensors.index.json.metadata",
+            "sha256": "932b48322401aab5cd8bbad7db066e3ddd9ee49b850ca0397a48f5d53a8047ff"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/special_tokens_map.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/special_tokens_map.json.metadata",
+            "sha256": "008e4861cf395c0bf90b818af0750fc946c027685e9d1776e7257546ace829ac"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/tokenizer.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/tokenizer.json.metadata",
+            "sha256": "18d45fac0d1e66260fdea3bd5a962018e3eed674a7c19aedb58ab333388c0e36"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/tokenizer_config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/tokenizer_config.json.metadata",
+            "sha256": "d7842f3661594835e180fdc319127f27e2420cfc6244c4f9dce60a8b5a82c9de"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/vocab.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/download/vocab.json.metadata",
+            "sha256": "675327a9faa06fd3ce5fff7778e0420e464f65440cdcb589400ed6b71a33ef51"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.cache/huggingface/trees/8607b97b893bf64be0de848609863093c7ecc095.json",
+            "sha256": "dc35bc324e7d178676500c91882ebce7c1f3cb0c258b786de0d69cfb50ec4dc0"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/.gitattributes",
+            "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/README.md",
+            "sha256": "4bcf87ecfbbb8e07a01b21415a970c8b53a5283bf6872b657040d3f45c9241f7"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/added_tokens.json",
+            "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/chat_template.jinja",
+            "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/config.json",
+            "sha256": "7b0c80f32387ae9f5bcec6c0b8d63310b42caa80fcf236cab5809cd853dc9f02"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/generation_config.json",
+            "sha256": "d3e057bbca66b92f33a8bdc6a1301014e0e4ab69b3b3fd2e442d9fe0c69f3431"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/merges.txt",
+            "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/model-00001-of-00004.safetensors",
+            "sha256": "207c09de0316b2ae4b802e620e1732b7aaa1fb913aea77a89f01579b40994301"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/model-00002-of-00004.safetensors",
+            "sha256": "8522b3b74c11127e61912751113671ac513e8001db8f799e37294e03d1c9c426"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/model-00003-of-00004.safetensors",
+            "sha256": "7b5983e57cf461f73f39d79ae319a10b3f24ab53d408e5a564199e314c2fcfff"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/model-00004-of-00004.safetensors",
+            "sha256": "f5d73e91fd0fd2c47e3cf1cd1e88c2daf912ee9918c5d718a01a1ed5413d599c"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/model.safetensors.index.json",
+            "sha256": "e7e4bdc58d3302c97357f27979b270987dd620cf0cd9b1c130e3a51c9d64df95"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/special_tokens_map.json",
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/tokenizer.json",
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/tokenizer_config.json",
+            "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/classify_model/vocab.json",
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+        "tree_sha256": "2c96d4fb8b255eca103809d1514dc859560c157df48ff87958ddc10c010bbb08"
+      }
+    },
+    "judge": {
+      "api_key_env": "ARK_API_KEY",
+      "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+      "enable_thinking": true,
+      "max_model_len": 1048576,
+      "max_output_tokens": 131072,
+      "model": "deepseek-v4.1-flash",
+      "reasoning_effort": "high",
+      "response_model": "deepseek-v4-1-flash-260910",
+      "temperature": 0.0,
+      "timeout_seconds": 600.0
+    },
+    "split": {
+      "base_url": "http://127.0.0.1:13099/v1",
+      "model": "Qwen3-8B-Split",
+      "model_identity": {
+        "files": [
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/.gitignore",
+            "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/.gitattributes.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/.gitattributes.metadata",
+            "sha256": "e068416eb6af488ae6479fa5c9467f569bfb2874fcc85b73753ff1b478db6db3"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/README.md.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/README.md.metadata",
+            "sha256": "ce7de8fbe8719f12f87e79a310e5a08e24d69af7f399ea3f721b3007ff822055"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/added_tokens.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/added_tokens.json.metadata",
+            "sha256": "a8377566cab6f30691629c087e10bd1b5bff4f498fd89b0124bd2a38b3c04f92"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/chat_template.jinja.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/chat_template.jinja.metadata",
+            "sha256": "1efd37ffd03045952ac43fddfbb3568ef818aa5b727f3c27a880c1c1a961563e"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/config.json.metadata",
+            "sha256": "a9fa9b5cd5ebb27fb374cfa3f8b2eb914a8cbb0034d08187f4c43ad2731aa735"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/generation_config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/generation_config.json.metadata",
+            "sha256": "52fd15d0849bdd0e591eb8ae37835ce12101d17ceb48fe5fc221ac7c9c9edc18"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/merges.txt.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/merges.txt.metadata",
+            "sha256": "494b21837ca5a6f13dc3a964d4e13768175d85bf6a601719bcd50a00510b6f3f"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+            "sha256": "1c05578ced9fda605caf2793b5730d38ddc8e46aa8398b8832749c86143f4b68"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+            "sha256": "6706763dc233735bd662c56164305977e6c7a2df64836146445efdd618702675"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+            "sha256": "ac89d8cbae4642522138bcdc1bfd78d606a8f2cbb0154020800313dd09c52b14"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+            "sha256": "b97359b170412fd63d593f6d98bf09909aa2fcbc2921b845feb36bf4ea41f46e"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model.safetensors.index.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/model.safetensors.index.json.metadata",
+            "sha256": "22dc57b6950ef68d87f1b0f535267a4e6ffc40bf9906a34e8ec35707cbc99c7d"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/special_tokens_map.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/special_tokens_map.json.metadata",
+            "sha256": "5e20973895c984d6f57841b7d966c1222c23aad5918f30ed9f92746cdafc1983"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/tokenizer.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/tokenizer.json.metadata",
+            "sha256": "3eda2638eacf3677ce96e53011257628c1c0ba67da46b7e3a1d7d94c209ebb81"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/tokenizer_config.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/tokenizer_config.json.metadata",
+            "sha256": "2c04a3f4fc8abc0e034853f43ad1bba7d83f9ddebd3b7039300af2ce5cc97213"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/vocab.json.lock",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.cache/huggingface/download/vocab.json.metadata",
+            "sha256": "fec13c27f2e78dadeb1af4bcce6d7b15e11daf643bbd7e0c9ed0e64941065003"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/.gitattributes",
+            "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/README.md",
+            "sha256": "4bcf87ecfbbb8e07a01b21415a970c8b53a5283bf6872b657040d3f45c9241f7"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/added_tokens.json",
+            "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/chat_template.jinja",
+            "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/config.json",
+            "sha256": "7b0c80f32387ae9f5bcec6c0b8d63310b42caa80fcf236cab5809cd853dc9f02"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/generation_config.json",
+            "sha256": "d3e057bbca66b92f33a8bdc6a1301014e0e4ab69b3b3fd2e442d9fe0c69f3431"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/merges.txt",
+            "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/model-00001-of-00004.safetensors",
+            "sha256": "8a5d9de732829436e8323c65937cfe53a81ac0882e336df77e9a9f7beb36624e"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/model-00002-of-00004.safetensors",
+            "sha256": "fbd0c0591207d2b280ff27e36dc67f887a813a97670d953745128009c16f1568"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/model-00003-of-00004.safetensors",
+            "sha256": "e92bed8516591fd5f3cd777c75fd38833057e0bdd6491679bb51c408d791dd05"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/model-00004-of-00004.safetensors",
+            "sha256": "a4d54912a9e252470f0316396dfa59f32d2562eada306de8d7fd2fa4eea30c2a"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/model.safetensors.index.json",
+            "sha256": "3037dbd89fb25e0b328fddbb41b60a0967da3eb20e80e1b9fe0c5b1ac902f368"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/special_tokens_map.json",
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/tokenizer.json",
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/tokenizer_config.json",
+            "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0"
+          },
+          {
+            "path": "/data/xyj/shengao/CoCoReviewBench/model/split_model/vocab.json",
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+        "tree_sha256": "24f40e05dfca020fc07b06ffa1c9faf18a27b1403ce01d66bfbcd3258c96fba9"
+      },
+      "ssh": {
+        "base_url": "http://127.0.0.1:13099/v1",
+        "guard": {
+          "argv_sha256": "8c367469cdfdc96fe7d25e09ba96ff8f362c7e35cc117aea28194ad5c075a468",
+          "role": "split",
+          "socket": "/data0/xyj/shengao/agentreview-0930-coco/model-watch.sock",
+          "source_files": [
+            {
+              "path": "/data0/xyj/shengao/agentreview-0930-coco/ssh_model_guard.py",
+              "sha256": "8fa575d63e2c5cf25591c14bbdd0a25c3e41d1dc4370d31a6ea5d81499c977a1"
+            },
+            {
+              "path": "/data0/xyj/shengao/agentreview-0930-coco/model_watch.py",
+              "sha256": "adcf80a987d2650b235b2bb02a3d7bf8f60e9d191185ed7cc1401f0162d0a6c5"
+            }
+          ]
+        },
+        "identity_file": "/data/xyj/.ssh/id_ed25519",
+        "model_files": [
+          {
+            "ctime_ns": 1785388810271605885,
+            "inode": 15797109,
+            "mtime_ns": 1785388810271605885,
+            "relative_path": ".gitattributes",
+            "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+            "size": 1570
+          },
+          {
+            "ctime_ns": 1785388810163604968,
+            "inode": 15797107,
+            "mtime_ns": 1785388810163604968,
+            "relative_path": "README.md",
+            "sha256": "4bcf87ecfbbb8e07a01b21415a970c8b53a5283bf6872b657040d3f45c9241f7",
+            "size": 31
+          },
+          {
+            "ctime_ns": 1785388810127604662,
+            "inode": 15797106,
+            "mtime_ns": 1785388810123604628,
+            "relative_path": "added_tokens.json",
+            "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+            "size": 707
+          },
+          {
+            "ctime_ns": 1785388810127604662,
+            "inode": 15797104,
+            "mtime_ns": 1785388810123604628,
+            "relative_path": "chat_template.jinja",
+            "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "size": 4168
+          },
+          {
+            "ctime_ns": 1785388810127604662,
+            "inode": 15797105,
+            "mtime_ns": 1785388810127604662,
+            "relative_path": "config.json",
+            "sha256": "7b0c80f32387ae9f5bcec6c0b8d63310b42caa80fcf236cab5809cd853dc9f02",
+            "size": 1538
+          },
+          {
+            "ctime_ns": 1785388810223605477,
+            "inode": 15797108,
+            "mtime_ns": 1785388810223605477,
+            "relative_path": "generation_config.json",
+            "sha256": "d3e057bbca66b92f33a8bdc6a1301014e0e4ab69b3b3fd2e442d9fe0c69f3431",
+            "size": 214
+          },
+          {
+            "ctime_ns": 1785388818795678267,
+            "inode": 15797135,
+            "mtime_ns": 1785388818795678267,
+            "relative_path": "merges.txt",
+            "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+            "size": 1671853
+          },
+          {
+            "ctime_ns": 1788104447967169813,
+            "inode": 15796915,
+            "mtime_ns": 1787538280379121838,
+            "relative_path": "model-00001-of-00004.safetensors",
+            "sha256": "8a5d9de732829436e8323c65937cfe53a81ac0882e336df77e9a9f7beb36624e",
+            "size": 4907512496
+          },
+          {
+            "ctime_ns": 1787191911339647498,
+            "inode": 15797125,
+            "mtime_ns": 1787191911339647498,
+            "relative_path": "model-00002-of-00004.safetensors",
+            "sha256": "fbd0c0591207d2b280ff27e36dc67f887a813a97670d953745128009c16f1568",
+            "size": 4605605264
+          },
+          {
+            "ctime_ns": 1788104381947455327,
+            "inode": 15797124,
+            "mtime_ns": 1787463047468299490,
+            "relative_path": "model-00003-of-00004.safetensors",
+            "sha256": "e92bed8516591fd5f3cd777c75fd38833057e0bdd6491679bb51c408d791dd05",
+            "size": 4893919488
+          },
+          {
+            "ctime_ns": 1788104391627413450,
+            "inode": 15797122,
+            "mtime_ns": 1787463064693026849,
+            "relative_path": "model-00004-of-00004.safetensors",
+            "sha256": "a4d54912a9e252470f0316396dfa59f32d2562eada306de8d7fd2fa4eea30c2a",
+            "size": 1974479552
+          },
+          {
+            "ctime_ns": 1785388813891636626,
+            "inode": 15797127,
+            "mtime_ns": 1785388813887636593,
+            "relative_path": "model.safetensors.index.json",
+            "sha256": "3037dbd89fb25e0b328fddbb41b60a0967da3eb20e80e1b9fe0c5b1ac902f368",
+            "size": 32914
+          },
+          {
+            "ctime_ns": 1785388813863636388,
+            "inode": 15797126,
+            "mtime_ns": 1785388813863636388,
+            "relative_path": "special_tokens_map.json",
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+            "size": 613
+          },
+          {
+            "ctime_ns": 1785388967740940914,
+            "inode": 15797123,
+            "mtime_ns": 1785388967720940744,
+            "relative_path": "tokenizer.json",
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+            "size": 11422654
+          },
+          {
+            "ctime_ns": 1785388815651651572,
+            "inode": 15797132,
+            "mtime_ns": 1785388815651651572,
+            "relative_path": "tokenizer_config.json",
+            "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+            "size": 5404
+          },
+          {
+            "ctime_ns": 1785389034193503129,
+            "inode": 15797137,
+            "mtime_ns": 1785389034193503129,
+            "relative_path": "vocab.json",
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+            "size": 2776833
+          }
+        ],
+        "model_root": "/data0/xyj/shengao/CoCoReviewBench/model/split_model",
+        "service_argv_sha256": "11b092cc09540d7a2bde4137c32b26d70d7c7aea3e16f31e83f6cc3a83eedab3",
+        "target": "xyj@10.249.45.139"
+      }
+    }
+  },
+  "source_files": [
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/__init__.py",
+      "sha256": "91c485bbde5b32ff7cb09ce6f55286cb6dc5d08bc63d2bb5dbe17d81bb9aabc7"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_0_format_reviews.py",
+      "sha256": "b542d41e67e25a5fc582316168e8ff2f4e20f42bdc86bdd6f38ffd11f3efc32a"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_0_openreview_crawler.py",
+      "sha256": "589e0eea000729dc66c166f6026664c3c70a6befa294ce6a9b6aaa78a045bacb"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_0_sample_data.py",
+      "sha256": "e7ec9fa455d92f7885e35cbbc69f5564d45c7206fadead857e431f14297b606f"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_1_split_reviews.py",
+      "sha256": "6fe5310244fbf6f9e91f3e1ee538b07585fb9f340a2c9a205e6da19e20db8642"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_1_split_reviews_analysis.py",
+      "sha256": "4eaa66e46f6513754a0310608051a6229d5f0fc91ee4b2c759d0ec89a7f98bed"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_2_classify_reviews.py",
+      "sha256": "86eb37cd75a454aed528826f017feea947ef387ebe339a439af3bb0be921682d"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_2_classify_reviews_analysis.py",
+      "sha256": "35444b4df7ab1b8a5e4b5bc1381f16470a37a5d7aff6034afb95809fb2f05b48"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_3_preprocess_file.py",
+      "sha256": "421412e6133c83db763c6cd2e933735a327e72591f1d5ff52a7051990eac1ae5"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_3_refine_split_and_classify.py",
+      "sha256": "4de0ca1b041a1066741e86082f5b8126efd6298349fcfdae4e119409ea6debba"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_3_refine_split_and_classify_analysis.py",
+      "sha256": "c88006014f2fca3f9e58ac76e06ac1b3f86c78ad9c1240d4461e9fd1e3bf4365"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_4_review_clustering.py",
+      "sha256": "8c6164b2d559d435159c8f1b0b73ab9176708985e59a477732267928ab8d080d"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_4_review_clustering_analysis.py",
+      "sha256": "2fbd52a86f6115d90e5522aded6021f456559b46a32388f05a3128ceb0248142"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_5_conflict_reviews.py",
+      "sha256": "5f2a864ca432f21b04875affb4ef8ec02e0540c763b3cd44d0c2d54e28176fe5"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_5_conflict_reviews_analysis.py",
+      "sha256": "f65135d868d4960078f0681b301311369631c49d00c0e7914c46e75963679185"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_5_validate_conflict_reviews.py",
+      "sha256": "85fc322eaf3c1e1d1828df26dcd2b0e0a3b60ee54aff44f5a746f805c7ec45db"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_5_validate_conflict_reviews_analysis.py",
+      "sha256": "b267bf9b069e9f9fa60192ab3caee9ca79381aa61df5ef9a9e33a023b8c06d8c"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_6_author_conflict.py",
+      "sha256": "9d792628a1db144eb6b2e5ec951723e74994cc756d0e7997e0e7161a412e288d"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_6_author_conflict_analysis.py",
+      "sha256": "65774bddf8ffebd760bc0ce2d8b47c3eb3ae6acde087f8e4baa2c0690a3acc87"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_6_validate_author_conflict.py",
+      "sha256": "3ad715b22662b01ac92414134aa2e2f9d15706952f494a32ffcb745033e7e27b"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_6_validate_author_conflict_analysis.py",
+      "sha256": "952ac4f959848635034352b0de212c36ff0821c9f23f29e358ee788cd8b49665"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_7_merge_benchmark.py",
+      "sha256": "2845b03be3967a4c7204412d74f3d43eab0109d9f2b342b934f5fb68e32ddf1e"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_7_postprocess_benchmark.py",
+      "sha256": "2e737f23715f733126e3b8a3c666c1904261ead69457f4ad216762965070b02f"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_9_sft.py",
+      "sha256": "ec94db7b83f246f9b00f8fac5fd279172417cca6bfd4cd8825447f7fd71b6c5c"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/_9_split_reward.py",
+      "sha256": "0f3c80bf3baaed462f484e00a15fc09d408b14cbe7208c0884286ac7ef3615d8"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/benchmark/prompt_registry.py",
+      "sha256": "15da4e63732705e84c1893e37188aa95c5d8719d4e1c9eab0a90b29435f37893"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_0_human_review.py",
+      "sha256": "311d878ce82f39145011bba8b4f5e9f4ce11674412757df1bc4025cbfcef6328"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_1_query_ai_reviewer.py",
+      "sha256": "c44af965a0b1101df053567a858c37871358c211b1e1726325c03cb04143f1e2"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_2_split.py",
+      "sha256": "0889e6a747709837fcfcc240503ed45dd7f9eda5a4bbfd2b56e3696072d7ac0b"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_3_classify.py",
+      "sha256": "e62c64545d470675ec3fba6606f37efee371ccf33e23baeb4655d66f99cbc036"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_4_evaluation.py",
+      "sha256": "d0c10721e1dc7cf82a80cbb705feeab808749fcb1dca0acf25f6c669f24a4c9b"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/fewshot_examples/132_automated_relational.txt",
+      "sha256": "44c80d1808917182cdea6ee47d911221975710e3a901f32a397ce5a35f314272"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/fewshot_examples/2_carpe_diem.txt",
+      "sha256": "2c2c8a9be27fff3fb68ad6c3df414f03f5b55d65bc5ec39b8ac5b0d6f2d5cba4"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/fewshot_examples/attention.txt",
+      "sha256": "f2c424b19d9ab414d3b6dbaf1f902be123fe6d3544d167c5217cc1c6eb464523"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/ideas/i_cant_believe_its_not_better.py",
+      "sha256": "71fcf1b647a58401f825a35b2ac290e3ba3f4f3bf04af8cd8a8f0bf55f19e868"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/ideas/i_cant_believe_its_not_betterrealworld.py",
+      "sha256": "4135344849bed0be61db2ab8dec18f23bcdd841fe3beec6a7887b86092ddd7f8"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/llm.py",
+      "sha256": "73ed5e450897867d7a72526d3db409a311db6844b33cde7dd2ddc7c54a94f9f3"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_icbinb_writeup.py",
+      "sha256": "b147ded1238281723ff0e186a0bc17b4880a324f224d387c0bdfd029d1cc31fc"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_ideation_temp_free.py",
+      "sha256": "5bea1d34d3e36622315b9fb1fb283bd5d057918b5e362ccae58d530000f1ed66"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_llm_review.py",
+      "sha256": "342e0d5a29c1468732f5b23b2869897d62d216b50ea8b92e9519a02fc51f2ffb"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_plotting.py",
+      "sha256": "be34c7bfdac961b3f23884fbd1e1b809af5f9a07e43ad7a241b3fa16a453893c"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_vlm_review.py",
+      "sha256": "8e01809be66cdad09ea2efc4edf5f26f6c8e73eb86f87f0c5da1509fe151f90c"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/perform_writeup.py",
+      "sha256": "393bceb4dd3e2bea21eb34803c8698541e481bf93caed6ae4e2d8789641e1f22"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/requirements.txt",
+      "sha256": "9cf33bea1319084bc97cb4565d9fc0aeed16103f8fb650978438559fbc5bb0cb"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/tools/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/tools/base_tool.py",
+      "sha256": "60b7a77082c65ea34a6f2f5f0eb03c643a9c8444fb1d06ec19d07e6cc717d451"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/tools/semantic_scholar.py",
+      "sha256": "b5a207fc39e188fcbee244b70f514bf111d873fd31797cfed4ba31592afb958e"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/agent_manager.py",
+      "sha256": "3abbc08428be8345baa106045bcbc82fcff115634579b11436a8181707208c89"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/backend/__init__.py",
+      "sha256": "4698ddaafdd6d242a850036dbc6383773c1c3fb69fcac32edcfbf71d9f5fac33"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/backend/backend_anthropic.py",
+      "sha256": "ae06955d89335f15b3fdcdf97d14c0053ef922b767c337ceb1efab4d088e53ed"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/backend/backend_openai.py",
+      "sha256": "cbfce6f4c6c71c0bdecd609e0291c63278d4f4bd75734ce6893ab274127a8413"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/backend/utils.py",
+      "sha256": "417be30e00dabecd2f0815c110b227faee2aa5074a73cd38d791a7fac6d5d654"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/bfts_utils.py",
+      "sha256": "03ccb7683a33bf8511ba99acb7e0040bf4deec69a3a365ca99b2731b245af706"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/interpreter.py",
+      "sha256": "8e7c00573100c22384b8eefd72c87ee49fc2684907341ebd9ac5282a6c4ac7ad"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/journal.py",
+      "sha256": "5690b2b803300f655788064ec253159f2f41c86802e886e601cf640f798cd5b6"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/journal2report.py",
+      "sha256": "56d301a96067eaf565adc707a081c4f7212307ecc15ab2b3949beb55bba853b4"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/log_summarization.py",
+      "sha256": "0aad17d76e8e6b4b076ba6ffa8c6f41c5b0d13541d93119155e3621dce2c619e"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/parallel_agent.py",
+      "sha256": "57d17fcf00509fef1756ac14b22992f9da66447c4ed97cb7b5a4fec031d6ed4e"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/perform_experiments_bfts_with_agentmanager.py",
+      "sha256": "ec2f90b3928fb4189dfe46715f4ca7ce8bfec9f9ccadf3c831b226f75b28dafd"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/__init__.py",
+      "sha256": "d6094430e4e87f170f80305c8b19053e2deacdc32bda61aadf70571334f2e238"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/config.py",
+      "sha256": "01fda1d6bc21204656d6b0913f801b8daaeb5e96c39f0d653fb9fe8cebf619f6"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/data_preview.py",
+      "sha256": "d372563465f2f2a30169b2f535186f3b9a8e59aeddfd11db5eadb599d19666ae"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/metric.py",
+      "sha256": "3d33431a5aceb0093f40c6e108ee3498b3ce36972d84db56b953d95692aa9549"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/response.py",
+      "sha256": "d166ee59f885fa5becb17d269f9f9ab1a7296054fce22a053d726a785fdd0ae8"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/serialize.py",
+      "sha256": "42dee5d0077f6ce78d1d9c6b59d8751512be1f8e0f15da9c2824528f5dfc38d2"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/treesearch/utils/tree_export.py",
+      "sha256": "d9667467a6b2f9cab52bf8d174b466dfffe1378460370b25b1bbc4e588fbd71c"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/utils/token_tracker.py",
+      "sha256": "f749a8e4bddb9be8cfe92fecefec6f57147405d83ff00e983f2bd819b1005e77"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/ai_scientist/vlm.py",
+      "sha256": "453e66170d0e963417be6a766760c9268e60aacdc35241dd5860dbe5152efb3d"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/parse_result.py",
+      "sha256": "09a6e2c72ad341aec3db12f86551b2df440fb848306cfe9e7d7ed20a6f883380"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/prompt/judge.txt",
+      "sha256": "305e68ae15805911fb44f2166fabcb95e08acf664546636036616ec1bbb294c5"
+    },
+    {
+      "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/utils.py",
+      "sha256": "79e584d6ece0686e4fc486553ed95f3f93caba52c20a2154116bad00d825ddcb"
+    }
+  ],
+  "timeout_seconds": 14400
+}

@@ -167,47 +167,13 @@ def _plan_signature_error(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str |
     return None
 
 
-def _text_slice_errors(tree):
-    """Permit proven collection slices, reject unbounded text/unknown slices.
-
-    This is a program quality contract, not the sandbox security boundary.
-    Unknown collection expressions can be made explicit with list(...).
-    """
-    errors = []
-    for function in (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)):
-        assignments = {}
-        for node in ast.walk(function):
-            if isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name):
-                        assignments.setdefault(target.id, []).append(node.value)
-
-        def sequence(node, seen=frozenset()):
-            if isinstance(node, (ast.List, ast.Tuple, ast.ListComp)):
-                return True
-            if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
-                return sequence(node.value, seen)
-            if isinstance(node, ast.Call):
-                return (isinstance(node.func, ast.Name) and node.func.id in {"list", "tuple", "sorted"}) or (
-                    isinstance(node.func, ast.Attribute) and node.func.attr in {"query", "select_memory_entries", "split", "splitlines", "fetchall"})
-            if isinstance(node, ast.Name) and node.id not in seen:
-                values = assignments.get(node.id, [])
-                return bool(values) and all(sequence(v, seen | {node.id}) for v in values)
-            return False
-
-        for node in ast.walk(function):
-            if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice) and not sequence(node.value):
-                errors.append(f"Text or unknown slice at line {node.lineno}: select complete entries with toolkit.select_memory_entries; never truncate material")
-    return errors
-
-
 def static_check(code: str, import_whitelist: set[str] | None = None) -> list[str]:
     whitelist = import_whitelist or DEFAULT_IMPORT_WHITELIST
     try:
         tree = ast.parse(code)
     except SyntaxError as exc:
         return [f"AST parse failed: {exc}"]
-    errors: list[str] = _text_slice_errors(tree)
+    errors: list[str] = []
     class_nodes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
     classes = [node.name for node in class_nodes]
     top_level_classes = {

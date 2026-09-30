@@ -1,0 +1,272 @@
+{
+  "host": "xyj@10.249.45.139",
+  "models": {
+    "split": {
+      "root": "/data0/xyj/shengao/CoCoReviewBench/model/split_model",
+      "files": [
+        {
+          "relative_path": ".gitattributes",
+          "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+          "size": 1570,
+          "mtime_ns": 1785388810271605885,
+          "ctime_ns": 1785388810271605885,
+          "inode": 15797109
+        },
+        {
+          "relative_path": "README.md",
+          "sha256": "4bcf87ecfbbb8e07a01b21415a970c8b53a5283bf6872b657040d3f45c9241f7",
+          "size": 31,
+          "mtime_ns": 1785388810163604968,
+          "ctime_ns": 1785388810163604968,
+          "inode": 15797107
+        },
+        {
+          "relative_path": "added_tokens.json",
+          "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+          "size": 707,
+          "mtime_ns": 1785388810123604628,
+          "ctime_ns": 1785388810127604662,
+          "inode": 15797106
+        },
+        {
+          "relative_path": "chat_template.jinja",
+          "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+          "size": 4168,
+          "mtime_ns": 1785388810123604628,
+          "ctime_ns": 1785388810127604662,
+          "inode": 15797104
+        },
+        {
+          "relative_path": "config.json",
+          "sha256": "7b0c80f32387ae9f5bcec6c0b8d63310b42caa80fcf236cab5809cd853dc9f02",
+          "size": 1538,
+          "mtime_ns": 1785388810127604662,
+          "ctime_ns": 1785388810127604662,
+          "inode": 15797105
+        },
+        {
+          "relative_path": "generation_config.json",
+          "sha256": "d3e057bbca66b92f33a8bdc6a1301014e0e4ab69b3b3fd2e442d9fe0c69f3431",
+          "size": 214,
+          "mtime_ns": 1785388810223605477,
+          "ctime_ns": 1785388810223605477,
+          "inode": 15797108
+        },
+        {
+          "relative_path": "merges.txt",
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+          "size": 1671853,
+          "mtime_ns": 1785388818795678267,
+          "ctime_ns": 1785388818795678267,
+          "inode": 15797135
+        },
+        {
+          "relative_path": "model-00001-of-00004.safetensors",
+          "sha256": "8a5d9de732829436e8323c65937cfe53a81ac0882e336df77e9a9f7beb36624e",
+          "size": 4907512496,
+          "mtime_ns": 1787538280379121838,
+          "ctime_ns": 1788104447967169813,
+          "inode": 15796915
+        },
+        {
+          "relative_path": "model-00002-of-00004.safetensors",
+          "sha256": "fbd0c0591207d2b280ff27e36dc67f887a813a97670d953745128009c16f1568",
+          "size": 4605605264,
+          "mtime_ns": 1787191911339647498,
+          "ctime_ns": 1787191911339647498,
+          "inode": 15797125
+        },
+        {
+          "relative_path": "model-00003-of-00004.safetensors",
+          "sha256": "e92bed8516591fd5f3cd777c75fd38833057e0bdd6491679bb51c408d791dd05",
+          "size": 4893919488,
+          "mtime_ns": 1787463047468299490,
+          "ctime_ns": 1788104381947455327,
+          "inode": 15797124
+        },
+        {
+          "relative_path": "model-00004-of-00004.safetensors",
+          "sha256": "a4d54912a9e252470f0316396dfa59f32d2562eada306de8d7fd2fa4eea30c2a",
+          "size": 1974479552,
+          "mtime_ns": 1787463064693026849,
+          "ctime_ns": 1788104391627413450,
+          "inode": 15797122
+        },
+        {
+          "relative_path": "model.safetensors.index.json",
+          "sha256": "3037dbd89fb25e0b328fddbb41b60a0967da3eb20e80e1b9fe0c5b1ac902f368",
+          "size": 32914,
+          "mtime_ns": 1785388813887636593,
+          "ctime_ns": 1785388813891636626,
+          "inode": 15797127
+        },
+        {
+          "relative_path": "special_tokens_map.json",
+          "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+          "size": 613,
+          "mtime_ns": 1785388813863636388,
+          "ctime_ns": 1785388813863636388,
+          "inode": 15797126
+        },
+        {
+          "relative_path": "tokenizer.json",
+          "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+          "size": 11422654,
+          "mtime_ns": 1785388967720940744,
+          "ctime_ns": 1785388967740940914,
+          "inode": 15797123
+        },
+        {
+          "relative_path": "tokenizer_config.json",
+          "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+          "size": 5404,
+          "mtime_ns": 1785388815651651572,
+          "ctime_ns": 1785388815651651572,
+          "inode": 15797132
+        },
+        {
+          "relative_path": "vocab.json",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "size": 2776833,
+          "mtime_ns": 1785389034193503129,
+          "ctime_ns": 1785389034193503129,
+          "inode": 15797137
+        }
+      ]
+    },
+    "classify": {
+      "root": "/data0/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "files": [
+        {
+          "relative_path": ".gitattributes",
+          "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+          "size": 1570,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786609910992885573,
+          "inode": 15868097
+        },
+        {
+          "relative_path": "README.md",
+          "sha256": "4bcf87ecfbbb8e07a01b21415a970c8b53a5283bf6872b657040d3f45c9241f7",
+          "size": 31,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786613072500746415,
+          "inode": 15868102
+        },
+        {
+          "relative_path": "added_tokens.json",
+          "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+          "size": 707,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786609911332883798,
+          "inode": 15868099
+        },
+        {
+          "relative_path": "chat_template.jinja",
+          "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+          "size": 4168,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786609911484883005,
+          "inode": 15868100
+        },
+        {
+          "relative_path": "config.json",
+          "sha256": "7b0c80f32387ae9f5bcec6c0b8d63310b42caa80fcf236cab5809cd853dc9f02",
+          "size": 1538,
+          "mtime_ns": 1786604665000000000,
+          "ctime_ns": 1786609911604882379,
+          "inode": 15868095
+        },
+        {
+          "relative_path": "generation_config.json",
+          "sha256": "d3e057bbca66b92f33a8bdc6a1301014e0e4ab69b3b3fd2e442d9fe0c69f3431",
+          "size": 214,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786609911728881732,
+          "inode": 15868098
+        },
+        {
+          "relative_path": "merges.txt",
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+          "size": 1671853,
+          "mtime_ns": 1786604667000000000,
+          "ctime_ns": 1786609915624861418,
+          "inode": 15798399
+        },
+        {
+          "relative_path": "model-00001-of-00004.safetensors",
+          "sha256": "207c09de0316b2ae4b802e620e1732b7aaa1fb913aea77a89f01579b40994301",
+          "size": 4902257696,
+          "mtime_ns": 1786609321256500151,
+          "ctime_ns": 1786609321256500151,
+          "inode": 15798395
+        },
+        {
+          "relative_path": "model-00002-of-00004.safetensors",
+          "sha256": "8522b3b74c11127e61912751113671ac513e8001db8f799e37294e03d1c9c426",
+          "size": 4915960368,
+          "mtime_ns": 1786620037760844687,
+          "ctime_ns": 1786620037780844479,
+          "inode": 15868114
+        },
+        {
+          "relative_path": "model-00003-of-00004.safetensors",
+          "sha256": "7b5983e57cf461f73f39d79ae319a10b3f24ab53d408e5a564199e314c2fcfff",
+          "size": 4983068496,
+          "mtime_ns": 1786620048968729042,
+          "ctime_ns": 1786620048972729001,
+          "inode": 15868119
+        },
+        {
+          "relative_path": "model-00004-of-00004.safetensors",
+          "sha256": "f5d73e91fd0fd2c47e3cf1cd1e88c2daf912ee9918c5d718a01a1ed5413d599c",
+          "size": 1580230264,
+          "mtime_ns": 1787463078849625058,
+          "ctime_ns": 1788104521078853865,
+          "inode": 15868115
+        },
+        {
+          "relative_path": "model.safetensors.index.json",
+          "sha256": "e7e4bdc58d3302c97357f27979b270987dd620cf0cd9b1c130e3a51c9d64df95",
+          "size": 32914,
+          "mtime_ns": 1786604666000000000,
+          "ctime_ns": 1786609915860860188,
+          "inode": 15868120
+        },
+        {
+          "relative_path": "special_tokens_map.json",
+          "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+          "size": 613,
+          "mtime_ns": 1786604667000000000,
+          "ctime_ns": 1786613074460756090,
+          "inode": 15868121
+        },
+        {
+          "relative_path": "tokenizer.json",
+          "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+          "size": 11422654,
+          "mtime_ns": 1786604704000000000,
+          "ctime_ns": 1786613078204774535,
+          "inode": 15798397
+        },
+        {
+          "relative_path": "tokenizer_config.json",
+          "sha256": "443bfa629eb16387a12edbf92a76f6a6f10b2af3b53d87ba1550adfcf45f7fa0",
+          "size": 5404,
+          "mtime_ns": 1786604667000000000,
+          "ctime_ns": 1786613078368775341,
+          "inode": 15868125
+        },
+        {
+          "relative_path": "vocab.json",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "size": 2776833,
+          "mtime_ns": 1786604669000000000,
+          "ctime_ns": 1786613079712781948,
+          "inode": 15798400
+        }
+      ]
+    }
+  },
+  "checked_at": 1790663075.8363383
+}

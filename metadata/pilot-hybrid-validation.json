@@ -1,0 +1,41 @@
+{
+  "acceptance": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-hybrid-acceptance.json",
+    "sha256": "bf95254e76fd5ac1b4faefc1e89f18950f4d386652b4c400ceedf70fb272ea4d"
+  },
+  "checked_at": 1790665994.1628218,
+  "completed_evolution_rounds": 0,
+  "deployment": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-hybrid-deployment-validation.json",
+    "sha256": "c7a6c007873bd85ec7463a3de6a0a8af79de6034c5327984f2402ecd41207730"
+  },
+  "phase": "search",
+  "process": {
+    "argv": [
+      "/data/xyj/envs/coco-original/bin/python",
+      "-u",
+      "-B",
+      "deployment/pilot_0930_hybrid.py",
+      "run"
+    ],
+    "pid": 2165985,
+    "start_time": "614736302",
+    "uid": 1032
+  },
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-hybrid/protocol.frozen.json",
+    "sha256": "4db608b7d5bb95892dfb4fd2185497d4b01fa61f0900a09704141fca20600026"
+  },
+  "report": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/report/自进化逐轮报告.md",
+  "scope": "15 papers; build4/static3/rotating5/test3; one search; up to five mutations; full experiment not started",
+  "scored_results": 0,
+  "status": "running",
+  "systemd_unit": "agentreview-0930-pilot-hybrid.service",
+  "tests": {
+    "log": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-hybrid-targeted-tests.log",
+      "sha256": "adba2b54b3e90da62a5aa29838975b5cfe5203c857cc76b9d0f467736e780184"
+    },
+    "passed": 11
+  }
+}

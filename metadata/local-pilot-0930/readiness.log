@@ -1,0 +1,41 @@
+{
+  "status": "ready",
+  "counts": {
+    "build": 4,
+    "static": 3,
+    "rotating": 5,
+    "sealed_test": 3
+  },
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+    "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+  },
+  "runtime": "verified",
+  "model_calls": 0,
+  "credential_configured": true,
+  "sandbox": "passed",
+  "services": {
+    "split": {
+      "pid": 217221,
+      "start_identity": "621818938",
+      "uid": 1032,
+      "argv_sha256": "cdebcb9cea1810ce8eca67cce0090db4b9779aaabea32cf50d7b279edcec8265",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+      "model": "Qwen3-8B-Split",
+      "base_url": "http://127.0.0.1:13099/v1",
+      "max_model_len": 65536
+    },
+    "classify": {
+      "pid": 217222,
+      "start_identity": "621818938",
+      "uid": 1032,
+      "argv_sha256": "2c3bf399a899b1d5609603f87a462b462c722929908f9a3bf8e7ad1172b3aaf5",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "model": "Qwen3-8B-Classify",
+      "base_url": "http://127.0.0.1:13098/v1",
+      "max_model_len": 32768
+    }
+  },
+  "blockers": [],
+  "checked_at": 1790736596.8832273
+}

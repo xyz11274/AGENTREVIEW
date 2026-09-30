@@ -44,7 +44,7 @@ def forbid_memory_build(backend, monkeypatch):
 
 def final_client(backend, monkeypatch):
     class MemoryCompletion(review_fixtures.FakeCompletion):
-        def complete(self, messages, *, max_tokens, component):
+        def complete(self, messages, *, max_tokens, component, response_format=None):
             if component == "memory_summarizer" and "The Query must conform to this schema" in messages[-1]["content"]:
                 self.calls.append({"messages": messages, "max_tokens": max_tokens, "component": component})
                 return json.dumps({"query_text": "complete paper review experience", "reviewer_dimension": ""})

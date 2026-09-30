@@ -1,0 +1,14 @@
+{
+  "budget": 32768,
+  "coco_source_modified": false,
+  "elapsed_seconds": 2.102590322494507,
+  "experiment_resumed": false,
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-streaming/protocol.frozen.json",
+    "sha256": "31023f46c4631389a2dfb833466225093e610de37063b0471083f8307870d49d"
+  },
+  "response": "STREAM_OK",
+  "response_model": "deepseek-v4-1-flash-260910",
+  "status": "complete",
+  "stream": true
+}

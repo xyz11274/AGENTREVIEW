@@ -16,7 +16,7 @@ class FakeCompletion:
         self.error = error
         self.calls = []
 
-    def complete(self, messages, *, max_tokens, component):
+    def complete(self, messages, *, max_tokens, component, response_format=None):
         self.calls.append(component)
         if self.error is not None:
             raise self.error

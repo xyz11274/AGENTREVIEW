@@ -23,7 +23,7 @@ def command(config, role):
     gpus = service.get("gpus", [])
     if not gpus or any(type(g) is not int or g < 0 for g in gpus):
         raise ValueError(f"{role}: explicitly allocated GPU IDs are required")
-    max_model_len = service.get("max_model_len", {"split":65536,"classify":32768,"judge":65536}[role])
+    max_model_len = service.get("max_model_len", {"split":65536,"classify":32768}[role])
     if type(max_model_len) is not int or max_model_len <= 0:
         raise ValueError(f"{role}: max_model_len requires a positive integer")
     result = [config["serving_python"], "-m", "vllm.entrypoints.openai.api_server",
@@ -47,8 +47,6 @@ def command(config, role):
         # Current vLLM accepts the original YaRN setting via HF overrides.
         result += ["--hf-overrides", json.dumps({"rope_scaling": {
             "rope_type": "yarn", "factor": 4.0, "original_max_position_embeddings": 32768}})]
-    if role == "judge":
-        result += ["--reasoning-parser", "qwen3"]
     # Split/Classify retain think text in content for the upstream parsers.
     return result
 
@@ -126,7 +124,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["plan", "start", "status", "stop"])
     parser.add_argument("--config", required=True)
-    parser.add_argument("--role", required=True, choices=["split", "classify", "judge"])
+    parser.add_argument("--role", required=True, choices=["split", "classify"])
     args = parser.parse_args()
     result = manage(json.loads(Path(args.config).read_text()), args.role, args.action)
     print(json.dumps(result, indent=2))

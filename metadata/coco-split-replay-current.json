@@ -1,0 +1,77 @@
+{
+  "status": "diagnosis_complete",
+  "model_calls": 0,
+  "paper_id": "f-FQE1fjPK",
+  "input_parts": 95,
+  "raw_responses": [
+    {
+      "audit_key": "22eb1a6637f678011cea2605f51c4513645fd2ac86c3d96cc23f9eb2676694ab.audit",
+      "raw_coverage": 0.9894736842105263,
+      "missing_part_ids": [
+        95
+      ],
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1809,
+        "completion_tokens_details": null,
+        "prompt_tokens": 5997,
+        "prompt_tokens_details": null,
+        "total_tokens": 7806
+      },
+      "presence_penalty": 0.5
+    },
+    {
+      "audit_key": "6c6914c54af4ddd009e752efbfe49a0d89c5c37596cf5c41facd39115b0abcc8.audit",
+      "raw_coverage": 0.9894736842105263,
+      "missing_part_ids": [
+        95
+      ],
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1809,
+        "completion_tokens_details": null,
+        "prompt_tokens": 5997,
+        "prompt_tokens_details": null,
+        "total_tokens": 7806
+      },
+      "presence_penalty": 0.0
+    },
+    {
+      "audit_key": "716f130480b4dace096f6c3d70d5b6f82873fd9cc85248643f058522cca61e6d.audit",
+      "raw_coverage": 0.9894736842105263,
+      "missing_part_ids": [
+        95
+      ],
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1833,
+        "completion_tokens_details": null,
+        "prompt_tokens": 5997,
+        "prompt_tokens_details": null,
+        "total_tokens": 7830
+      },
+      "presence_penalty": 1.0
+    }
+  ],
+  "upstream_replay_matches_saved_output": true,
+  "upstream_final_covered_parts": 95,
+  "upstream_final_missing_indices": [],
+  "upstream_final_groups_containing_last_part": [
+    [
+      94
+    ]
+  ],
+  "last_part_text": "- POL: The paper reports concrete resource usage (single NVIDIA A100 GPU, 8 CPU cores) and quantifies runtime/efficiency gains (e.g., >3 orders of magnitude speedup over ApproxMC3), which supports transparency about compute cost. Evidence anchors: SRC-014, SRC-019.\nFinal recommendation: Weak Accept",
+  "host_rejection": null,
+  "root_cause": "Host audit rejects the author's normal missing-part recovery even though the unchanged upstream result covers every input part.",
+  "upstream_source": {
+    "path": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_2_split.py",
+    "sha256": "0889e6a747709837fcfcc240503ed45dd7f9eda5a4bbfd2b56e3696072d7ac0b"
+  },
+  "host_audit_source": {
+    "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/coco_integrity.py",
+    "sha256": "c0b879041d077c4bd5dc518ac98a14c7688eb09b0d5f157da0b1eb3cda96b132"
+  },
+  "experiment_mutated": false,
+  "fixed": true
+}

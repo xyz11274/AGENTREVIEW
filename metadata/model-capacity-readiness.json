@@ -1,0 +1,51 @@
+{
+  "status": "ready",
+  "counts": {
+    "build": 4,
+    "static": 3,
+    "rotating": 5,
+    "sealed_test": 3
+  },
+  "offline_protocol_and_scoring_validation": "passed",
+  "sandbox": "passed",
+  "credential_configured": true,
+  "services": {
+    "split": {
+      "pid": 2228235,
+      "start_identity": "584742898",
+      "uid": 1014,
+      "argv_sha256": "11b092cc09540d7a2bde4137c32b26d70d7c7aea3e16f31e83f6cc3a83eedab3",
+      "model_root": "/data0/xyj/shengao/CoCoReviewBench/model/split_model",
+      "model": "Qwen3-8B-Split",
+      "base_url": "http://127.0.0.1:13099/v1",
+      "max_model_len": 65536,
+      "verified_model_inventory": "f4d24a236757f351014b25c614bf87e05ba8bb915da1250abfabf513b82e55f2",
+      "model_watcher": {
+        "pid": 2229406,
+        "start_identity": "584751355"
+      },
+      "transport": "ssh",
+      "ssh_target": "xyj@10.249.45.139",
+      "remote_base_url": "http://127.0.0.1:13099/v1",
+      "tunnel": {
+        "pid": 2159957,
+        "start_identity": "614714864",
+        "uid": 1032,
+        "argv_sha256": "57d0519db4886a6b94b12ec0366df6eed9779ab719f9ebe7e9990f1cf5eb2ad1"
+      }
+    },
+    "classify": {
+      "pid": 2154247,
+      "start_identity": "614697225",
+      "uid": 1032,
+      "argv_sha256": "2c3bf399a899b1d5609603f87a462b462c722929908f9a3bf8e7ad1172b3aaf5",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "model": "Qwen3-8B-Classify",
+      "base_url": "http://127.0.0.1:13098/v1",
+      "max_model_len": 32768
+    }
+  },
+  "blockers": [],
+  "model_calls": 0,
+  "checked_at": 1790671366.7031205
+}

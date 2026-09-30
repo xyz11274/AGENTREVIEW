@@ -1,0 +1,48 @@
+{
+  "embedding_dependency": "deterministic test adapter",
+  "model_dependency": "structured test response",
+  "new_api_calls": 0,
+  "program": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/architecture-0930-acceptance/reflection/program.py",
+    "sha256": "41c1c988f5ebb32d76e19e51f68a941d02d67b52774289518e261741f15fecf9"
+  },
+  "roles": [
+    {
+      "context_chars": 298,
+      "nonempty_retrieval": true,
+      "role": "QUAL",
+      "snapshot_restore_equal": true,
+      "write_model_calls": 1
+    },
+    {
+      "context_chars": 298,
+      "nonempty_retrieval": true,
+      "role": "CLAR",
+      "snapshot_restore_equal": true,
+      "write_model_calls": 1
+    },
+    {
+      "context_chars": 298,
+      "nonempty_retrieval": true,
+      "role": "SIGN",
+      "snapshot_restore_equal": true,
+      "write_model_calls": 1
+    },
+    {
+      "context_chars": 298,
+      "nonempty_retrieval": true,
+      "role": "ORIG",
+      "snapshot_restore_equal": true,
+      "write_model_calls": 1
+    },
+    {
+      "context_chars": 296,
+      "nonempty_retrieval": true,
+      "role": "POL",
+      "snapshot_restore_equal": true,
+      "write_model_calls": 1
+    }
+  ],
+  "scope": "Actual candidate sandbox write/read and snapshot restore for all five roles",
+  "status": "passed"
+}

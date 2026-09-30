@@ -25,7 +25,7 @@ class ExperimentProtocolTest(unittest.TestCase):
         self.config = pending_experiment_template()
         self.config.update({
             "status": "frozen", "experiment_id": "fixture-shared-experiment",
-            "model": {**ModelConfig().identity(), **ModelConfig().runtime_config(), "api_key_env": "OPENAI_API_KEY"},
+            "model": {**ModelConfig().protocol_config(), "api_key_env": "OPENAI_API_KEY"},
             "generation": {
                 "review_max_tokens": 300, "meta_max_tokens": 500,
                 "memory_max_tokens": 200, "native_max_tokens": 600,
@@ -190,8 +190,8 @@ class ExperimentProtocolTest(unittest.TestCase):
 
     def test_mutable_model_or_oversized_generation_budget_is_rejected(self):
         for field, value, message in (
-            ("model", "another-model", "Qwen3.8-27B"),
-            ("base_url", "https://api.example.com/v1", "local deployment"),
+            ("model", "", "nonempty"),
+            ("base_url", "https://key@example.com/v1", "without credentials"),
             ("max_model_len", 4200, "capacity"),
         ):
             with self.subTest(field=field):

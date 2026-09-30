@@ -1,0 +1,55 @@
+{
+  "counts": {
+    "build": 4,
+    "rotating": 5,
+    "sealed_test": 3,
+    "static": 3
+  },
+  "history": "Development assignment in earlier versions is retained in the historical inventory; pilot is not a historically unseen test",
+  "original_sealed_test_identity_overlap": 0,
+  "paper_ids": {
+    "build": [
+      "ByxkCj09Fm",
+      "wCrH0JBCFNm",
+      "Hyx0slrFvH",
+      "r1Bjj8qge"
+    ],
+    "rotating": [
+      "EcGGFkNTxdJ",
+      "0tpZgkAKVjB",
+      "HndgQudNb91",
+      "0IywQ8uxJx",
+      "VAmkgdMztWs"
+    ],
+    "sealed_test": [
+      "dgWo-UyVEsa",
+      "So6YAqnqgMj",
+      "VHmdFPy4U_u"
+    ],
+    "static": [
+      "f-FQE1fjPK",
+      "C_vsGwEIjAr",
+      "qf12cWVSksq"
+    ]
+  },
+  "selection": "Venue/year-balanced, SHA256 order; no score or text-length filtering",
+  "sources": {
+    "build": {
+      "path": "/data/xyj/shengao/AgentReview_0930/data/paired/build/manifest.json",
+      "sha256": "be95b6fdb194b6f97036d67a286c932ea67278fe67f1cc00b7ab9d3a69f9a140"
+    },
+    "rotating": {
+      "path": "/data/xyj/shengao/AgentReview_0930/data/paired/rotating/manifest.json",
+      "sha256": "00f82ac4a329a7b7018b9b61e3ea981661b7a61d61cbebd062a01f286e972b28"
+    },
+    "sealed_test": {
+      "path": "/data/xyj/shengao/AgentReview_0930/data/paired/sealed_test/manifest.json",
+      "sha256": "fb6ff261191a82c8508389a7b69d440b13d49093f42c31f27dd984aa8371eb7e"
+    },
+    "static": {
+      "path": "/data/xyj/shengao/AgentReview_0930/data/paired/static/manifest.json",
+      "sha256": "c7a0d18232e36bf6413ed3345c86f79e7d6f2443ca881aa651bf1e06c60b15b1"
+    }
+  },
+  "split_seed": 20260929
+}

@@ -1,0 +1,121 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/scoring-only/references.json",
+          "sha256": "32769cb7aae90e50b9cab1270f1366b9bcd3f66928adcb2b699f646de4afe642"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/papers/EcGGFkNTxdJ.json",
+          "sha256": "8610fb9452238565e8d63811d32849c70d4a5feb5ae7bb959604328869b1b4c5"
+        }
+      },
+      "content_sha256": "fc6d7a46e36629d17bc44449c84402d1edca321fd262a2d2927b9e02fba07d15",
+      "normalized_content_sha256": "9a5ef0ffcc4b9ee713315fd868616957d797e3a7cfd5c2bb9589af2c091317b2",
+      "paper_id": "EcGGFkNTxdJ",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "rotating",
+      "title": "Trust Region Policy Optimisation in Multi-Agent Reinforcement Learning",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "EcGGFkNTxdJ"
+      ],
+      "work_family": "8a6b1bfad8f76b3ab7eba040a4253bc53aa63cbffae38896710b5e764fffaa66"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/scoring-only/references.json",
+          "sha256": "32769cb7aae90e50b9cab1270f1366b9bcd3f66928adcb2b699f646de4afe642"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/papers/0tpZgkAKVjB.json",
+          "sha256": "892db7355315784eb50bc1fb0036bd41638f35dd3ee2e5407c2bee405e1f3a86"
+        }
+      },
+      "content_sha256": "b27565d87dc951c9b2f5a67dcdba9d605a180cd4719b4444cea9b7f59da84fa9",
+      "normalized_content_sha256": "a713e34bfb3d6b3f40774bec7131739241a37196b97a74451480c2f0441feb26",
+      "paper_id": "0tpZgkAKVjB",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "rotating",
+      "title": "Luckiness in Multiscale Online Learning",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "0tpZgkAKVjB"
+      ],
+      "work_family": "211a14615ae3419c74ee64a3edd31bdadf2f284f7462b08ec7ab64f672ad487b"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/scoring-only/references.json",
+          "sha256": "32769cb7aae90e50b9cab1270f1366b9bcd3f66928adcb2b699f646de4afe642"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/papers/HndgQudNb91.json",
+          "sha256": "5b5d946f227ba5d53afd94eee27226b2b5af470f63e19eae31f96eed434d6061"
+        }
+      },
+      "content_sha256": "ed1c10ecb2256b90c2fa85883ef666b2bd81f8adf706c23cd8c75780dcbbd355",
+      "normalized_content_sha256": "03a1f4a342899918b0a6da4977fec468e32c9a5d1f5dbadc351c1f5237a25165",
+      "paper_id": "HndgQudNb91",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "rotating",
+      "title": "Learning to Downsample for Segmentation of Ultra-High Resolution Images",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "HndgQudNb91"
+      ],
+      "work_family": "3e599c6861107fb57451b3ac3ef533a5676eb0815c22086e88d3fa740d6afde6"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/scoring-only/references.json",
+          "sha256": "32769cb7aae90e50b9cab1270f1366b9bcd3f66928adcb2b699f646de4afe642"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/papers/0IywQ8uxJx.json",
+          "sha256": "6baed74427128d5abdc9dc23663a0cee1824dffa7378c194f1511b41497826f9"
+        }
+      },
+      "content_sha256": "7d7796314437ca16e0eb51965379ffdf6bec91519c94835506d8ab92992ada3b",
+      "normalized_content_sha256": "fb41c0d67635ba9efa516767c51176c311f6bebadb52c649751d9a355ad54f62",
+      "paper_id": "0IywQ8uxJx",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "rotating",
+      "title": "Graph Neural Networks as Gradient Flows",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "0IywQ8uxJx"
+      ],
+      "work_family": "4133e610dc188b1e044ca73b874c8b317159b59abf8fc599e836e9e2252e8936"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/scoring-only/references.json",
+          "sha256": "32769cb7aae90e50b9cab1270f1366b9bcd3f66928adcb2b699f646de4afe642"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/rotating/papers/VAmkgdMztWs.json",
+          "sha256": "af0f749a8f6747d199587a32c97405d3857ee0151bd5b0b09f1ba7a03c1189a8"
+        }
+      },
+      "content_sha256": "5cbf931440380e7f68d3ccdce2e160df5c150d36fc9e9f6e16aff4bd469f2c5b",
+      "normalized_content_sha256": "b0cf9f71fa699a0eaae5a1e180ea44ddbdb66c70fb322d9f7524e01eb3c26290",
+      "paper_id": "VAmkgdMztWs",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "rotating",
+      "title": "Network robustness as a mathematical property: training, evaluation and attack",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "VAmkgdMztWs"
+      ],
+      "work_family": "b8e698051bd29cb8de95efcd207b92a8d12e7af09150bb5a14dd617a37be37ee"
+    }
+  ],
+  "split": "rotating"
+}

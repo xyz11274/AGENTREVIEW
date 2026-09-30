@@ -11,9 +11,7 @@ from agentreview.paper_context import (
     text_source_anchors,
 )
 from agentreview.research_v2.data import _paper_asset_path
-from agentreview.research_v2.coco_review_batch import ResearchV2ReviewGenerationAdapter, SpecialistInvocation, FinalInvocation
 from agentreview.research_v2.constants import ROLES
-from agentreview.research_v2.evaluation import run_internal_evaluation
 from agentreview.research_v2.io import atomic_write_json, write_derived_jsonl
 from agentreview.research_v2.memory import build_memory_snapshot, seed_program_path
 from agentreview.research_v2.models import Paper
@@ -73,47 +71,6 @@ class CompletePaperTest(unittest.TestCase):
             with self.assertRaises(UnicodeDecodeError):
                 build_canonical_paper_context(str(full), paper_id="p")
 
-    def test_existing_review_adapter_meta_and_evaluator_receive_complete_body(self):
-        text = "# Complete body\n" + "A detailed observation.\n" * 5000 + "\nAPPENDIX FINAL EVIDENCE."
-        identity = {"model": "fixture-reviewer"}
-        class Completion:
-            config = SimpleNamespace(identity=lambda: identity)
-            def __init__(self):
-                self.prompts = []
-            def complete(self, messages, *, max_tokens, component):
-                self.prompts.append((component, "\n".join(message["content"] for message in messages)))
-                if component.startswith("specialist_review:"):
-                    return "The appendix provides the detailed observations."
-                if component == "meta_synthesis":
-                    return json.dumps({"sections": [
-                        {"role": role, "opinions": [{"statement": "The appendix supports the findings.", "source_roles": [role], "evidence_anchors": [], "suggestions": []}]}
-                        for role in ROLES
-                    ], "recommendation": "Accept"})
-                return json.dumps({"review_quality": 4, "major_missing_points": [], "factual_evidence_issues": [], "improvement_suggestions": []})
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            paper_path = root / "paper.json"
-            atomic_write_json(paper_path, Paper("p", "Complete paper", "Abstract", text).to_dict())
-            s2 = root / "s2.jsonl"
-            write_derived_jsonl(s2, [{"paper_id": "p", "pool_version": "fixture", "retrieved_papers": []}])
-            store = FrozenS2Store(s2)
-            program = seed_program_path("vector_search")
-            embedding_identity = {"provider": "deterministic-fallback-v1"}
-            client = Completion()
-            adapter = ResearchV2ReviewGenerationAdapter(completion_client=client, embedding_identity=embedding_identity, require_bubblewrap=False)
-            review_paths = []
-            for role in ROLES:
-                snapshot = root / f"{role}.snapshot.json"
-                build_memory_snapshot(role=role, program_path=program, program_version="fixture", review_paths=[], evaluation_paths=[], output_path=snapshot, seed_kind="vector_search", embedding_identity=embedding_identity, require_bubblewrap=False)
-                invocation = SpecialistInvocation(paper_id="p", paper_path=paper_path, role=role, program_path=program, snapshot_path=snapshot, run_id="fixture", output_root=root, model_identity=identity, embedding_identity=embedding_identity, require_bubblewrap=False, program_version="fixture", frozen_s2_path=s2, frozen_s2_store=store, s2_intervention={"protocol": "s2-intervention-v1", "mode": "forced_off", "label": "fixture"})
-                adapter.generate_specialist(invocation)
-                review_paths.append(invocation.output_path)
-            adapter.generate_final(FinalInvocation(paper_id="p", paper_path=paper_path, review_paths=tuple(review_paths), mode="meta", run_id="fixture", output_root=root, model_identity=identity, embedding_identity=embedding_identity, require_bubblewrap=False))
-            run_internal_evaluation(paper_path=paper_path, review_path=review_paths[0], run_id="evaluation", output_root=root, completion_client=client, evaluator_identity=identity)
-            self.assertEqual(len(client.prompts), 7)
-            for component, prompt in client.prompts:
-                with self.subTest(component=component):
-                    self.assertIn(text, prompt)
 
 
 if __name__ == "__main__":

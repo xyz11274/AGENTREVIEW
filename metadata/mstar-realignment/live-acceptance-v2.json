@@ -1,0 +1,45 @@
+{
+  "compiled_and_sandbox_validated": true,
+  "diff": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930-v2/reflection/program.diff",
+    "sha256": "a88c6d4e83cd23223e8ba8e00ce698fbb19b87d6bde6a46ad3726d8582e5e0fd"
+  },
+  "elapsed_seconds": 91.182,
+  "finished_at": 1790685126.4664042,
+  "fitness_evaluated": false,
+  "fixed_review_policy_preserved": true,
+  "native_patch_applied": true,
+  "parent": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/search/programs/seed-vector_search/program.py",
+    "sha256": "47e3f7581edeadd58ad89a6a726f2a4d87915d52d627e619cdb72bbe59491ba9"
+  },
+  "program_changed": true,
+  "proposal": {
+    "change": "Title: Give the reviewer a concrete dimension protocol and make retrieved experience transferable, diverse, and coverage-aware\n\n- Root cause / diagnosis:\n- `ALWAYS_ON_KNOWLEDGE` is a single sentence (\"Ground every judgment in the Frozen Paper\"), so it injects no coverage, evidence or specificity requirement. The trajectories show reviews that are well-grounded and clear but weak on completeness/thoroughness (`Completeness 3`, `Thoro. ~2.1–2.3`) and only moderately correct — i.e. the agent stops early, covers some subcategories and skips others.\n- The memory returns full reviews of *unrelated* papers (cosine ≈ 0.45–0.50 for every hit; \"Graph Neural Networks as Gradient Flows\" retrieves quantization/SPN/soft-NLL reviews). It is therefore pure style guidance, but nothing in the prompt or in the retrieval header tells the agent that, so the large other-paper blocks risk being echoed and never function as a checklist.\n- `KnowledgeItem` is a single opaque blob: only `{role, topic}` metadata is stored. `read()` therefore cannot report *which facets of the dimension* strong reviews cover, and it just takes the first 5 role matches, so it can return 5 near-identical reviews instead of diverse lessons.\n- `write()` dedupe key contains an artificial chunk index over a single chunk, and the four `INSTRUCTION_*` strings say nothing about inducing/using transferable experience.\n\n- What I changed:\n- (A) Prompt optimization: `ALWAYS_ON_KNOWLEDGE` now encodes a per-action review protocol — dimension→subcategory scope map, a thoroughness requirement (several opinions per subcategory), evidence/polarity/confidence/actionable-suggestion requirements, specificity (quote equations/tables/numbers), strict grounding, and an anti-loop/efficiency rule. `INSTRUCTION_KNOWLEDGE_ITEM`, `INSTRUCTION_QUERY` and `INSTRUCTION_RESPONSE` now define what to store (transferable strategy + subcategory tags), how to build the cross-paper query, and how to consume experience (structure yes, facts never).\n- (B) Memory design: `KnowledgeItem` gains a `subcategories` field; `Query` gains an optional `focus` field. `write()` parses the review's `subcategory:` tags (generic schema regex) into metadata and keeps the *complete* review as the atomic unit. `read()` embeds title+dimension+focus, keeps only same-role experience, diversifies one entry per source topic (plain loop, no truncation), aggregates the covered subcategories into a guidance header, and returns the header plus the complete selected entries through `select_memory_entries`. No new top-level helpers, no unsupported builtins, `plan_review` untouched.",
+    "parent_id": "seed-vector_search",
+    "program": {
+      "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930-v2/reflection/program.py",
+      "sha256": "ceacccbb60d5cd029f7a1665c83546cc2b1469d1b527998a79fc9ec47c749edd"
+    },
+    "program_sha256": "ceacccbb60d5cd029f7a1665c83546cc2b1469d1b527998a79fc9ec47c749edd",
+    "reflection": {
+      "path": "/data/xyj/shengao/AgentReview_0930/artifacts/mstar-adaptation-0930-v2/reflection/mstar-trace.json",
+      "sha256": "7b959558d24d900e7227a7b34afbf3fe9b4c8cabd9f9f888431d240ea34019c7"
+    },
+    "seed": "vector_search",
+    "seed_kind": "evolved"
+  },
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-mstar-native-v2/protocol.frozen.json",
+    "sha256": "b444b5da32daa9e2fe3152c3b99e76e41786900e804a559a2a1afcd28e578859"
+  },
+  "real_api_calls": 1,
+  "scoring_services_started": false,
+  "search_started": false,
+  "source_state": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/search/search.json",
+    "sha256": "d0a922e1d861f15a2341588f638c5cceac8b11b1f4a347308f27fc73fd4ac523"
+  },
+  "started_at": 1790685035.28454,
+  "status": "complete"
+}

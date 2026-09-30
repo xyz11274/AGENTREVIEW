@@ -1,0 +1,10 @@
+{
+  "pid": 2220965,
+  "argv": [
+    "/usr/bin/python3",
+    "/data0/xyj/shengao/agentreview-0930-coco/ssh_model_guard.py",
+    "/data0/xyj/shengao/agentreview-0930-coco/model-identity.json",
+    "/data0/xyj/shengao/agentreview-0930-coco/model-watch.sock"
+  ],
+  "started": 1790663509.8969672
+}

@@ -1,0 +1,60 @@
+.............................................. [ 16%]
+................................................... [ 34%]
+............................................................ [ 55%]
+...................................................................................................... [ 90%]
+.....F....................                                               [100%]
+=================================== FAILURES ===================================
+____________ test_cross_process_admission_and_process_exit_release _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-82/test_cross_process_admission_a0')
+
+    def test_cross_process_admission_and_process_exit_release(tmp_path):
+        from agentreview.research_v2.request_admission import Slot
+        script = """
+    import json,os,sys,time
+    from pathlib import Path
+    from agentreview.research_v2.request_admission import Slot
+    slot = Slot(Path(sys.argv[1]), 18001, 2)
+    slot.__enter__()
+    start = time.monotonic_ns()
+    time.sleep(.08)
+    end = time.monotonic_ns()
+    Path(sys.argv[1], sys.argv[2]+'.json').write_text(json.dumps([start,end]))
+    os._exit(0)
+    """
+        children = [subprocess.Popen([sys.executable, "-c", script, str(tmp_path), str(i)]) for i in range(8)]
+        for child in children:
+>           assert child.wait(timeout=10) == 0
+E           AssertionError: assert 1 == 0
+E            +  where 1 = wait(timeout=10)
+E            +    where wait = <Popen: returncode: 1 args: ['/data/xyj/envs/coco-original/bin/python', '-c'...>.wait
+
+AgentReview/tests/test_research_v2_throughput.py:88: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "<string>", line 4, in <module>
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+ModuleNotFoundError: No module named 'agentreview'
+ModuleNotFoundError: No module named 'agentreview'
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+ModuleNotFoundError: No module named 'agentreview'
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_throughput.py::test_cross_process_admission_and_process_exit_release
+1 failed, 284 passed, 101 subtests passed in 93.12s (0:01:33)

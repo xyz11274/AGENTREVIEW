@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from .execution_telemetry import timed
 import fcntl
 import json
 from contextlib import contextmanager
@@ -327,6 +328,7 @@ def _load_hashed_json(path: str | Path) -> dict[str, Any]:
     }
 
 
+@timed('memory_build', 'role', 'program_version')
 def build_memory_snapshot(
     *,
     role: str,
@@ -617,6 +619,7 @@ def build_memory_snapshot(
     return validate_memory_snapshot_artifact(read_json(output_path), path=output_path)
 
 
+@timed('memory_retrieval', 'role')
 def retrieve_memory(
     *,
     paper: Paper,

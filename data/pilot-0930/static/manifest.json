@@ -1,0 +1,75 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/scoring-only/references.json",
+          "sha256": "3d9ee0bce658308f580aec88a0df65136dca9f5ec1b4acc53e46f15d5e41a5eb"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/papers/f-FQE1fjPK.json",
+          "sha256": "4f870c49de3b04ef92eec7276e897c019d73857a6b858e52cc1c1693d8096118"
+        }
+      },
+      "content_sha256": "b1cd425b34fba759a49f1a164b5d9077d9e71996954861a2664e966b51ab751a",
+      "normalized_content_sha256": "76b1e9880c2c7f2fd82827c3f7b0b65c9c2bd8e62c8fe6ca5b5cd36124d54765",
+      "paper_id": "f-FQE1fjPK",
+      "pilot_origin_partition": "static",
+      "source_partition": "static",
+      "title": "NSNet: A General Neural Probabilistic Framework for Satisfiability Problems",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "f-FQE1fjPK"
+      ],
+      "work_family": "b7d77b9c46a07d78a3f3b0942684d5418c3dd571c1afcac4a44ed605a5ce6369"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/scoring-only/references.json",
+          "sha256": "3d9ee0bce658308f580aec88a0df65136dca9f5ec1b4acc53e46f15d5e41a5eb"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/papers/C_vsGwEIjAr.json",
+          "sha256": "10c6bf37ae2d10649165f54c6288a61c423cd7c09bab59903e8907d40c97ab15"
+        }
+      },
+      "content_sha256": "cc6aedc02135fd04f45f68d11ba848e53454004e8ae1c2c3e71afcf87028c2e0",
+      "normalized_content_sha256": "d8632e47a3d811cc9f611a6c905fc27215d32b038695d3852d0cf8d3de6415b4",
+      "paper_id": "C_vsGwEIjAr",
+      "pilot_origin_partition": "static",
+      "source_partition": "static",
+      "title": "Trivial or Impossible --- dichotomous data difficulty masks model differences (on ImageNet and beyond)",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "C_vsGwEIjAr"
+      ],
+      "work_family": "9caa1adf677c16f76ae2c23666a004e175369856aab17b4afd173c4c30eadb2c"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/scoring-only/references.json",
+          "sha256": "3d9ee0bce658308f580aec88a0df65136dca9f5ec1b4acc53e46f15d5e41a5eb"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/static/papers/qf12cWVSksq.json",
+          "sha256": "c66d78c34789410936522e931651ca3cf22546ca31c701a35681d07386dc7617"
+        }
+      },
+      "content_sha256": "93be942782c4b6120fb04d8d1e31799c05f587cfc7a8225344c883625adcec90",
+      "normalized_content_sha256": "030548ac9afed101935f903efe81788d955b286c39704a9175c8a0ecad080e38",
+      "paper_id": "qf12cWVSksq",
+      "pilot_origin_partition": "static",
+      "source_partition": "static",
+      "title": "Inception Transformer",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "qf12cWVSksq"
+      ],
+      "work_family": "cedfaf40e6be5ddc2eeadcb90cf19a8f65f9bd14e50e2a19c36fb4d726648419"
+    }
+  ],
+  "split": "static"
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=AgentReview 0930 hybrid single-paper acceptance and 15-paper pilot
+After=agentreview-0930-coco-classify.service agentreview-0930-tunnel-split.service
+
+[Service]
+Type=exec
+WorkingDirectory=/data/xyj/shengao/AgentReview_0930
+StandardInput=null
+StandardOutput=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/launcher.log
+StandardError=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/launcher.log
+ExecStart=/bin/bash /data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/operations/acceptance_and_run.sh
+Restart=no
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=90

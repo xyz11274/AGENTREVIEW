@@ -1,0 +1,8 @@
+Collecting codex-apply-patch==0.4.0
+  Using cached codex_apply_patch-0.4.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+Using cached codex_apply_patch-0.4.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (340 kB)
+Installing collected packages: codex-apply-patch
+Successfully installed codex-apply-patch-0.4.0
+
+[notice] A new release of pip is available: 25.0.1 -> 26.2.1
+[notice] To update, run: /data/xyj/envs/coco-original/bin/python -m pip install --upgrade pip

@@ -1,0 +1,15 @@
+{
+  "status": "validated",
+  "counts": {
+    "build": 4,
+    "static": 3,
+    "rotating": 5,
+    "sealed_test": 3
+  },
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/current-pilot/protocol.frozen.json",
+    "sha256": "9b347f95221c7132071085d4c220fed63c271b43df4e7f6c176d05dd15351f22"
+  },
+  "runtime": "verified",
+  "model_calls": 0
+}

@@ -1,9 +1,11 @@
-# Direct dependencies for Research Core v2 and Qwen3-Embedding-8B.
-# The Qwen3.8-27B vLLM server is a separate process/environment.
+# API generation/Judge plus unchanged CPU Qwen3 embeddings.
+# Only CoCo Split/Classify use a separate vLLM serving environment.
 
 numpy==2.2.6
-openai==1.109.1
+openai==2.6.0
+tokenizers==0.22.2
 requests==2.32.5
 sentence-transformers==5.1.2
 torch==2.7.1
 transformers==4.57.1
+codex-apply-patch==0.4.0

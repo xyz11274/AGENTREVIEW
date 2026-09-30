@@ -85,6 +85,11 @@ def failure_detail(error: Exception, *, phase: str) -> dict[str, Any]:
     ):
         category = "candidate"
     record = {"category": category, "phase": phase, "error": message, "transient": transient}
+    if getattr(error, "repair_exhausted", False):
+        record["repair_exhausted"] = True
+    reflection = getattr(error, "reflection", None)
+    if reflection:
+        record["reflection"] = reflection
     record["fingerprint"] = value_sha256({"category": category, "phase": phase, "error": message})
     evaluator_record = getattr(error, "failure_record", None)
     if isinstance(evaluator_record, dict):

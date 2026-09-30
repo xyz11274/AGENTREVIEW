@@ -30,8 +30,8 @@ def exited_child():
 def test_owned_zombie_is_exited_and_reaped(tmp_path):
     child, identity = exited_child()
     try:
-        (tmp_path / "judge.json").write_text(json.dumps({"process": identity}))
-        status = services.manage({"state_root": str(tmp_path)}, "judge", "status")
+        (tmp_path / "classify.json").write_text(json.dumps({"process": identity}))
+        status = services.manage({"state_root": str(tmp_path)}, "classify", "status")
         assert status["running"] is False
         assert not Path(f"/proc/{child.pid}").exists()
         assert status["record"]["process"] == identity
@@ -43,9 +43,9 @@ def test_zombie_with_different_start_identity_is_still_rejected(tmp_path):
     child, identity = exited_child()
     try:
         changed = {**identity, "start_time": str(int(identity["start_time"])+1)}
-        (tmp_path / "judge.json").write_text(json.dumps({"process": changed}))
+        (tmp_path / "classify.json").write_text(json.dumps({"process": changed}))
         with pytest.raises(RuntimeError, match="PID identity changed"):
-            services.manage({"state_root": str(tmp_path)}, "judge", "status")
+            services.manage({"state_root": str(tmp_path)}, "classify", "status")
         assert Path(f"/proc/{child.pid}").exists()
     finally:
         child.wait()
@@ -53,11 +53,11 @@ def test_zombie_with_different_start_identity_is_still_rejected(tmp_path):
 
 def test_explicit_context_capacity_is_not_silently_ignored():
     config = {"serving_python":sys.executable,"services":{
-        "judge":{"gpus":[0,1,2,3],"model_root":"/models/judge","model":"judge","port":18001,
+        "classify":{"gpus":[0,1,2,3],"model_root":"/models/classify","model":"classify","port":18001,
                  "max_model_len":131072}}}
-    argv = services.command(config,"judge")
+    argv = services.command(config,"classify")
     assert argv[argv.index("--max-model-len")+1] == "131072"
     for invalid in (0,-1,True,"131072"):
-        config["services"]["judge"]["max_model_len"] = invalid
+        config["services"]["classify"]["max_model_len"] = invalid
         with pytest.raises(ValueError, match="max_model_len"):
-            services.command(config,"judge")
+            services.command(config,"classify")

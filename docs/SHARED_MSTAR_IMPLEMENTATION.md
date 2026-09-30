@@ -1,5 +1,7 @@
 # 0915 共享 M★ 实验实现
 
+0930 当前补丁协议、停机状态及实测修复以 [M★ 适配记录](MSTAR_ADAPTATION_0930.md) 为准；本文保留早期架构背景。
+
 本实现承接 ADR-0011–0016，当前配对实验的数据用途规则由 [ADR-0019](adr/0019-existing-benchmark-paired-evolution.md) 更新。实验以一个共享 MemoryProgram、一个候选池和一条进化谱系运行；QUAL、CLAR、SIGN、ORIG、POL 分别构建和读取自己的记忆库。仅最终完整评审进入标准 CoCo，Table-1 `Paper.` 决定父代抽样和 Champion；不再单独评分五角色。
 
 ## 执行流程
@@ -8,7 +10,7 @@
 2. 在 build 集生成相同固定审稿策略的无记忆角色经验。每个 seed 或新 MemoryProgram 从这些获准角色经验构建五个独立快照。
 3. 三个 memory seed 分别生成 static 集五角色评审及最终评审，按原标准 CoCo 评分。各 seed 的无 memory 对照保持审稿策略、S2、模型和生成条件相同，关闭记忆操作及注入。CoCo 原始提示基线单列。
 4. 在同一 static 集的完整 `Paper.` 成绩上进行 softmax 父代抽样。每轮重新评价所选父代的 rotating 样本，保存当前五角色轨迹、完整最终评审及标准反馈。
-5. 反思生成完整的新程序源码，搜索 KnowledgeItem/Query Schema、KnowledgeBase 读写逻辑和记忆交互指令。宿主验证固定非记忆审稿策略与角色库边界，再构建新快照、生成评审并执行标准评分。
+5. 反思返回原版补丁文本，由宿主调用 M★ patcher 在内存中修改 Python 程序，保留原版全文代码兜底及错误修复循环，搜索 KnowledgeItem/Query Schema、KnowledgeBase 读写逻辑和记忆交互指令。宿主验证固定非记忆审稿策略与角色库边界，再构建新快照、生成评审并执行标准评分。
 6. 完成有效评价的子代进入共享池，包括成绩下降的有效子代。候选契约错误按有限预算修复；公共故障暂停整轮，修复后在新 epoch 统一重评候选和对照。
 7. 完整比较后保存版本化 winner 与冻结系统。独立 final-test 入口复用冻结程序和开发记忆，在封存集生成、评分；测试结果进入测试产物与报告。
 8. 另外运行报告工具，读取预定论文清单与已保存评分，生成每个 seed、无 memory、Native、候选、Champion 的逐论文表、CoCo 汇总与谱系；配对入口另存逐篇差值和不确定性报告。

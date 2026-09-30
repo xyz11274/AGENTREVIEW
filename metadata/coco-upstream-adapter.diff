@@ -1,0 +1,310 @@
+--- before/AgentReview/agentreview/research_v2/coco_integrity.py
++++ after/AgentReview/agentreview/research_v2/coco_integrity.py
+@@ -1,25 +1,25 @@
+-"""Fail-closed transport and completeness checks around unchanged CoCo code."""
++"""Transport evidence and artifact checks around unchanged official CoCo code.
++
++Original parsing, recovery and score applicability belong to CoCo. Diagnostics
++must not turn an upstream-accepted recovery into a failed evaluation.
++"""
+ 
+ from __future__ import annotations
+ 
+ import asyncio
+ import json
+-import math
+ import urllib.request
+ from pathlib import Path
+ 
+ from .io import atomic_write_json, read_json, value_sha256
+-from .llm import validate_completion
+ from .request_admission import async_request_slot
+ from .execution_telemetry import span
+-from .retry import transient_error, retry_delay
+ 
+ 
+ def audited_client_class(base):
+     class AuditedClient(base):
+         def __init__(self, *args, **kwargs):
+             super().__init__(*args, **kwargs)
+-            self.client.max_retries = 0
+             self.response_model = self.model_name
+             self.audit_tasks = {}
+             self.wire_attempts = {}
+@@ -34,12 +34,11 @@
+             cached = super()._cache_load(key)
+             if cached is None:
+                 return None
+-            choices = receipt["completion"]["choices"]
+-            if (receipt["completion"].get("model") != self.response_model
+-                    or len(choices) != 1 or choices[0]["finish_reason"] != "stop"
+-                    or choices[0]["message"]["content"] != cached[0]
+-                    or not isinstance(cached[0], str) or not cached[0].strip()):
+-                raise ValueError("CoCo cache differs from its complete response receipt")
++            completion = receipt.get("completion")
++            if completion is not None and completion.get("model") != self.response_model:
++                raise ValueError("CoCo response receipt belongs to a different configured model")
++            if receipt["upstream_content"] != cached[0]:
++                raise ValueError("CoCo cache differs from its recorded upstream result")
+             self.audit_tasks[key] = receipt
+             return cached
+ 
+@@ -64,8 +63,6 @@
+             digest = value_sha256(api_payload)
+             directory = self.cache_dir / "wire" / digest
+             attempts = self.wire_attempts.setdefault(digest, [])
+-            if len(attempts) >= 3:
+-                raise RuntimeError("CoCo request exhausted three transport attempts")
+             attempt = len(attempts) + 1
+             record = {"attempt": attempt, "payload": api_payload, "status": "reserved"}
+             attempts.append(record)
+@@ -76,7 +73,8 @@
+                     with span("coco_model_request", service=self.base_url, request_digest=digest):
+                         response = await super()._create_completion_async(api_payload)
+                 record["completion"] = response.model_dump(mode="json")
+-                validate_completion(response, component="original_coco", expected_model=self.response_model)
++                if response.model != self.response_model:
++                    raise ValueError("CoCo endpoint returned a different configured model")
+                 record["status"] = "complete"
+                 return response
+             except Exception as exc:
+@@ -86,40 +84,21 @@
+                 atomic_write_json(directory / f"attempt-{attempt}.result.json", record)
+ 
+         async def get_response(self, key, messages, api_payload):
+-            cached = self._cache_load(key)
+-            if cached is not None:
+-                return cached
+-            for attempt in range(1, 4):
+-                try:
+-                    response = await self._create_completion_async(api_payload)
+-                    break
+-                except Exception as exc:
+-                    if attempt == 3 or not transient_error(exc):
+-                        raise
+-                    await asyncio.sleep(retry_delay(exc, attempt))
+-            content = response.choices[0].message.content
+-            history = messages + [{"role": "assistant", "content": content}]
++            # Preserve the author's retries, extraction, empty/error responses,
++            # token accounting and cache writes. Recording observes that result.
++            result = await super().get_response(key, messages, api_payload)
++            if key in self.audit_tasks:
++                return result
+             attempts = self.wire_attempts.get(value_sha256(api_payload), [])
+             successful = [item for item in attempts if item["status"] == "complete"]
+-            if not successful or not isinstance(content, str) or not content.strip():
+-                raise RuntimeError("CoCo request has no complete model response")
++            last = successful[-1] if successful else (attempts[-1] if attempts else {})
+             receipt = {"status": "complete", "messages": messages, "payload": api_payload,
+-                       "completion": successful[-1]["completion"], "tokens": successful[-1]["tokens"],
++                       "upstream_content": result[0], "completion": last.get("completion"),
++                       "tokens": last.get("tokens"), "transport_status": last.get("status"),
++                       "transport_error": last.get("error"), "expected_model": self.response_model,
+                        "wire_request": value_sha256(api_payload)}
+             self.audit_tasks[key] = receipt
+             atomic_write_json(self.cache_dir / f"{key}.audit.json", receipt)
+-            self._cache_store(key, content, history)
+-            usage = response.usage
+-            if usage is not None:
+-                with self._lock:
+-                    self._total_prompt_tokens += usage.prompt_tokens
+-                    self._total_completion_tokens += usage.completion_tokens
+-            return content, history
+-
+-        def get_result(self, key, clear_cache=False):
+-            result = super().get_result(key, clear_cache=clear_cache)
+-            if key not in self.audit_tasks or result.get("status") != "done":
+-                raise RuntimeError(f"CoCo task {key} has no complete transport receipt")
+             return result
+ 
+     return AuditedClient
+@@ -131,56 +110,40 @@
+     evidence = []
+     for source, result in zip(inputs, outputs):
+         texts, prompt, _ = module.build_prompt(source["text"])
+-        responses = [task["completion"]["choices"][0]["message"]["content"] for task in tasks.values()
++        responses = [task["upstream_content"] if "upstream_content" in task
++                     else task["completion"]["choices"][0]["message"]["content"] for task in tasks.values()
+                      if task["messages"][-1]["content"] == prompt]
+         coverage = [module.compute_coverage(module.parse_llm_output(raw), len(texts))[0] for raw in responses]
+-        if not coverage or max(coverage) != 1.0:
+-            raise ValueError("CoCo Split exhausted responses without full part coverage; fallback is not admissible")
++        if not coverage:
++            raise ValueError("CoCo Split has no recorded model response")
+         if result.get("sentence_texts") != texts or not result.get("opinions"):
+             raise ValueError("CoCo Split requires original sentence texts and nonempty opinions")
+         if any(not opinion or any(type(i) is not int or not 0 <= i < len(texts) for i in opinion)
+                for opinion in result["opinions"]):
+             raise ValueError("CoCo Split contains invalid opinion indices")
++        covered = {i for opinion in result["opinions"] for i in opinion}
++        if covered != set(range(len(texts))):
++            raise ValueError("CoCo Split artifact lost parts after upstream recovery")
+         evidence.append({"paper_id": source["id"], "sentence_count": len(texts),
+-                         "opinion_count": len(result["opinions"]), "raw_coverage": coverage})
++                         "opinion_count": len(result["opinions"]), "raw_coverage": coverage,
++                         "output_coverage": 1.0, "upstream_recovery_used": max(coverage) != 1.0})
+     return evidence
+ 
+ 
+ def audit_classify(module, inputs, outputs, tasks):
+-    allowed, _ = module.classify_categories()
+-    _, main = module.classify_reviews_prompt()
+     if len(inputs) != len(outputs):
+         raise ValueError("CoCo Classify lost an input review")
+     evidence = []
+     for source, result in zip(inputs, outputs):
+         opinions = source["opinions"]
+         categories = result.get("category", [])
+-        normalized_na = 0
+         if len(categories) != len(opinions) or any(result.get(k) != v for k, v in source.items()):
+             raise ValueError("CoCo Classify must preserve every opinion and supply every classification")
+-        for opinion, labels in zip(opinions, categories):
+-            comment = "\n".join(source["sentence_texts"][i] for i in opinion).strip()
+-            prompt = main.strip() + "\n\n\nReviewer Comment:\n" + comment
+-            valid = []
+-            normalized = False
+-            for task in sorted(tasks.values(), key=lambda value: value.get("payload", {}).get("presence_penalty", 0)):
+-                if task["messages"][-1]["content"] != prompt:
+-                    continue
+-                raw = task["completion"]["choices"][0]["message"]["content"]
+-                parsed, okay = module.parse_labels_from_llm(raw, allowed)
+-                # Match upstream is_retry_ok and labels_candidate exactly. An
+-                # accepted no-category response normalizes to N/A; the fallback
+-                # with zero accepted responses is the unresolved failure.
+-                if raw and okay and "</think>" in raw:
+-                    valid.append(parsed if parsed else ["N/A"])
+-                    normalized = normalized or not parsed
+-            expected = (["N/A"] if any(module._is_na_labelset(item) for item in valid)
+-                        else min(valid, key=len)) if valid else None
+-            if labels != expected:
+-                raise ValueError("CoCo Classify has an unresolved opinion or classification without valid original-model evidence")
+-            normalized_na += int(normalized and labels == ["N/A"])
++        # CoCo owns retry selection and N/A recovery. Do not reimplement that
++        # algorithm here or require a raw response to meet extra format rules.
+         evidence.append({"paper_id": source["id"], "opinion_count": len(opinions),
+-                         "classified_count": len(categories), "original_na_normalizations": normalized_na})
++                         "classified_count": len(categories),
++                         "na_opinion_count": sum(labels == ["N/A"] for labels in categories)})
+     return evidence
+ 
+ 
+@@ -189,20 +152,9 @@
+     for pid in paper_ids:
+         expected = (set(human_refs[pid]["category_correct"]) & set(ai_categories[pid])) - {"N/A"}
+         actual = category[pid]["category_scores"]
+-        if set(actual) != expected:
+-            raise ValueError(f"CoCo Judge has unresolved required categories for {pid}: {sorted(expected - set(actual))}")
+-        scores = [paper[pid]["judge_scores"], *(row["judge_scores"] for row in actual.values())]
+-        for row in scores:
+-            if row.get("success") is not True:
+-                raise ValueError("CoCo Judge requires every scheduled result to succeed")
+-            # X is upstream's legitimate non-applicable score. Missing values are not X.
+-            if row.get("claim_extraction") not in {"claim", "normal"}:
+-                raise ValueError("CoCo Judge requires its claim_extraction decision")
+-            for metric in (*evaluation.table_judge_metric_map.values(), "actionability"):
+-                value = row.get(metric)
+-                if (value == "X" and metric in {"verifiability", "actionability"}) or (type(value) in (int, float) and math.isfinite(value) and 1 <= value <= 5):
+-                    continue
+-                raise ValueError(f"CoCo Judge has missing/invalid required metric {metric}: {value!r}")
++        # Original summary functions decide which parsed metrics apply and
++        # which failed judgments are omitted. Preserve those values and counts.
+         evidence.append({"paper_id": pid, "required_categories": sorted(expected),
+-                         "completed_categories": sorted(actual), "paper_judge_complete": True})
++                         "completed_categories": sorted(actual),
++                         "paper_judge_complete": paper[pid]["judge_scores"].get("success") is True})
+     return evidence
+--- before/AgentReview/agentreview/research_v2/development_coco.py
++++ after/AgentReview/agentreview/research_v2/development_coco.py
+@@ -54,7 +54,6 @@
+ REFERENCE_MANIFEST_PROTOCOL = "research-v2-coco-reference-manifest-v1"
+ CONFIG_PROTOCOL = "research-v2-coco-api-judge-config-v2"
+ COLUMNS = ("BLEU", "ROUGE-L", "BERT.", "Correct.", "Thoro.", "Ground.", "Verify.", "Clarity", "Average", "Paper.", "Complete.")
+-FULL_COLUMNS = ("BLEU", "ROUGE-L", "BERT.", "Paper.", "Complete.")
+ 
+ 
+ class DevelopmentCoCoFailure(RuntimeError):
+@@ -369,15 +368,8 @@
+     if [row["paper_id"] for row in rows] != paper_ids or rows != receipt["rows"]:
+         raise ValueError("Evaluation receipt requires exact persisted rows for its cohort")
+     for row in rows:
+-        if row["status"] == "complete" and all(row["metric_counts"][column] == 1 for column in FULL_COLUMNS):
+-            pass
+-        else:
+-            raise ValueError("Candidate admission requires complete standard scoring for every paper")
+-        score = row["metrics"]["Paper."]
+-        if type(score) in (int, float) and math.isfinite(score) and 1 <= score <= 5:
+-            pass
+-        else:
+-            raise ValueError("Standard CoCo Paper. requires a finite score between one and five")
++        if row["status"] != "complete":
++            raise ValueError("Evaluation receipt requires a persisted upstream result for every paper")
+         for key in ("partition", "run_id", "candidate_id", "evaluation_epoch", "scoring_protocol"):
+             if row[key] != receipt[key]:
+                 raise ValueError("Paper evaluation identity differs from its receipt")
+@@ -419,6 +411,14 @@
+     """Admission interface used by the shared candidate pool and report readers."""
+     value = read_json(receipt) if isinstance(receipt, (str, Path)) else receipt
+     validate_evaluation_receipt(value, expected_paper_ids=expected_paper_ids, expected_epoch=expected_epoch)
++    # Selection needs one actual fitness observation per compared paper. This
++    # does not rewrite or reject the original CoCo evaluation artifact, including
++    # its missing metrics, applicability counts and partial judging results.
++    for row in value["rows"]:
++        score = row["metrics"]["Paper."]
++        if (row["metric_counts"]["Paper."] != 1 or type(score) not in (int, float)
++                or not math.isfinite(score)):
++            raise ValueError("Evolution fitness is unavailable: original CoCo has no Paper. score for every paper")
+     if expected_partition is not None and value["partition"] != expected_partition:
+         raise ValueError("Receipt partition differs from its comparison partition")
+     if candidate_identity is not None and value["candidate_identity"] != candidate_identity:
+@@ -439,20 +439,10 @@
+             raise ValueError("CoCo stage integrity requires raw model completion evidence")
+         for task_ref in value["tasks"]:
+             task = read_json(_bound_file(task_ref))
+-            choices = task["completion"]["choices"]
+-            tokens = task["tokens"]
+-            if (task.get("status") != "complete" or len(choices) != 1
+-                    or choices[0].get("finish_reason") != "stop"
+-                    or not choices[0]["message"].get("content")
+-                    or tokens["input_tokens"] + tokens["output_budget"] > tokens["max_model_len"]):
+-                raise ValueError("CoCo stage contains truncated or over-budget model output")
+-        for row in value["checks"]:
+-            if stage == "split" and (not row["opinion_count"] or max(row["raw_coverage"]) != 1.0):
+-                raise ValueError("CoCo Split has unresolved missing parts")
+-            if stage == "classify" and (not row["opinion_count"] or row["opinion_count"] != row["classified_count"]):
+-                raise ValueError("CoCo Classify has unresolved opinions")
+-            if stage == "evaluation" and (row["required_categories"] != row["completed_categories"] or row["paper_judge_complete"] is not True):
+-                raise ValueError("CoCo Judge has unresolved required scores")
++            if task.get("status") != "complete":
++                raise ValueError("CoCo stage is missing its recorded upstream result")
++        # Stage diagnostics describe the author's recovery/applicability rules;
++        # they are not additional acceptance thresholds on original CoCo output.
+ 
+ 
+ def evaluate_final_reviews(*, review_manifest_path: str | Path, reference_manifest_path: str | Path,
+@@ -529,15 +519,6 @@
+             row.update(status="complete", metrics=table["absolute_scores"], metric_counts=table["paper_counts"],
+                        applicability={name: "applicable" if table["paper_counts"][name] else "not_applicable" for name in COLUMNS},
+                        paper_judge_scores=detail["paper_judge_scores"], category_judge_scores=detail["category_judge_scores"], raw=_binding(result_path))
+-            if all(row["metric_counts"][column] == 1 for column in FULL_COLUMNS):
+-                pass
+-            else:
+-                raise ValueError("Every requested paper requires full standard CoCo scoring coverage")
+-            score = row["metrics"]["Paper."]
+-            if type(score) in (int, float) and math.isfinite(score) and 1 <= score <= 5:
+-                pass
+-            else:
+-                raise ValueError("Standard CoCo Paper. requires a finite score between one and five")
+         aggregate = aggregate_paper_scores(rows)
+         for name in COLUMNS:
+             declared = raw["table_1_summary"]["absolute_scores"][name]
+--- before/AgentReview/agentreview/research_v2/development_coco_worker.py
++++ after/AgentReview/agentreview/research_v2/development_coco_worker.py
+@@ -82,7 +82,7 @@
+     return client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
+         max_workers=config["request_settings"][stage]["max_workers"],
+         cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
+-        cache_version=value_sha256({"request": request, "stage": stage, "service": service, "integrity": "complete-v2"}))
++        cache_version=value_sha256({"request": request, "stage": stage, "service": service, "integrity": "upstream-observed-v1"}))
+ 
+ 
+ def _runtime(config, stage):

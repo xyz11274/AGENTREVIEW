@@ -1,0 +1,11 @@
+{
+  "method": "Seeded venue/year-balanced selection; full identity/family/content disjointness verified by protocol loader",
+  "original_sealed_test_identity_overlap": 0,
+  "split_manifest_sha256": {
+    "build": "8f7cc1e27d211130f78d638e380a704d26aa31ed67468294467061310954f3b9",
+    "rotating": "89a0ca20f55889691c1e366ed4f21c4f8dff45c9e7b724603a69972d3d8b4684",
+    "sealed_test": "ce0116cae5fa066548146e7316ed107025bb40e77a5cef235a93a9bf3ac889ef",
+    "static": "ee937ae197586ab847665dfc25594e2d02251f31cd5230787d830100aca745f6"
+  },
+  "status": "complete"
+}

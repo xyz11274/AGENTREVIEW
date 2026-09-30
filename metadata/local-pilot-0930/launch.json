@@ -1,0 +1,107 @@
+{
+  "checked_at": 1790736926.0627618,
+  "host": "10.249.47.18",
+  "services": {
+    "classify": {
+      "argv_sha256": "2c3bf399a899b1d5609603f87a462b462c722929908f9a3bf8e7ad1172b3aaf5",
+      "base_url": "http://127.0.0.1:13098/v1",
+      "max_model_len": 32768,
+      "model": "Qwen3-8B-Classify",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "pid": 217222,
+      "start_identity": "621818938",
+      "uid": 1032,
+      "CUDA_VISIBLE_DEVICES": "2,3",
+      "systemd_unit": "agentreview-0930-coco-classify.service",
+      "weights_preserved": true
+    },
+    "split": {
+      "argv_sha256": "cdebcb9cea1810ce8eca67cce0090db4b9779aaabea32cf50d7b279edcec8265",
+      "base_url": "http://127.0.0.1:13099/v1",
+      "max_model_len": 65536,
+      "model": "Qwen3-8B-Split",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+      "pid": 217221,
+      "start_identity": "621818938",
+      "uid": 1032,
+      "CUDA_VISIBLE_DEVICES": "0,1",
+      "systemd_unit": "agentreview-0930-coco-split.service",
+      "weights_preserved": true
+    }
+  },
+  "original_source_preserved": true,
+  "official_git_status": "",
+  "linger": "Linger=yes",
+  "obsolete_tunnel_autostart": "disabled",
+  "targeted_tests": "......                                                                   [100%]\n6 passed in 0.08s\n",
+  "launched_at": 1790736841.3107204,
+  "pilot": {
+    "phase": "search",
+    "pid": 232032,
+    "process_start_ticks": "621848662",
+    "protocol": {
+      "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+      "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+    },
+    "status": "running",
+    "updated_at": 1790736795.5044727
+  },
+  "active_profile": {
+    "output_root": "../artifacts/pilot-0930-local",
+    "protocol": "0930-pilot-local/protocol.frozen.json"
+  },
+  "accepted_scope": {
+    "paper_count": 15,
+    "build": 4,
+    "static": 3,
+    "rotating": 5,
+    "sealed_test": 3,
+    "evolution_attempts": 5,
+    "final_arms": 8
+  },
+  "report": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/report/自进化逐轮报告.md",
+  "real_generation_responses": 20,
+  "coco_acceptance": {
+    "assessment": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/acceptance/assessment.json",
+    "elapsed_seconds": 246.442,
+    "finished_at": 1790736857.6390889,
+    "mean_score": 4.0,
+    "metrics": {
+      "absolute_scores": {
+        "Average": 3.5666666666666664,
+        "BERT.": 81.36319518089294,
+        "BLEU": 0.49196307477087825,
+        "Clarity": 4.5,
+        "Complete.": 191.66666666666669,
+        "Correct.": 3.0,
+        "Ground.": 4.666666666666667,
+        "Paper.": 4.0,
+        "ROUGE-L": 7.905929447085313,
+        "Thoro.": 2.1666666666666665,
+        "Verify.": 3.4
+      },
+      "paper_counts": {
+        "Average": 1,
+        "BERT.": 1,
+        "BLEU": 1,
+        "Clarity": 1,
+        "Complete.": 1,
+        "Correct.": 1,
+        "Ground.": 1,
+        "Paper.": 1,
+        "ROUGE-L": 1,
+        "Thoro.": 1,
+        "Verify.": 1
+      }
+    },
+    "official_commit": "2580687ee5d4ad2ac4b9730afb8f1dfda22e40db",
+    "old_request": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-model-capacity/search/assessments/e0/seed-llm_summarizer/r0/coco/parts/26f83a96501af9239d32dce1cee1dde4cde63558ef4ce1e5ecf769ac72ee90bd/request.json",
+    "output_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/acceptance",
+    "paper_ids": [
+      "f-FQE1fjPK"
+    ],
+    "started_at": 1790736611.1971114,
+    "status": "complete"
+  },
+  "completed_evolution_attempts": 0
+}

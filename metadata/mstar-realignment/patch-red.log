@@ -1,0 +1,188 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_current_parent_feedback_uses_its_existing_role_memory[1] _________
+
+backend = <agentreview.research_v2.shared_experiment.APISharedBackend object at 0x7f85cc951d60>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f85cc975070>
+rotating_count = 1
+
+    @pytest.mark.parametrize("rotating_count", [1, 5])
+    def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypatch, rotating_count):
+        install_model_scores(monkeypatch)
+        template = backend.protocol.records("rotating")[0]
+        ids = [f"rotating-paper-{index}" for index in range(rotating_count)]
+        rows = []
+        reference_root = backend.root / "five-rotating"
+        benchmark = write_immutable_jsonl(reference_root / "benchmark.jsonl", [{"id": pid} for pid in ids])
+        human = write_immutable_jsonl(reference_root / "human.jsonl", [{"id": pid} for pid in ids])
+        selection = atomic_write_json(reference_root / "selection.json", dict.fromkeys(ids, "Reviewer 1"))
+        reference = atomic_write_json(reference_root / "references.json", {"protocol": coco.REFERENCE_MANIFEST_PROTOCOL,
+            "partition":"rotating", "paper_ids":ids, "benchmark_files":[binding(benchmark)],
+            "complete_human_classify_file":binding(human), "reviewer_selection_file":binding(selection)})
+        for pid in ids:
+            row = copy.deepcopy(template)
+            row["paper_id"] = pid
+            paper = read_json(template["assets"]["paper"]["path"])
+            paper["paper_id"] = pid
+            row["assets"].update(paper=binding(atomic_write_json(reference_root / f"{pid}.json", paper)), coco_reference=binding(reference))
+            rows.append(row)
+        backend.protocol.splits["rotating"] = rows
+        class QueryCompletion(review_fixtures.FakeCompletion):
+            def complete(self, messages, *, max_tokens, component, response_format=None):
+                if response_format and response_format["json_schema"]["name"] == "Query":
+                    return '{"query_text":"current paper methods","reviewer_dimension":"QUAL"}'
+                return super().complete(messages, max_tokens=max_tokens, component=component)
+        @contextmanager
+        def client(directory):
+            yield QueryCompletion()
+        monkeypatch.setattr(backend, "client", client)
+        static = {**recipe(backend), "memory_enabled": True}
+        first = backend.assess(static, epoch=0)
+        rotating = {**static, "key": "feedback-0001-e0", "kind": "parent_feedback", "split": "rotating", "paper_ids": ids}
+        second = backend.assess(rotating, epoch=0)
+        backend.validate(second, recipe=rotating, epoch=0)
+        assert first["identity"]["snapshots"] == second["identity"]["snapshots"]
+        assert first["identity"]["role_reviews"] != second["identity"]["role_reviews"]
+        assert first["assessment"] != second["assessment"]
+        prompts = []
+        class Reflector:
+            def count_chat_tokens(self, messages):
+                return {"input_tokens": len(messages[0]["content"]) // 4, "max_model_len": 131072}
+            def complete(self, messages, **kwargs):
+                prompts.append(messages[0]["content"])
+                assert kwargs.get("response_format") is None
+                line = next(x for x in seed_program_path("vector_search").read_text().splitlines()
+                            if "Ground every judgment in the Frozen Paper." in x)
+                replacement = line.replace("Ground every judgment in the Frozen Paper.",
+                                           "Verify each recalled heuristic against the Frozen Paper.")
+                return ("*** Commit Message\nUse rotating diagnosis in the memory instruction.\n\n"
+                        "*** Begin Patch\n*** Update File: program.py\n@@\n-" + line + "\n+" + replacement + "\n*** End Patch\n")
+        @contextmanager
+        def reflector(directory):
+            yield Reflector()
+        monkeypatch.setattr(backend, "client", reflector)
+        backend.generation["input_max_tokens"] = 114688
+        selected = ids[:min(2, rotating_count)]
+        backend.config["evolution"]["detailed_reflection_cases"] = len(selected)
+>       proposal = backend.propose(parent=static["candidate"], feedback={**second,
+            "reflection_case_ids":selected, "reflection_selection":{"rule":"frozen test tie-break"}},
+            history={"0001": {"change": "COMPLETE_PRIOR_CHANGE"}}, directory=backend.root / "reflection")
+
+AgentReview/tests/test_research_v2_shared_coco_integration.py:264: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+AgentReview/agentreview/research_v2/shared_experiment.py:564: in propose
+    raw = client.complete([{"role": "user", "content": prompt}],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_research_v2_shared_coco_integration.test_current_parent_feedback_uses_its_existing_role_memory.<locals>.Reflector object at 0x7f85cb39d370>
+messages = [{'content': 'Evolve one shared MemoryProgram for five fixed specialist reviewers. Optimize final complete-review stan...ork context; cite its IDs and do not treat it as evidence for claims about the current paper."}}}]}}', 'role': 'user'}]
+kwargs = {'component': 'shared_mstar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}
+@py_assert1 = <built-in method get of dict object at 0x7f85cc7ff600>
+@py_assert3 = 'response_format', @py_assert5 = {'type': 'json_object'}
+@py_assert8 = None, @py_assert7 = False
+@py_format10 = "{'type': 'json_object'}\n{{'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7ff600>\n{<built-i...ar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get\n}('response_format')\n} is None"
+@py_format12 = "assert {'type': 'json_object'}\n{{'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7ff600>\n{<...ar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get\n}('response_format')\n} is None"
+
+    def complete(self, messages, **kwargs):
+        prompts.append(messages[0]["content"])
+>       assert kwargs.get("response_format") is None
+E       AssertionError: assert {'type': 'json_object'} is None
+E        +  where {'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7ff600>('response_format')
+E        +    where <built-in method get of dict object at 0x7f85cc7ff600> = {'component': 'shared_mstar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get
+
+AgentReview/tests/test_research_v2_shared_coco_integration.py:250: AssertionError
+________ test_current_parent_feedback_uses_its_existing_role_memory[5] _________
+
+backend = <agentreview.research_v2.shared_experiment.APISharedBackend object at 0x7f85cc9ad3a0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f85cd554da0>
+rotating_count = 5
+
+    @pytest.mark.parametrize("rotating_count", [1, 5])
+    def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypatch, rotating_count):
+        install_model_scores(monkeypatch)
+        template = backend.protocol.records("rotating")[0]
+        ids = [f"rotating-paper-{index}" for index in range(rotating_count)]
+        rows = []
+        reference_root = backend.root / "five-rotating"
+        benchmark = write_immutable_jsonl(reference_root / "benchmark.jsonl", [{"id": pid} for pid in ids])
+        human = write_immutable_jsonl(reference_root / "human.jsonl", [{"id": pid} for pid in ids])
+        selection = atomic_write_json(reference_root / "selection.json", dict.fromkeys(ids, "Reviewer 1"))
+        reference = atomic_write_json(reference_root / "references.json", {"protocol": coco.REFERENCE_MANIFEST_PROTOCOL,
+            "partition":"rotating", "paper_ids":ids, "benchmark_files":[binding(benchmark)],
+            "complete_human_classify_file":binding(human), "reviewer_selection_file":binding(selection)})
+        for pid in ids:
+            row = copy.deepcopy(template)
+            row["paper_id"] = pid
+            paper = read_json(template["assets"]["paper"]["path"])
+            paper["paper_id"] = pid
+            row["assets"].update(paper=binding(atomic_write_json(reference_root / f"{pid}.json", paper)), coco_reference=binding(reference))
+            rows.append(row)
+        backend.protocol.splits["rotating"] = rows
+        class QueryCompletion(review_fixtures.FakeCompletion):
+            def complete(self, messages, *, max_tokens, component, response_format=None):
+                if response_format and response_format["json_schema"]["name"] == "Query":
+                    return '{"query_text":"current paper methods","reviewer_dimension":"QUAL"}'
+                return super().complete(messages, max_tokens=max_tokens, component=component)
+        @contextmanager
+        def client(directory):
+            yield QueryCompletion()
+        monkeypatch.setattr(backend, "client", client)
+        static = {**recipe(backend), "memory_enabled": True}
+        first = backend.assess(static, epoch=0)
+        rotating = {**static, "key": "feedback-0001-e0", "kind": "parent_feedback", "split": "rotating", "paper_ids": ids}
+        second = backend.assess(rotating, epoch=0)
+        backend.validate(second, recipe=rotating, epoch=0)
+        assert first["identity"]["snapshots"] == second["identity"]["snapshots"]
+        assert first["identity"]["role_reviews"] != second["identity"]["role_reviews"]
+        assert first["assessment"] != second["assessment"]
+        prompts = []
+        class Reflector:
+            def count_chat_tokens(self, messages):
+                return {"input_tokens": len(messages[0]["content"]) // 4, "max_model_len": 131072}
+            def complete(self, messages, **kwargs):
+                prompts.append(messages[0]["content"])
+                assert kwargs.get("response_format") is None
+                line = next(x for x in seed_program_path("vector_search").read_text().splitlines()
+                            if "Ground every judgment in the Frozen Paper." in x)
+                replacement = line.replace("Ground every judgment in the Frozen Paper.",
+                                           "Verify each recalled heuristic against the Frozen Paper.")
+                return ("*** Commit Message\nUse rotating diagnosis in the memory instruction.\n\n"
+                        "*** Begin Patch\n*** Update File: program.py\n@@\n-" + line + "\n+" + replacement + "\n*** End Patch\n")
+        @contextmanager
+        def reflector(directory):
+            yield Reflector()
+        monkeypatch.setattr(backend, "client", reflector)
+        backend.generation["input_max_tokens"] = 114688
+        selected = ids[:min(2, rotating_count)]
+        backend.config["evolution"]["detailed_reflection_cases"] = len(selected)
+>       proposal = backend.propose(parent=static["candidate"], feedback={**second,
+            "reflection_case_ids":selected, "reflection_selection":{"rule":"frozen test tie-break"}},
+            history={"0001": {"change": "COMPLETE_PRIOR_CHANGE"}}, directory=backend.root / "reflection")
+
+AgentReview/tests/test_research_v2_shared_coco_integration.py:264: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+AgentReview/agentreview/research_v2/shared_experiment.py:564: in propose
+    raw = client.complete([{"role": "user", "content": prompt}],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_research_v2_shared_coco_integration.test_current_parent_feedback_uses_its_existing_role_memory.<locals>.Reflector object at 0x7f85cb422660>
+messages = [{'content': 'Evolve one shared MemoryProgram for five fixed specialist reviewers. Optimize final complete-review stan...ork context; cite its IDs and do not treat it as evidence for claims about the current paper."}}}]}}', 'role': 'user'}]
+kwargs = {'component': 'shared_mstar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}
+@py_assert1 = <built-in method get of dict object at 0x7f85cc7fd200>
+@py_assert3 = 'response_format', @py_assert5 = {'type': 'json_object'}
+@py_assert8 = None, @py_assert7 = False
+@py_format10 = "{'type': 'json_object'}\n{{'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7fd200>\n{<built-i...ar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get\n}('response_format')\n} is None"
+@py_format12 = "assert {'type': 'json_object'}\n{{'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7fd200>\n{<...ar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get\n}('response_format')\n} is None"
+
+    def complete(self, messages, **kwargs):
+        prompts.append(messages[0]["content"])
+>       assert kwargs.get("response_format") is None
+E       AssertionError: assert {'type': 'json_object'} is None
+E        +  where {'type': 'json_object'} = <built-in method get of dict object at 0x7f85cc7fd200>('response_format')
+E        +    where <built-in method get of dict object at 0x7f85cc7fd200> = {'component': 'shared_mstar_reflection', 'max_tokens': 393216, 'response_format': {'type': 'json_object'}}.get
+
+AgentReview/tests/test_research_v2_shared_coco_integration.py:250: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_shared_coco_integration.py::test_current_parent_feedback_uses_its_existing_role_memory[1]
+FAILED AgentReview/tests/test_research_v2_shared_coco_integration.py::test_current_parent_feedback_uses_its_existing_role_memory[5]
+2 failed, 5 deselected in 14.74s

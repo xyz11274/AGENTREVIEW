@@ -1,24 +1,26 @@
-"""Fail-closed transport and completeness checks around unchanged CoCo code."""
+"""Transport evidence and artifact checks around unchanged official CoCo code.
+
+Original parsing, recovery and score applicability belong to CoCo. Diagnostics
+must not turn an upstream-accepted recovery into a failed evaluation.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import json
-import math
 import urllib.request
 from pathlib import Path
 
 from .io import atomic_write_json, read_json, value_sha256
-from .llm import validate_completion
 from .request_admission import async_request_slot
-from .execution_telemetry import span
+from .execution_telemetry import span, RequestTrace
 
 
 def audited_client_class(base):
     class AuditedClient(base):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self.client.max_retries = 0
+            self.response_model = self.model_name
             self.audit_tasks = {}
             self.wire_attempts = {}
 
@@ -29,8 +31,16 @@ def audited_client_class(base):
             receipt = read_json(audit)
             if receipt.get("status") != "complete":
                 return None
+            cached = super()._cache_load(key)
+            if cached is None:
+                return None
+            completion = receipt.get("completion")
+            if completion is not None and completion.get("model") != self.response_model:
+                raise ValueError("CoCo response receipt belongs to a different configured model")
+            if receipt["upstream_content"] != cached[0]:
+                raise ValueError("CoCo cache differs from its recorded upstream result")
             self.audit_tasks[key] = receipt
-            return super()._cache_load(key)
+            return cached
 
         def _token_budget(self, payload):
             base_url = self.base_url.rstrip("/").removesuffix("/v1")
@@ -49,23 +59,27 @@ def audited_client_class(base):
                 raise ValueError(f"CoCo complete request exceeds context: input={count}, output={output}, capacity={capacity}")
             return {"input_tokens": count, "output_budget": output, "max_model_len": capacity}
 
+        async def _perform_completion(self, api_payload):
+            return await super()._create_completion_async(api_payload)
+
         async def _create_completion_async(self, api_payload):
             digest = value_sha256(api_payload)
             directory = self.cache_dir / "wire" / digest
             attempts = self.wire_attempts.setdefault(digest, [])
-            if len(attempts) >= 3:
-                raise RuntimeError("CoCo request exhausted three transport attempts")
             attempt = len(attempts) + 1
             record = {"attempt": attempt, "payload": api_payload, "status": "reserved"}
             attempts.append(record)
             atomic_write_json(directory / f"attempt-{attempt}.request.json", record)
             try:
                 record["tokens"] = await asyncio.to_thread(self._token_budget, api_payload)
-                async with async_request_slot(self.base_url):
-                    with span("coco_model_request", service=self.base_url, request_digest=digest):
-                        response = await super()._create_completion_async(api_payload)
+                with RequestTrace(directory / f'attempt-{attempt}.progress.json', request_id=digest,
+                                  component='coco:' + self.model_name, attempt=attempt):
+                    async with async_request_slot(self.base_url):
+                        with span("coco_model_request", service=self.base_url, request_digest=digest):
+                            response = await self._perform_completion(api_payload)
                 record["completion"] = response.model_dump(mode="json")
-                validate_completion(response, component="original_coco")
+                if response.model != self.response_model:
+                    raise ValueError("CoCo endpoint returned a different configured model")
                 record["status"] = "complete"
                 return response
             except Exception as exc:
@@ -75,22 +89,21 @@ def audited_client_class(base):
                 atomic_write_json(directory / f"attempt-{attempt}.result.json", record)
 
         async def get_response(self, key, messages, api_payload):
-            content, history = await super().get_response(key, messages, api_payload)
+            # Preserve the author's retries, extraction, empty/error responses,
+            # token accounting and cache writes. Recording observes that result.
+            result = await super().get_response(key, messages, api_payload)
+            if key in self.audit_tasks:
+                return result
             attempts = self.wire_attempts.get(value_sha256(api_payload), [])
             successful = [item for item in attempts if item["status"] == "complete"]
-            if not successful or not isinstance(content, str) or "[LLM Error]" in content:
-                raise RuntimeError("CoCo request has no complete model response")
+            last = successful[-1] if successful else (attempts[-1] if attempts else {})
             receipt = {"status": "complete", "messages": messages, "payload": api_payload,
-                       "completion": successful[-1]["completion"], "tokens": successful[-1]["tokens"],
+                       "upstream_content": result[0], "completion": last.get("completion"),
+                       "tokens": last.get("tokens"), "transport_status": last.get("status"),
+                       "transport_error": last.get("error"), "expected_model": self.response_model,
                        "wire_request": value_sha256(api_payload)}
             self.audit_tasks[key] = receipt
             atomic_write_json(self.cache_dir / f"{key}.audit.json", receipt)
-            return content, history
-
-        def get_result(self, key, clear_cache=False):
-            result = super().get_result(key, clear_cache=clear_cache)
-            if key not in self.audit_tasks or result.get("status") != "done":
-                raise RuntimeError(f"CoCo task {key} has no complete transport receipt")
             return result
 
     return AuditedClient
@@ -102,56 +115,40 @@ def audit_split(module, inputs, outputs, tasks):
     evidence = []
     for source, result in zip(inputs, outputs):
         texts, prompt, _ = module.build_prompt(source["text"])
-        responses = [task["completion"]["choices"][0]["message"]["content"] for task in tasks.values()
+        responses = [task["upstream_content"] if "upstream_content" in task
+                     else task["completion"]["choices"][0]["message"]["content"] for task in tasks.values()
                      if task["messages"][-1]["content"] == prompt]
         coverage = [module.compute_coverage(module.parse_llm_output(raw), len(texts))[0] for raw in responses]
-        if not coverage or max(coverage) != 1.0:
-            raise ValueError("CoCo Split exhausted responses without full part coverage; fallback is not admissible")
+        if not coverage:
+            raise ValueError("CoCo Split has no recorded model response")
         if result.get("sentence_texts") != texts or not result.get("opinions"):
             raise ValueError("CoCo Split requires original sentence texts and nonempty opinions")
         if any(not opinion or any(type(i) is not int or not 0 <= i < len(texts) for i in opinion)
                for opinion in result["opinions"]):
             raise ValueError("CoCo Split contains invalid opinion indices")
+        covered = {i for opinion in result["opinions"] for i in opinion}
+        if covered != set(range(len(texts))):
+            raise ValueError("CoCo Split artifact lost parts after upstream recovery")
         evidence.append({"paper_id": source["id"], "sentence_count": len(texts),
-                         "opinion_count": len(result["opinions"]), "raw_coverage": coverage})
+                         "opinion_count": len(result["opinions"]), "raw_coverage": coverage,
+                         "output_coverage": 1.0, "upstream_recovery_used": max(coverage) != 1.0})
     return evidence
 
 
 def audit_classify(module, inputs, outputs, tasks):
-    allowed, _ = module.classify_categories()
-    _, main = module.classify_reviews_prompt()
     if len(inputs) != len(outputs):
         raise ValueError("CoCo Classify lost an input review")
     evidence = []
     for source, result in zip(inputs, outputs):
         opinions = source["opinions"]
         categories = result.get("category", [])
-        normalized_na = 0
         if len(categories) != len(opinions) or any(result.get(k) != v for k, v in source.items()):
             raise ValueError("CoCo Classify must preserve every opinion and supply every classification")
-        for opinion, labels in zip(opinions, categories):
-            comment = "\n".join(source["sentence_texts"][i] for i in opinion).strip()
-            prompt = main.strip() + "\n\n\nReviewer Comment:\n" + comment
-            valid = []
-            normalized = False
-            for task in sorted(tasks.values(), key=lambda value: value.get("payload", {}).get("presence_penalty", 0)):
-                if task["messages"][-1]["content"] != prompt:
-                    continue
-                raw = task["completion"]["choices"][0]["message"]["content"]
-                parsed, okay = module.parse_labels_from_llm(raw, allowed)
-                # Match upstream is_retry_ok and labels_candidate exactly. An
-                # accepted no-category response normalizes to N/A; the fallback
-                # with zero accepted responses is the unresolved failure.
-                if raw and okay and "</think>" in raw:
-                    valid.append(parsed if parsed else ["N/A"])
-                    normalized = normalized or not parsed
-            expected = (["N/A"] if any(module._is_na_labelset(item) for item in valid)
-                        else min(valid, key=len)) if valid else None
-            if labels != expected:
-                raise ValueError("CoCo Classify has an unresolved opinion or classification without valid original-model evidence")
-            normalized_na += int(normalized and labels == ["N/A"])
+        # CoCo owns retry selection and N/A recovery. Do not reimplement that
+        # algorithm here or require a raw response to meet extra format rules.
         evidence.append({"paper_id": source["id"], "opinion_count": len(opinions),
-                         "classified_count": len(categories), "original_na_normalizations": normalized_na})
+                         "classified_count": len(categories),
+                         "na_opinion_count": sum(labels == ["N/A"] for labels in categories)})
     return evidence
 
 
@@ -160,20 +157,9 @@ def audit_judge(evaluation, paper_ids, human_refs, ai_categories, category, pape
     for pid in paper_ids:
         expected = (set(human_refs[pid]["category_correct"]) & set(ai_categories[pid])) - {"N/A"}
         actual = category[pid]["category_scores"]
-        if set(actual) != expected:
-            raise ValueError(f"CoCo Judge has unresolved required categories for {pid}: {sorted(expected - set(actual))}")
-        scores = [paper[pid]["judge_scores"], *(row["judge_scores"] for row in actual.values())]
-        for row in scores:
-            if row.get("success") is not True:
-                raise ValueError("CoCo Judge requires every scheduled result to succeed")
-            # X is upstream's legitimate non-applicable score. Missing values are not X.
-            if row.get("claim_extraction") not in {"claim", "normal"}:
-                raise ValueError("CoCo Judge requires its claim_extraction decision")
-            for metric in (*evaluation.table_judge_metric_map.values(), "actionability"):
-                value = row.get(metric)
-                if (value == "X" and metric in {"verifiability", "actionability"}) or (type(value) in (int, float) and math.isfinite(value) and 1 <= value <= 5):
-                    continue
-                raise ValueError(f"CoCo Judge has missing/invalid required metric {metric}: {value!r}")
+        # Original summary functions decide which parsed metrics apply and
+        # which failed judgments are omitted. Preserve those values and counts.
         evidence.append({"paper_id": pid, "required_categories": sorted(expected),
-                         "completed_categories": sorted(actual), "paper_judge_complete": True})
+                         "completed_categories": sorted(actual),
+                         "paper_judge_complete": paper[pid]["judge_scores"].get("success") is True})
     return evidence

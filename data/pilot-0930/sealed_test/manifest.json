@@ -1,0 +1,75 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/scoring-only/references.json",
+          "sha256": "f301d17f0a5e5158adbf9afe15c4c62d91abd8c03e9651480e1ac5ca71975ff8"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/papers/dgWo-UyVEsa.json",
+          "sha256": "6144f26b70ac8a855ca2f3998236f708059329c23b629d3b35e648faa4332cc4"
+        }
+      },
+      "content_sha256": "5f82246af1a01f4b0e453b917d615f5fbc214e244bddd5a32b1fe06a359345d3",
+      "normalized_content_sha256": "1e8130ce209cf7431f86d22c8451d44aab9aad229a93f49ca227c6622ac73749",
+      "paper_id": "dgWo-UyVEsa",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "sealed_test",
+      "title": "Linear Label Ranking with Bounded Noise",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "dgWo-UyVEsa"
+      ],
+      "work_family": "ff8ed8ff2755867d6b1e60aa36d00dc1a68bb587d836b9e57ba2e8470504276b"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/scoring-only/references.json",
+          "sha256": "f301d17f0a5e5158adbf9afe15c4c62d91abd8c03e9651480e1ac5ca71975ff8"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/papers/So6YAqnqgMj.json",
+          "sha256": "79bb7d4b365502b3d68a8d3e4e331bb6411e31731900db06eaaf2a2756a8e400"
+        }
+      },
+      "content_sha256": "49d3466273d23cc88186fc577b48753d597a403bf66a9375c8c0e734eba1fcd9",
+      "normalized_content_sha256": "73135b3d7caefc77a8c4c1d9c57f29d9f0f7efe4bd57a196c65e38026e1bf9c4",
+      "paper_id": "So6YAqnqgMj",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "sealed_test",
+      "title": "EigenGame Unloaded: When playing games is better than optimizing",
+      "venue_year": "ICLR_2022",
+      "version_ids": [
+        "So6YAqnqgMj"
+      ],
+      "work_family": "80241005345c8c720cd88f2c8d22b08bc3df735db8e91ad9c3082eb158b62392"
+    },
+    {
+      "assets": {
+        "coco_reference": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/scoring-only/references.json",
+          "sha256": "f301d17f0a5e5158adbf9afe15c4c62d91abd8c03e9651480e1ac5ca71975ff8"
+        },
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/sealed_test/papers/VHmdFPy4U_u.json",
+          "sha256": "5416090ec1a1a85b3a7c7b49fed2680d2fab189d44e5a262db8fba4ef4f53867"
+        }
+      },
+      "content_sha256": "e14ca092ffd72b00e910536496912f9efe89c6f61ae49da0823f12fbe791b5de",
+      "normalized_content_sha256": "dc8317549f1e8fc9368f40b13390c37780a4b212f40d65fa748a6bd6fd5872c5",
+      "paper_id": "VHmdFPy4U_u",
+      "pilot_origin_partition": "rotating",
+      "source_partition": "sealed_test",
+      "title": "Trimmed Maximum Likelihood Estimation for Robust Generalized Linear Model",
+      "venue_year": "NeurIPS_2022",
+      "version_ids": [
+        "VHmdFPy4U_u"
+      ],
+      "work_family": "4d8f2da51944fb783ba43dfc4a1c5f5f13e0de5a9f688dfd915869670ea2db02"
+    }
+  ],
+  "split": "sealed_test"
+}

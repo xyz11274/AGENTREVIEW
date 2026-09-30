@@ -1,0 +1,32 @@
+{
+  "serving_python": "/data/xyj/envs/qwen38serve/bin/python",
+  "state_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/services",
+  "services": {
+    "split": {
+      "base_url": "http://127.0.0.1:13099/v1",
+      "model": "Qwen3-8B-Split",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+      "port": 13099,
+      "gpus": [0, 1],
+      "max_model_len": 65536,
+      "gpu_memory_utilization": 0.8,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 2048,
+      "enable_chunked_prefill": true,
+      "enable_prefix_caching": true
+    },
+    "classify": {
+      "base_url": "http://127.0.0.1:13098/v1",
+      "model": "Qwen3-8B-Classify",
+      "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+      "port": 13098,
+      "gpus": [2, 3],
+      "max_model_len": 32768,
+      "gpu_memory_utilization": 0.8,
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 2048,
+      "enable_chunked_prefill": true,
+      "enable_prefix_caching": true
+    }
+  }
+}

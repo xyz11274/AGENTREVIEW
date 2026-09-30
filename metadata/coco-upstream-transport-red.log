@@ -1,0 +1,157 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_transport_preserves_original_response_handling[length-Part 1: Label 1] __
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-95/test_transport_preserves_origi0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9d677db0e0>
+finish = 'length', content = 'Part 1: Label 1'
+
+    @pytest.mark.parametrize("finish,content", [("length", "Part 1: Label 1"), ("stop", "")])
+    def test_transport_preserves_original_response_handling(tmp_path, monkeypatch, finish, content):
+        import asyncio
+        import importlib
+        from openai.types.chat import ChatCompletion
+    
+        _load_standard(COCO, "_2_split")
+        base = importlib.import_module("src.utils").LLMClient
+        response = ChatCompletion(id="fixture", created=0, model="fixture", object="chat.completion",
+            choices=[{"index": 0, "finish_reason": finish, "message": {"role": "assistant", "content": content}}])
+        async def complete(self, payload):
+            return response
+        async def no_sleep(*args):
+            pass
+        monkeypatch.setattr(base, "_create_completion_async", complete)
+        monkeypatch.setattr(asyncio, "sleep", no_sleep)
+        adapted_type = audited_client_class(base)
+        monkeypatch.setattr(adapted_type, "_token_budget", lambda *_: {
+            "input_tokens": 10, "output_budget": 20, "max_model_len": 100})
+        clients = [kind(api_key="fixture", base_url="http://127.0.0.1/v1", model_name="fixture",
+                        cache_dir=tmp_path / str(i)) for i, kind in enumerate((base, adapted_type))]
+        try:
+            messages = [{"role": "user", "content": "review"}]
+            payload = {"model": "fixture", "messages": messages, "max_tokens": 20}
+            direct, adapted = clients
+            expected = asyncio.run(direct.get_response("key", messages, payload))
+            # Repeated calls must retain the original retry policy, not a global
+            # three-response cap imposed by the recording wrapper.
+            for i in range(4):
+>               assert asyncio.run(adapted.get_response(f"key-{i}", messages, payload)) == expected
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+AgentReview/agentreview/research_v2/coco_integrity.py:97: in get_response
+    response = await self._create_completion_async(api_payload)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AgentReview/agentreview/research_v2/coco_integrity.py:82: in _create_completion_async
+    validate_completion(response, component="original_coco", expected_model=self.response_model)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+response = ChatCompletion(id='fixture', choices=[Choice(finish_reason='length', index=0, logprobs=None, message=ChatCompletionMes...=None))], created=0, model='fixture', object='chat.completion', service_tier=None, system_fingerprint=None, usage=None)
+
+    def validate_completion(response: Any, *, component: str, expected_model: str) -> dict[str, Any]:
+        receipt = response.model_dump(mode="json")
+        if receipt.get("model") != expected_model:
+            raise IncompleteCompletionOutput(
+                f"{component} returned model {receipt.get('model')!r}; expected {expected_model!r}", receipt)
+        choices = receipt.get("choices", [])
+        if len(choices) != 1 or choices[0].get("finish_reason") != "stop":
+>           raise IncompleteCompletionOutput(
+                f"{component} requires one complete response; finish_reason="
+                f"{[choice.get('finish_reason') for choice in choices]}", receipt)
+E           agentreview.research_v2.llm.IncompleteCompletionOutput: original_coco requires one complete response; finish_reason=['length']
+
+AgentReview/agentreview/research_v2/llm.py:32: IncompleteCompletionOutput
+----------------------------- Captured stdout call -----------------------------
+[LLM usage] prompt=0, completion=0, total=0
+[LLM usage] prompt=0, completion=0, total=0
+__________ test_transport_preserves_original_response_handling[stop-] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-95/test_transport_preserves_origi1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9d660264b0>
+finish = 'stop', content = ''
+
+    @pytest.mark.parametrize("finish,content", [("length", "Part 1: Label 1"), ("stop", "")])
+    def test_transport_preserves_original_response_handling(tmp_path, monkeypatch, finish, content):
+        import asyncio
+        import importlib
+        from openai.types.chat import ChatCompletion
+    
+        _load_standard(COCO, "_2_split")
+        base = importlib.import_module("src.utils").LLMClient
+        response = ChatCompletion(id="fixture", created=0, model="fixture", object="chat.completion",
+            choices=[{"index": 0, "finish_reason": finish, "message": {"role": "assistant", "content": content}}])
+        async def complete(self, payload):
+            return response
+        async def no_sleep(*args):
+            pass
+        monkeypatch.setattr(base, "_create_completion_async", complete)
+        monkeypatch.setattr(asyncio, "sleep", no_sleep)
+        adapted_type = audited_client_class(base)
+        monkeypatch.setattr(adapted_type, "_token_budget", lambda *_: {
+            "input_tokens": 10, "output_budget": 20, "max_model_len": 100})
+        clients = [kind(api_key="fixture", base_url="http://127.0.0.1/v1", model_name="fixture",
+                        cache_dir=tmp_path / str(i)) for i, kind in enumerate((base, adapted_type))]
+        try:
+            messages = [{"role": "user", "content": "review"}]
+            payload = {"model": "fixture", "messages": messages, "max_tokens": 20}
+            direct, adapted = clients
+            expected = asyncio.run(direct.get_response("key", messages, payload))
+            # Repeated calls must retain the original retry policy, not a global
+            # three-response cap imposed by the recording wrapper.
+            for i in range(4):
+>               assert asyncio.run(adapted.get_response(f"key-{i}", messages, payload)) == expected
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+AgentReview/agentreview/research_v2/coco_integrity.py:97: in get_response
+    response = await self._create_completion_async(api_payload)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AgentReview/agentreview/research_v2/coco_integrity.py:82: in _create_completion_async
+    validate_completion(response, component="original_coco", expected_model=self.response_model)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+response = ChatCompletion(id='fixture', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessa...=None))], created=0, model='fixture', object='chat.completion', service_tier=None, system_fingerprint=None, usage=None)
+
+    def validate_completion(response: Any, *, component: str, expected_model: str) -> dict[str, Any]:
+        receipt = response.model_dump(mode="json")
+        if receipt.get("model") != expected_model:
+            raise IncompleteCompletionOutput(
+                f"{component} returned model {receipt.get('model')!r}; expected {expected_model!r}", receipt)
+        choices = receipt.get("choices", [])
+        if len(choices) != 1 or choices[0].get("finish_reason") != "stop":
+            raise IncompleteCompletionOutput(
+                f"{component} requires one complete response; finish_reason="
+                f"{[choice.get('finish_reason') for choice in choices]}", receipt)
+        content = choices[0]["message"].get("content")
+        if not isinstance(content, str) or not content.strip():
+>           raise IncompleteCompletionOutput(f"{component} returned an empty response", receipt)
+E           agentreview.research_v2.llm.IncompleteCompletionOutput: original_coco returned an empty response
+
+AgentReview/agentreview/research_v2/llm.py:37: IncompleteCompletionOutput
+----------------------------- Captured stdout call -----------------------------
+[LLM usage] prompt=0, completion=0, total=0
+[LLM usage] prompt=0, completion=0, total=0
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_transport_preserves_original_response_handling[length-Part 1: Label 1]
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_transport_preserves_original_response_handling[stop-]
+2 failed, 6 deselected in 0.95s

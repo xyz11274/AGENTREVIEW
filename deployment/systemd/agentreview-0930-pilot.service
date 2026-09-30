@@ -1,0 +1,15 @@
+[Unit]
+Description=AgentReview current frozen pilot
+After=agentreview-0930-coco-classify.service agentreview-0930-coco-split.service
+
+[Service]
+Type=exec
+WorkingDirectory=/data/xyj/shengao/AgentReview_0930
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/bin/bash /data/xyj/shengao/AgentReview_0930/deployment/run_pilot_0930.sh run
+Restart=no
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=90

@@ -1,0 +1,577 @@
+--- before/AgentReview/agentreview/research_v2/program_checks.py
++++ after/AgentReview/agentreview/research_v2/program_checks.py
+@@ -192,6 +192,12 @@
+                     isinstance(node.func, ast.Attribute) and node.func.attr in {"query", "select_memory_entries", "split", "splitlines", "fetchall"})
+             if isinstance(node, ast.Name) and node.id not in seen:
+                 values = assignments.get(node.id, [])
++                # A slice assignment preserves an already-proven collection's
++                # type. Do not treat lines = lines[1:] as an unknown cycle.
++                def self_slice(value):
++                    return (isinstance(value, ast.Subscript) and isinstance(value.slice, ast.Slice)
++                            and isinstance(value.value, ast.Name) and value.value.id == node.id)
++                values = [value for value in values if not self_slice(value)]
+                 return bool(values) and all(sequence(v, seen | {node.id}) for v in values)
+             return False
+ 
+--- before/AgentReview/agentreview/research_v2/shared_evolution.py
++++ after/AgentReview/agentreview/research_v2/shared_evolution.py
+@@ -173,7 +173,10 @@
+             epoch = self.epoch
+             try:
+                 if recipe["candidate"].get("proposal_failure"):
+-                    raise CandidateProposalFailure(recipe["candidate"]["proposal_failure"]["error"])
++                    detail = recipe["candidate"]["proposal_failure"]
++                    error = CandidateProposalFailure(detail["error"])
++                    error.repair_exhausted = detail.get("repair_exhausted", False)
++                    raise error
+                 result = self.backend.assess(recipe, epoch=epoch)
+                 self.backend.validate(result, recipe=recipe, epoch=epoch)
+                 self._gate(recovery=recovery)
+@@ -189,7 +192,7 @@
+                 if detail["category"] == "candidate" and recipe["kind"] == "candidate":
+                     revision = candidate.get("revision", 0)
+                     reservation = f"candidate-repair:{candidate['candidate_id']}:r{revision}"
+-                    if self.controller.reserve_repair(operation_id=reservation, candidate_id=candidate["candidate_id"]):
++                    if not detail.get("repair_exhausted") and self.controller.reserve_repair(operation_id=reservation, candidate_id=candidate["candidate_id"]):
+                         try:
+                             repaired = self.backend.propose(parent=candidate, feedback={"contract_failure": detail},
+                                                             history=self.state["attempts"],
+--- before/AgentReview/agentreview/research_v2/program_validation.py
++++ after/AgentReview/agentreview/research_v2/program_validation.py
+@@ -53,6 +53,15 @@
+             values[item.name] = 1.0
+         else:
+             values[item.name] = "sample"
++    # Empty defaults otherwise skip the role-filtered write and query paths,
++    # accepting programs which fail on the first real review experience.
++    review_sample = {
++        "topic": "Protocol smoke paper", "content": "traceable Review Experience",
++        "reviewer_name": "QUAL", "reviewer_dimension": "QUAL",
++        "query_text": "Protocol smoke paper: methodology and evidence",
++    }
++    values.update({field.name: review_sample[field.name] for field in fields(dataclass_type)
++                   if field.name in review_sample})
+     return dataclass_type(**values)
+ 
+ def validate_program(
+--- before/AgentReview/agentreview/research_v2/shared_experiment.py
++++ after/AgentReview/agentreview/research_v2/shared_experiment.py
+@@ -6,6 +6,7 @@
+ import os
+ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+ from contextlib import contextmanager
++from dataclasses import replace
+ from pathlib import Path
+ 
+ from .config import ModelConfig, ResearchConfig
+@@ -46,7 +47,9 @@
+     paths.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))
+     paths.extend(sorted((root.parents[1] / "memory_evolution").glob("embedding*.py")))
+     paths.extend(sorted((root / "vendor/deepseek_v41").glob("*.*")))
+-    return [binding(path) for path in paths]
++    paths.extend(sorted((root / "vendor/mstar").glob("*")))
++    from .mstar_adapter import source_identity
++    return [binding(path) for path in paths if path.is_file()] + source_identity()
+ 
+ 
+ def generation_identity():
+@@ -127,6 +130,17 @@
+                     max_attempts=self.config["failure_policy"]["request_attempts"])
+         try:
+             yield wrapped
++        finally:
++            client.close()
++
++    @contextmanager
++    def reflection_client(self, directory):
++        # The upstream reflector requests high reasoning for mutation and fixes.
++        model = replace(self.model, enable_thinking=True, reasoning_effort="high")
++        client = OpenAICompletionClient(model)
++        try:
++            yield PersistentCompletionClient(client, directory, identity=model.identity(),
++                        max_attempts=self.config["failure_policy"]["request_attempts"])
+         finally:
+             client.close()
+ 
+@@ -527,56 +541,34 @@
+             prompt_packet["current_rotating_feedback"] = [row for row in prompt_packet["current_rotating_feedback"] if row["paper_id"] in chosen]
+             prompt_packet["trajectories"] = {role: [row for row in reviews if row["paper_id"] in chosen]
+                 for role, reviews in prompt_packet["trajectories"].items()}
+-        prompt = ("Evolve one shared MemoryProgram for five fixed specialist reviewers. Optimize final complete-review "
+-                  "standard CoCo Table-1 Paper. using this iteration's development feedback. Modify KnowledgeItem and Query "
+-                  "schemas, KnowledgeBase read/write logic, and the four memory instruction constants. Preserve the exact "
+-                  "plan_review function and its imports, the fixed host task, and role-local memory boundaries. Each revised "
+-                  "program builds fresh role-local knowledge bases. Keep canonical Query query_text and reviewer_dimension "
+-                  "fields for host planning. Toolkit model API: toolkit.llm_completion(messages, max_tokens=N), "
+-                  "where messages is a list of objects with role and content; the return value is text. "
+-                  "There is no toolkit.llm method. Other APIs include toolkit.embed(list_of_texts), "
+-                  "toolkit.create_vector_collection(name), and toolkit.log(event, payload). Never catch and hide "
+-                  "model, embedding, capability or budget failures. Keep any parsing fallback separate from "
+-                  "the model call. Never slice review, feedback, memory or summary text by characters. "
+-                  "Use toolkit.select_memory_entries(list_of_complete_text_entries, purpose='context') for reads "
+-                  "or purpose='summary_input' before summarizing; join selected entries with two newlines. "
+-                  "toolkit.memory_token_limit() and toolkit.count_tokens(text) expose host token accounting. "
+-                  "Return complete read results within this token budget; over-budget or incomplete results fail. "
+-                  "The raw_text of write contains the complete build experience with source IDs and any explicitly "
+-                  "provided build correction; honor corrections instead of memorizing the erroneous claim. "
+-                  "Empty build evaluation_paths is intentional: there are no role-level scores. Rotating CoCo "
+-                  "feedback below is for program evolution only, never add it or test references to the build corpus. "
+-                  "Respect the configured memory call budgets. For evolved programs, "
+-                  "reserve one build LLM call for host KnowledgeItem induction; KnowledgeBase.write may use only "
+-                  "the remaining build_llm_calls minus one calls. Program imports and methods "
+-                  "must satisfy the existing sandbox interface. Return a JSON object with change (text) and program "
+-                  "(the complete Python source).\n\nMemory runtime: " + json.dumps(self.memory_runtime()) +
+-                  "\n\nParent source:\n" + source.read_text(encoding="utf-8") +
+-                  "\n\nDevelopment feedback:\n")
+-        with self.client(directory / "requests") as client:
++        from .mstar_adapter import MstarReflection
++        def validate_mutation(path):
++            try:
++                self._candidate_check({**parent, "program": binding(path), "seed_kind": "evolved"})
++            except CandidateContractError as exc:
++                return str(exc)
++            return None
++        with self.reflection_client(directory / "requests") as client:
++            runner = MstarReflection(client=client, model=self.model, runtime=self.memory_runtime(),
++                                     directory=directory, validator=validate_mutation)
++            code = source.read_text(encoding="utf-8")
++            score = float(feedback.get("static_score", parent.get("static_score") or 0))
++            iteration = int(parent.get("round", 0)) + 1
++            prefix = runner.prompt(code, score, iteration)
+             from .reflection_budget import pack_reflection_feedback
+-            prompt, prompt_packet, budget = pack_reflection_feedback(prompt_packet, prefix=prompt,
++            prompt, prompt_packet, budget = pack_reflection_feedback(prompt_packet, prefix=prefix,
+                 count_chat_tokens=client.count_chat_tokens, input_limit=self.model.max_model_len - 1,
+                 output_budget=self.model.max_output_tokens)
+             atomic_write_json(directory / "reflection-input.json", prompt_packet)
+             budget["source_feedback"] = binding(directory / "feedback.json")
+             atomic_write_json(directory / "reflection-budget.json", budget)
+-            raw = client.complete([{"role": "user", "content": prompt}],
+-                    max_tokens=self.model.max_output_tokens, component="shared_mstar_reflection",
+-                    response_format={"type": "json_object"})
+-        atomic_write_json(directory / "response.json", {"raw_model_output": raw})
+-        try:
+-            parsed = json.loads(raw)
+-            code, change = parsed["program"], parsed["change"]
+-            if isinstance(code, str) and isinstance(change, str) and code.strip() and change.strip():
+-                pass
+-            else:
+-                raise ValueError("Reflection requires complete source and a change description")
+-        except (ValueError, TypeError, KeyError) as exc:
+-            code, change = "", f"Reflection contract failure: {exc}"
++            violation = feedback.get("contract_failure")
++            code, change = runner.run(code=code, prompt=prompt, iteration=iteration, score=score,
++                                      violation=json.dumps(violation, ensure_ascii=False) if violation is not None else None)
+         target = directory / "program.py"
+         self._write_program(target, code)
+         return {"program": binding(target), "program_sha256": file_sha256(target), "seed_kind": "evolved",
++                "reflection": binding(directory / "mstar-trace.json"),
+                 "change": change, "seed": parent["seed"], "parent_id": parent["candidate_id"]}
+ 
+     def freeze(self, winner, state):
+--- before/AgentReview/agentreview/research_v2/failure_policy.py
++++ after/AgentReview/agentreview/research_v2/failure_policy.py
+@@ -85,6 +85,8 @@
+     ):
+         category = "candidate"
+     record = {"category": category, "phase": phase, "error": message, "transient": transient}
++    if getattr(error, "repair_exhausted", False):
++        record["repair_exhausted"] = True
+     record["fingerprint"] = value_sha256({"category": category, "phase": phase, "error": message})
+     evaluator_record = getattr(error, "failure_record", None)
+     if isinstance(evaluator_record, dict):
+--- before/AgentReview/tests/test_research_v2_shared_evolution.py
++++ after/AgentReview/tests/test_research_v2_shared_evolution.py
+@@ -78,6 +78,21 @@
+     calls = list(backend.calls)
+     assert run(tmp_path, backend)["status"] == "complete"
+     assert backend.calls == calls
++
++
++def test_exhausted_upstream_repairs_do_not_restart_an_outer_repair_loop(tmp_path):
++    from agentreview.research_v2.mstar_adapter import ReflectionFailure
++    backend = Backend()
++    calls = []
++    def exhausted(**kwargs):
++        calls.append(kwargs)
++        raise ReflectionFailure("Native compile-fix loop exhausted")
++    backend.propose = exhausted
++    result = run(tmp_path, backend, protocol(attempts=1))
++    assert result["status"] == "complete"
++    assert result["results"]["candidate-0001"]["status"] == "candidate_failed"
++    assert len(calls) == 1
++    assert read_json(tmp_path / "failure-policy.json")["repair_budget"]["used"] == 0
+ 
+ 
+ def test_candidate_failure_is_bounded_and_preserves_other_population(tmp_path):
+--- before/AgentReview/tests/test_research_v2_shared_coco_integration.py
++++ after/AgentReview/tests/test_research_v2_shared_coco_integration.py
+@@ -246,14 +246,18 @@
+         def count_chat_tokens(self, messages):
+             return {"input_tokens": len(messages[0]["content"]) // 4, "max_model_len": 131072}
+         def complete(self, messages, **kwargs):
+-            prompts.append(messages[0]["content"])
+-            return json.dumps({"change": "Use rotating diagnosis in the memory instruction.",
+-                "program": seed_program_path("vector_search").read_text().replace(
+-                    "Ground every judgment in the Frozen Paper.", "Verify each recalled heuristic against the Frozen Paper.")})
++            prompts.append(next(message["content"] for message in messages if message["role"] == "user"))
++            assert kwargs.get("response_format") is None
++            line = next(x for x in seed_program_path("vector_search").read_text().splitlines()
++                        if "Ground every judgment in the Frozen Paper." in x)
++            replacement = line.replace("Ground every judgment in the Frozen Paper.",
++                                       "Verify each recalled heuristic against the Frozen Paper.")
++            return ("*** Commit Message\nUse rotating diagnosis in the memory instruction.\n\n"
++                    "*** Begin Patch\n*** Update File: program.py\n@@\n-" + line + "\n+" + replacement + "\n*** End Patch\n")
+     @contextmanager
+     def reflector(directory):
+         yield Reflector()
+-    monkeypatch.setattr(backend, "client", reflector)
++    monkeypatch.setattr(backend, "reflection_client", reflector)
+     backend.generation["input_max_tokens"] = 114688
+     selected = ids[:min(2, rotating_count)]
+     backend.config["evolution"]["detailed_reflection_cases"] = len(selected)
+--- /dev/null
++++ after/AgentReview/agentreview/research_v2/mstar_adapter.py
+@@ -0,0 +1,199 @@
++"""Bind unmodified Mstar reflection/patching code to the review host and API.
++
++Source modules are loaded without their optional provider/tracing imports. The
++original Reflector owns patch extraction, application, full-code fallback and
++compile-fix iteration. Only model transport, prompts and validation are bound
++to AgentReview; generated code executes only in the existing sandbox.
++"""
++from __future__ import annotations
++
++import ast
++from pathlib import Path
++import sys
++from types import ModuleType, SimpleNamespace
++from uuid import uuid4
++
++from .io import atomic_write_json, file_sha256, read_json, value_sha256
++from .program_checks import DEFAULT_IMPORT_WHITELIST, ALLOWED_FIELD_TYPES, FORBIDDEN_CALLS
++from .program_validation import validate_program
++
++UPSTREAM = Path(__file__).parent / "vendor/mstar"
++
++
++class ReflectionFailure(ValueError):
++    failure_category = "candidate"
++    repair_exhausted = True
++
++
++def source_identity():
++    manifest = read_json(UPSTREAM / "manifest.json")
++    files = [(UPSTREAM / name, sha) for name, sha in manifest["files"].items()]
++    dependency = manifest["patch_dependency"]
++    files += [(Path(dependency["root"]) / name, sha) for name, sha in dependency["files"].items()]
++    for path, sha in files:
++        if file_sha256(path) != sha:
++            raise ValueError(f"Frozen Mstar source/dependency changed: {path}")
++    return [{"path": str(path.resolve()), "sha256": sha} for path, sha in files]
++
++
++def _load(name, bindings):
++    path = UPSTREAM / f"{name}.py"
++    tree = ast.parse(path.read_text(), filename=str(path))
++    # Leave upstream function/class bodies intact. Replace only unavailable
++    # package/provider imports with the explicit host bindings below.
++    tree.body = [n for n in tree.body if not (
++        isinstance(n, ast.ImportFrom) and (n.module or "").startswith("mstar")
++        or isinstance(n, ast.Import) and any(a.name == "weave" for a in n.names))]
++    module = ModuleType(f"_agentreview_mstar_{name}_{uuid4().hex}")
++    module.__dict__.update(bindings, __file__=str(path))
++    sys.modules[module.__name__] = module
++    exec(compile(tree, str(path), "exec"), module.__dict__)
++    return module
++
++
++def interface_spec(runtime):
++    write_calls = max(0, runtime["build_llm_calls"] - 1)
++    return f"""AgentReview task interface (authoritative for this host):
++- Define KnowledgeItem and Query dataclasses, KnowledgeBase, and the four existing
++  memory instruction strings. JSON-compatible field types: {sorted(ALLOWED_FIELD_TYPES)}.
++- Keep Query.query_text and Query.reviewer_dimension. Preserve the exact
++  plan_review function and the imports it uses: only the memory strategy evolves.
++- KnowledgeBase.__init__(self, toolkit), write(self, item, raw_text), read(self, query).
++  Put memory helper methods inside KnowledgeBase. No additional top-level helpers.
++- Candidate-visible toolkit methods: llm_completion(messages, **kwargs) -> str;
++  embed(list_of_texts); create_vector_collection(name); log(event, payload);
++  count_tokens(text); memory_token_limit(purpose='context');
++  select_memory_entries(list_of_complete_text_entries, purpose='context').
++  For summary input use purpose='summary_input'. toolkit.db is in-memory SQLite,
++  toolkit.chroma is the existing collection facade; toolkit.logger.debug is available.
++- These are the complete public capabilities; toolkit.memory_runtime and
++  toolkit.max_llm_calls_per_operation DO NOT exist in the candidate sandbox.
++  The following call allowances are host configuration, not accessible attributes:
++  write may use {write_calls} LLM calls, read may use {runtime['read_llm_calls']}.
++  The host already reserves one build call for KnowledgeItem induction.
++- Allowed imports: {', '.join(sorted(DEFAULT_IMPORT_WHITELIST))}.
++  Unsupported builtins: {', '.join(sorted(FORBIDDEN_CALLS))}.
++- read returns a complete string within the model context.
++  Preserve complete selected entries and complete model responses; no character
++  truncation or hardcoded short output budgets. Omit max_tokens to use model capacity.
++  Normal list operations and removal of JSON/Markdown syntax delimiters are allowed.
++- Each role has independent memory. Never write rotating/test feedback into build
++  memory. Do not catch and hide model, embedding, capability or budget failures.
++- A patch must contain one `*** Update File: program.py` section with all hunks
++  in source order. Repeated sections overwrite each other in the native patch
++  dependency; they are rejected so the original format-repair loop can fix them.
++"""
++
++
++def _adapt_prompt(text):
++    # Capacity/interface substitutions only; original patch grammar stays intact.
++    text = text.replace('4. `read()` must return at most 3000 characters — do not return all stored text.',
++                        '4. `read()` returns complete selected memory within the model context.')
++    text = text.replace('3. Only use allowed imports: json, re, math, hashlib, collections, dataclasses, typing, datetime, textwrap, sqlite3, chromadb.',
++                        '3. Use only the allowed imports in the task interface above.')
++    return text
++
++
++class MstarReflection:
++    def __init__(self, *, client, model, runtime, directory, validator=None, max_fix_attempts=3):
++        self.client, self.model, self.runtime = client, model, runtime
++        self.directory = Path(directory)
++        self.directory.mkdir(parents=True, exist_ok=True)
++        self.events, self.calls, self.modules = [], [], []
++        self.source = source_identity()
++        manifest = read_json(UPSTREAM / "manifest.json")
++        dependency = str(Path(manifest["patch_dependency"]["root"]).parent)
++        if dependency not in sys.path:
++            sys.path.insert(0, dependency)
++        types = self._module("types", {})
++        self.prompts = self._module("prompts", vars(types))
++        spec = interface_spec(runtime)
++        self.prompts.KB_INTERFACE_SPEC = spec
++        # Replace the upstream example advocating a 3000-char cap with a
++        # semantics-preserving example. Keep the actual V4A specification.
++        self.prompts.PATCH_FORMAT_SPEC = self.prompts.PATCH_FORMAT_SPEC.split("Example — replacing a return value:")[0]
++        patcher = self._module("patcher", {})
++        def apply_patch(code, body):
++            if sum(line.strip() == "*** Update File: program.py" for line in body.splitlines()) > 1:
++                raise ValueError("Repeated program.py update sections would lose changes; use one section with multiple hunks")
++            return patcher.apply_patch(code, body)
++        logger = SimpleNamespace(log=lambda message, header=None: self.events.append({"header": header, "message": message}))
++        bindings = {**vars(types), **vars(self.prompts), "apply_patch": apply_patch,
++                    "weave": SimpleNamespace(op=lambda: lambda fn: fn),
++                    "get_logger": lambda: logger, "completion_with_retry": self._complete,
++                    "build_compile_fix_prompt": lambda **kw: _adapt_prompt(self.prompts.build_compile_fix_prompt(**kw)),
++                    "build_patch_format_fix_prompt": lambda **kw: _adapt_prompt(self.prompts.build_patch_format_fix_prompt(**kw)),
++                    "build_reflection_user_prompt": lambda **kw: self.initial_prompt}
++        module = self._module("reflector", bindings)
++        self.types = types
++        host_validate = validator or self._validate
++        adapter = self
++        class ReviewReflector(module.Reflector):
++            def _validate_code(self, code):
++                number = len(adapter.events)
++                path = adapter.directory / "validation" / f"{number:03d}.py"
++                adapter._write(path, code)
++                error = host_validate(path)
++                adapter.events.append({"validation_source": str(path), "error": error})
++                adapter._save()
++                return ("AgentReview compile/smoke error", error) if error else None
++        self.reflector = ReviewReflector(model=model.model, max_fix_attempts=max_fix_attempts)
++
++    def _module(self, name, bindings):
++        # Never copy another module's identity into the new namespace.
++        module = _load(name, {k: v for k, v in bindings.items() if not k.startswith('__')})
++        self.modules.append(module)
++        return module
++
++    @staticmethod
++    def _write(path, text):
++        path.parent.mkdir(parents=True, exist_ok=True)
++        if path.exists():
++            if path.read_text() != text:
++                raise ValueError(f"Recorded Mstar text changed: {path}")
++        else:
++            path.write_text(text)
++
++    def _validate(self, path):
++        errors = validate_program(path, require_bubblewrap=True, memory_runtime=self.runtime, seed_kind="evolved")
++        return "\n".join(errors) if errors else None
++
++    def _save(self):
++        atomic_write_json(self.directory / "mstar-trace.json", {
++            "protocol": "mstar-upstream-patch-v1", "source": self.source,
++            "max_fix_attempts": self.reflector.max_fix_attempts,
++            "calls": self.calls, "events": self.events}, immutable=False)
++
++    def _complete(self, *, messages, **kwargs):
++        index = len(self.calls)
++        raw = self.client.complete(messages, max_tokens=self.model.max_output_tokens,
++                                   component="shared_mstar_reflection")
++        path = self.directory / "responses" / f"{index:03d}.txt"
++        self._write(path, raw)
++        self.calls.append({"index": index, "messages_sha256": value_sha256(messages),
++                           "path": str(path), "sha256": file_sha256(path)})
++        self._save()
++        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=raw))])
++
++    def prompt(self, code, score, iteration):
++        text = self.prompts.build_reflection_user_prompt(code=code, score=score, failed_cases=[], iteration=iteration)
++        return _adapt_prompt(text) + "\n\nComplete AgentReview rotating feedback and lineage:\n"
++
++    def run(self, *, code, prompt, iteration, score, violation=None):
++        self.initial_prompt = prompt
++        try:
++            if violation is not None:
++                result = self.reflector.fix_runtime_violation(code, violation)
++                change = "Mstar runtime repair: " + violation
++            else:
++                reflected = self.reflector.reflect_and_mutate(
++                    self.types.KBProgram(source_code=code), self.types.EvalResult(score=score), iteration)
++                result = reflected.program.source_code if reflected is not None else None
++                change = reflected.commit_message if reflected is not None else None
++            if result is None:
++                raise ReflectionFailure("Mstar exhausted its patch/compile/smoke repair loop; see mstar-trace.json")
++            return result, change or "Mstar memory program update"
++        finally:
++            self._save()
++            for module in self.modules:
++                sys.modules.pop(module.__name__, None)
+--- /dev/null
++++ after/AgentReview/tests/test_mstar_adapter.py
+@@ -0,0 +1,114 @@
++from pathlib import Path
++import pytest
++
++from agentreview.research_v2.config import ModelConfig
++from agentreview.research_v2.io import read_json
++from agentreview.research_v2.memory import seed_program_path
++from agentreview.research_v2.mstar_adapter import MstarReflection, ReflectionFailure, source_identity
++
++
++RUNTIME = {"build_llm_calls": 2, "read_llm_calls": 2}
++
++
++class RecordedClient:
++    def __init__(self, *responses):
++        self.responses = iter(responses)
++        self.requests = []
++
++    def complete(self, messages, **kwargs):
++        self.requests.append((messages, kwargs))
++        assert "response_format" not in kwargs
++        return next(self.responses)
++
++
++def patch(old, new):
++    return ("*** Commit Message\nUse grounded memory.\n\n*** Begin Patch\n*** Update File: program.py\n@@\n-"
++            + old + "\n+" + new + "\n*** End Patch\n")
++
++
++def runner(tmp_path, client):
++    return MstarReflection(client=client, model=ModelConfig(), runtime=RUNTIME, directory=tmp_path)
++
++
++def test_native_patch_applies_and_passes_real_sandbox(tmp_path):
++    source = seed_program_path("vector_search").read_text()
++    line = next(x for x in source.splitlines() if "Ground every judgment" in x)
++    modified = line.replace("Ground every judgment", "Verify every recalled judgment")
++    client = RecordedClient(patch(line, modified))
++    adapter = runner(tmp_path, client)
++    code, change = adapter.run(code=source, prompt=adapter.prompt(source, 4, 1), iteration=1, score=4)
++    assert code == source.replace(line, modified)
++    assert change == "Use grounded memory."
++    assert client.requests[0][1]["max_tokens"] == ModelConfig().max_output_tokens
++    assert read_json(tmp_path / "mstar-trace.json")["events"][-1]["error"] is None
++    assert source_identity()
++
++
++def test_upstream_full_code_fallback_is_retained(tmp_path):
++    source = seed_program_path("vector_search").read_text()
++    adapter = runner(tmp_path, RecordedClient("```python\n" + source + "\n```"))
++    code, _ = adapter.run(code=source, prompt="reflect", iteration=1, score=4)
++    assert code.strip() == source.strip()
++
++
++def test_unknown_api_is_repaired_using_native_error_feedback(tmp_path):
++    source = seed_program_path("vector_search").read_text()
++    old = "        self.toolkit = toolkit"
++    first = "*** Begin Patch\n*** Update File: program.py\n@@\n " + old + "\n+        self.config = toolkit.memory_runtime\n*** End Patch\n"
++    fix = "*** Begin Patch\n*** Update File: program.py\n@@\n " + old + "\n-        self.config = toolkit.memory_runtime\n*** End Patch\n"
++    client = RecordedClient(first, fix)
++    adapter = runner(tmp_path, client)
++    code, _ = adapter.run(code=source, prompt="reflect", iteration=1, score=4)
++    assert code == source
++    assert len(client.requests) == 2
++    prompt = client.requests[1][0][-1]["content"]
++    assert "Unknown toolkit interface: memory_runtime" in prompt
++    assert "toolkit.memory_runtime" in prompt and "DO NOT exist" in prompt
++    assert "3000" not in prompt
++
++
++def test_native_format_failure_gets_three_repairs_and_persists_all_responses(tmp_path):
++    source = seed_program_path("vector_search").read_text()
++    client = RecordedClient(*["No patch here."] * 4)
++    adapter = runner(tmp_path, client)
++    with pytest.raises(ReflectionFailure):
++        adapter.run(code=source, prompt="reflect", iteration=1, score=4)
++    trace = read_json(tmp_path / "mstar-trace.json")
++    assert trace["max_fix_attempts"] == 3 and len(trace["calls"]) == 4
++    assert all(Path(call["path"]).read_text() == "No patch here." for call in trace["calls"])
++
++
++def test_plain_json_source_is_not_a_supported_reflection_protocol(tmp_path):
++    client = RecordedClient(*['{"program":"pass", "change":"invented protocol"}'] * 4)
++    adapter = runner(tmp_path, client)
++    with pytest.raises(ReflectionFailure):
++        adapter.run(code=seed_program_path("vector_search").read_text(), prompt="reflect", iteration=1, score=4)
++
++
++def test_repeated_file_updates_cannot_silently_discard_first_change(tmp_path):
++    source = seed_program_path("vector_search").read_text()
++    first = 'INSTRUCTION_KNOWLEDGE_ITEM = "Store traceable Review Experience without paper prose."'
++    second = 'ALWAYS_ON_KNOWLEDGE = "Ground every judgment in the Frozen Paper."'
++    patch_body = ("*** Begin Patch\n*** Update File: program.py\n@@\n-" + first
++        + '\n+' + first.replace('Store', 'Keep')
++        + "\n*** Update File: program.py\n@@\n-" + second
++        + '\n+' + second.replace('Ground', 'Verify') + '\n*** End Patch\n')
++    fixed = patch_body.replace("\n*** Update File: program.py\n@@\n-" + second, "\n@@\n-" + second)
++    client = RecordedClient(patch_body, fixed)
++    adapter = runner(tmp_path, client)
++    result, _ = adapter.run(code=source, prompt="reflect", iteration=1, score=4)
++    assert result == source.replace(first, first.replace('Store', 'Keep')).replace(second, second.replace('Ground', 'Verify'))
++    assert len(client.requests) == 2
++
++
++def test_smoke_exercises_nonempty_role_and_query_before_acceptance(tmp_path):
++    from agentreview.research_v2.program_validation import validate_program
++    source = seed_program_path("vector_search").read_text()
++    path = tmp_path / "missing_field.py"
++    path.write_text(source.replace('"topic": item.topic}', '"topic": item.subcategories}'))
++    errors = validate_program(path, require_bubblewrap=True, memory_runtime=RUNTIME, seed_kind="evolved")
++    assert any('subcategories' in error for error in errors)
++    path = tmp_path / "missing_read_field.py"
++    path.write_text(source.replace('embedding = self.toolkit.embed([query.query_text])[0]', 'embedding = query.nonexistent_embedding'))
++    errors = validate_program(path, require_bubblewrap=True, memory_runtime=RUNTIME, seed_kind="evolved")
++    assert any('nonexistent_embedding' in error for error in errors)
+--- /dev/null
++++ after/AgentReview/tests/test_mstar_list_parsing.py
+@@ -0,0 +1,23 @@
++import ast
++from agentreview.research_v2.program_checks import _text_slice_errors
++
++
++def test_markdown_fence_parsing_is_a_list_operation():
++    tree = ast.parse('''def parse(text):
++    lines = text.splitlines()
++    if lines and lines[0].startswith("```"):
++        lines = lines[1:]
++    if lines and lines[-1].startswith("```"):
++        lines = lines[:-1]
++    return "\\n".join(lines)
++''')
++    assert _text_slice_errors(tree) == []
++
++
++def test_reassignment_to_text_is_not_a_proven_list():
++    tree = ast.parse('''def parse(text):
++    lines = text.splitlines()
++    lines = text
++    return lines[:100]
++''')
++    assert _text_slice_errors(tree)

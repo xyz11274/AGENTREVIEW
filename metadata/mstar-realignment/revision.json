@@ -1,0 +1,62 @@
+{
+  "coCo_source_modified": false,
+  "created_at": 1790684563.3695154,
+  "experiment_started": false,
+  "max_compile_fix_attempts": 3,
+  "old_failures_preserved": true,
+  "previous_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-coco-upstream/protocol.frozen.json",
+    "sha256": "e461c002be7f4e95faef41ce15f24d6cc0863f7b3e04264b9e9bb3b33fd1eaf1"
+  },
+  "previous_state": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-coco-upstream/search/search.json",
+    "sha256": "d0a922e1d861f15a2341588f638c5cceac8b11b1f4a347308f27fc73fd4ac523"
+  },
+  "reason": "User requested stop and original Mstar patch-based adaptation",
+  "reflection_model": {
+    "api_key_env": "ARK_API_KEY",
+    "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+    "enable_thinking": true,
+    "max_model_len": 1048576,
+    "max_output_tokens": 393216,
+    "model": "deepseek-v4.1-flash",
+    "reasoning_effort": "high",
+    "response_model": "deepseek-v4-1-flash-260910",
+    "temperature": 0.0,
+    "timeout_seconds": 600.0
+  },
+  "source": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/reflector.py",
+      "sha256": "b03feab278ef9005a71a41e5a42083d3fa39977b314441556c97bdc02fb875bc"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/patcher.py",
+      "sha256": "52ba762712966cd0094de91378beeeb35638b0d68059109ae54aea1912b058af"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/prompts.py",
+      "sha256": "6dcbfcf20ccd01057d502e1b0955486903db78ce4d35b9c8bee0da006a3659c1"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/types.py",
+      "sha256": "6d06cd5ec27f7dd86d4461e22cf099c98c7c967669a05d1f1110fb6c024ee942"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/LICENSE",
+      "sha256": "9426c8f750a9609f9e6fb11cc4e2422e050d64fd88e2970134a265cb9939a668"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/codex_apply_patch.cpython-312-x86_64-linux-gnu.so",
+      "sha256": "c01a5d946083872f33cf75e661b56f2f2097a43e95cbb9a93e1a16dc60b2a1e7"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/.gitignore",
+      "sha256": "5c9aff029b0659718ea8f6aa03e67b46c9d9311d3bb06d216d33eeac9546140c"
+    },
+    {
+      "path": "/data/xyj/envs/agentreview-mstar-patch/codex_apply_patch/__init__.py",
+      "sha256": "f9cec16c509ecb2f0c957c0fc90e4dba2ec84a420aafb65537085e0c8e5bcf53"
+    }
+  ]
+}

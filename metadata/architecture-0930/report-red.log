@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_failed_reflection_reports_actual_proposed_source _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-113/test_failed_reflection_reports0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff611252210>
+
+    def test_failed_reflection_reports_actual_proposed_source(tmp_path, monkeypatch):
+        atomic_write_json(tmp_path / 'protocol.frozen.json', {'evolution': {'attempts': 1}})
+        old, proposed = tmp_path / 'old.py', tmp_path / 'proposed.py'
+        old.write_text('VALUE = 1\n')
+        proposed.write_text('VALUE = missing_name\n')
+        raw = tmp_path / 'response.txt'
+        raw.write_text('*** Begin Patch\n*** End Patch\n')
+        trace = tmp_path / 'trace.json'
+        atomic_write_json(trace, {'calls': [binding(raw)], 'events': [
+            {'validation_source': str(proposed), 'program': binding(proposed), 'error': 'NameError'}]})
+        failure = {'category': 'candidate', 'reflection': binding(trace)}
+        state = {'status': 'running', 'pool': ['seed-a'], 'attempts': {'1': {
+            'status': 'candidate_failed', 'parent_key': 'seed-a', 'candidate_key': 'candidate-0001'}},
+            'recipes': {'seed-a': {'kind': 'seed', 'candidate': {'program': binding(old)}},
+                        'candidate-0001': {'kind': 'candidate', 'candidate': {
+                            'program': binding(old), 'proposal_failure': failure}}},
+            'results': {'candidate-0001': {'status': 'candidate_failed', 'failure': failure}}}
+        atomic_write_json(tmp_path / 'search/search.json', state)
+        monkeypatch.setattr(rounds, 'scores_for', lambda state, key: score(3) if key == 'seed-a' else None)
+        row = rounds.report(tmp_path)['rounds'][0]
+>       assert row['candidate_program']['path'] == str(proposed)
+E       AssertionError: assert '/tmp/pytest-...ports0/old.py' == '/tmp/pytest-...0/proposed.py'
+E         
+E         Skipping 52 identical leading characters in diff, use -v to show
+E         - _reports0/proposed.py
+E         ?           -- ^^^^
+E         + _reports0/old.py
+E         ?            ^
+
+AgentReview/tests/test_pilot_0930.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_pilot_0930.py::test_failed_reflection_reports_actual_proposed_source
+1 failed in 0.12s

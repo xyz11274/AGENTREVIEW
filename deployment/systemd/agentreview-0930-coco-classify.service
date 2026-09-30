@@ -1,0 +1,21 @@
+[Unit]
+Description=AgentReview CoCo classify on local GPUs 2,3
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory=/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/services
+StandardInput=null
+StandardOutput=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/services/classify.log
+StandardError=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/services/classify.log
+Environment="CUDA_VISIBLE_DEVICES=2,3"
+Environment="PATH=/data/xyj/envs/qwen38serve/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="NO_PROXY=127.0.0.1,localhost,::1"
+Environment="no_proxy=127.0.0.1,localhost,::1"
+ExecStart="/data/xyj/envs/qwen38serve/bin/python" "-m" "vllm.entrypoints.openai.api_server" "--model" "/data/xyj/shengao/CoCoReviewBench/model/classify_model" "--served-model-name" "Qwen3-8B-Classify" "--host" "127.0.0.1" "--port" "13098" "--dtype" "bfloat16" "--tensor-parallel-size" "2" "--max-model-len" "32768" "--gpu-memory-utilization" "0.8" "--max-num-seqs" "8" "--max-num-batched-tokens" "2048" "--enable-chunked-prefill" "--enable-prefix-caching"
+Restart=on-failure
+RestartSec=30
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=90

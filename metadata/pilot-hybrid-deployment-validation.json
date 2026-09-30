@@ -1,0 +1,48 @@
+{
+  "acceptance": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-hybrid-acceptance.json",
+    "sha256": "bf95254e76fd5ac1b4faefc1e89f18950f4d386652b4c400ceedf70fb272ea4d"
+  },
+  "acceptance_state": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/acceptance-native/acceptance-state.json",
+  "checked_at": 1790665708.2260609,
+  "full_experiment_started": false,
+  "predecessor_build_reviews_preserved": 20,
+  "predecessor_mutation_attempts": 0,
+  "predecessor_scored_results": 0,
+  "protocol_changed_keys": [
+    "deployment_revision",
+    "experiment_id",
+    "implementation",
+    "remote_deployment",
+    "scoring_config",
+    "service_configuration",
+    "services_config"
+  ],
+  "run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid",
+  "same_core_runtime": true,
+  "same_data_and_search_settings": true,
+  "same_original_coco_source": true,
+  "same_original_models_and_request_settings": true,
+  "startup_identity_checks": "metadata/pilot-hybrid-readiness.json",
+  "status": "acceptance_passed_pilot_running",
+  "supervision": {
+    "classify": "18:agentreview-0930-coco-classify.service",
+    "forward": "18:agentreview-0930-tunnel-split.service",
+    "linger_both_hosts": true,
+    "pilot": "18:agentreview-0930-pilot-hybrid.service",
+    "remote_model_watcher": "139:agentreview-0930-model-guard.service",
+    "split": "139:agentreview-0930-coco-split.service"
+  },
+  "targeted_tests": {
+    "log": "metadata/pilot-hybrid-targeted-tests.log",
+    "passed": 11
+  },
+  "tunnel_fault_injection": {
+    "NRestarts": 1,
+    "method": "SIGKILL owned systemd SSH main process before acceptance",
+    "previous_pid": 2154244,
+    "recovered_pid": 2159957,
+    "verified_models_after_reconnect": true
+  },
+  "updated_at": 1790665994.1658802
+}

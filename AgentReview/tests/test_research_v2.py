@@ -4,21 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agentreview.research_v2.evaluation import run_internal_evaluation
-from agentreview.research_v2.coco_protocol import proportional_quotas
 from agentreview.research_v2.config import ResearchConfig
-from agentreview.research_v2.coco import (
-    TABLE_1_COLUMNS,
-    _validate_evaluation_summary,
-)
 from agentreview.research_v2.data import prepare_data
-from agentreview.research_v2.evolution import (
-    EvolutionPool,
-    PoolEntry,
-    ReflectorContextBudgetError,
-    _reflector_context_budget,
-    propose_candidate,
-)
 from agentreview.research_v2.io import atomic_write_json, file_sha256, read_json
 from agentreview.research_v2.memory import (
     build_memory_snapshot,
@@ -41,7 +28,7 @@ class FakeCompletion:
         self.error = error
         self.calls = []
 
-    def complete(self, messages, *, max_tokens, component):
+    def complete(self, messages, *, max_tokens, component, response_format=None):
         self.calls.append(
             {"messages": messages, "max_tokens": max_tokens, "component": component}
         )
@@ -174,44 +161,13 @@ class ResearchV2Test(unittest.TestCase):
         config = ResearchConfig()
         self.assertEqual(config.model.temperature, 0.0)
         self.assertFalse(config.model.enable_thinking)
-        self.assertEqual(len(config.model.revision), 40)
+        self.assertEqual(config.model.model, "deepseek-v4.1-flash")
+        self.assertEqual(config.model.response_model, "deepseek-v4-1-flash-260910")
+        self.assertEqual(config.model.api_key_env, "ARK_API_KEY")
         self.assertEqual(config.embedding_provider, "qwen3_embedding")
         self.assertEqual(len(config.embedding_revision), 40)
 
-    def test_coco_largest_remainder_uses_actual_bucket_proportions(self):
-        self.assertEqual(
-            proportional_quotas({"0-3": 14, "3-5": 98, "5-7": 148, "7-10": 40}, 100),
-            {"0-3": 5, "3-5": 33, "5-7": 49, "7-10": 13},
-        )
 
-    def test_coco_evaluation_requires_exact_table_1_coverage(self):
-        summary_path = self.root / "evaluation-summary.json"
-        table = {
-            "input_label": "candidate_official_classify",
-            "absolute_scores": {name: 1.0 for name in TABLE_1_COLUMNS},
-            "paper_counts": {name: 1 for name in TABLE_1_COLUMNS},
-            "category_coverage": {
-                "item_count": 1,
-                "metric_counts": {"Complete.": 1},
-                "metrics": {"Complete.": 1.0},
-            },
-        }
-        summary = {
-            "input_label": "candidate_official_classify",
-            "overall_metrics": {
-                "full_text": {},
-                "category_correct": {},
-                "paper_level": {},
-            },
-            "category_breakdown": {"category_correct": {}},
-            "table_1_summary": table,
-        }
-        atomic_write_json(summary_path, summary)
-        _validate_evaluation_summary(summary_path, expected_count=1)
-        table["paper_counts"]["Paper."] = 0
-        atomic_write_json(summary_path, summary, immutable=False)
-        with self.assertRaisesRegex(RuntimeError, "exact frozen paper set"):
-            _validate_evaluation_summary(summary_path, expected_count=1)
 
     def test_vector_memory_is_role_local_deterministic_and_non_generative(self):
         review = self._review_path(text="Check ablations and statistical variance.")
@@ -352,29 +308,6 @@ class ResearchV2Test(unittest.TestCase):
                 require_bubblewrap=False,
             )
 
-    def test_internal_evaluator_is_blind_to_program_and_coco(self):
-        review_path = self._review_path()
-        client = FakeCompletion()
-        result = run_internal_evaluation(
-            paper_path=self.paper_path,
-            review_path=review_path,
-            run_id="eval-run",
-            output_root=self.root,
-            completion_client=client,
-            evaluator_identity={"model": "same-base"},
-        )
-        prompt = "\n".join(
-            message["content"] for message in client.calls[0]["messages"]
-        )
-        self.assertNotIn("secret-program-version", prompt)
-        self.assertNotIn("CoCo", prompt)
-        self.assertEqual(result["review_quality"], 4.0)
-        self.assertEqual(set(result), {
-            "schema_version", "evaluation_id", "review_id", "paper_id", "role",
-            "review_quality", "major_missing_points", "factual_evidence_issues",
-            "improvement_suggestions", "raw_model_output", "evaluator_identity",
-            "prompt_version", "run_id", "created_at"
-        })
 
     def test_meta_has_no_score_and_never_falls_back_to_concat(self):
         paths = [
@@ -700,179 +633,8 @@ class ResearchV2Test(unittest.TestCase):
         self.assertEqual(manifest["rejection_counts"]["coco_canonical_title"], 1)
         self.assertEqual(len(list((output / "data" / "papers").glob("*.json"))), 3)
 
-    def test_role_local_pool_and_single_repair_attempt(self):
-        program = seed_program_path("vector_search")
-        parent = PoolEntry(
-            candidate_id="seed-vector",
-            role="QUAL",
-            program_path=str(program),
-            program_sha256=file_sha256(program),
-            parent_id=None,
-            static_score=3.0,
-            seed_kind="vector_search",
-        )
-        pool = EvolutionPool("QUAL", [parent])
-        with self.assertRaisesRegex(ValueError, "cross-role"):
-            EvolutionPool(
-                "QUAL",
-                [PoolEntry(**{**parent.__dict__, "role": "CLAR"})],
-            )
-        patch = """*** Commit Message
-Title: Clarify grounding
-- experience needs stronger grounding
-- update always-on guidance
-*** Begin Patch
-*** Update File: program.py
-@@
--ALWAYS_ON_KNOWLEDGE = "Ground every judgment in the Frozen Paper."
-+ALWAYS_ON_KNOWLEDGE = "Ground every major judgment in the Frozen Paper."
-*** End Patch"""
-        client = FakeCompletion(["invalid patch", patch])
-        outcome = propose_candidate(
-            role="QUAL",
-            pool=pool,
-            evaluation_paths=[self._evaluation_path()],
-            review_paths=[self._review_path()],
-            attempt=1,
-            run_id="evolution-run",
-            output_root=self.root,
-            completion_client=client,
-            require_bubblewrap=False,
-        )
-        self.assertEqual(outcome["status"], "proposed")
-        self.assertTrue(outcome["repair_used"])
-        self.assertEqual(len(client.calls), 2)
-        self.assertEqual(len(pool.entries), 1)
-        replay_client = FakeCompletion(error=AssertionError("must not call Reflector"))
-        replayed = propose_candidate(
-            role="QUAL",
-            pool=pool,
-            evaluation_paths=[self._evaluation_path()],
-            review_paths=[self._review_path()],
-            attempt=1,
-            run_id="evolution-run",
-            output_root=self.root,
-            completion_client=replay_client,
-            require_bubblewrap=False,
-        )
-        self.assertEqual(replayed, outcome)
-        self.assertEqual(replay_client.calls, [])
-        with self.assertRaisesRegex(ValueError, "cross-role Internal Evaluation"):
-            propose_candidate(
-                role="QUAL",
-                pool=pool,
-                evaluation_paths=[
-                    self._evaluation_path(role="CLAR", review_id="cross-feedback")
-                ],
-                review_paths=[
-                    self._review_path(role="QUAL", review_id="cross-feedback")
-                ],
-                attempt=2,
-                run_id="cross-feedback-run",
-                output_root=self.root,
-                completion_client=FakeCompletion(),
-                require_bubblewrap=False,
-            )
 
-    def test_reflector_uses_exact_context_budget_with_headroom(self):
-        client = CountingCompletion(56832)
-        budget = _reflector_context_budget(
-            messages=[{"role": "user", "content": "feedback"}],
-            completion_client=client,
-            completion_identity={"max_model_len": 65536},
-        )
-        self.assertEqual(budget["input_tokens"], 56832)
-        self.assertEqual(budget["max_tokens"], 8192)
-        self.assertEqual(client.tokenize_calls, 1)
 
-        client.input_tokens = 56833
-        with self.assertRaisesRegex(ReflectorContextBudgetError, "fixed output"):
-            _reflector_context_budget(
-                messages=[{"role": "user", "content": "feedback"}],
-                completion_client=client,
-                completion_identity={"max_model_len": 65536},
-            )
-        with self.assertRaisesRegex(
-            ReflectorContextBudgetError,
-            "requires count_chat_tokens",
-        ):
-            _reflector_context_budget(
-                messages=[{"role": "user", "content": "feedback"}],
-                completion_client=FakeCompletion(),
-                completion_identity={"max_model_len": 65536},
-            )
-
-    def test_tiny_five_role_review_then_separate_evaluation_and_finalization(self):
-        roles = ("QUAL", "CLAR", "SIGN", "ORIG", "POL")
-        program = seed_program_path("vector_search")
-        frozen_s2_path = self._empty_s2_pool()
-        review_paths = []
-        review_client = FakeCompletion()
-        for role in roles:
-            snapshot = self.root / "tiny" / "snapshots" / f"{role}.json"
-            build_memory_snapshot(
-                role=role,
-                program_path=program,
-                program_version=f"{role.lower()}-vector-v1",
-                review_paths=[],
-                evaluation_paths=[],
-                output_path=snapshot,
-                seed_kind="vector_search",
-                require_bubblewrap=False,
-            )
-            run_specialist_review(
-                paper_path=self.paper_path,
-                role=role,
-                program_path=program,
-                snapshot_path=snapshot,
-                run_id="tiny-review",
-                output_root=self.root,
-                completion_client=review_client,
-                model_identity={"model": "mock"},
-                program_version=f"{role.lower()}-vector-v1",
-                frozen_s2_path=frozen_s2_path,
-                require_bubblewrap=False,
-            )
-            review_paths.append(self.root / "reviews" / "tiny-review" / "p1" / f"{role}.json")
-        self.assertEqual(len(review_client.calls), 5)
-        self.assertFalse((self.root / "evaluations" / "tiny-eval").exists())
-
-        evaluation_client = FakeCompletion()
-        for path in review_paths:
-            run_internal_evaluation(
-                paper_path=self.paper_path,
-                review_path=path,
-                run_id="tiny-eval",
-                output_root=self.root,
-                completion_client=evaluation_client,
-                evaluator_identity={"model": "same-mock-base"},
-            )
-        self.assertEqual(len(evaluation_client.calls), 5)
-        evaluation_dir = self.root / "evaluations" / "tiny-eval" / "p1"
-        self.assertTrue(all((evaluation_dir / f"{role}.json").is_file() for role in roles))
-
-        meta = generate_final_review(
-            paper_path=self.paper_path,
-            review_paths=review_paths,
-            mode="meta",
-            run_id="tiny-meta",
-            output_root=self.root,
-            completion_client=FakeCompletion(),
-            model_identity={"model": "mock"},
-        )
-        concat = generate_final_review(
-            paper_path=self.paper_path,
-            review_paths=review_paths,
-            mode="concat",
-            run_id="tiny-concat",
-            output_root=self.root,
-            completion_client=None,
-            model_identity=None,
-        )
-        self.assertEqual(meta["mode"], "meta")
-        self.assertEqual(concat["mode"], "concat")
-        self.assertEqual(meta["source_review_ids"], concat["source_review_ids"])
-        self.assertNotIn("review_quality", meta)
 
 
 if __name__ == "__main__":

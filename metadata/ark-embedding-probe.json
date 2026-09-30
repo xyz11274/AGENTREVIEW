@@ -1,0 +1,20 @@
+{
+  "endpoint": "https://ark.cn-beijing.volces.com/api/plan/v3/embeddings",
+  "request_model": "doubao-embedding-vision",
+  "http_status": 200,
+  "seconds": 0.41609112080186605,
+  "scope": "one synthetic text; connectivity and latency only; no experiment changes",
+  "response_model": "doubao-embedding-vision-251215",
+  "usage": {
+    "prompt_tokens": 29,
+    "total_tokens": 29
+  },
+  "vectors": 1,
+  "dimensions": [
+    2048
+  ],
+  "finite": true,
+  "norms": [
+    0.9977292251772674
+  ]
+}

@@ -3,7 +3,7 @@ from functools import lru_cache
 import hashlib
 from pathlib import Path
 
-MEMORY_CONTRACT = "complete-experience-token-budget-v2"
+MEMORY_CONTRACT = "complete-experience-model-capacity-v3"
 
 
 @lru_cache(maxsize=4)
@@ -20,20 +20,17 @@ def _tokenizer(path, digest, size, mtime_ns):
 
 def budget_options(runtime):
     runtime = runtime or {}
-    identity = runtime.get("tokenizer")
-    if identity:
-        path = Path(identity["path"]).resolve()
-        stat = path.stat()
-        tokenizer = _tokenizer(str(path), identity["sha256"], stat.st_size, stat.st_mtime_ns)
-        counter = lambda text: len(tokenizer.encode(text, add_special_tokens=False).ids)
-    else:
-        # Offline fixtures / legacy entry points only. UTF-8 bytes are a
-        # conservative upper bound, explicitly recorded rather than called BPE.
-        counter = lambda text: len(text.encode("utf-8"))
+    from agentreview.research_v2.config import ModelConfig
+    from agentreview.research_v2.token_accounting import tokenizer_identity
+    identity = runtime.get("tokenizer", tokenizer_identity()["tokenizer"])
+    path = Path(identity["path"]).resolve()
+    stat = path.stat()
+    tokenizer = _tokenizer(str(path), identity["sha256"], stat.st_size, stat.st_mtime_ns)
+    counter = lambda text: len(tokenizer.encode(text, add_special_tokens=False).ids)
     return {"memory_token_counter": counter,
-            "memory_tokenizer_identity": identity or {"provider": "utf8-byte-upper-bound"},
-            "memory_context_tokens": runtime.get("context_max_tokens", 4096),
-            "memory_summary_input_tokens": runtime.get("summary_input_max_tokens", 32768)}
+            "memory_tokenizer_identity": identity,
+            "memory_context_tokens": runtime.get("context_max_tokens", ModelConfig().max_model_len - 1),
+            "memory_summary_input_tokens": runtime.get("summary_input_max_tokens", ModelConfig().max_model_len - 1)}
 
 
 class MemoryBudgetError(ValueError):

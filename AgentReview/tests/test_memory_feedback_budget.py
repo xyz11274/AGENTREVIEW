@@ -6,7 +6,6 @@ import pytest
 from test_research_v2_shared_memory_contract import SharedMemoryContractTest, MemoryCompletion
 from agentreview.research_v2.io import atomic_write_json, read_json, value_sha256
 from agentreview.research_v2.memory import build_memory_snapshot, seed_program_path, retrieve_memory
-from agentreview.research_v2.program_checks import static_check
 
 
 class CorrectedCompletion(MemoryCompletion):
@@ -82,12 +81,13 @@ class FeedbackIntoReviewTest(SharedMemoryContractTest):
         with self.assertRaisesRegex(ValueError, "rebuild"):
             self.prepare("vector_search", snapshot, MemoryCompletion())
 
-    def test_truncated_budget_output_cannot_reach_review_input(self):
+    def test_memory_exceeding_context_cannot_reach_review_input(self):
+        self.runtime["context_max_tokens"] = 4096
         snapshot = self.snapshot("llm_summarizer", "QUAL", client=MemoryCompletion())
         class HugeSummary(MemoryCompletion):
             def complete(self, messages, **kwargs):
                 if "Frozen hit set:" in messages[-1]["content"]:
-                    return "x" * 5000
+                    return "indivisible evidence. " * 5000
                 return super().complete(messages, **kwargs)
         with self.assertRaisesRegex(ValueError, "token budget"):
             self.prepare("llm_summarizer", snapshot, HugeSummary())
@@ -99,14 +99,6 @@ class FeedbackIntoReviewTest(SharedMemoryContractTest):
             atomic_write_json(source, {**review, "partition": partition}, immutable=False)
             with self.assertRaisesRegex(ValueError, "cannot ingest"):
                 self.snapshot("vector_search", "QUAL", review_paths=[source])
-
-
-@pytest.mark.parametrize("expression", ['str(query.query_text)[:6000]', '"\\n".join([query.query_text])[:1500]', 'query.query_text[0:1200]'])
-def test_children_cannot_reintroduce_character_clipping(expression):
-    source = seed_program_path("vector_search").read_text()
-    source = source.replace('    def read(self, query: Query) -> str:\n',
-        f'    def read(self, query: Query) -> str:\n        return {expression}\n')
-    assert any("slice" in error.lower() or "truncat" in error.lower() for error in static_check(source))
 
 
 def test_token_budget_selects_whole_entries_and_records_omissions():

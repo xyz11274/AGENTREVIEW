@@ -1,0 +1,58 @@
+{
+  "results": [
+    {
+      "characters": 14908,
+      "effective_max_tokens": 393216,
+      "finish_reason": "stop",
+      "messages_unchanged": true,
+      "old_max_tokens": 4096,
+      "response": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/repairs/model-capacity/live-replay/0ebf035a817c71ecd56e3fb203a925f85ce714a87a67c94772f54360e3a79132/21ba487e0ad78e0d87e81ea4d42fbb832b0c8cd0bfdbe96c789d7b5da2ab920c/response.json",
+      "seconds": 26.94759702682495,
+      "source_request": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/search/assessments/e0/seed-llm_summarizer/r0/paper-requests/26f83a96501af9239d32dce1cee1dde4cde63558ef4ce1e5ecf769ac72ee90bd/0ebf035a817c71ecd56e3fb203a925f85ce714a87a67c94772f54360e3a79132/request.json",
+      "status": "complete",
+      "usage": {
+        "completion_tokens": 3274,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens": 7152,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 7040
+        },
+        "total_tokens": 10426
+      }
+    },
+    {
+      "characters": 23298,
+      "effective_max_tokens": 393216,
+      "finish_reason": "stop",
+      "messages_unchanged": true,
+      "old_max_tokens": 4096,
+      "response": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/repairs/model-capacity/live-replay/fa82d25dd431663f605ba46aa38ca3ae57e5005fa70c50616e655724b174cf3a/8c015b489665a89b1da8588290a5de181ce045bfd987059398402e62e4bc3a91/response.json",
+      "seconds": 37.58669829368591,
+      "source_request": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/search/assessments/e0/seed-llm_summarizer/r0/paper-requests/8901e7393a4cfabe3ea04ba82b34a532c140ee7a04068b6bc1e58cc5d776aa76/fa82d25dd431663f605ba46aa38ca3ae57e5005fa70c50616e655724b174cf3a/request.json",
+      "status": "complete",
+      "usage": {
+        "completion_tokens": 6611,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens": 7108,
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 7040
+        },
+        "total_tokens": 13719
+      }
+    }
+  ],
+  "scope": "Replay the original failed requests with identical messages; no search scores imported",
+  "time": 1790670991.1926062
+}

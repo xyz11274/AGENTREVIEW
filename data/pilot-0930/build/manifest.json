@@ -1,0 +1,82 @@
+{
+  "protocol": "shared-memory-split-v1",
+  "records": [
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/build/papers/ByxkCj09Fm.json",
+          "sha256": "cc42c8e89121b7451207706e9187d0fa129cc550dbaf707a6cf71bf2a77298cf"
+        }
+      },
+      "content_sha256": "533727bd62409e39ad130851eeea938c41a10e842d0e770dd5059fc54f24a8e9",
+      "normalized_content_sha256": "7d942c6c29cd29d62c8c9b10751079a9488b7baf0c836c96c962fded957b0e4c",
+      "paper_id": "ByxkCj09Fm",
+      "pilot_origin_partition": "build",
+      "source_partition": "build",
+      "title": "DEEP HIERARCHICAL MODEL FOR HIERARCHICAL SELECTIVE CLASSIFICATION AND ZERO SHOT LEARNING",
+      "venue_year": "ICLR_2019",
+      "version_ids": [
+        "ByxkCj09Fm"
+      ],
+      "work_family": "5fe5a963ad1a698e654df43ba8e14efc8447c64b0de24fb1b9a3c4a7c0b87223"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/build/papers/wCrH0JBCFNm.json",
+          "sha256": "de852857781a645374e64d6c5c2ea711c1a4d74465997a64e11c0bc32157dbef"
+        }
+      },
+      "content_sha256": "b9865fddf4ce3dff3e55a287e289e57908434e4d8447d98a1e9270d4371d6585",
+      "normalized_content_sha256": "c6dc9973645bfe1933ab79126de8edf4d5ea0fa998caab481fd5feb917e018be",
+      "paper_id": "wCrH0JBCFNm",
+      "pilot_origin_partition": "build",
+      "source_partition": "build",
+      "title": "Post-Training Quantization for Vision Transformer",
+      "venue_year": "NeurIPS_2021",
+      "version_ids": [
+        "wCrH0JBCFNm"
+      ],
+      "work_family": "932991f35f3dda2bae95b02c6b0d9be7c96cbf041951098deb02a9da424670e0"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/build/papers/Hyx0slrFvH.json",
+          "sha256": "df4307bbe486216dd30cc8aca05771351a54cd56bbfa3d1c188e3a55039dac9a"
+        }
+      },
+      "content_sha256": "bdcc9d050758fa138d8477239e7aec5d895d2d9abcecff29022ab1bb0d795497",
+      "normalized_content_sha256": "d4467e31cc58f5b32e865f8e8e3e4152828220ab9578bc651cb0dcb64c021bf7",
+      "paper_id": "Hyx0slrFvH",
+      "pilot_origin_partition": "build",
+      "source_partition": "build",
+      "title": "Mixed Precision DNNs: All you need is a good parametrization",
+      "venue_year": "ICLR_2020",
+      "version_ids": [
+        "Hyx0slrFvH"
+      ],
+      "work_family": "8da3d786c8500b87eac7a22e4628d7014fa7090d3d1fde303fc8e7b4c6fa176a"
+    },
+    {
+      "assets": {
+        "paper": {
+          "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/build/papers/r1Bjj8qge.json",
+          "sha256": "5f349eb34cab1b112e6691eeed66922f23106c281c2b727480209c9a6f7b7211"
+        }
+      },
+      "content_sha256": "aa17e3fcd9d35c53936c9bb011b3bade66fc38887fb75513827a77b8ca1e5c6b",
+      "normalized_content_sha256": "05d8c359bb44d5d7f90dc3ca209588fc43118ec4f6c43e41dc981022fbfa8c19",
+      "paper_id": "r1Bjj8qge",
+      "pilot_origin_partition": "build",
+      "source_partition": "build",
+      "title": "Encoding and Decoding Representations with Sum- and Max-Product Networks",
+      "venue_year": "ICLR_2017",
+      "version_ids": [
+        "r1Bjj8qge"
+      ],
+      "work_family": "514dc78097b07d2313cfc9e1eba66fb5bda802b9abb6bf9370ccf5b04069d889"
+    }
+  ],
+  "split": "build"
+}

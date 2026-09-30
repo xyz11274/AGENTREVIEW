@@ -1,0 +1,52 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_repeated_file_updates_cannot_silently_discard_first_change ________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-105/test_repeated_file_updates_can0')
+
+    def test_repeated_file_updates_cannot_silently_discard_first_change(tmp_path):
+        source = seed_program_path("vector_search").read_text()
+        first = 'ALWAYS_ON_KNOWLEDGE = "Ground every judgment in the Frozen Paper."'
+        second = 'INSTRUCTION_KNOWLEDGE_ITEM = "Store traceable Review Experience without paper prose."'
+        patch_body = ("*** Begin Patch\n*** Update File: program.py\n@@\n-" + first
+            + '\n+' + first.replace('Ground', 'Verify')
+            + "\n*** Update File: program.py\n@@\n-" + second
+            + '\n+' + second.replace('Store', 'Keep') + '\n*** End Patch\n')
+        fixed = patch_body.replace("\n*** Update File: program.py\n@@\n-" + second, "\n@@\n-" + second)
+        client = RecordedClient(patch_body, fixed)
+        adapter = runner(tmp_path, client)
+        result, _ = adapter.run(code=source, prompt="reflect", iteration=1, score=4)
+>       assert result == source.replace(first, first.replace('Ground', 'Verify')).replace(second, second.replace('Store', 'Keep'))
+E       assert '"""Determini...s(entries))\n' == '"""Determini...s(entries))\n'
+E         
+E         Skipping 442 identical leading characters in diff, use -v to show
+E         Skipping 3290 identical trailing characters in diff, use -v to show
+E         - WLEDGE = "Verify every ju
+E         ?           ^^ ^^^
+E         + WLEDGE = "Ground every ju
+E         ?           ^ ^^^^
+
+AgentReview/tests/test_mstar_adapter.py:100: AssertionError
+________ test_smoke_exercises_nonempty_role_and_query_before_acceptance ________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-105/test_smoke_exercises_nonempty_0')
+
+    def test_smoke_exercises_nonempty_role_and_query_before_acceptance(tmp_path):
+        from agentreview.research_v2.program_validation import validate_program
+        source = seed_program_path("vector_search").read_text()
+        path = tmp_path / "missing_field.py"
+        path.write_text(source.replace('if not text or not role:', 'if item.subcategories and role:'))
+        errors = validate_program(path, require_bubblewrap=True, memory_runtime=RUNTIME, seed_kind="evolved")
+        assert any('subcategories' in error for error in errors)
+        path = tmp_path / "missing_read_field.py"
+        path.write_text(source.replace('embedding = self.toolkit.embed([query.query_text])[0]', 'embedding = query.nonexistent_embedding'))
+        errors = validate_program(path, require_bubblewrap=True, memory_runtime=RUNTIME, seed_kind="evolved")
+>       assert any('nonexistent_embedding' in error for error in errors)
+E       assert False
+E        +  where False = any(<generator object test_smoke_exercises_nonempty_role_and_query_before_acceptance.<locals>.<genexpr> at 0x7f70e5677ac0>)
+
+AgentReview/tests/test_mstar_adapter.py:114: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_mstar_adapter.py::test_repeated_file_updates_cannot_silently_discard_first_change
+FAILED AgentReview/tests/test_mstar_adapter.py::test_smoke_exercises_nonempty_role_and_query_before_acceptance
+2 failed, 5 deselected in 1.04s

@@ -25,7 +25,7 @@ def pack_reflection_feedback(packet, *, prefix, count_chat_tokens, input_limit, 
         prompt = prefix + json.dumps(candidate, ensure_ascii=False)
         tokens = count_chat_tokens([{"role": "user", "content": prompt}])
         return prompt, tokens, (tokens["input_tokens"] <= input_limit and
-                              tokens["input_tokens"] + output_budget <= tokens["max_model_len"])
+                              tokens["input_tokens"] < tokens["max_model_len"])
 
     if not measure(selected)[2]:
         raise ValueError("Complete parent source and mandatory reflection instructions exceed token budget")
@@ -62,5 +62,6 @@ def pack_reflection_feedback(packet, *, prefix, count_chat_tokens, input_limit, 
             selected = trial
     prompt, tokens, _ = measure(selected)
     trace["tokens"] = tokens
+    trace["effective_max_tokens"] = min(output_budget, tokens["max_model_len"] - tokens["input_tokens"])
     trace["selected_packet_sha256"] = value_sha256(selected)
     return prompt, selected, trace

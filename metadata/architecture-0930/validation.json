@@ -1,0 +1,68 @@
+{
+  "active_profile": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/active-pilot.json",
+    "sha256": "7c7290d05b0ce8d8756f41f9ceabd557e68bf0c714e60dd03eade14f4b4d28f2"
+  },
+  "base_input_capacity_audit": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-architecture/audit/capacity.json",
+    "sha256": "fff751a6060fa528f672472942f8928da27df13dbd5579c16145c9dff27b80b8"
+  },
+  "experiment_status": "prepared",
+  "failures_reproduced": {
+    "edit_application": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/red.log",
+      "sha256": "8b87a936555c74f72e40c942acc0e590620c15ac1e8bf6255e5dbeff2e9612b1"
+    },
+    "failed_candidate_report": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/report-red.log",
+      "sha256": "b27879dedaee343b58ffeaaeec745bec3e40d41cbe77b7be6ecec9b6c2f26f11"
+    },
+    "valid_string_parser": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/parsing-red.log",
+      "sha256": "5111cc4495c9eba33f96d9456c0a3bb3f8faf6058fb49bbb3349b98b6400228d"
+    }
+  },
+  "live_api": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/live-api.json",
+    "sha256": "a2c58e1f2f089dc3e8b207798b61b5010b9cecc1fb6dbc2806a70c1b26429731"
+  },
+  "live_api_representation": "full_python",
+  "new_coco_scores": 0,
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/current-pilot/protocol.frozen.json",
+    "sha256": "9b347f95221c7132071085d4c220fed63c271b43df4e7f6c176d05dd15351f22"
+  },
+  "real_response_replay": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/repeated-update-replay/result.json",
+    "sha256": "e577507693a69707078df535b376da799ee3dc9bad41af2ea40a69169d95193e"
+  },
+  "role_execution_and_restore": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/candidate-role-smoke.json",
+    "sha256": "1b702780bc4a55cadee6f8dfe8d8d0ddd08844f8dd5f8cdff227d917f87d5943"
+  },
+  "shutdown": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/shutdown-verification.json",
+    "sha256": "be3d4f1cbee81c0719efbc78000def37c502f09c766ca4c2d1fe649c2c62f21f"
+  },
+  "source_verification": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/source-verification.json",
+    "sha256": "0664d49bbab6b4e2551a95e23b54aaa665ea7dd2c5be7e198bfe97abd5e09799"
+  },
+  "status": "code_organized_and_validated",
+  "tests": {
+    "log": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/architecture-0930/regression.log",
+      "sha256": "fe6a302f8c9cfe479f6dde008910f9d9cabdca7dfe9cc8e89714444fc1ae214e"
+    },
+    "result": "309 passed, 101 subtests passed in 86.81s (0:01:26)"
+  },
+  "validation_scope": [
+    "Complete repository regression",
+    "Historical model response applied in one step and executed in sandbox",
+    "One live DeepSeek reflection with full Python source",
+    "Five role-local write/read and snapshot restore using structured test responses and deterministic test embeddings",
+    "Protocol and original CoCo binding preflight",
+    "All 15 complete base prompts fit the frozen model context"
+  ],
+  "verified_at": "2026-09-30T10:21:52.183420+08:00"
+}

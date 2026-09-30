@@ -1,0 +1,4 @@
+{
+  "output_root": "../artifacts/pilot-0930-architecture",
+  "protocol": "current-pilot/protocol.frozen.json"
+}

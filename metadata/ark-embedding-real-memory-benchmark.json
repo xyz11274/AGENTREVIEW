@@ -1,0 +1,222 @@
+{
+  "scope": "Five complete existing memory texts; single requests and one five-text batch. No truncation, no old cache write, no evaluation or model switch. This compares deployment options, not same-model precision or retrieval quality.",
+  "endpoint": "https://ark.cn-beijing.volces.com/api/plan/v3/embeddings",
+  "request_model": "doubao-embedding-vision",
+  "samples": [
+    {
+      "role": "QUAL",
+      "source": "artifacts/pilot-0930-model-capacity/search/memory/e0/seed-vector_search/r0/enabled/QUAL.json",
+      "text_sha256": "b31645be31e22807746633cb9000b5836fa286884616fcf34378b9c548ccd27b",
+      "characters": 7809
+    },
+    {
+      "role": "CLAR",
+      "source": "artifacts/pilot-0930-model-capacity/search/memory/e0/seed-vector_search/r0/enabled/CLAR.json",
+      "text_sha256": "b0626509f02607cd82028e4fe53366363695ff1706ca6c3292b9940c6bf70f08",
+      "characters": 6714
+    },
+    {
+      "role": "SIGN",
+      "source": "artifacts/pilot-0930-model-capacity/search/memory/e0/seed-vector_search/r0/enabled/SIGN.json",
+      "text_sha256": "92bcee33bf4c949b47f68c8ba9a91c786e8727b2a2e8d1ef4aa2706ec523942a",
+      "characters": 6741
+    },
+    {
+      "role": "ORIG",
+      "source": "artifacts/pilot-0930-model-capacity/search/memory/e0/seed-vector_search/r0/enabled/ORIG.json",
+      "text_sha256": "b556b60e1045a430dd869d8f54afeeaa6d30451fe765dbadcd3899e98ee55a41",
+      "characters": 7440
+    },
+    {
+      "role": "POL",
+      "source": "artifacts/pilot-0930-model-capacity/search/memory/e0/seed-vector_search/r0/enabled/POL.json",
+      "text_sha256": "35dc1e1456b83e59365e8ce0cb2d875dee236101965983c75ce7fc6c8440d8e0",
+      "characters": 4972
+    }
+  ],
+  "results": [
+    {
+      "mode": "single",
+      "roles": [
+        "QUAL"
+      ],
+      "http_status": 200,
+      "seconds": 0.347817936912179,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 2058,
+        "total_tokens": 2058
+      },
+      "vectors": 1,
+      "indices": [
+        0
+      ],
+      "dimensions": [
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        1.0009895045214678
+      ],
+      "vector_sha256": [
+        "fe3f359e4abbf8d3d4a20e61b88e0972dff3bbcc8a0e9892e9a64cdac0ca8770"
+      ]
+    },
+    {
+      "mode": "single",
+      "roles": [
+        "CLAR"
+      ],
+      "http_status": 200,
+      "seconds": 0.22541319113224745,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 1823,
+        "total_tokens": 1823
+      },
+      "vectors": 1,
+      "indices": [
+        0
+      ],
+      "dimensions": [
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        1.0016037443420944
+      ],
+      "vector_sha256": [
+        "5152ad0a42a422e97b4446443a618511d01298a981405330c62d3fd291a22136"
+      ]
+    },
+    {
+      "mode": "single",
+      "roles": [
+        "SIGN"
+      ],
+      "http_status": 200,
+      "seconds": 0.2887703776359558,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 1674,
+        "total_tokens": 1674
+      },
+      "vectors": 1,
+      "indices": [
+        0
+      ],
+      "dimensions": [
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        0.9987963531948687
+      ],
+      "vector_sha256": [
+        "432663624d1cd36e15d5faa8a489a4fc28bacfeba6d3881e3dbe38b34cd70927"
+      ]
+    },
+    {
+      "mode": "single",
+      "roles": [
+        "ORIG"
+      ],
+      "http_status": 200,
+      "seconds": 0.4706932036206126,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 1852,
+        "total_tokens": 1852
+      },
+      "vectors": 1,
+      "indices": [
+        0
+      ],
+      "dimensions": [
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        0.9988342501216905
+      ],
+      "vector_sha256": [
+        "bbd0b9af19ddd96ef6e7952b2253ef0a2b06f067bc4046b8d7a46bdf3e741680"
+      ]
+    },
+    {
+      "mode": "single",
+      "roles": [
+        "POL"
+      ],
+      "http_status": 200,
+      "seconds": 0.2100251978263259,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 1285,
+        "total_tokens": 1285
+      },
+      "vectors": 1,
+      "indices": [
+        0
+      ],
+      "dimensions": [
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        0.9980936740469892
+      ],
+      "vector_sha256": [
+        "32f5257d2c7cd81de7362d032e0910cf30058190f993ced9b4c5eea134f41b9e"
+      ]
+    },
+    {
+      "mode": "batch",
+      "roles": [
+        "QUAL",
+        "CLAR",
+        "SIGN",
+        "ORIG",
+        "POL"
+      ],
+      "http_status": 200,
+      "seconds": 0.406708562746644,
+      "response_model": "doubao-embedding-vision-251215",
+      "usage": {
+        "prompt_tokens": 8692,
+        "total_tokens": 8692
+      },
+      "vectors": 5,
+      "indices": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "dimensions": [
+        2048,
+        2048,
+        2048,
+        2048,
+        2048
+      ],
+      "finite": true,
+      "norms": [
+        0.9994426125164024,
+        1.0016037443420944,
+        0.9981459183512903,
+        0.9991246804183308,
+        1.0001203966456043
+      ],
+      "vector_sha256": [
+        "c3e39ca8f2fb1a9af5a6a3860204055276b9d379cc05ede677f7c6482a0b6e77",
+        "5152ad0a42a422e97b4446443a618511d01298a981405330c62d3fd291a22136",
+        "49213f30411e112c4082c6ba3ef37c96ff3c8f64e0aabc43c21d2dbc449b4eaa",
+        "522c05bed4e2bdb0069eca3c24c409507a5636281322edc55f9950e675231161",
+        "166d84246f0af4979c64ad2469aa49c09f168e47752033df0b38ba4158f67d10"
+      ]
+    }
+  ],
+  "single_median_seconds": 0.2887703776359558
+}

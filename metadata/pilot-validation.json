@@ -1,0 +1,95 @@
+{
+  "api_credential": {
+    "configured": true,
+    "included_in_repository": false,
+    "location": "/data/xyj/.config/agentreview/0930.env",
+    "mode": "0600"
+  },
+  "complete_build_role_reviews": 20,
+  "completed_build_papers": 4,
+  "counts": {
+    "build": 4,
+    "rotating": 5,
+    "sealed_test": 3,
+    "static": 3
+  },
+  "current_phase": "deployment_migration",
+  "dataset_allocation": {
+    "path": "/data/xyj/shengao/AgentReview_0930/data/pilot-0930/allocation.json",
+    "sha256": "7f68f900d2cf7e2791dbaf8a4048b5973db80cbefda85cfd9c54e0c5ce9b0d98"
+  },
+  "evolution_completed_rounds": 0,
+  "evolution_results_available": false,
+  "expected_build_papers": 4,
+  "full_experiment_authorized": false,
+  "full_experiment_started": false,
+  "launcher_process": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930/launcher-process.json",
+    "sha256": "53cbe1728660f44f16a444e3466e76b75df2ad45ea35cd355e967a5b9eb1d5d4"
+  },
+  "pilot_started": true,
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot/protocol.frozen.json",
+    "sha256": "f82ace842d6d649e86f11bb2e39177319cbd02522850d9ccba01f533e6d4d476"
+  },
+  "remaining_prerequisite": "Hybrid deployment acceptance",
+  "remote_gpu_allocation": {
+    "classify": [
+      5
+    ],
+    "split": [
+      4
+    ]
+  },
+  "remote_host": "xyj@10.249.45.139",
+  "remote_model_root": "/data0/xyj/shengao/CoCoReviewBench/model",
+  "remote_verification": "metadata/pilot-remote-services-ready.json",
+  "round_report": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930/report/自进化逐轮报告.md",
+    "sha256": "68791f282d5a7ec1742d10b3a1d630c319f15e162677d1ff291e1984c0807eb6"
+  },
+  "round_report_path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930/report/自进化逐轮报告.md",
+  "scope": "15-paper pilot only; five mutation attempts; one independent search; eight comparison arms; post-freeze held-out evaluation of every valid mutation",
+  "ssh_regression": "metadata/pilot-ssh-regression.log",
+  "status": "paused",
+  "successor_run_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid",
+  "updated_at": 1790665392.0364609,
+  "validation": {
+    "api_generation_and_judge": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-api-readiness.json",
+      "sha256": "142ba2d24de606c9e9b117353334a67949e7f5530736e84402be91bdca11d5bd"
+    },
+    "cpu_embedding": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-embedding-readiness.json",
+      "sha256": "524e826653ba042ab8fcd55420ca27a5d8c9f52eab18f4f4c844f2ab2d588aaa"
+    },
+    "current_readiness": {
+      "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930/readiness.json",
+      "sha256": "0dff97dee41294f544d20ad8763cd116cd0786d6d45ef15473c2fb0b2a1ec183"
+    },
+    "local_coco_readiness": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-readiness.json",
+      "sha256": "233176fd52ca3059fabd5715664d773e2dcedd971add88d9c8f5645d07559bf7"
+    },
+    "original_input_preservation": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-ssh-original-workspace-check.json",
+      "sha256": "987729fc46353587e85031f60b3f4b39d7883971eb22f7ee5ec78ebd239b68f3"
+    },
+    "regression": {
+      "evidence": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-ssh-regression.log",
+        "sha256": "beb552c677283f281803bfbf07fd71f59c6d650c587b2d16830b43e3615525fb"
+      },
+      "passed": 291,
+      "subtests_passed": 101
+    },
+    "remote_end_to_end": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-remote-acceptance.json",
+      "sha256": "e3007f74789c3a9a29d4e067825c006b1cba344175fe3c67f85708778760fa59"
+    },
+    "resource_allocation": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/pilot-resource-status.json",
+      "sha256": "1931781cf857b9232cbcaf7c45a15bf7ef167120558f94fd7e9481650a1cc3e0"
+    }
+  }
+}

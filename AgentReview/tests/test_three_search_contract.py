@@ -162,7 +162,7 @@ def test_persistent_retry_owner_prevents_wrapper_amplification(tmp_path):
             self.calls += 1
             raise TimeoutError("public service")
     inner = Failing()
-    wrapper = PersistentCompletionClient(inner, tmp_path, identity={}, max_attempts=3, input_max_tokens=50)
+    wrapper = PersistentCompletionClient(inner, tmp_path, identity={}, max_attempts=3)
     for _ in range(2):
         with pytest.raises(Exception):
             _call_with_identical_retry(wrapper, [{"role":"user","content":"unchanged"}], max_tokens=10, component="test")

@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_string_fence_parsing_and_list_slices_are_valid_program_operations ____
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-114/test_string_fence_parsing_and_0')
+
+    def test_string_fence_parsing_and_list_slices_are_valid_program_operations(tmp_path):
+        source = seed_program_path('vector_search').read_text()
+        parsing = '''        text = str(raw_text or item.content or "").strip()
+            if text.startswith("```json") and text.endswith("```"):
+                text = text[7:-3].strip()
+            lines = text.splitlines()
+            lines = lines[1:] if lines and lines[0] == "HEADER" else lines
+            text = "\\n".join(lines)'''
+        source = source.replace('        text = str(raw_text or item.content or "").strip()', parsing)
+        path = tmp_path / 'program.py'
+        path.write_text(source)
+>       assert validate_program(path, require_bubblewrap=True,
+                                memory_runtime={'build_llm_calls': 2, 'read_llm_calls': 2}, seed_kind='evolved') == []
+E       AssertionError: assert ['Text or unk...ate material'] == []
+E         
+E         Left contains 2 more items, first extra item: 'Text or unknown slice at line 65: select complete entries with toolkit.select_memory_entries; never truncate material'
+E         Use -v to get more diff
+
+AgentReview/tests/test_mstar_list_parsing.py:16: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_mstar_list_parsing.py::test_string_fence_parsing_and_list_slices_are_valid_program_operations
+1 failed in 0.08s

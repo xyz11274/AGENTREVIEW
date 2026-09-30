@@ -74,34 +74,6 @@ class SpecialistReview:
 
 
 @dataclass(frozen=True)
-class InternalEvaluation:
-    evaluation_id: str
-    review_id: str
-    paper_id: str
-    role: str
-    review_quality: float
-    major_missing_points: list[str]
-    factual_evidence_issues: list[str]
-    improvement_suggestions: list[str]
-    raw_model_output: str
-    evaluator_identity: dict[str, Any]
-    prompt_version: str
-    run_id: str
-    created_at: str
-
-    def validate(self) -> None:
-        _require_role(self.role)
-        if not 1.0 <= float(self.review_quality) <= 5.0:
-            raise ValueError("InternalEvaluation.review_quality must be in [1, 5]")
-        if not self.evaluation_id or not self.review_id:
-            raise ValueError("InternalEvaluation identity is required")
-
-    def to_dict(self) -> dict[str, Any]:
-        self.validate()
-        return {"schema_version": SCHEMA_VERSION, **asdict(self)}
-
-
-@dataclass(frozen=True)
 class FinalReview:
     final_review_id: str
     paper_id: str

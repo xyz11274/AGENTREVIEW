@@ -16,7 +16,7 @@ from agentreview.research_v2.constants import ROLES
 from agentreview.research_v2.experiment_protocol import load_experiment_protocol
 from agentreview.research_v2.io import atomic_write_json, read_json, write_immutable_jsonl
 from agentreview.research_v2.memory import seed_program_path
-from agentreview.research_v2.shared_experiment import LocalSharedBackend, binding
+from agentreview.research_v2.shared_experiment import APISharedBackend, binding
 
 
 def test_composed_receipt_checks_child_evidence_and_rejects_rehashed_tampering(backend, monkeypatch):
@@ -121,14 +121,13 @@ def backend(monkeypatch):
         tokenizer = Tokenizer(models.WordLevel({"[UNK]": 0}, unk_token="[UNK]"))
         tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
         tokenizer.save(str(model_dir / "tokenizer.json"))
-        fixture.config["model"]["tokenizer_sha256"] = binding(model_dir / "tokenizer.json")["sha256"]
         atomic_write_json(scoring, {"source_files": [], "coco_root": "/data0/xyj/shengao/CoCoReviewBench",
             "bert_score_model": coco._model_identity(model_dir),
-            "services": {"judge": {"model_identity": coco._model_identity(model_dir)}}}, immutable=False)
+            "services": {stage: {"model_identity": coco._model_identity(model_dir)} for stage in ("split", "classify")}}, immutable=False)
         fixture.config["scoring_config"] = binding(scoring)
         fixture.rewrite_config()
         protocol = load_experiment_protocol(fixture.config_path)
-        result = LocalSharedBackend(protocol=protocol, output_root=fixture.root / "run")
+        result = APISharedBackend(protocol=protocol, output_root=fixture.root / "run")
         result.require_bubblewrap = False
         result.embedding_client = lambda texts: [[1.0, 0.0] for _ in texts]
         @contextmanager
@@ -247,14 +246,18 @@ def test_current_parent_feedback_uses_its_existing_role_memory(backend, monkeypa
         def count_chat_tokens(self, messages):
             return {"input_tokens": len(messages[0]["content"]) // 4, "max_model_len": 131072}
         def complete(self, messages, **kwargs):
-            prompts.append(messages[0]["content"])
-            return json.dumps({"change": "Use rotating diagnosis in the memory instruction.",
-                "program": seed_program_path("vector_search").read_text().replace(
-                    "Ground every judgment in the Frozen Paper.", "Verify each recalled heuristic against the Frozen Paper.")})
+            prompts.append(next(message["content"] for message in messages if message["role"] == "user"))
+            assert kwargs.get("response_format") is None
+            line = next(x for x in seed_program_path("vector_search").read_text().splitlines()
+                        if "Ground every judgment in the Frozen Paper." in x)
+            replacement = line.replace("Ground every judgment in the Frozen Paper.",
+                                       "Verify each recalled heuristic against the Frozen Paper.")
+            return ("*** Commit Message\nUse rotating diagnosis in the memory instruction.\n\n"
+                    "*** Begin Patch\n*** Update File: program.py\n@@\n-" + line + "\n+" + replacement + "\n*** End Patch\n")
     @contextmanager
     def reflector(directory):
         yield Reflector()
-    monkeypatch.setattr(backend, "client", reflector)
+    monkeypatch.setattr(backend, "reflection_client", reflector)
     backend.generation["input_max_tokens"] = 114688
     selected = ids[:min(2, rotating_count)]
     backend.config["evolution"]["detailed_reflection_cases"] = len(selected)

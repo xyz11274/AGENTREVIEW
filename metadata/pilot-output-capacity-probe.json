@@ -1,0 +1,52 @@
+{
+  "time": 1790670683.399457,
+  "endpoint": "https://ark.cn-beijing.volces.com/api/plan/v3",
+  "model": "deepseek-v4.1-flash",
+  "calls": [
+    {
+      "requested_max_tokens": 393216,
+      "status": "accepted",
+      "response_model": "deepseek-v4-1-flash-260910",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1,
+        "prompt_tokens": 8,
+        "total_tokens": 9,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 0
+        }
+      },
+      "output": "OK"
+    },
+    {
+      "requested_max_tokens": 1048560,
+      "status": "accepted",
+      "response_model": "deepseek-v4-1-flash-260910",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1,
+        "prompt_tokens": 8,
+        "total_tokens": 9,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 0
+        }
+      },
+      "output": "OK"
+    }
+  ],
+  "scope": "Parameter acceptance probe; short responses do not prove long generation capability"
+}

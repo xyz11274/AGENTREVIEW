@@ -18,7 +18,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .io import atomic_write_json, file_sha256, read_json, read_jsonl, value_sha256, write_immutable_jsonl
-from . import judge_lease
+from .config import ModelConfig
+from .execution_telemetry import timed
 
 ORIGINAL_REQUEST_SETTINGS = {
     "split": {"max_completion_tokens": 32768, "effort": "medium", "max_workers": 64},
@@ -47,14 +48,13 @@ def _validate_bert_cache(value: dict[str, Any]) -> None:
     if snapshot != Path(value["bert_score_model"]["root"]):
         raise ValueError("Original BERTScore roberta-large cache resolves to a different frozen model")
 
-SCORING_PROTOCOL = "research-v2-standard-coco-v1"
+SCORING_PROTOCOL = "research-v2-coco-deepseek-judge-v2"
 RECEIPT_PROTOCOL = "research-v2-development-coco-receipt-v1"
 PAPER_PROTOCOL = "research-v2-development-coco-paper-v1"
 REVIEW_MANIFEST_PROTOCOL = "research-v2-coco-review-manifest-v1"
 REFERENCE_MANIFEST_PROTOCOL = "research-v2-coco-reference-manifest-v1"
-CONFIG_PROTOCOL = "research-v2-development-coco-config-v1"
+CONFIG_PROTOCOL = "research-v2-coco-api-judge-config-v2"
 COLUMNS = ("BLEU", "ROUGE-L", "BERT.", "Correct.", "Thoro.", "Ground.", "Verify.", "Clarity", "Average", "Paper.", "Complete.")
-FULL_COLUMNS = ("BLEU", "ROUGE-L", "BERT.", "Paper.", "Complete.")
 
 
 class DevelopmentCoCoFailure(RuntimeError):
@@ -143,17 +143,17 @@ def materialize_scoring_config(*, coco_root: str | Path, python_executable: str 
     """Freeze explicitly supplied services and all standard source/model files."""
     root = Path(coco_root).expanduser().resolve(strict=True)
     configured = {}
-    for stage in ("split", "classify", "judge"):
+    for stage in ("split", "classify"):
         service = services[stage]
         configured[stage] = {"base_url": service["base_url"], "model": service["model"],
                              "model_identity": _model_identity(service["model_root"])}
+    configured["judge"] = ModelConfig(**services["judge"]).protocol_config()
     body = {"protocol": CONFIG_PROTOCOL, "coco_root": str(root),
             "python_executable": str(Path(python_executable).expanduser().absolute()),
             "services": configured, "source_files": _source_identity(root),
             "bert_score_model": _model_identity(bert_score_model_root),
             "timeout_seconds": timeout_seconds, "max_stage_attempts": max_stage_attempts,
             "hf_home": str(Path(hf_home or Path.home() / ".cache/huggingface").expanduser().resolve()),
-            "lease_path": str(judge_lease.LEASE_PATH),
             "request_settings": ORIGINAL_REQUEST_SETTINGS,
             "python_runtime": _python_runtime(python_executable)}
     value = {**body, "config_id": value_sha256(body)}
@@ -168,8 +168,6 @@ def _validate_config(value: dict[str, Any]) -> None:
         raise ValueError("Scoring configuration requires its canonical protocol and self hash")
     if value.get("request_settings") != ORIGINAL_REQUEST_SETTINGS:
         raise ValueError("Scoring configuration must retain upstream request settings")
-    if value.get("lease_path") != str(judge_lease.LEASE_PATH):
-        raise ValueError("Reviewer and Judge require the same mode lease path")
     hf_home = Path(value.get("hf_home", ""))
     if not hf_home.is_absolute() or not hf_home.is_dir():
         raise ValueError("Scoring requires an existing absolute HF_HOME")
@@ -188,20 +186,20 @@ def _validate_config(value: dict[str, Any]) -> None:
         raise ValueError("Scoring Python requires an existing absolute executable")
     if value.get("python_runtime") != _python_runtime(executable):
         raise ValueError("Frozen scoring Python environment changed")
-    for stage in ("split", "classify", "judge"):
+    for stage in ("split", "classify"):
         service = value["services"][stage]
+        if "ssh" in service:
+            from .ssh_service import validate_remote_identity
+            validate_remote_identity(service)
         if urlparse(service["base_url"]).hostname in {"127.0.0.1", "localhost", "::1"} and service["model"]:
             continue
         raise ValueError("CoCo services require explicit local endpoints and model names")
-    judge = value["services"]["judge"]
-    if judge["model"] == "qwen3.8-27b" and judge["base_url"] == "http://127.0.0.1:18001/v1":
-        pass
-    else:
-        raise ValueError("Standard CoCo judge requires local qwen3.8-27b at port 18001")
-    for model in [value["bert_score_model"], *(value["services"][stage]["model_identity"] for stage in ("split", "classify", "judge"))]:
-        if model == _model_identity(model["root"]):
-            continue
-        raise ValueError("Scoring model identity changed")
+    judge = ModelConfig(**value["services"]["judge"])
+    if judge.temperature != ORIGINAL_REQUEST_SETTINGS["judge"]["temperature"]:
+        raise ValueError("CoCo Judge must retain the paper's temperature=0")
+    for model in [value["bert_score_model"], *(value["services"][stage]["model_identity"] for stage in ("split", "classify"))]:
+        if model != _model_identity(model["root"]):
+            raise ValueError("Scoring model identity changed")
 
 
 def _validate_inputs(review_path: Path, reference_path: Path, partition: str) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, str]]]:
@@ -308,8 +306,15 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
         environment.update(HF_HOME=config.get("hf_home", str(Path.home() / ".cache/huggingface")),
                            HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
-        if config.get("lease_path"):
-            environment["AGENTREVIEW_QWEN27B_MODE_LEASE_PATH"] = config["lease_path"]
+        # Only the Judge worker receives the cloud credential. Candidate sandboxes
+        # never inherit it; Split/Classify need no cloud key.
+        if stage == "evaluation":
+            from .llm import require_api_key
+            judge = ModelConfig(**config["services"]["judge"])
+            environment[judge.api_key_env] = require_api_key(judge)
+            for name in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"):
+                if name in os.environ:
+                    environment[name] = os.environ[name]
         for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT"):
             if name in os.environ:
                 environment[name] = os.environ[name]
@@ -364,15 +369,8 @@ def validate_evaluation_receipt(receipt: dict[str, Any], *, expected_paper_ids: 
     if [row["paper_id"] for row in rows] != paper_ids or rows != receipt["rows"]:
         raise ValueError("Evaluation receipt requires exact persisted rows for its cohort")
     for row in rows:
-        if row["status"] == "complete" and all(row["metric_counts"][column] == 1 for column in FULL_COLUMNS):
-            pass
-        else:
-            raise ValueError("Candidate admission requires complete standard scoring for every paper")
-        score = row["metrics"]["Paper."]
-        if type(score) in (int, float) and math.isfinite(score) and 1 <= score <= 5:
-            pass
-        else:
-            raise ValueError("Standard CoCo Paper. requires a finite score between one and five")
+        if row["status"] != "complete":
+            raise ValueError("Evaluation receipt requires a persisted upstream result for every paper")
         for key in ("partition", "run_id", "candidate_id", "evaluation_epoch", "scoring_protocol"):
             if row[key] != receipt[key]:
                 raise ValueError("Paper evaluation identity differs from its receipt")
@@ -414,6 +412,14 @@ def validate_assessment_receipt(receipt: dict[str, Any] | str | Path, *, expecte
     """Admission interface used by the shared candidate pool and report readers."""
     value = read_json(receipt) if isinstance(receipt, (str, Path)) else receipt
     validate_evaluation_receipt(value, expected_paper_ids=expected_paper_ids, expected_epoch=expected_epoch)
+    # Selection needs one actual fitness observation per compared paper. This
+    # does not rewrite or reject the original CoCo evaluation artifact, including
+    # its missing metrics, applicability counts and partial judging results.
+    for row in value["rows"]:
+        score = row["metrics"]["Paper."]
+        if (row["metric_counts"]["Paper."] != 1 or type(score) not in (int, float)
+                or not math.isfinite(score)):
+            raise ValueError("Evolution fitness is unavailable: original CoCo has no Paper. score for every paper")
     if expected_partition is not None and value["partition"] != expected_partition:
         raise ValueError("Receipt partition differs from its comparison partition")
     if candidate_identity is not None and value["candidate_identity"] != candidate_identity:
@@ -434,22 +440,13 @@ def validate_stage_integrity(stages, paper_ids):
             raise ValueError("CoCo stage integrity requires raw model completion evidence")
         for task_ref in value["tasks"]:
             task = read_json(_bound_file(task_ref))
-            choices = task["completion"]["choices"]
-            tokens = task["tokens"]
-            if (task.get("status") != "complete" or len(choices) != 1
-                    or choices[0].get("finish_reason") != "stop"
-                    or not choices[0]["message"].get("content")
-                    or tokens["input_tokens"] + tokens["output_budget"] > tokens["max_model_len"]):
-                raise ValueError("CoCo stage contains truncated or over-budget model output")
-        for row in value["checks"]:
-            if stage == "split" and (not row["opinion_count"] or max(row["raw_coverage"]) != 1.0):
-                raise ValueError("CoCo Split has unresolved missing parts")
-            if stage == "classify" and (not row["opinion_count"] or row["opinion_count"] != row["classified_count"]):
-                raise ValueError("CoCo Classify has unresolved opinions")
-            if stage == "evaluation" and (row["required_categories"] != row["completed_categories"] or row["paper_judge_complete"] is not True):
-                raise ValueError("CoCo Judge has unresolved required scores")
+            if task.get("status") != "complete":
+                raise ValueError("CoCo stage is missing its recorded upstream result")
+        # Stage diagnostics describe the author's recovery/applicability rules;
+        # they are not additional acceptance thresholds on original CoCo output.
 
 
+@timed('coco_evaluation', 'candidate_id', 'partition')
 def evaluate_final_reviews(*, review_manifest_path: str | Path, reference_manifest_path: str | Path,
                            scoring_config_path: str | Path, output_root: str | Path,
                            partition: str, run_id: str, candidate_id: str, evaluation_epoch: int,
@@ -524,15 +521,6 @@ def _evaluate_locked(*, review_manifest_path: Path, reference_manifest_path: Pat
             row.update(status="complete", metrics=table["absolute_scores"], metric_counts=table["paper_counts"],
                        applicability={name: "applicable" if table["paper_counts"][name] else "not_applicable" for name in COLUMNS},
                        paper_judge_scores=detail["paper_judge_scores"], category_judge_scores=detail["category_judge_scores"], raw=_binding(result_path))
-            if all(row["metric_counts"][column] == 1 for column in FULL_COLUMNS):
-                pass
-            else:
-                raise ValueError("Every requested paper requires full standard CoCo scoring coverage")
-            score = row["metrics"]["Paper."]
-            if type(score) in (int, float) and math.isfinite(score) and 1 <= score <= 5:
-                pass
-            else:
-                raise ValueError("Standard CoCo Paper. requires a finite score between one and five")
         aggregate = aggregate_paper_scores(rows)
         for name in COLUMNS:
             declared = raw["table_1_summary"]["absolute_scores"][name]

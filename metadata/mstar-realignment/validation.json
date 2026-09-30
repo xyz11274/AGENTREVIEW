@@ -1,0 +1,60 @@
+{
+  "changed_existing_files": [
+    "AgentReview/agentreview/research_v2/program_checks.py",
+    "AgentReview/agentreview/research_v2/shared_evolution.py",
+    "AgentReview/agentreview/research_v2/program_validation.py",
+    "AgentReview/agentreview/research_v2/shared_experiment.py",
+    "AgentReview/agentreview/research_v2/failure_policy.py",
+    "AgentReview/tests/test_research_v2_shared_evolution.py",
+    "AgentReview/tests/test_research_v2_shared_coco_integration.py"
+  ],
+  "coco_adapter_modified_this_revision": false,
+  "coco_source_modified": false,
+  "experiment_restarted": false,
+  "fitness_evaluated": false,
+  "implementation_diff": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/adapter.diff",
+    "sha256": "a53ca298ea315a580417a0ad9b5c96b0f43b829cf5df24afad0b6ed32918240f"
+  },
+  "limitations": [
+    "Independent API mutation and real sandbox validation; no new CoCo-scored evolution round",
+    "Initial API acceptance was rejected in source review and retained with explicit rejection evidence",
+    "Candidate quality must be measured with CoCo after a separately launched pilot; no guarantee of improvement"
+  ],
+  "new_adapter_tests": [
+    "AgentReview/agentreview/research_v2/mstar_adapter.py",
+    "AgentReview/tests/test_mstar_adapter.py",
+    "AgentReview/tests/test_mstar_list_parsing.py"
+  ],
+  "original_mstar_source_modified": false,
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-mstar-native-v2/protocol.frozen.json",
+    "sha256": "b444b5da32daa9e2fe3152c3b99e76e41786900e804a559a2a1afcd28e578859"
+  },
+  "real_api_acceptance": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/live-acceptance-v2.json",
+    "sha256": "cd29420ccd0f9e4d26e95361d58efd6ec6490e2b6a8575bb34eaad38f54668b7"
+  },
+  "shutdown": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/shutdown.json",
+    "sha256": "f66399f36c81b03748e4ecb3248c1b5230e36e66ebcfab0334e4a9e1b749829a"
+  },
+  "source_verification": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/source-verification.json",
+    "sha256": "3e9d2f53348b842773ddcf22e54251352c5932a260431b23e5d0d884c2f6d997"
+  },
+  "status": "adapted_and_validated_experiment_stopped",
+  "superseded_acceptance_review": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/initial-acceptance-review.json",
+    "sha256": "ff3bdea6bfc6c6697a68188195aa32e4cade31dc145801aa7a4abbc09e57cc80"
+  },
+  "tests": {
+    "command": "PYTHONPATH=AgentReview /data/xyj/envs/coco-original/bin/python -m pytest -q AgentReview/tests",
+    "log": {
+      "path": "/data/xyj/shengao/AgentReview_0930/metadata/mstar-realignment/regression-v2-verified.log",
+      "sha256": "50d79ef4a1215c09d7155d44ad1f8906accfe3d40d15e59e371927e19f11eb35"
+    },
+    "result": "309 passed, 101 subtests passed in 92.81s (0:01:32)"
+  },
+  "verified_at": "2026-09-29T20:35:09.461761+08:00"
+}

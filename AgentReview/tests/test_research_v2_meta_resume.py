@@ -27,7 +27,7 @@ class _Completion:
         self.error = error
         self.calls = 0
 
-    def complete(self, messages, *, max_tokens, component):
+    def complete(self, messages, *, max_tokens, component, response_format=None):
         self.calls += 1
         if self.error is not None:
             raise self.error

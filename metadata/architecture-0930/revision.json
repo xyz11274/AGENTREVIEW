@@ -1,0 +1,36 @@
+{
+  "changes": [
+    "Explicit Mstar reflection and host prompts",
+    "Ordered atomic program edits",
+    "Program execution and token-budget validation",
+    "Explicit PilotRun paths and terminal lifecycle",
+    "Actual failed-candidate sources in reports"
+  ],
+  "coco_algorithm": "upstream retained",
+  "created_at": "2026-09-30T10:13:34.348919+08:00",
+  "dataset_policy": "same 15-paper pilot partitions",
+  "experiment_started": false,
+  "previous_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-mstar-native-v2/protocol.frozen.json",
+    "sha256": "b444b5da32daa9e2fe3152c3b99e76e41786900e804a559a2a1afcd28e578859"
+  },
+  "source": [
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/manifest.json",
+      "sha256": "1e5c98215d5864dde937c5be96c5c7b28019eb2eb5cba2e5b093583c675f4ce9"
+    },
+    {
+      "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/mstar/LICENSE",
+      "sha256": "9426c8f750a9609f9e6fb11cc4e2422e050d64fd88e2970134a265cb9939a668"
+    },
+    {
+      "path": "/data/xyj/envs/coco-original/lib/python3.12/site-packages/codex_apply_patch/__init__.py",
+      "sha256": "f9cec16c509ecb2f0c957c0fc90e4dba2ec84a420aafb65537085e0c8e5bcf53"
+    },
+    {
+      "path": "/data/xyj/envs/coco-original/lib/python3.12/site-packages/codex_apply_patch/codex_apply_patch.cpython-312-x86_64-linux-gnu.so",
+      "sha256": "c01a5d946083872f33cf75e661b56f2f2097a43e95cbb9a93e1a16dc60b2a1e7"
+    }
+  ],
+  "state": "prepared"
+}

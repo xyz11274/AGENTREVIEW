@@ -1,0 +1,56 @@
+{
+  "verified_at": "2026-09-29T20:31:24.385273+08:00",
+  "local_host": "10.249.47.18",
+  "local_units": [
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-pilot-coco-upstream.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-pilot-model-capacity.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-pilot-hybrid.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-coco-classify.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-tunnel-split.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    }
+  ],
+  "remote_host": "10.249.45.139",
+  "remote_units": [
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-coco-split.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    {
+      "MainPID": "0",
+      "Id": "agentreview-0930-model-guard.service",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    }
+  ],
+  "local_gpu_csv_index_used_free_MiB": "6, 1647, 22434\n7, 1647, 22434",
+  "remote_gpu_csv_index_used_free_MiB": "5, 15, 48494",
+  "local_coco_ports_closed": true,
+  "experiment_restarted": false,
+  "other_user_processes_stopped": false
+}

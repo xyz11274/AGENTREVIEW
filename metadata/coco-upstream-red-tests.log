@@ -1,0 +1,187 @@
+FFFF.                                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_split_preserves_upstream_missing_part_recovery ______________
+
+    def test_split_preserves_upstream_missing_part_recovery():
+        module = _load_standard(COCO, "_2_split")
+        source = {"id": "paper", "text": "First sufficiently long reviewer opinion.\n\nSecond sufficiently long reviewer opinion."}
+        texts, prompt, _ = module.build_prompt(source["text"])
+        assert len(texts) > 1
+        result = {**source, "sentence_texts": texts, "opinions": [list(range(len(texts)))]}
+>       check = audit_split(module, [source], [result], {"attempt": task(prompt, "Part 1: Label 1")})[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module '_2_split' from '/data/xyj/shengao/CoCoReviewBench/src/evaluation/_2_split.py'>
+inputs = [{'id': 'paper', 'text': 'First sufficiently long reviewer opinion.\n\nSecond sufficiently long reviewer opinion.'}]
+outputs = [{'id': 'paper', 'opinions': [[0, 1]], 'sentence_texts': ['First sufficiently long reviewer opinion.', 'Second suffici...eviewer opinion.'], 'text': 'First sufficiently long reviewer opinion.\n\nSecond sufficiently long reviewer opinion.'}]
+tasks = {'attempt': {'completion': {'choices': [{'finish_reason': 'stop', 'message': {'content': 'Part 1: Label 1'}}]}, 'messa...content': 'Part 1: First sufficiently long reviewer opinion.\nPart 2: Second sufficiently long reviewer opinion.\n'}]}}
+
+    def audit_split(module, inputs, outputs, tasks):
+        if len(inputs) != len(outputs):
+            raise ValueError("CoCo Split lost an input review")
+        evidence = []
+        for source, result in zip(inputs, outputs):
+            texts, prompt, _ = module.build_prompt(source["text"])
+            responses = [task["completion"]["choices"][0]["message"]["content"] for task in tasks.values()
+                         if task["messages"][-1]["content"] == prompt]
+            coverage = [module.compute_coverage(module.parse_llm_output(raw), len(texts))[0] for raw in responses]
+            if not coverage or max(coverage) != 1.0:
+>               raise ValueError("CoCo Split exhausted responses without full part coverage; fallback is not admissible")
+E               ValueError: CoCo Split exhausted responses without full part coverage; fallback is not admissible
+
+AgentReview/agentreview/research_v2/coco_integrity.py:138: ValueError
+___________ test_classification_preserves_original_na_fallback[N/A] ____________
+
+invalid = 'N/A'
+
+    @pytest.mark.parametrize("invalid", ["N/A", "</think>QUAL-MET QUAL-MET"])
+    def test_classification_preserves_original_na_fallback(invalid):
+        module = _load_standard(COCO, "_3_classify")
+        source = {"id": "paper", "sentence_texts": ["A greeting."], "opinions": [[0]]}
+        result = {**source, "category": [["N/A"]]}
+        _, main = module.classify_reviews_prompt()
+        prompt = main.strip() + "\n\n\nReviewer Comment:\nA greeting."
+>       assert audit_classify(module, [source], [result], {"attempt": task(prompt, invalid)})[0]["na_opinion_count"] == 1
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module '_3_classify' from '/data/xyj/shengao/CoCoReviewBench/src/evaluation/_3_classify.py'>
+inputs = [{'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['A greeting.']}]
+outputs = [{'category': [['N/A']], 'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['A greeting.']}]
+tasks = {'attempt': {'completion': {'choices': [{'finish_reason': 'stop', 'message': {'content': 'N/A'}}]}, 'messages': [{'con...ble single label. Do not include any other words or explanation in the output.\n\n\nReviewer Comment:\nA greeting.'}]}}
+
+    def audit_classify(module, inputs, outputs, tasks):
+        allowed, _ = module.classify_categories()
+        _, main = module.classify_reviews_prompt()
+        if len(inputs) != len(outputs):
+            raise ValueError("CoCo Classify lost an input review")
+        evidence = []
+        for source, result in zip(inputs, outputs):
+            opinions = source["opinions"]
+            categories = result.get("category", [])
+            normalized_na = 0
+            if len(categories) != len(opinions) or any(result.get(k) != v for k, v in source.items()):
+                raise ValueError("CoCo Classify must preserve every opinion and supply every classification")
+            for opinion, labels in zip(opinions, categories):
+                comment = "\n".join(source["sentence_texts"][i] for i in opinion).strip()
+                prompt = main.strip() + "\n\n\nReviewer Comment:\n" + comment
+                valid = []
+                normalized = False
+                for task in sorted(tasks.values(), key=lambda value: value.get("payload", {}).get("presence_penalty", 0)):
+                    if task["messages"][-1]["content"] != prompt:
+                        continue
+                    raw = task["completion"]["choices"][0]["message"]["content"]
+                    parsed, okay = module.parse_labels_from_llm(raw, allowed)
+                    # Match upstream is_retry_ok and labels_candidate exactly. An
+                    # accepted no-category response normalizes to N/A; the fallback
+                    # with zero accepted responses is the unresolved failure.
+                    if raw and okay and "</think>" in raw:
+                        valid.append(parsed if parsed else ["N/A"])
+                        normalized = normalized or not parsed
+                expected = (["N/A"] if any(module._is_na_labelset(item) for item in valid)
+                            else min(valid, key=len)) if valid else None
+                if labels != expected:
+>                   raise ValueError("CoCo Classify has an unresolved opinion or classification without valid original-model evidence")
+E                   ValueError: CoCo Classify has an unresolved opinion or classification without valid original-model evidence
+
+AgentReview/agentreview/research_v2/coco_integrity.py:180: ValueError
+_ test_classification_preserves_original_na_fallback[</think>QUAL-MET QUAL-MET] _
+
+invalid = '</think>QUAL-MET QUAL-MET'
+
+    @pytest.mark.parametrize("invalid", ["N/A", "</think>QUAL-MET QUAL-MET"])
+    def test_classification_preserves_original_na_fallback(invalid):
+        module = _load_standard(COCO, "_3_classify")
+        source = {"id": "paper", "sentence_texts": ["A greeting."], "opinions": [[0]]}
+        result = {**source, "category": [["N/A"]]}
+        _, main = module.classify_reviews_prompt()
+        prompt = main.strip() + "\n\n\nReviewer Comment:\nA greeting."
+>       assert audit_classify(module, [source], [result], {"attempt": task(prompt, invalid)})[0]["na_opinion_count"] == 1
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module '_3_classify' from '/data/xyj/shengao/CoCoReviewBench/src/evaluation/_3_classify.py'>
+inputs = [{'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['A greeting.']}]
+outputs = [{'category': [['N/A']], 'id': 'paper', 'opinions': [[0]], 'sentence_texts': ['A greeting.']}]
+tasks = {'attempt': {'completion': {'choices': [{'finish_reason': 'stop', 'message': {'content': '</think>QUAL-MET QUAL-MET'}}...ble single label. Do not include any other words or explanation in the output.\n\n\nReviewer Comment:\nA greeting.'}]}}
+
+    def audit_classify(module, inputs, outputs, tasks):
+        allowed, _ = module.classify_categories()
+        _, main = module.classify_reviews_prompt()
+        if len(inputs) != len(outputs):
+            raise ValueError("CoCo Classify lost an input review")
+        evidence = []
+        for source, result in zip(inputs, outputs):
+            opinions = source["opinions"]
+            categories = result.get("category", [])
+            normalized_na = 0
+            if len(categories) != len(opinions) or any(result.get(k) != v for k, v in source.items()):
+                raise ValueError("CoCo Classify must preserve every opinion and supply every classification")
+            for opinion, labels in zip(opinions, categories):
+                comment = "\n".join(source["sentence_texts"][i] for i in opinion).strip()
+                prompt = main.strip() + "\n\n\nReviewer Comment:\n" + comment
+                valid = []
+                normalized = False
+                for task in sorted(tasks.values(), key=lambda value: value.get("payload", {}).get("presence_penalty", 0)):
+                    if task["messages"][-1]["content"] != prompt:
+                        continue
+                    raw = task["completion"]["choices"][0]["message"]["content"]
+                    parsed, okay = module.parse_labels_from_llm(raw, allowed)
+                    # Match upstream is_retry_ok and labels_candidate exactly. An
+                    # accepted no-category response normalizes to N/A; the fallback
+                    # with zero accepted responses is the unresolved failure.
+                    if raw and okay and "</think>" in raw:
+                        valid.append(parsed if parsed else ["N/A"])
+                        normalized = normalized or not parsed
+                expected = (["N/A"] if any(module._is_na_labelset(item) for item in valid)
+                            else min(valid, key=len)) if valid else None
+                if labels != expected:
+>                   raise ValueError("CoCo Classify has an unresolved opinion or classification without valid original-model evidence")
+E                   ValueError: CoCo Classify has an unresolved opinion or classification without valid original-model evidence
+
+AgentReview/agentreview/research_v2/coco_integrity.py:180: ValueError
+_____ test_judge_diagnostics_do_not_override_original_missing_metric_rules _____
+
+    def test_judge_diagnostics_do_not_override_original_missing_metric_rules():
+        evaluation = SimpleNamespace(table_judge_metric_map={"Correctness": "alignment", "Verifiability": "verifiability"})
+        human = {"p": {"category_correct": {"QUAL-MET": ["reference"]}}}
+        ai = {"p": {"QUAL-MET": ["review"]}}
+        paper = {"p": {"judge_scores": {"success": True, "alignment": 4, "verifiability": "X",
+                                         "claim_extraction": "normal", "actionability": "X"}}}
+        category = {"p": {"category_scores": {}}}
+>       check = audit_judge(evaluation, ["p"], human, ai, category, paper)[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_coco_integrity.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+evaluation = namespace(table_judge_metric_map={'Correctness': 'alignment', 'Verifiability': 'verifiability'})
+paper_ids = ['p']
+human_refs = {'p': {'category_correct': {'QUAL-MET': ['reference']}}}
+ai_categories = {'p': {'QUAL-MET': ['review']}}
+category = {'p': {'category_scores': {}}}
+paper = {'p': {'judge_scores': {'actionability': 'X', 'alignment': 4, 'claim_extraction': 'normal', 'success': True, ...}}}
+
+    def audit_judge(evaluation, paper_ids, human_refs, ai_categories, category, paper):
+        evidence = []
+        for pid in paper_ids:
+            expected = (set(human_refs[pid]["category_correct"]) & set(ai_categories[pid])) - {"N/A"}
+            actual = category[pid]["category_scores"]
+            if set(actual) != expected:
+>               raise ValueError(f"CoCo Judge has unresolved required categories for {pid}: {sorted(expected - set(actual))}")
+E               ValueError: CoCo Judge has unresolved required categories for p: ['QUAL-MET']
+
+AgentReview/agentreview/research_v2/coco_integrity.py:193: ValueError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_split_preserves_upstream_missing_part_recovery
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_classification_preserves_original_na_fallback[N/A]
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_classification_preserves_original_na_fallback[</think>QUAL-MET QUAL-MET]
+FAILED AgentReview/tests/test_research_v2_coco_integrity.py::test_judge_diagnostics_do_not_override_original_missing_metric_rules
+4 failed, 1 passed in 0.76s

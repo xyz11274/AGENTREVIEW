@@ -1,0 +1,18 @@
+[Unit]
+Description=AgentReview 0930 original CoCo model integrity watcher
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=/data0/xyj/shengao/agentreview-0930-coco
+StandardInput=null
+StandardOutput=append:/data0/xyj/shengao/agentreview-0930-coco/model-guard.systemd.log
+StandardError=append:/data0/xyj/shengao/agentreview-0930-coco/model-guard.systemd.log
+Restart=always
+RestartSec=10
+KillMode=control-group
+ExecStart=/usr/bin/python3 /data0/xyj/shengao/agentreview-0930-coco/ssh_model_guard.py /data0/xyj/shengao/agentreview-0930-coco/model-identity.json /data0/xyj/shengao/agentreview-0930-coco/model-watch.sock
+ExecStopPost=/usr/bin/rm -f /data0/xyj/shengao/agentreview-0930-coco/model-watch.sock
+
+[Install]
+WantedBy=default.target

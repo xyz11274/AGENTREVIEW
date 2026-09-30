@@ -102,8 +102,7 @@ class KnowledgeBase:
             "guidance for the supplied query. Do not filter, add, or replace hits. Do not "
             "claim that prior-paper facts apply to the current paper. Preserve explicit "
             "corrections and distinguish them from the original erroneous claims. Cite "
-            "the source REVIEW EXPERIENCE IDs. Return complete guidance within "
-            + str(self.toolkit.memory_token_limit()) + " tokens.\n\nRole:\n"
+            "the source REVIEW EXPERIENCE IDs. Return concise, complete guidance.\n\nRole:\n"
             + role
             + "\n\nQuery:\n"
             + query.query_text

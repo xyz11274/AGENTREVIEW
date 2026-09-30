@@ -1,0 +1,73 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_repeated_file_updates_apply_in_order_in_one_request ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-110/test_repeated_file_updates_app0')
+
+    def test_repeated_file_updates_apply_in_order_in_one_request(tmp_path):
+        source = seed_program_path("vector_search").read_text()
+        first = 'INSTRUCTION_KNOWLEDGE_ITEM = "Store traceable Review Experience without paper prose."'
+        second = 'ALWAYS_ON_KNOWLEDGE = "Ground every judgment in the Frozen Paper."'
+        patch_body = ("*** Begin Patch\n*** Update File: program.py\n@@\n-" + first
+            + '\n+' + first.replace('Store', 'Keep')
+            + "\n*** Update File: program.py\n@@\n-" + second
+            + '\n+' + second.replace('Ground', 'Verify') + '\n*** End Patch\n')
+        client = RecordedClient(patch_body)
+        adapter = runner(tmp_path, client)
+>       result, _ = adapter.run(code=source, prompt="reflect", iteration=1, score=4)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_mstar_adapter.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+AgentReview/agentreview/research_v2/mstar_adapter.py:189: in run
+    reflected = self.reflector.reflect_and_mutate(
+AgentReview/agentreview/research_v2/vendor/mstar/reflector.py:250: in reflect_and_mutate
+    fixed_code = self._try_fix(new_code, error_type, error_details)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AgentReview/agentreview/research_v2/vendor/mstar/reflector.py:106: in _try_fix
+    response = completion_with_retry(
+AgentReview/agentreview/research_v2/mstar_adapter.py:169: in _complete
+    raw = self.client.complete(messages, max_tokens=self.model.max_output_tokens,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_mstar_adapter.RecordedClient object at 0x7f8cd6772150>
+messages = [{'content': ' ', 'role': 'system'}, {'content': 'You are an expert Python programmer. The previous LLM output did not...\\n".join(self.toolkit.select_memory_entries(entries))\n\n```\n\nOutput your changes as a V4A patch.', 'role': 'user'}]
+kwargs = {'component': 'shared_mstar_reflection', 'max_tokens': 393216}
+@py_assert0 = None, @py_assert2 = None
+
+    def complete(self, messages, **kwargs):
+        self.requests.append((messages, kwargs))
+        assert "response_format" not in kwargs
+>       return next(self.responses)
+               ^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+AgentReview/tests/test_mstar_adapter.py:21: StopIteration
+__________________ test_interrupt_records_terminal_run_state ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-110/test_interrupt_records_termina0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8cd63a1340>
+
+    def test_interrupt_records_terminal_run_state(tmp_path, monkeypatch):
+        protocol = tmp_path / 'protocol.frozen.json'
+        protocol.write_text('{}')
+        monkeypatch.setattr(pilot, 'ROOT', tmp_path)
+        monkeypatch.setattr(pilot, 'PROTOCOL', protocol)
+        monkeypatch.setattr(pilot, 'check', lambda: {'status': 'ready'})
+        monkeypatch.setattr(evolution_round_report, 'report', lambda root: {})
+        def interrupt(**kwargs):
+            raise KeyboardInterrupt()
+        monkeypatch.setattr(pilot, 'run_shared_experiment', interrupt)
+        with pytest.raises(KeyboardInterrupt):
+            pilot.run()
+>       assert read_json(tmp_path / 'pilot-state.json')['status'] == 'stopped'
+E       AssertionError: assert 'running' == 'stopped'
+E         
+E         - stopped
+E         + running
+
+AgentReview/tests/test_pilot_lifecycle.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_mstar_adapter.py::test_repeated_file_updates_apply_in_order_in_one_request
+FAILED AgentReview/tests/test_pilot_lifecycle.py::test_interrupt_records_terminal_run_state
+2 failed in 0.15s

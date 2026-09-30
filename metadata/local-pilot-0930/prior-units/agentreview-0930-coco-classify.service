@@ -1,0 +1,24 @@
+[Unit]
+Description=agentreview-0930-coco-classify
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/services
+StandardInput=null
+StandardOutput=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/services/classify.systemd.log
+StandardError=append:/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-hybrid/services/classify.systemd.log
+Restart=always
+RestartSec=30
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=90
+Environment="CUDA_VISIBLE_DEVICES=6,7"
+Environment="PATH=/data/xyj/envs/qwen38serve/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="NO_PROXY=127.0.0.1,localhost,::1"
+Environment="no_proxy=127.0.0.1,localhost,::1"
+ExecStartPre="/usr/bin/python3" "-c" "import subprocess; rows=subprocess.check_output([\"nvidia-smi\",\"--id=6,7\",\"--query-gpu=memory.free,memory.total\",\"--format=csv,noheader,nounits\"],text=True); values=[tuple(map(float,s.split(\",\"))) for s in rows.splitlines()]; assert len(values)==2 and all(f>=t*0.8 for f,t in values), \"Insufficient free GPU memory; retry without stopping any existing job\""
+ExecStart="/data/xyj/envs/qwen38serve/bin/python" "-m" "vllm.entrypoints.openai.api_server" "--model" "/data/xyj/shengao/CoCoReviewBench/model/classify_model" "--served-model-name" "Qwen3-8B-Classify" "--host" "127.0.0.1" "--port" "13098" "--dtype" "bfloat16" "--tensor-parallel-size" "2" "--max-model-len" "32768" "--gpu-memory-utilization" "0.8" "--max-num-seqs" "8" "--max-num-batched-tokens" "2048" "--enable-chunked-prefill" "--enable-prefix-caching"
+
+[Install]
+WantedBy=default.target

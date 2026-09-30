@@ -1,0 +1,132 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_original_missing_paper_metric_is_preserved_before_fitness_admission ___
+
+experiment = {'candidate_id': 'vector', 'candidate_identity': {'memory': {'QUAL': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb...uation_epoch': 0, 'output_root': PosixPath('/tmp/pytest-of-xyj/pytest-97/test_original_missing_paper_me0/scores'), ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f391668e540>
+
+    def test_original_missing_paper_metric_is_preserved_before_fitness_admission(experiment, monkeypatch):
+        def missing(raw):
+            for detail in raw["papers"].values():
+                detail["table_1_summary"]["absolute_scores"]["Paper."] = None
+                detail["table_1_summary"]["paper_counts"]["Paper."] = 0
+                detail["paper_judge_scores"] = {"success": False}
+            raw["table_1_summary"]["absolute_scores"]["Paper."] = None
+            raw["table_1_summary"]["paper_counts"]["Paper."] = 0
+        fake_standard(monkeypatch, experiment, mutate=missing)
+>       receipt = coco.evaluate_final_reviews(**experiment)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+AgentReview/tests/test_research_v2_development_coco.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+AgentReview/agentreview/research_v2/development_coco.py:458: in evaluate_final_reviews
+    return _evaluate_locked(review_manifest_path=Path(review_manifest_path).resolve(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _evaluate_locked(*, review_manifest_path: Path, reference_manifest_path: Path, scoring_config_path: Path,
+                         output: Path, partition: str, run_id: str, candidate_id: str, evaluation_epoch: int,
+                         candidate_identity: dict[str, Any], purpose: str, review_target: str) -> dict[str, Any]:
+        try:
+            if review_target != "final":
+                raise ValueError("CoCo accepts only the final complete review; role scoring is disabled")
+            if (partition == "sealed_test" and purpose == "final_test") or (partition != "sealed_test" and purpose == "development"):
+                pass
+            else:
+                raise ValueError("Sealed test scoring requires the final_test purpose")
+            if type(evaluation_epoch) is int and evaluation_epoch >= 0 and run_id and candidate_id and candidate_identity:
+                pass
+            else:
+                raise ValueError("Scoring requires a run, candidate identity and nonnegative evaluation epoch")
+            manifest, references, candidate = _validate_inputs(review_manifest_path, reference_manifest_path, partition)
+            config = read_json(scoring_config_path)
+            _validate_config(config)
+        except (ValueError, TypeError, KeyError, OSError) as exc:
+            record = {"stage": "preflight", "category": "shared_data", "message": str(exc), "error_type": type(exc).__name__}
+            atomic_write_json(output / "preflight.failure.json", record, immutable=False)
+            raise DevelopmentCoCoFailure(record) from exc
+        identity = {"partition": partition, "run_id": run_id, "candidate_id": candidate_id, "evaluation_epoch": evaluation_epoch,
+            "scoring_protocol": {"protocol": SCORING_PROTOCOL, "config_sha256": file_sha256(scoring_config_path),
+                                 "standard_source_sha256": value_sha256(config["source_files"])}}
+        inputs = {"reviews": _binding(review_manifest_path), "references": _binding(reference_manifest_path), "scoring_config": _binding(scoring_config_path)}
+        request = {**identity, "inputs": inputs, "paper_ids": manifest["paper_ids"], "candidate_identity": candidate_identity,
+                   "purpose": purpose, "review_target": review_target, "output_root": str(output)}
+        request_path = atomic_write_json(output / "request.json", request)
+        receipt_path = output / "assessment.json"
+        if receipt_path.is_file():
+            existing = read_json(receipt_path)
+            if existing["status"] == "complete":
+                return validate_evaluation_receipt(existing, expected_paper_ids=manifest["paper_ids"], expected_epoch=evaluation_epoch)
+            raise DevelopmentCoCoFailure(existing["failure"])
+        write_immutable_jsonl(output / "candidate.jsonl", candidate)
+        by_id = {row["paper_id"]: row for row in manifest["records"]}
+        rows = [{"protocol": PAPER_PROTOCOL, **identity, "paper_id": paper_id, "status": "pending",
+                 "metrics": dict.fromkeys(COLUMNS), "metric_counts": dict.fromkeys(COLUMNS, 0),
+                 "applicability": dict.fromkeys(COLUMNS, "unknown"), "review": {key: by_id[paper_id][key] for key in ("path", "sha256")}}
+                for paper_id in manifest["paper_ids"]]
+        failure = None
+        stage_integrity = {}
+        try:
+            for stage in ("split", "classify", "evaluation"):
+                result_path = _run_stage(stage=stage, request_path=request_path, output=output, config=config)
+                stage_integrity[stage] = read_json(result_path)["integrity"]
+            validate_stage_integrity(stage_integrity, manifest["paper_ids"])
+            raw = read_json(result_path)
+            if raw["request"] != _binding(request_path):
+                raise ValueError("Standard CoCo worker result requires its original frozen scoring request")
+            if raw["paper_ids"] != manifest["paper_ids"] or set(raw["papers"]) != set(manifest["paper_ids"]):
+                raise ValueError("Standard CoCo worker requires the exact frozen paper cohort")
+            for row in rows:
+                detail = raw["papers"][row["paper_id"]]
+                table = detail["table_1_summary"]
+                row.update(status="complete", metrics=table["absolute_scores"], metric_counts=table["paper_counts"],
+                           applicability={name: "applicable" if table["paper_counts"][name] else "not_applicable" for name in COLUMNS},
+                           paper_judge_scores=detail["paper_judge_scores"], category_judge_scores=detail["category_judge_scores"], raw=_binding(result_path))
+                if all(row["metric_counts"][column] == 1 for column in FULL_COLUMNS):
+                    pass
+                else:
+                    raise ValueError("Every requested paper requires full standard CoCo scoring coverage")
+                score = row["metrics"]["Paper."]
+                if type(score) in (int, float) and math.isfinite(score) and 1 <= score <= 5:
+                    pass
+                else:
+                    raise ValueError("Standard CoCo Paper. requires a finite score between one and five")
+            aggregate = aggregate_paper_scores(rows)
+            for name in COLUMNS:
+                declared = raw["table_1_summary"]["absolute_scores"][name]
+                derived = aggregate["absolute_scores"][name]
+                matches = declared is None and derived is None or type(declared) in (int, float) and type(derived) in (int, float) and math.isclose(declared, derived, rel_tol=1e-12, abs_tol=1e-12)
+                if matches and raw["table_1_summary"]["paper_counts"][name] == aggregate["paper_counts"][name]:
+                    continue
+                raise ValueError(f"Standard aggregate and per-paper {name} values differ")
+            _validate_inputs(review_manifest_path, reference_manifest_path, partition)
+            if inputs != {"reviews": _binding(review_manifest_path), "references": _binding(reference_manifest_path), "scoring_config": _binding(scoring_config_path)}:
+                raise ValueError("Scoring input manifests changed during evaluation")
+        except (DevelopmentCoCoFailure, ValueError, KeyError, TypeError, OSError) as exc:
+            failure = exc.failure_record if isinstance(exc, DevelopmentCoCoFailure) else _stage_failure("validation", exc)
+            for row in rows:
+                row.update(status="failed", metrics=dict.fromkeys(COLUMNS), metric_counts=dict.fromkeys(COLUMNS, 0),
+                           applicability=dict.fromkeys(COLUMNS, "unknown"), failure=failure)
+        papers = []
+        for index, row in enumerate(rows):
+            path = atomic_write_json(output / "papers" / f"{index:06d}.json", row)
+            papers.append({"paper_id": row["paper_id"], **_binding(path)})
+        aggregate = aggregate_paper_scores(rows)
+        receipt = {"protocol": RECEIPT_PROTOCOL, **identity, "purpose": purpose, "review_target": review_target,
+            "stage_integrity": stage_integrity,
+            "candidate_identity": candidate_identity, "inputs": inputs, "paper_ids": manifest["paper_ids"], "papers": papers, "rows": rows,
+            "status": "paused" if failure else "complete", "expected_count": len(rows), "complete_count": sum(row["status"] == "complete" for row in rows),
+            "aggregate": aggregate, "mean_score": aggregate["absolute_scores"]["Paper."] if failure is None else None}
+        if failure:
+            receipt["failure"] = failure
+        receipt["receipt_id"] = value_sha256(receipt)
+        if failure is None:
+            validate_evaluation_receipt(receipt)
+        atomic_write_json(receipt_path, receipt)
+        if failure:
+>           raise DevelopmentCoCoFailure(failure)
+E           agentreview.research_v2.development_coco.DevelopmentCoCoFailure: Every requested paper requires full standard CoCo scoring coverage
+
+AgentReview/agentreview/research_v2/development_coco.py:564: DevelopmentCoCoFailure
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_research_v2_development_coco.py::test_original_missing_paper_metric_is_preserved_before_fitness_admission
+1 failed, 18 deselected in 0.20s

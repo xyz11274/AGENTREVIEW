@@ -1,6 +1,7 @@
 """Pinned dense-embedding backends with fingerprinted exact-text caches."""
 
 from __future__ import annotations
+from agentreview.research_v2.execution_telemetry import timed
 
 import gc
 import hashlib
@@ -413,6 +414,7 @@ class CachedDenseEmbedding:
             output.extend(self._canonical_float32_vector(vector)[0] for vector in raw)
         return output
 
+    @timed('embedding')
     def embed(self, texts: list[str]) -> list[list[float]]:
         normalized = [str(value) for value in texts]
         with self._lock:

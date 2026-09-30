@@ -1,0 +1,5 @@
+[EMBED CACHE] provider=qwen3_embedding fingerprint=78600a929973 requested=1 hits=0 misses=1
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:29<01:29, 29.86s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:55<00:54, 27.48s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [01:19<00:26, 26.04s/it]Loading checkpoint shards: 100%|██████████| 4/4 [01:21<00:00, 16.37s/it]Loading checkpoint shards: 100%|██████████| 4/4 [01:21<00:00, 20.39s/it]
+[QWEN3 EMBEDDING] device=cpu dtype=float32 attention=sdpa max_length=32768
+[EMBED CACHE] progress=1/1 committed=1
+{"status": "passed", "device": "cpu", "dimension": 4096, "l2_norm": 0.9999999727403391, "seconds": 178.02490261290222, "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"}

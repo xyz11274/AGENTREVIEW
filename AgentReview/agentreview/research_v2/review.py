@@ -1,6 +1,7 @@
 """Review-only pipeline: frozen inputs to one immutable Specialist Review."""
 
 from __future__ import annotations
+from .execution_telemetry import timed
 
 import hashlib
 from datetime import datetime, timezone
@@ -316,6 +317,7 @@ def _load_review_request(
     return value
 
 
+@timed('specialist_review', 'role', 'run_id')
 def run_specialist_review(
     *,
     paper_path: str | Path,

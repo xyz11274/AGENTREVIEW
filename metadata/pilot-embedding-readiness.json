@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "device": "cpu",
+  "dimension": 4096,
+  "l2_norm": 0.9999999727403391,
+  "seconds": 178.02490261290222,
+  "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+}

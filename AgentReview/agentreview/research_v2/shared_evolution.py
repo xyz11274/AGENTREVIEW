@@ -173,7 +173,11 @@ class SharedEvolution:
             epoch = self.epoch
             try:
                 if recipe["candidate"].get("proposal_failure"):
-                    raise CandidateProposalFailure(recipe["candidate"]["proposal_failure"]["error"])
+                    detail = recipe["candidate"]["proposal_failure"]
+                    error = CandidateProposalFailure(detail["error"])
+                    error.repair_exhausted = detail.get("repair_exhausted", False)
+                    error.reflection = detail.get("reflection")
+                    raise error
                 result = self.backend.assess(recipe, epoch=epoch)
                 self.backend.validate(result, recipe=recipe, epoch=epoch)
                 self._gate(recovery=recovery)
@@ -189,7 +193,7 @@ class SharedEvolution:
                 if detail["category"] == "candidate" and recipe["kind"] == "candidate":
                     revision = candidate.get("revision", 0)
                     reservation = f"candidate-repair:{candidate['candidate_id']}:r{revision}"
-                    if self.controller.reserve_repair(operation_id=reservation, candidate_id=candidate["candidate_id"]):
+                    if not detail.get("repair_exhausted") and self.controller.reserve_repair(operation_id=reservation, candidate_id=candidate["candidate_id"]):
                         try:
                             repaired = self.backend.propose(parent=candidate, feedback={"contract_failure": detail},
                                                             history=self.state["attempts"],
@@ -403,7 +407,9 @@ class SharedEvolution:
                         except Exception as proposal_exc:
                             detail = failure_detail(proposal_exc, phase="shared_candidate_proposal")
                             if detail["category"] == "candidate":
-                                candidate = {**self.state["recipes"][parent["key"]]["candidate"], "proposal_failure": detail}
+                                candidate = {**self.state["recipes"][parent["key"]]["candidate"],
+                                             "proposal_failure": detail, "change": None,
+                                             "reflection": detail.get("reflection")}
                             else:
                                 raise
                         candidate.update(candidate_id=candidate_key, parent_id=parent["candidate_id"], seed=parent["seed"], revision=0,

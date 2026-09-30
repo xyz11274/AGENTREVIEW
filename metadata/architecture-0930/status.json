@@ -1,0 +1,10 @@
+{
+  "status": "prepared",
+  "phase": "awaiting_start",
+  "recorded_status": "prepared",
+  "protocol_path": "/data/xyj/shengao/AgentReview_0930/config/current-pilot/protocol.frozen.json",
+  "output_root": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-architecture",
+  "state_path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-architecture/pilot-state.json",
+  "log_command": "journalctl --user -u agentreview-0930-pilot.service -f",
+  "report_path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-architecture/report/自进化逐轮报告.md"
+}

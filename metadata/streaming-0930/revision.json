@@ -1,0 +1,24 @@
+{
+  "change": "Ark SSE transport, durable request progress and per-operation timing",
+  "coco": "Original source and scoring semantics; Judge API transport uses streaming",
+  "created_at": 1790751608.4200392,
+  "execution": "Prepared only; experiment remains paused",
+  "model_parameters": "Preserve full inputs, thinking mode and model output capacity",
+  "original_artifacts": "Original run retains its frozen identity and completed receipts",
+  "predecessor_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+    "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+  },
+  "predecessor_state": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/pilot-state.json",
+    "sha256": "508666b920bb60035cc28ccb26ea5fd585132544fb655f50eeff6f61806f2e4f"
+  },
+  "shutdown": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/shutdown.json",
+    "sha256": "5bb996639234766e64abcc9593c945fec5b42522fe96ce9918172c9184809f06"
+  },
+  "source_archive": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/before.tar.gz",
+    "sha256": "35b263cf3ca4ca594a61135267787b63ea693cfe10c6f334ea0d6beefff99751"
+  }
+}

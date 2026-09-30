@@ -1,0 +1,1272 @@
+{
+  "status": "paused",
+  "planned_rounds": 5,
+  "completed_rounds": 3,
+  "protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/protocol.frozen.json",
+    "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+  },
+  "baselines": {
+    "coco-native": {
+      "mean": 3.6666666666666665,
+      "per_paper": {
+        "f-FQE1fjPK": 3.4,
+        "C_vsGwEIjAr": 3.8,
+        "qf12cWVSksq": 3.8
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/coco-native/r0/coco/assessment.json",
+        "sha256": "9370fa70744531db029378a952fcdb87f0a37b9e255882c6685b61c52a948fe5"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 2.6666666666666665,
+          "BERT.": 83.34417939186096,
+          "BLEU": 2.0388021169331614,
+          "Clarity": 3.8333333333333335,
+          "Complete.": 191.66666666666669,
+          "Correct.": 2.5,
+          "Ground.": 3.5,
+          "Paper.": 3.4,
+          "ROUGE-L": 17.28395061728395,
+          "Thoro.": 1.3333333333333333,
+          "Verify.": 2.0
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.4071428571428575,
+          "BERT.": 84.19402241706848,
+          "BLEU": 2.3679312330708537,
+          "Clarity": 4.571428571428571,
+          "Complete.": 90.9090909090909,
+          "Correct.": 3.2857142857142856,
+          "Ground.": 4.142857142857143,
+          "Paper.": 3.8,
+          "ROUGE-L": 14.121037463976943,
+          "Thoro.": 2.0,
+          "Verify.": 2.8
+        },
+        "qf12cWVSksq": {
+          "Average": 3.43125,
+          "BERT.": 83.79733562469482,
+          "BLEU": 2.4308229410469346,
+          "Clarity": 4.25,
+          "Complete.": 76.92307692307693,
+          "Correct.": 2.875,
+          "Ground.": 4.625,
+          "Paper.": 3.8,
+          "ROUGE-L": 14.473684210526313,
+          "Thoro.": 2.125,
+          "Verify.": 3.3333333333333335
+        }
+      }
+    },
+    "no-memory-experience_learner": {
+      "mean": 4.0,
+      "per_paper": {
+        "f-FQE1fjPK": 3.8,
+        "C_vsGwEIjAr": 4.2,
+        "qf12cWVSksq": 4.0
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-experience_learner/r0/coco/assessment.json",
+        "sha256": "4c281331549a84a37dbeaafa01977a39f4494e5037712e9cb66a9717b2e69a14"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.6666666666666665,
+          "BERT.": 81.30512833595276,
+          "BLEU": 0.8432606847399912,
+          "Clarity": 4.5,
+          "Complete.": 175.0,
+          "Correct.": 3.0,
+          "Ground.": 4.833333333333333,
+          "Paper.": 3.8,
+          "ROUGE-L": 8.174537420602045,
+          "Thoro.": 2.0,
+          "Verify.": 4.0
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.54375,
+          "BERT.": 81.25074505805969,
+          "BLEU": 0.2765029854980595,
+          "Clarity": 4.375,
+          "Complete.": 190.9090909090909,
+          "Correct.": 3.125,
+          "Ground.": 4.625,
+          "Paper.": 4.2,
+          "ROUGE-L": 7.836198179979776,
+          "Thoro.": 1.75,
+          "Verify.": 4.0
+        },
+        "qf12cWVSksq": {
+          "Average": 3.94,
+          "BERT.": 81.1308205127716,
+          "BLEU": 0.3026480325474799,
+          "Clarity": 4.3,
+          "Complete.": 169.23076923076923,
+          "Correct.": 3.5,
+          "Ground.": 4.8,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.952393832837437,
+          "Thoro.": 3.1,
+          "Verify.": 4.0
+        }
+      }
+    },
+    "no-memory-llm_summarizer": {
+      "mean": 4.066666666666666,
+      "per_paper": {
+        "f-FQE1fjPK": 4.4,
+        "C_vsGwEIjAr": 3.8,
+        "qf12cWVSksq": 4.0
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-llm_summarizer/r0/coco/assessment.json",
+        "sha256": "8f4ad117570f4eb9f7f7aa4b4f68f0f17ef9a354fbd81a0ad7c4a5028a7b0279"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.72,
+          "BERT.": 81.42927885055542,
+          "BLEU": 0.8173518149009946,
+          "Clarity": 4.6,
+          "Complete.": 183.33333333333331,
+          "Correct.": 3.2,
+          "Ground.": 4.6,
+          "Paper.": 4.4,
+          "ROUGE-L": 8.581777653942604,
+          "Thoro.": 2.4,
+          "Verify.": 3.8
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.54375,
+          "BERT.": 81.45779371261597,
+          "BLEU": 0.34518142613450836,
+          "Clarity": 4.75,
+          "Complete.": 190.9090909090909,
+          "Correct.": 2.875,
+          "Ground.": 4.5,
+          "Paper.": 3.8,
+          "ROUGE-L": 8.3265306122449,
+          "Thoro.": 2.0,
+          "Verify.": 3.75
+        },
+        "qf12cWVSksq": {
+          "Average": 3.727272727272727,
+          "BERT.": 81.53908252716064,
+          "BLEU": 0.28207016290964226,
+          "Clarity": 4.454545454545454,
+          "Complete.": 169.23076923076923,
+          "Correct.": 3.0,
+          "Ground.": 4.818181818181818,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.8095747526076496,
+          "Thoro.": 2.6363636363636362,
+          "Verify.": 3.727272727272727
+        }
+      }
+    },
+    "no-memory-vector_search": {
+      "mean": 4.066666666666666,
+      "per_paper": {
+        "f-FQE1fjPK": 4.0,
+        "C_vsGwEIjAr": 4.0,
+        "qf12cWVSksq": 4.2
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-vector_search/r0/coco/assessment.json",
+        "sha256": "59edcb9d77c5955cf3d016440ed2a88f984cc45c498a6fd6847c0e4aa10446cb"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.8333333333333335,
+          "BERT.": 81.60715699195862,
+          "BLEU": 0.3295881376986951,
+          "Clarity": 4.833333333333333,
+          "Complete.": 191.66666666666669,
+          "Correct.": 3.3333333333333335,
+          "Ground.": 5.0,
+          "Paper.": 4.0,
+          "ROUGE-L": 8.413527632664284,
+          "Thoro.": 2.1666666666666665,
+          "Verify.": 3.8
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.65,
+          "BERT.": 81.5876305103302,
+          "BLEU": 0.22803368879737718,
+          "Clarity": 4.428571428571429,
+          "Complete.": 181.8181818181818,
+          "Correct.": 3.2857142857142856,
+          "Ground.": 4.714285714285714,
+          "Paper.": 4.0,
+          "ROUGE-L": 8.108108108108107,
+          "Thoro.": 2.142857142857143,
+          "Verify.": 3.6
+        },
+        "qf12cWVSksq": {
+          "Average": 3.9136363636363636,
+          "BERT.": 81.61143660545349,
+          "BLEU": 0.4230655777916999,
+          "Clarity": 4.363636363636363,
+          "Complete.": 169.23076923076923,
+          "Correct.": 3.3636363636363638,
+          "Ground.": 5.0,
+          "Paper.": 4.2,
+          "ROUGE-L": 8.421639709983268,
+          "Thoro.": 3.090909090909091,
+          "Verify.": 3.7
+        }
+      }
+    },
+    "seed-experience_learner": {
+      "mean": 4.0,
+      "per_paper": {
+        "f-FQE1fjPK": 4.2,
+        "C_vsGwEIjAr": 3.8,
+        "qf12cWVSksq": 4.0
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-experience_learner/r0/coco/assessment.json",
+        "sha256": "756c851691c76059546a3cb3023f334bc47e8081cf0b8ef65f997ded18cfa6fc"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.88,
+          "BERT.": 81.54318928718567,
+          "BLEU": 0.27865684161248805,
+          "Clarity": 4.2,
+          "Complete.": 183.33333333333331,
+          "Correct.": 3.6,
+          "Ground.": 5.0,
+          "Paper.": 4.2,
+          "ROUGE-L": 7.922856398227782,
+          "Thoro.": 2.6,
+          "Verify.": 4.0
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.6285714285714286,
+          "BERT.": 81.19168281555176,
+          "BLEU": 0.5677308406310556,
+          "Clarity": 4.428571428571429,
+          "Complete.": 163.63636363636365,
+          "Correct.": 3.2857142857142856,
+          "Ground.": 4.428571428571429,
+          "Paper.": 3.8,
+          "ROUGE-L": 7.885862516212712,
+          "Thoro.": 2.4285714285714284,
+          "Verify.": 3.6666666666666665
+        },
+        "qf12cWVSksq": {
+          "Average": 3.855555555555556,
+          "BERT.": 82.41785764694214,
+          "BLEU": 0.7556794680689239,
+          "Clarity": 4.222222222222222,
+          "Complete.": 161.53846153846155,
+          "Correct.": 3.4444444444444446,
+          "Ground.": 4.777777777777778,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.8347196136302655,
+          "Thoro.": 3.111111111111111,
+          "Verify.": 3.625
+        }
+      }
+    },
+    "seed-llm_summarizer": {
+      "mean": 4.066666666666666,
+      "per_paper": {
+        "f-FQE1fjPK": 4.0,
+        "C_vsGwEIjAr": 4.4,
+        "qf12cWVSksq": 3.8
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-llm_summarizer/r0/coco/assessment.json",
+        "sha256": "b9b494c559a42da34fa4e3e9b396f310f578eb9ff5bdb5b87d7a63ff63c35425"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.5833333333333335,
+          "BERT.": 81.45197033882141,
+          "BLEU": 0.590322712693832,
+          "Clarity": 4.333333333333333,
+          "Complete.": 191.66666666666669,
+          "Correct.": 3.0,
+          "Ground.": 4.833333333333333,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.608957380207079,
+          "Thoro.": 2.0,
+          "Verify.": 3.8
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.6875,
+          "BERT.": 81.25436305999756,
+          "BLEU": 0.24306441863698358,
+          "Clarity": 4.5,
+          "Complete.": 209.0909090909091,
+          "Correct.": 3.125,
+          "Ground.": 4.625,
+          "Paper.": 4.4,
+          "ROUGE-L": 7.5136612021857925,
+          "Thoro.": 2.25,
+          "Verify.": 4.2
+        },
+        "qf12cWVSksq": {
+          "Average": 3.8272727272727276,
+          "BERT.": 81.95220232009888,
+          "BLEU": 0.6085732273980746,
+          "Clarity": 4.363636363636363,
+          "Complete.": 169.23076923076923,
+          "Correct.": 3.3636363636363638,
+          "Ground.": 4.818181818181818,
+          "Paper.": 3.8,
+          "ROUGE-L": 6.9298245614035086,
+          "Thoro.": 2.909090909090909,
+          "Verify.": 3.6
+        }
+      }
+    },
+    "seed-vector_search": {
+      "mean": 3.8000000000000003,
+      "per_paper": {
+        "f-FQE1fjPK": 4.0,
+        "C_vsGwEIjAr": 3.6,
+        "qf12cWVSksq": 3.8
+      },
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-vector_search/r0/coco/assessment.json",
+        "sha256": "43c4b229e31b61f56eea8c7c59a37859cc426702a998e3d2a20ed9fed7f90ade"
+      },
+      "evaluation_epoch": 0,
+      "all_metrics_per_paper": {
+        "f-FQE1fjPK": {
+          "Average": 3.8333333333333335,
+          "BERT.": 80.71990013122559,
+          "BLEU": 0.25190260876179715,
+          "Clarity": 4.666666666666667,
+          "Complete.": 191.66666666666669,
+          "Correct.": 3.5,
+          "Ground.": 4.833333333333333,
+          "Paper.": 4.0,
+          "ROUGE-L": 7.260428410372041,
+          "Thoro.": 2.1666666666666665,
+          "Verify.": 4.0
+        },
+        "C_vsGwEIjAr": {
+          "Average": 3.54375,
+          "BERT.": 81.60693645477295,
+          "BLEU": 0.26238038599284064,
+          "Clarity": 4.25,
+          "Complete.": 190.9090909090909,
+          "Correct.": 3.375,
+          "Ground.": 4.625,
+          "Paper.": 3.6,
+          "ROUGE-L": 6.857374721038751,
+          "Thoro.": 1.875,
+          "Verify.": 3.6
+        },
+        "qf12cWVSksq": {
+          "Average": 3.75,
+          "BERT.": 81.93185329437256,
+          "BLEU": 0.44058669571517595,
+          "Clarity": 4.363636363636363,
+          "Complete.": 176.9230769230769,
+          "Correct.": 3.272727272727273,
+          "Ground.": 4.818181818181818,
+          "Paper.": 3.8,
+          "ROUGE-L": 7.141222247653925,
+          "Thoro.": 2.5454545454545454,
+          "Verify.": 3.6666666666666665
+        }
+      }
+    }
+  },
+  "initial_best_static": 4.066666666666666,
+  "rounds": [
+    {
+      "round": 1,
+      "status": "complete",
+      "parent": "seed-llm_summarizer",
+      "candidate": "candidate-0001",
+      "parent_static": {
+        "mean": 4.066666666666666,
+        "per_paper": {
+          "f-FQE1fjPK": 4.0,
+          "C_vsGwEIjAr": 4.4,
+          "qf12cWVSksq": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-llm_summarizer/r0/coco/assessment.json",
+          "sha256": "b9b494c559a42da34fa4e3e9b396f310f578eb9ff5bdb5b87d7a63ff63c35425"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.5833333333333335,
+            "BERT.": 81.45197033882141,
+            "BLEU": 0.590322712693832,
+            "Clarity": 4.333333333333333,
+            "Complete.": 191.66666666666669,
+            "Correct.": 3.0,
+            "Ground.": 4.833333333333333,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.608957380207079,
+            "Thoro.": 2.0,
+            "Verify.": 3.8
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.6875,
+            "BERT.": 81.25436305999756,
+            "BLEU": 0.24306441863698358,
+            "Clarity": 4.5,
+            "Complete.": 209.0909090909091,
+            "Correct.": 3.125,
+            "Ground.": 4.625,
+            "Paper.": 4.4,
+            "ROUGE-L": 7.5136612021857925,
+            "Thoro.": 2.25,
+            "Verify.": 4.2
+          },
+          "qf12cWVSksq": {
+            "Average": 3.8272727272727276,
+            "BERT.": 81.95220232009888,
+            "BLEU": 0.6085732273980746,
+            "Clarity": 4.363636363636363,
+            "Complete.": 169.23076923076923,
+            "Correct.": 3.3636363636363638,
+            "Ground.": 4.818181818181818,
+            "Paper.": 3.8,
+            "ROUGE-L": 6.9298245614035086,
+            "Thoro.": 2.909090909090909,
+            "Verify.": 3.6
+          }
+        }
+      },
+      "candidate_static": {
+        "mean": 4.0,
+        "per_paper": {
+          "f-FQE1fjPK": 4.2,
+          "C_vsGwEIjAr": 4.0,
+          "qf12cWVSksq": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/candidate-0001/r0/coco/assessment.json",
+          "sha256": "620acb9ebb0f1b6da6037807b3d0e27ae8b0e048a6fd389e4daa593000d4ff3d"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.6999999999999997,
+            "BERT.": 81.2182068824768,
+            "BLEU": 0.592597957831576,
+            "Clarity": 4.666666666666667,
+            "Complete.": 183.33333333333331,
+            "Correct.": 3.1666666666666665,
+            "Ground.": 4.833333333333333,
+            "Paper.": 4.2,
+            "ROUGE-L": 7.731718677224034,
+            "Thoro.": 2.0,
+            "Verify.": 3.8333333333333335
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.59375,
+            "BERT.": 81.27347230911255,
+            "BLEU": 0.6334724600430892,
+            "Clarity": 4.5,
+            "Complete.": 190.9090909090909,
+            "Correct.": 3.0,
+            "Ground.": 4.875,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.371007371007371,
+            "Thoro.": 1.875,
+            "Verify.": 3.8
+          },
+          "qf12cWVSksq": {
+            "Average": 3.6700000000000004,
+            "BERT.": 82.07722306251526,
+            "BLEU": 0.3649358010198577,
+            "Clarity": 4.2,
+            "Complete.": 161.53846153846155,
+            "Correct.": 2.8,
+            "Ground.": 4.8,
+            "Paper.": 3.8,
+            "ROUGE-L": 7.373271889400922,
+            "Thoro.": 2.4,
+            "Verify.": 4.111111111111111
+          }
+        }
+      },
+      "delta_vs_parent": {
+        "mean": -0.06666666666666672,
+        "per_paper": {
+          "f-FQE1fjPK": 0.20000000000000018,
+          "C_vsGwEIjAr": -0.40000000000000036,
+          "qf12cWVSksq": 0.0
+        },
+        "wins": 1,
+        "ties": 1,
+        "losses": 1
+      },
+      "previous_best": 4.066666666666666,
+      "became_champion": false,
+      "change_claim": "Mstar memory program update",
+      "rotating_paper_ids": [
+        "VAmkgdMztWs",
+        "0tpZgkAKVjB",
+        "0IywQ8uxJx"
+      ],
+      "reflection_case_ids": [
+        "0IywQ8uxJx",
+        "VAmkgdMztWs"
+      ],
+      "rotating_parent_feedback": {
+        "mean": 3.8666666666666667,
+        "per_paper": {
+          "VAmkgdMztWs": 3.8,
+          "0tpZgkAKVjB": 4.0,
+          "0IywQ8uxJx": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0001-e0/r0/coco/assessment.json",
+          "sha256": "d4df00a558c2d7e72a1645fbfe0d5d8b577df3fbc7ed8c513b1e8604007d969b"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "VAmkgdMztWs": {
+            "Average": 3.4333333333333336,
+            "BERT.": 81.21040463447571,
+            "BLEU": 0.1955423411946188,
+            "Clarity": 4.0,
+            "Complete.": 275.0,
+            "Correct.": 2.8333333333333335,
+            "Ground.": 5.0,
+            "Paper.": 3.8,
+            "ROUGE-L": 7.223476297968396,
+            "Thoro.": 2.0,
+            "Verify.": 3.3333333333333335
+          },
+          "0tpZgkAKVjB": {
+            "Average": 3.55,
+            "BERT.": 81.76752924919128,
+            "BLEU": 0.46284793893920373,
+            "Clarity": 4.375,
+            "Complete.": 209.0909090909091,
+            "Correct.": 2.75,
+            "Ground.": 5.0,
+            "Paper.": 4.0,
+            "ROUGE-L": 5.748373101952278,
+            "Thoro.": 2.125,
+            "Verify.": 3.5
+          },
+          "0IywQ8uxJx": {
+            "Average": 3.6875,
+            "BERT.": 81.26883506774902,
+            "BLEU": 0.7309274975472891,
+            "Clarity": 4.125,
+            "Complete.": 146.66666666666666,
+            "Correct.": 3.25,
+            "Ground.": 4.875,
+            "Paper.": 3.8,
+            "ROUGE-L": 10.50709939148073,
+            "Thoro.": 2.375,
+            "Verify.": 3.857142857142857
+          }
+        }
+      },
+      "parent_test": null,
+      "candidate_test": null,
+      "test_delta_vs_parent": null,
+      "delta_vs_initial_best": -0.06666666666666643,
+      "best_after_round": 4.066666666666666,
+      "admitted_to_pool": true,
+      "failure": null,
+      "revision": 0,
+      "repair_artifacts": [],
+      "candidate_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/program.py",
+        "sha256": "a96dd3e432fdf94422a2d6af176d2cea59f7bb79fa95f73202270809b8ae8eb3"
+      },
+      "candidate_program_status": "validated",
+      "reflection": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/mstar-trace.json",
+        "sha256": "88d8a303ca327d05e992380b21267e3d474f14cb3f4363ac2231ab6142ccccb8"
+      },
+      "reflection_responses": [
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/responses/000.txt",
+          "sha256": "e9ed37179b7c90f1e3ff937b1026a563be0df0ba6f34e08b154c64c1d1e6bf1c"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/responses/001.txt",
+          "sha256": "d624da96a369080f70556fac7585135679aead25e927da65bc0756ff386b4e58"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/responses/002.txt",
+          "sha256": "f5a00a6888d16919c34767c03cf9d0f23091fe170ce2c02eb070bbe7b8107dc3"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/responses/003.txt",
+          "sha256": "68aad23a91a6f1dc12b8ed7857f8188b5fd4c865662f57434b28cbd143ef044f"
+        }
+      ],
+      "validation_attempts": [
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/000.diff",
+            "sha256": "253f645ad190bb05a7860836b08cd331b30373c90bbc9c7bdadfdbae786733e0"
+          },
+          "error": "AST parse failed: unterminated string literal (detected at line 128) (<unknown>, line 128)",
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/000.py",
+            "sha256": "183f6ffb7b1f99b53698903348e126c6f3f42ce2fd56e84e7f1d6091282a73a1"
+          },
+          "representation": "python",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/000.py"
+        },
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/001.diff",
+            "sha256": "d260eb20851d3a147cf7d894a622b84a44f46afdf580ba8d1daf8ad7c9e43bad"
+          },
+          "error": "Forbidden call: getattr; Program top-level constants must be exactly the four Memory instructions; got ['ALWAYS_ON_KNOWLEDGE', 'INSTRUCTION_KNOWLEDGE_ITEM', 'INSTRUCTION_QUERY', 'INSTRUCTION_RESPONSE', 'ROLE_TAXONOMY']",
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/001.py",
+            "sha256": "3ad2a148bf6ea5d6c406e42f8e2af0817ff6b3da2e87a19ed4451427f0fcb6f7"
+          },
+          "representation": "patch",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/001.py"
+        },
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/002.diff",
+            "sha256": "c549dc0891bec1bbf0a63109af2cdc499a4c0fe6c791f53bddf2d79a9a26638b"
+          },
+          "error": "Program top-level constants must be exactly the four Memory instructions; got ['ALWAYS_ON_KNOWLEDGE', 'INSTRUCTION_KNOWLEDGE_ITEM', 'INSTRUCTION_QUERY', 'INSTRUCTION_RESPONSE', 'ROLE_TAXONOMY']",
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/002.py",
+            "sha256": "994b29c5b83e63a07ce4aaf04cf0fd59512cd3975ff0d698c890a328d5903d46"
+          },
+          "representation": "patch",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/002.py"
+        },
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/003.diff",
+            "sha256": "170118331bb7c5a4dc415b005d5f0d41770b5261cbaa503038226a4df7e0cc88"
+          },
+          "error": null,
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/003.py",
+            "sha256": "a96dd3e432fdf94422a2d6af176d2cea59f7bb79fa95f73202270809b8ae8eb3"
+          },
+          "representation": "patch",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a1-e0/validation/003.py"
+        }
+      ],
+      "program_diff": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/report/round-diffs/round-01.diff",
+        "sha256": "8d3974de2a6f183508c6b4160445767ef304bcc4e7cd6000c0474996b3251c10"
+      },
+      "parent_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/programs/seed-llm_summarizer/program.py",
+        "sha256": "69af610841c2d003a78cbde8ad6a094d80179687542ba5a135db4a36d34f887c"
+      },
+      "identical_program": false,
+      "added_lines": 461,
+      "removed_lines": 61
+    },
+    {
+      "round": 2,
+      "status": "candidate_failed",
+      "parent": "seed-vector_search",
+      "candidate": "candidate-0002",
+      "parent_static": {
+        "mean": 3.8000000000000003,
+        "per_paper": {
+          "f-FQE1fjPK": 4.0,
+          "C_vsGwEIjAr": 3.6,
+          "qf12cWVSksq": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-vector_search/r0/coco/assessment.json",
+          "sha256": "43c4b229e31b61f56eea8c7c59a37859cc426702a998e3d2a20ed9fed7f90ade"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.8333333333333335,
+            "BERT.": 80.71990013122559,
+            "BLEU": 0.25190260876179715,
+            "Clarity": 4.666666666666667,
+            "Complete.": 191.66666666666669,
+            "Correct.": 3.5,
+            "Ground.": 4.833333333333333,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.260428410372041,
+            "Thoro.": 2.1666666666666665,
+            "Verify.": 4.0
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.54375,
+            "BERT.": 81.60693645477295,
+            "BLEU": 0.26238038599284064,
+            "Clarity": 4.25,
+            "Complete.": 190.9090909090909,
+            "Correct.": 3.375,
+            "Ground.": 4.625,
+            "Paper.": 3.6,
+            "ROUGE-L": 6.857374721038751,
+            "Thoro.": 1.875,
+            "Verify.": 3.6
+          },
+          "qf12cWVSksq": {
+            "Average": 3.75,
+            "BERT.": 81.93185329437256,
+            "BLEU": 0.44058669571517595,
+            "Clarity": 4.363636363636363,
+            "Complete.": 176.9230769230769,
+            "Correct.": 3.272727272727273,
+            "Ground.": 4.818181818181818,
+            "Paper.": 3.8,
+            "ROUGE-L": 7.141222247653925,
+            "Thoro.": 2.5454545454545454,
+            "Verify.": 3.6666666666666665
+          }
+        }
+      },
+      "candidate_static": null,
+      "delta_vs_parent": null,
+      "previous_best": 4.066666666666666,
+      "became_champion": false,
+      "change_claim": "Title: Distill dimension-tagged review patterns and make retrieval paper- and rubric-sensitive\n- Diagnosis: memory returned the identical four cross-domain episodes for every paper (QUAL 0.50/0.49/0.47/0.43 for both Trust-Region MARL and GNN-gradient-flow) with one metadata tag `{role, topic}`; metrics show saturated grounding (4.8-5.0) but weak Correct./Thoro. (2.75-3.1 / 1.8-2.44), i.e., style transfer instead of dimension coverage, plus foreign-anchor reuse.\n- Memory design: KnowledgeItem gains kind/pattern/polarity/subcategory/evidence_requirement/revision_template/source_id/keywords; write stores a distilled PATTERN CARD plus the verbatim EPISODE with role/kind/topic/subcategory/polarity/source/keyword metadata and a Jaccard near-duplicate guard; deterministic opinion-block parsing backfills card fields.\n- Retrieval/interaction: two-view query (title/abstract + dimension rubric terms), role gating, lexical-overlap reweighting, kind-aware selection (<=6 cards, <=1 episode) and a prepended per-dimension rubric; four instructions now fix the card/episode contract, rubric querying, pattern-only use, and always-on grounding with dimension/subcategory tagging.",
+      "rotating_paper_ids": [
+        "0tpZgkAKVjB",
+        "EcGGFkNTxdJ",
+        "0IywQ8uxJx"
+      ],
+      "reflection_case_ids": [
+        "EcGGFkNTxdJ",
+        "0IywQ8uxJx"
+      ],
+      "rotating_parent_feedback": {
+        "mean": 3.8000000000000003,
+        "per_paper": {
+          "0tpZgkAKVjB": 4.0,
+          "EcGGFkNTxdJ": 3.6,
+          "0IywQ8uxJx": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0002-e0/r0/coco/assessment.json",
+          "sha256": "0f311591a35d071f8a3c866f149349f0613e84fd60ed924800ad872aecfeba7f"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "0tpZgkAKVjB": {
+            "Average": 3.6125,
+            "BERT.": 80.85871934890747,
+            "BLEU": 0.3200114015903519,
+            "Clarity": 4.375,
+            "Complete.": 209.0909090909091,
+            "Correct.": 2.75,
+            "Ground.": 5.0,
+            "Paper.": 4.0,
+            "ROUGE-L": 4.9888861447270925,
+            "Thoro.": 2.25,
+            "Verify.": 3.7142857142857144
+          },
+          "EcGGFkNTxdJ": {
+            "Average": 3.5799999999999996,
+            "BERT.": 81.75182342529297,
+            "BLEU": 1.1103168157140835,
+            "Clarity": 4.5,
+            "Complete.": 176.9230769230769,
+            "Correct.": 3.1,
+            "Ground.": 4.8,
+            "Paper.": 3.6,
+            "ROUGE-L": 7.941385015362798,
+            "Thoro.": 1.8,
+            "Verify.": 3.7
+          },
+          "0IywQ8uxJx": {
+            "Average": 3.711111111111111,
+            "BERT.": 80.25107979774475,
+            "BLEU": 0.6461295676320991,
+            "Clarity": 4.222222222222222,
+            "Complete.": 153.33333333333334,
+            "Correct.": 3.111111111111111,
+            "Ground.": 4.888888888888889,
+            "Paper.": 3.8,
+            "ROUGE-L": 10.593569661995055,
+            "Thoro.": 2.4444444444444446,
+            "Verify.": 4.0
+          }
+        }
+      },
+      "parent_test": null,
+      "candidate_test": null,
+      "test_delta_vs_parent": null,
+      "best_after_round": 4.066666666666666,
+      "admitted_to_pool": false,
+      "failure": {
+        "category": "candidate",
+        "error": "CandidateProposalFailure: ReflectionFailure: Mstar repair attempts exhausted: ",
+        "fingerprint": "077a846069724f1db8d2003987cb554e6e37ba3ba3b3a5726fcbd2f728f4b4c3",
+        "phase": "shared_candidate_run",
+        "reflection": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/repairs/e0/candidate-0002/r1/mstar-trace.json",
+          "sha256": "df341b44c786ffc93ff96febe0033db5fff95729e05760226bb3110a0157785d"
+        },
+        "repair_exhausted": true,
+        "transient": false
+      },
+      "revision": 1,
+      "repair_artifacts": [],
+      "candidate_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a2-e0/program.py",
+        "sha256": "c93bdf10d7280ab6f20d51f3d59a15b9566d0bc402c16f63d29424e16eafa675"
+      },
+      "candidate_program_status": "parent_retained",
+      "reflection": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/repairs/e0/candidate-0002/r1/mstar-trace.json",
+        "sha256": "df341b44c786ffc93ff96febe0033db5fff95729e05760226bb3110a0157785d"
+      },
+      "reflection_responses": [
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/repairs/e0/candidate-0002/r1/responses/000.txt",
+          "sha256": "d5d86e905a49a0d5c74be25b557481a16fe9abbd6f3298c4cee5314da51c67ac"
+        }
+      ],
+      "validation_attempts": [],
+      "program_diff": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/report/round-diffs/round-02.diff",
+        "sha256": "e6b808eb97365ad8aee13834dae86acb33b591840f4565174a7d27b88af7adbe"
+      },
+      "parent_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/programs/seed-vector_search/program.py",
+        "sha256": "47e3f7581edeadd58ad89a6a726f2a4d87915d52d627e619cdb72bbe59491ba9"
+      },
+      "identical_program": false,
+      "added_lines": 329,
+      "removed_lines": 27
+    },
+    {
+      "round": 3,
+      "status": "complete",
+      "parent": "seed-llm_summarizer",
+      "candidate": "candidate-0003",
+      "parent_static": {
+        "mean": 4.066666666666666,
+        "per_paper": {
+          "f-FQE1fjPK": 4.0,
+          "C_vsGwEIjAr": 4.4,
+          "qf12cWVSksq": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-llm_summarizer/r0/coco/assessment.json",
+          "sha256": "b9b494c559a42da34fa4e3e9b396f310f578eb9ff5bdb5b87d7a63ff63c35425"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.5833333333333335,
+            "BERT.": 81.45197033882141,
+            "BLEU": 0.590322712693832,
+            "Clarity": 4.333333333333333,
+            "Complete.": 191.66666666666669,
+            "Correct.": 3.0,
+            "Ground.": 4.833333333333333,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.608957380207079,
+            "Thoro.": 2.0,
+            "Verify.": 3.8
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.6875,
+            "BERT.": 81.25436305999756,
+            "BLEU": 0.24306441863698358,
+            "Clarity": 4.5,
+            "Complete.": 209.0909090909091,
+            "Correct.": 3.125,
+            "Ground.": 4.625,
+            "Paper.": 4.4,
+            "ROUGE-L": 7.5136612021857925,
+            "Thoro.": 2.25,
+            "Verify.": 4.2
+          },
+          "qf12cWVSksq": {
+            "Average": 3.8272727272727276,
+            "BERT.": 81.95220232009888,
+            "BLEU": 0.6085732273980746,
+            "Clarity": 4.363636363636363,
+            "Complete.": 169.23076923076923,
+            "Correct.": 3.3636363636363638,
+            "Ground.": 4.818181818181818,
+            "Paper.": 3.8,
+            "ROUGE-L": 6.9298245614035086,
+            "Thoro.": 2.909090909090909,
+            "Verify.": 3.6
+          }
+        }
+      },
+      "candidate_static": {
+        "mean": 4.0,
+        "per_paper": {
+          "f-FQE1fjPK": 4.0,
+          "C_vsGwEIjAr": 3.8,
+          "qf12cWVSksq": 4.2
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/candidate-0003/r0/coco/assessment.json",
+          "sha256": "ee7c5d7abce479e67f201e6d1c571e4fb3232f5534632907d19e5f9021b6cfd8"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.766666666666667,
+            "BERT.": 80.99457621574402,
+            "BLEU": 0.28314229979516514,
+            "Clarity": 4.666666666666667,
+            "Complete.": 191.66666666666669,
+            "Correct.": 3.3333333333333335,
+            "Ground.": 5.0,
+            "Paper.": 4.0,
+            "ROUGE-L": 8.014202383971595,
+            "Thoro.": 2.0,
+            "Verify.": 3.8333333333333335
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.69375,
+            "BERT.": 81.12675547599792,
+            "BLEU": 0.24969430785316357,
+            "Clarity": 4.625,
+            "Complete.": 190.9090909090909,
+            "Correct.": 3.375,
+            "Ground.": 4.875,
+            "Paper.": 3.8,
+            "ROUGE-L": 7.440476190476191,
+            "Thoro.": 1.875,
+            "Verify.": 3.75
+          },
+          "qf12cWVSksq": {
+            "Average": 3.7454545454545456,
+            "BERT.": 81.76432251930237,
+            "BLEU": 0.47721286486763675,
+            "Clarity": 4.454545454545454,
+            "Complete.": 169.23076923076923,
+            "Correct.": 3.272727272727273,
+            "Ground.": 4.7272727272727275,
+            "Paper.": 4.2,
+            "ROUGE-L": 8.02977931401223,
+            "Thoro.": 2.3636363636363638,
+            "Verify.": 4.0
+          }
+        }
+      },
+      "delta_vs_parent": {
+        "mean": -0.06666666666666672,
+        "per_paper": {
+          "f-FQE1fjPK": 0.0,
+          "C_vsGwEIjAr": -0.6000000000000005,
+          "qf12cWVSksq": 0.40000000000000036
+        },
+        "wins": 1,
+        "ties": 1,
+        "losses": 1
+      },
+      "previous_best": 4.066666666666666,
+      "became_champion": false,
+      "change_claim": "Title: Query-conditioned opinion-block memory with rubric coverage (replaces whole-review retrieval)\n- Evidence: retrieval logs return the identical 4 hits per role for both rotating papers (QUAL ebbae83c/938c24ed/2b165f74/f8414fe2; CLAR e8501f18/d9df2617/8bb6d8f6/79414ad7; SIGN f82b6612/b63f7d7a/f472b981/64084cf9; ORIG 188b0004/be8b97c6/9ee0abe9/d718ecb5; POL 9797549f/069f947f/04c10485/039d0565) because write stored one whole review per item; Ground. is saturated (4.5-5.0) while Correct. (2.75-3.22) and Thoro. (1.875-2.4) lag and summaries reproduce prior-paper specifics (Omega metric, 'tabby' row sums, Q_U typos).\n- Memory design: opinion-block schema + scalar metadata, anchor stripping, hash dedupe with deterministic fallback chunking; retrieval re-ranks by query-conditioned lexical overlap over text+keywords, then selects coverage-first (one block per rubric subcategory), polarity-balanced, caps 2/subcategory and 10 total, logging subcategory/polarity/lexical per hit.\n- Instructions: entry contract, rubric query, checklist-only response that never ports prior-paper facts, always-on grounding to the Frozen Paper.",
+      "rotating_paper_ids": [
+        "0IywQ8uxJx",
+        "VAmkgdMztWs",
+        "0tpZgkAKVjB"
+      ],
+      "reflection_case_ids": [
+        "VAmkgdMztWs",
+        "0tpZgkAKVjB"
+      ],
+      "rotating_parent_feedback": {
+        "mean": 3.8666666666666667,
+        "per_paper": {
+          "0IywQ8uxJx": 4.0,
+          "VAmkgdMztWs": 3.6,
+          "0tpZgkAKVjB": 4.0
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0003-e0/r0/coco/assessment.json",
+          "sha256": "f5ca3f16ac15f389eb5dd9d69cdbf1523efdeaf047297ddeb7bb6c0a6e1e5197"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "0IywQ8uxJx": {
+            "Average": 3.688888888888888,
+            "BERT.": 81.53078556060791,
+            "BLEU": 0.6484780992463396,
+            "Clarity": 4.444444444444445,
+            "Complete.": 153.33333333333334,
+            "Correct.": 3.2222222222222223,
+            "Ground.": 4.666666666666667,
+            "Paper.": 4.0,
+            "ROUGE-L": 10.903495273686525,
+            "Thoro.": 2.3333333333333335,
+            "Verify.": 3.7777777777777777
+          },
+          "VAmkgdMztWs": {
+            "Average": 3.56,
+            "BERT.": 81.0971736907959,
+            "BLEU": 0.1804695182750337,
+            "Clarity": 4.2,
+            "Complete.": 262.5,
+            "Correct.": 2.8,
+            "Ground.": 5.0,
+            "Paper.": 3.6,
+            "ROUGE-L": 6.599908966772872,
+            "Thoro.": 2.4,
+            "Verify.": 3.4
+          },
+          "0tpZgkAKVjB": {
+            "Average": 3.425,
+            "BERT.": 82.17080235481262,
+            "BLEU": 0.5895971171108267,
+            "Clarity": 4.25,
+            "Complete.": 209.0909090909091,
+            "Correct.": 2.75,
+            "Ground.": 4.5,
+            "Paper.": 4.0,
+            "ROUGE-L": 5.469410769664505,
+            "Thoro.": 1.875,
+            "Verify.": 3.75
+          }
+        }
+      },
+      "parent_test": null,
+      "candidate_test": null,
+      "test_delta_vs_parent": null,
+      "delta_vs_initial_best": -0.06666666666666643,
+      "best_after_round": 4.066666666666666,
+      "admitted_to_pool": true,
+      "failure": null,
+      "revision": 0,
+      "repair_artifacts": [],
+      "candidate_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/program.py",
+        "sha256": "f81cb6f2edf72905085e9a5a32a88b290b83fb560e4d91e54b68403d6d86d0a7"
+      },
+      "candidate_program_status": "validated",
+      "reflection": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/mstar-trace.json",
+        "sha256": "1e9462373e19a92e167cf4bb41d7aaba56d113e4ac8dcacaadc7c25ddcc30c64"
+      },
+      "reflection_responses": [
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/responses/000.txt",
+          "sha256": "14102be3beed0a707e90df4c9ea2bc47147cd8b4d6131fa38d0cd7bda3d2c99c"
+        },
+        {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/responses/001.txt",
+          "sha256": "c8efc65115ef01265bde7309ae2a23eaa0f6b74e2e80b65494d89dfae1349264"
+        }
+      ],
+      "validation_attempts": [
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/000.diff",
+            "sha256": "cd9d4f7bd7efa8fdbeca71be0aa736688878caa781b80ca4f94c38cb94d54756"
+          },
+          "error": "Forbidden call: getattr",
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/000.py",
+            "sha256": "43575056af4121f3a18b94353c43b7f8ba220d0b2a10262b49ba161dfd7c6063"
+          },
+          "representation": "patch",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/000.py"
+        },
+        {
+          "diff": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/001.diff",
+            "sha256": "798be585ee33e114646b248a5459337a1c2dc7444955153ee77118e99e9f060e"
+          },
+          "error": null,
+          "program": {
+            "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/001.py",
+            "sha256": "f81cb6f2edf72905085e9a5a32a88b290b83fb560e4d91e54b68403d6d86d0a7"
+          },
+          "representation": "patch",
+          "validation_source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a3-e0/validation/001.py"
+        }
+      ],
+      "program_diff": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/report/round-diffs/round-03.diff",
+        "sha256": "cec01565687f7ccafbf1aa671d276c2a031cbd09578cda465fdda1428cc76471"
+      },
+      "parent_program": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/programs/seed-llm_summarizer/program.py",
+        "sha256": "69af610841c2d003a78cbde8ad6a094d80179687542ba5a135db4a36d34f887c"
+      },
+      "identical_program": false,
+      "added_lines": 340,
+      "removed_lines": 42
+    },
+    {
+      "round": 4,
+      "status": "pending",
+      "parent": "seed-llm_summarizer",
+      "candidate": null,
+      "parent_static": {
+        "mean": 4.066666666666666,
+        "per_paper": {
+          "f-FQE1fjPK": 4.0,
+          "C_vsGwEIjAr": 4.4,
+          "qf12cWVSksq": 3.8
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-llm_summarizer/r0/coco/assessment.json",
+          "sha256": "b9b494c559a42da34fa4e3e9b396f310f578eb9ff5bdb5b87d7a63ff63c35425"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "f-FQE1fjPK": {
+            "Average": 3.5833333333333335,
+            "BERT.": 81.45197033882141,
+            "BLEU": 0.590322712693832,
+            "Clarity": 4.333333333333333,
+            "Complete.": 191.66666666666669,
+            "Correct.": 3.0,
+            "Ground.": 4.833333333333333,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.608957380207079,
+            "Thoro.": 2.0,
+            "Verify.": 3.8
+          },
+          "C_vsGwEIjAr": {
+            "Average": 3.6875,
+            "BERT.": 81.25436305999756,
+            "BLEU": 0.24306441863698358,
+            "Clarity": 4.5,
+            "Complete.": 209.0909090909091,
+            "Correct.": 3.125,
+            "Ground.": 4.625,
+            "Paper.": 4.4,
+            "ROUGE-L": 7.5136612021857925,
+            "Thoro.": 2.25,
+            "Verify.": 4.2
+          },
+          "qf12cWVSksq": {
+            "Average": 3.8272727272727276,
+            "BERT.": 81.95220232009888,
+            "BLEU": 0.6085732273980746,
+            "Clarity": 4.363636363636363,
+            "Complete.": 169.23076923076923,
+            "Correct.": 3.3636363636363638,
+            "Ground.": 4.818181818181818,
+            "Paper.": 3.8,
+            "ROUGE-L": 6.9298245614035086,
+            "Thoro.": 2.909090909090909,
+            "Verify.": 3.6
+          }
+        }
+      },
+      "candidate_static": null,
+      "delta_vs_parent": null,
+      "previous_best": 4.066666666666666,
+      "became_champion": false,
+      "change_claim": null,
+      "rotating_paper_ids": [
+        "HndgQudNb91",
+        "EcGGFkNTxdJ",
+        "0tpZgkAKVjB"
+      ],
+      "reflection_case_ids": [
+        "EcGGFkNTxdJ",
+        "HndgQudNb91"
+      ],
+      "rotating_parent_feedback": {
+        "mean": 4.0,
+        "per_paper": {
+          "HndgQudNb91": 4.0,
+          "EcGGFkNTxdJ": 3.8,
+          "0tpZgkAKVjB": 4.2
+        },
+        "assessment": {
+          "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0004-e0/r0/coco/assessment.json",
+          "sha256": "f20247bcf75ff98eaf1179afef01594be0d83ed268d725f539691003cf433b7f"
+        },
+        "evaluation_epoch": 0,
+        "all_metrics_per_paper": {
+          "HndgQudNb91": {
+            "Average": 3.6875,
+            "BERT.": 82.18653202056885,
+            "BLEU": 0.5726781310461605,
+            "Clarity": 4.25,
+            "Complete.": 244.44444444444446,
+            "Correct.": 3.375,
+            "Ground.": 4.75,
+            "Paper.": 4.0,
+            "ROUGE-L": 7.12707182320442,
+            "Thoro.": 2.375,
+            "Verify.": 3.6666666666666665
+          },
+          "EcGGFkNTxdJ": {
+            "Average": 3.6399999999999997,
+            "BERT.": 82.00674653053284,
+            "BLEU": 1.3027911745613383,
+            "Clarity": 4.3,
+            "Complete.": 176.9230769230769,
+            "Correct.": 3.0,
+            "Ground.": 5.0,
+            "Paper.": 3.8,
+            "ROUGE-L": 8.706986444212722,
+            "Thoro.": 1.9,
+            "Verify.": 4.0
+          },
+          "0tpZgkAKVjB": {
+            "Average": 3.6,
+            "BERT.": 81.0884952545166,
+            "BLEU": 0.42403700893057766,
+            "Clarity": 4.5,
+            "Complete.": 209.0909090909091,
+            "Correct.": 3.0,
+            "Ground.": 4.875,
+            "Paper.": 4.2,
+            "ROUGE-L": 5.344735435595938,
+            "Thoro.": 1.875,
+            "Verify.": 3.75
+          }
+        }
+      },
+      "parent_test": null,
+      "candidate_test": null,
+      "test_delta_vs_parent": null,
+      "best_after_round": 4.066666666666666,
+      "admitted_to_pool": false
+    },
+    {
+      "round": 5,
+      "status": "not_started",
+      "parent": null,
+      "candidate": null,
+      "parent_static": null,
+      "candidate_static": null,
+      "delta_vs_parent": null,
+      "previous_best": 4.066666666666666,
+      "became_champion": false,
+      "change_claim": null,
+      "rotating_paper_ids": [],
+      "reflection_case_ids": [],
+      "rotating_parent_feedback": null,
+      "parent_test": null,
+      "candidate_test": null,
+      "test_delta_vs_parent": null,
+      "best_after_round": 4.066666666666666,
+      "admitted_to_pool": false
+    }
+  ],
+  "final_comparisons": null,
+  "test_feedback_to_search": false,
+  "interpretation": "One search, three static and three held-out papers: exploratory only; no guarantee of improvement."
+}

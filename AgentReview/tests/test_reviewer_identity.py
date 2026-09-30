@@ -39,7 +39,7 @@ class FrozenReviewerIdentityTest(unittest.TestCase):
         self.assertEqual(payload["source_path"], "META_SYNTHESIS_Request_v2.md")
         self.assertIn("complete evidence set", prompt)
         self.assertEqual(payload["output_protocol_version"], "meta-synthesis-output-v2")
-        self.assertEqual(payload["rendering_protocol_version"], "meta-opinion-markdown-v2")
+        self.assertEqual(payload["rendering_protocol_version"], "meta-opinion-markdown-v3")
         self.assertNotIn("Final score", prompt)
         self.assertNotIn("Confidence (", prompt)
 

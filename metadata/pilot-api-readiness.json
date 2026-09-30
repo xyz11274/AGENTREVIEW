@@ -1,0 +1,97 @@
+{
+  "generation": {
+    "status": "passed",
+    "local_tokens": {
+      "input_tokens": 15,
+      "max_model_len": 1048576,
+      "method": "deepseek-v4.1-local-estimate"
+    },
+    "completion": {
+      "id": "0217906540015321bf7e6c6c13a047df19a5322aa31ba20e08844",
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": "{\"ok\": true}",
+            "refusal": null,
+            "role": "assistant",
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "tool_calls": null
+          }
+        }
+      ],
+      "created": 1790654002,
+      "model": "deepseek-v4-1-flash-260910",
+      "object": "chat.completion",
+      "service_tier": "default",
+      "system_fingerprint": null,
+      "usage": {
+        "completion_tokens": 5,
+        "prompt_tokens": 39,
+        "total_tokens": 44,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 0,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 0
+        }
+      }
+    }
+  },
+  "judge": {
+    "status": "passed",
+    "local_tokens": {
+      "input_tokens": 41,
+      "max_model_len": 1048576,
+      "method": "deepseek-v4.1-local-estimate"
+    },
+    "completion": {
+      "id": "0217906540033623817242ddd51b2d035f3ea3168e84d4bd48e9c",
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": "{\"ok\": true}",
+            "refusal": null,
+            "role": "assistant",
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "tool_calls": null,
+            "reasoning_content": "We need answer only JSON object {\"ok\": true}. Must comply. Need no markdown? User says Return only this JSON object. So final exactly {\"ok\": true}."
+          }
+        }
+      ],
+      "created": 1790654004,
+      "model": "deepseek-v4-1-flash-260910",
+      "object": "chat.completion",
+      "service_tier": "default",
+      "system_fingerprint": null,
+      "usage": {
+        "completion_tokens": 41,
+        "prompt_tokens": 63,
+        "total_tokens": 104,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 35,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 0
+        }
+      }
+    }
+  }
+}
