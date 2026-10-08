@@ -1,0 +1,10 @@
+{
+  "profile": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/active-pilot.json",
+    "sha256": "ece2a50b32158f8a61e1bf32b9fe98f95524df0476af5f4cc57edcf31d4ef73a"
+  },
+  "readiness": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/resume-readiness.json",
+    "sha256": "f00a559771c7c62eccc872397e486196f5f0904b14b0e9adc89265b782546b24"
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "cause": "Round 4 nonstreaming reflection exhausted three 600-second read timeouts.",
+  "historical_receipts": [
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/candidate-0001/r0/coco/assessment.json",
+        "sha256": "620acb9ebb0f1b6da6037807b3d0e27ae8b0e048a6fd389e4daa593000d4ff3d"
+      },
+      "key": "candidate-0001",
+      "score": 4.0
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/candidate-0003/r0/coco/assessment.json",
+        "sha256": "ee7c5d7abce479e67f201e6d1c571e4fb3232f5534632907d19e5f9021b6cfd8"
+      },
+      "key": "candidate-0003",
+      "score": 4.0
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/coco-native/r0/coco/assessment.json",
+        "sha256": "9370fa70744531db029378a952fcdb87f0a37b9e255882c6685b61c52a948fe5"
+      },
+      "key": "coco-native",
+      "score": 3.6666666666666665
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0001-e0/r0/coco/assessment.json",
+        "sha256": "d4df00a558c2d7e72a1645fbfe0d5d8b577df3fbc7ed8c513b1e8604007d969b"
+      },
+      "key": "feedback-0001-e0",
+      "score": 3.8666666666666667
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0002-e0/r0/coco/assessment.json",
+        "sha256": "0f311591a35d071f8a3c866f149349f0613e84fd60ed924800ad872aecfeba7f"
+      },
+      "key": "feedback-0002-e0",
+      "score": 3.8000000000000003
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0003-e0/r0/coco/assessment.json",
+        "sha256": "f5ca3f16ac15f389eb5dd9d69cdbf1523efdeaf047297ddeb7bb6c0a6e1e5197"
+      },
+      "key": "feedback-0003-e0",
+      "score": 3.8666666666666667
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/feedback-0004-e0/r0/coco/assessment.json",
+        "sha256": "f20247bcf75ff98eaf1179afef01594be0d83ed268d725f539691003cf433b7f"
+      },
+      "key": "feedback-0004-e0",
+      "score": 4.0
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-experience_learner/r0/coco/assessment.json",
+        "sha256": "4c281331549a84a37dbeaafa01977a39f4494e5037712e9cb66a9717b2e69a14"
+      },
+      "key": "no-memory-experience_learner",
+      "score": 4.0
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-llm_summarizer/r0/coco/assessment.json",
+        "sha256": "8f4ad117570f4eb9f7f7aa4b4f68f0f17ef9a354fbd81a0ad7c4a5028a7b0279"
+      },
+      "key": "no-memory-llm_summarizer",
+      "score": 4.066666666666666
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/no-memory-vector_search/r0/coco/assessment.json",
+        "sha256": "59edcb9d77c5955cf3d016440ed2a88f984cc45c498a6fd6847c0e4aa10446cb"
+      },
+      "key": "no-memory-vector_search",
+      "score": 4.066666666666666
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-experience_learner/r0/coco/assessment.json",
+        "sha256": "756c851691c76059546a3cb3023f334bc47e8081cf0b8ef65f997ded18cfa6fc"
+      },
+      "key": "seed-experience_learner",
+      "score": 4.0
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-llm_summarizer/r0/coco/assessment.json",
+        "sha256": "b9b494c559a42da34fa4e3e9b396f310f578eb9ff5bdb5b87d7a63ff63c35425"
+      },
+      "key": "seed-llm_summarizer",
+      "score": 4.066666666666666
+    },
+    {
+      "assessment": {
+        "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/assessments/e0/seed-vector_search/r0/coco/assessment.json",
+        "sha256": "43c4b229e31b61f56eea8c7c59a37859cc426702a998e3d2a20ed9fed7f90ade"
+      },
+      "key": "seed-vector_search",
+      "score": 3.8000000000000003
+    }
+  ],
+  "reevaluate": [
+    "candidate-0001",
+    "candidate-0003",
+    "coco-native",
+    "no-memory-experience_learner",
+    "no-memory-llm_summarizer",
+    "no-memory-vector_search",
+    "seed-experience_learner",
+    "seed-llm_summarizer",
+    "seed-vector_search"
+  ],
+  "repair": "Receive Ark generation and Judge with SSE; retain full input, model capacity and official CoCo semantics. Continue through the existing recovery epoch with the original candidates, attempts and RNG states.",
+  "resume_tests": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/resume-tests.log",
+    "sha256": "ecc85ca0d1f837260e4978c8a376bcd2f0c2643cd8b432b895f4bb0e3eeee6f9"
+  },
+  "retained_failure_policy": {
+    "limit": 6,
+    "used": 1
+  },
+  "scientific_settings_preserved": [
+    "model",
+    "embedding",
+    "generation",
+    "splits",
+    "evolution",
+    "failure_policy",
+    "scoring_config",
+    "initial_memory_programs",
+    "non_memory_conditions",
+    "evaluation_design",
+    "execution_profile"
+  ],
+  "source_failure_policy": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/failure-policy.json",
+    "sha256": "a247ac320fc5b19340d997fababf8a6fdfdcd4bab0fd16f18bad6f0370f8b106"
+  },
+  "source_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+    "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+  },
+  "source_search": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/search.json",
+    "sha256": "e5b763350cdd950727da673a42c1788ed90941c85b96cdba407236be6b599e45"
+  },
+  "validation": "318 regression tests and 101 subtests; 18 final streaming tests; 30 resume tests. Real generation and official CoCo Judge streaming probes returned STREAM_OK. Historical complete receipts verified before migration.",
+  "validation_record": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/validation.json",
+    "sha256": "5905cb0cc54790ce83ca56a3c054f4222e0c9278c83e813a94220baa515c7943"
+  }
+}

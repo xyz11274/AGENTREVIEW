@@ -1,0 +1,31 @@
+{
+  "attempts_preserved": true,
+  "execution": "Existing recovery allocates a new comparison epoch and reevaluates all affected candidates.",
+  "existing_artifacts": "Historical programs and receipts remain bound to their original paths.",
+  "historical_receipts_verified": 13,
+  "initial_target_search": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-streaming-resume/search/search.json",
+    "sha256": "087c375c37ce9e93f54abd00ea0a5296135af1cf1c282fab673bad91c8720b71"
+  },
+  "repair_evidence": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/streaming-0930/resume/repair-evidence.json",
+    "sha256": "cd541f09333bbc88bc34cffb4548a99017cc89b591b03d35c77767374e73d98c"
+  },
+  "rng_states_preserved": true,
+  "source_policy": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/failure-policy.json",
+    "sha256": "a247ac320fc5b19340d997fababf8a6fdfdcd4bab0fd16f18bad6f0370f8b106"
+  },
+  "source_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-local/protocol.frozen.json",
+    "sha256": "e768f38b10b0e870da426118488315b8633146047cc6392129c8951987a3435c"
+  },
+  "source_search": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/search.json",
+    "sha256": "e5b763350cdd950727da673a42c1788ed90941c85b96cdba407236be6b599e45"
+  },
+  "target_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-streaming-resume/protocol.frozen.json",
+    "sha256": "829da519531a010238bdccf30098664721f0d70c6a2b2beed3c4468ea03b8caa"
+  }
+}

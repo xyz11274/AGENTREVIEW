@@ -1,8 +1,8 @@
 # 0930 小规模实验运行说明
 
-2026-09-30 当前实验按用户要求保持暂停，两个本机 CoCo 服务及其自动启动已停止，GPU 0–3 已释放。以下记录保留原部署与结果路径。流式传输、阶段计时和已准备的新版本入口见[流式 API 与流程耗时](STREAMING_TIMING_0930.md)。
+2026-09-30 17:10 已按用户要求继续实验，本机两个 CoCo 服务与实验由 systemd 托管。流式恢复先在新比较批次中重评 9 个有效组，然后继续第 4、5 轮与独立测试。历史结果及失败记录保留原路径，流式传输、阶段计时和恢复证据见[流式 API 与流程耗时](STREAMING_TIMING_0930.md)。
 
-当前选择文件是 [config/active-pilot.json](../config/active-pilot.json)，指向 `config/0930-pilot-local/protocol.frozen.json` 和 `artifacts/pilot-0930-local/`。两个 CoCo 模型由本机 systemd 用户服务托管，实验的实时阶段记录在 [pilot-state.json](../artifacts/pilot-0930-local/pilot-state.json)。
+当前选择文件是 [config/active-pilot.json](../config/active-pilot.json)，指向 `config/0930-pilot-streaming-resume/protocol.frozen.json` 和 `artifacts/pilot-0930-streaming-resume/`。两个 CoCo 模型由本机 systemd 用户服务托管，实验的实时阶段记录在 [pilot-state.json](../artifacts/pilot-0930-streaming-resume/pilot-state.json)。
 
 | 服务 | 本机 GPU | 端点 | 上下文容量 |
 |---|---|---|---|

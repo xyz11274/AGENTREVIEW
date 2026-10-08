@@ -1,0 +1,50 @@
+{
+  "checked_at": 1790759596.1820939,
+  "completed_request_first_chunk_seconds": [
+    0.8551585180684924,
+    1.4938965067267418,
+    1.1464689150452614,
+    1.168251539580524,
+    1.6503612603992224,
+    1.074802715331316,
+    1.2132307328283787,
+    1.595128963701427,
+    1.1762594990432262,
+    2.1793849021196365,
+    2.0262182550504804,
+    1.4742703521624207,
+    1.9388486864045262,
+    1.3772253124043345,
+    1.5811946522444487,
+    1.619492688216269,
+    1.23745821043849,
+    1.2370155099779367,
+    1.6230181632563472,
+    1.166494196280837,
+    1.6019111229106784,
+    1.5384152522310615
+  ],
+  "evaluation_epoch": 1,
+  "gpu": "0, 19967 MiB\n1, 19967 MiB\n2, 19977 MiB\n3, 19977 MiB\n4, 1647 MiB\n5, 1647 MiB\n6, 1647 MiB\n7, 1647 MiB\n",
+  "official_source_preserved": true,
+  "pilot": {
+    "phase": "search",
+    "pid": 980661,
+    "process_start_ticks": "624116245",
+    "protocol": {
+      "path": "/data/xyj/shengao/AgentReview_0930/config/0930-pilot-streaming-resume/protocol.frozen.json",
+      "sha256": "829da519531a010238bdccf30098664721f0d70c6a2b2beed3c4468ea03b8caa"
+    },
+    "status": "running",
+    "updated_at": 1790759580.6564994
+  },
+  "policy_status": "reevaluating",
+  "reevaluation_groups": 9,
+  "request_counts": {
+    "complete": 22
+  },
+  "runtime_verified": true,
+  "services": "MainPID=980661\nId=agentreview-0930-pilot.service\nActiveState=active\n\nMainPID=970770\nId=agentreview-0930-coco-split.service\nActiveState=active\n\nMainPID=970775\nId=agentreview-0930-coco-classify.service\nActiveState=active\n",
+  "source_checkpoints_preserved": true,
+  "stream_chunks": 9798
+}

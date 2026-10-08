@@ -1,6 +1,6 @@
 # 流式 API 与流程耗时
 
-当前实验保持暂停，两个本机 CoCo 服务已经停止，GPU 0–3 的显存已释放。原运行的协议、候选、失败记录和完整 CoCo 回执保存在 `artifacts/pilot-0930-local/`。当前选择文件继续指向这次暂停的实验，方便查看既有结果。
+2026-09-30 17:10 按用户要求继续实验，两个本机 CoCo 服务使用 GPU 0–3，实验由 systemd 托管。当前选择文件指向 `config/0930-pilot-streaming-resume/protocol.frozen.json`，输出目录为 `artifacts/pilot-0930-streaming-resume/`。原运行的协议、候选、失败记录和完整 CoCo 回执保存在 `artifacts/pilot-0930-local/`。
 
 ## 调用与结果
 
@@ -30,28 +30,35 @@
 
 ## 查看与新版本准备
 
-当前暂停实验仍使用默认入口：
+当前流式恢复实验使用默认入口：
 
 ```bash
 bash deployment/run_pilot_0930.sh status
 bash deployment/run_pilot_0930.sh report
 ```
 
-流式版本的独立选择文件为 `config/0930-pilot-streaming/profile.json`，协议已冻结，产物目录为 `artifacts/pilot-0930-streaming/`。当前完成了配置验证，执行状态为 prepared：
+流式恢复版本的独立选择文件为 `config/0930-pilot-streaming-resume/profile.json`，协议已冻结，已通过实际服务、凭据、沙箱与源码身份检查：
 
 ```bash
-bash deployment/run_pilot_0930.sh validate --profile config/0930-pilot-streaming/profile.json
-bash deployment/run_pilot_0930.sh status --profile config/0930-pilot-streaming/profile.json
+bash deployment/run_pilot_0930.sh validate
+bash deployment/run_pilot_0930.sh status
+journalctl --user -u agentreview-0930-pilot.service -f
 ```
 
-原实验停在第 4 轮反思请求耗尽三次超时尝试的位置。原失败记录与评分保持原身份；新的传输实现使用新的代码身份。恢复调度时需显式选择新协议，并单独落实历史检查点迁移与请求恢复，现阶段保持暂停。
+原实验停在第 4 轮反思请求耗尽三次超时尝试的位置。迁移逐一验证了 13 份完整历史评分回执，保留候选程序、已完成的进化尝试、随机流状态及失败预算。新搜索检查点绑定新协议，结果与源码继续引用原始证据路径。
+
+恢复沿用 SharedEvolution 的正式修复入口：创建 epoch 1，重评 7 个基线组和第 1、3 轮的有效候选，共 9 组；统一提交后继续第 4、5 轮。各组仍使用原有 3 篇固定评分论文，15 篇数据划分与五次进化尝试保持原设置。第 2 轮候选失败记录继续保留。第 4 轮进入新 epoch 的请求目录，旧超时与重试证据保持原样。
+
+重评期间，逐轮报告显示已提交的 epoch 0 配对成绩及 epoch 1 完成组数。统一提交后更新配对成绩；阶段与流式请求实时进度始终记录在 `report/流程耗时报告.md`。迁移证据见 `metadata/streaming-0930/resume/migration.json`，修复证据与冻结协议共同约束本次恢复。
 
 ## 验证
 
-真实 DeepSeek 短请求流式验收返回 `STREAM_OK`，耗时约 1.95 秒，保留完整模型输出容量；记录见 `metadata/streaming-0930/live-api.json`，分片与耗时报告见 `artifacts/streaming-0930-acceptance/`。该验收覆盖实际 API 传输，正式 15 篇实验保持暂停。
+真实 DeepSeek 短请求流式验收返回 `STREAM_OK`，耗时约 1.95 秒，保留完整模型输出容量；记录见 `metadata/streaming-0930/live-api.json`，分片与耗时报告见 `artifacts/streaming-0930-acceptance/`。该验收在暂停阶段完成，覆盖实际 API 传输。
 
-通过官方 CoCo 客户端与 Judge 适配器发出的真实流式短请求也返回 `STREAM_OK`，耗时约 2.10 秒，输出预算保持 32,768 tokens；记录见 `metadata/streaming-0930/live-judge.json`，分片与耗时报告见 `artifacts/streaming-0930-judge-acceptance/`。这次验收验证 Judge 的 API 传输，CoCo 评分验收继续使用历史回执，本机模型服务保持停止。
+通过官方 CoCo 客户端与 Judge 适配器发出的真实流式短请求也返回 `STREAM_OK`，耗时约 2.10 秒，输出预算保持 32,768 tokens；记录见 `metadata/streaming-0930/live-judge.json`，分片与耗时报告见 `artifacts/streaming-0930-judge-acceptance/`。这次验收验证 Judge 的 API 传输，完整 CoCo 评分链路由本机模型和真实 Judge 执行。
 
 本地 HTTP/SSE 测试覆盖持续接收超过读取超时值、中途断流、独立重试、完整结果准入，以及官方 CoCo 对 stop、length 和空内容的原有处理。监控测试覆盖检查点静止时的请求展示、重试、并发阶段计时和中断归因。源码归档、回归与停机证据位于 `metadata/streaming-0930/`。
 
 回归测试通过 318 项测试及 101 项子测试；最终计时、传输和协议绑定调整后，相关 18 项测试全部通过。独立流式协议已通过配置与运行时代码身份校验，数据划分、进化设置和评分配置沿用原实验。汇总证据见 `metadata/streaming-0930/validation.json`。
+
+继续实验前，恢复调度、证据完整性、重评期间的同 epoch 报告和进化恢复等 30 项测试通过，记录见 `metadata/streaming-0930/resume-tests.log`。实际就绪检查为 `ready`，记录见 `metadata/streaming-0930/resume-readiness.json`。

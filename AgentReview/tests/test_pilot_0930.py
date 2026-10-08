@@ -22,6 +22,24 @@ def test_paired_round_scores_require_same_papers_and_epoch():
         rounds.paired_delta(score(3, epoch=1), score(3))
 
 
+def test_recovery_report_pairs_committed_scores_until_new_epoch_is_published():
+    parent_recipe = {'key': 'parent', 'split': 'static'}
+    child_recipe = {'key': 'child', 'split': 'static'}
+    parent = {'status': 'complete', 'evaluation_epoch': 0, 'static_score': 3.0}
+    child = {'status': 'complete', 'evaluation_epoch': 0, 'static_score': 3.5}
+    updated = {**child, 'evaluation_epoch': 1, 'static_score': 4.0}
+    state = {'champion': {'evaluation_epoch': 0},
+             'recipes': {'parent': parent_recipe, 'child': child_recipe},
+             'results': {'parent': parent, 'child': updated},
+             'assessment_history': [{'recipe': child_recipe, 'result': child}]}
+    view = rounds.committed_comparison(state)
+    assert view['results']['child'] == child
+    assert state['results']['child'] == updated
+    state['results']['parent'] = {**parent, 'evaluation_epoch': 1}
+    state['champion']['evaluation_epoch'] = 1
+    assert rounds.committed_comparison(state)['results']['child'] == updated
+
+
 def test_failed_reflection_reports_actual_proposed_source(tmp_path, monkeypatch):
     atomic_write_json(tmp_path / 'protocol.frozen.json', {'evolution': {'attempts': 1}})
     old, proposed = tmp_path / 'old.py', tmp_path / 'proposed.py'

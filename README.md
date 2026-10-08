@@ -2,7 +2,7 @@
 
 AgentReview 使用五个固定审稿角色、共享记忆程序和 CoCo 评分完成离线自进化实验。当前代码采用方舟 API 生成评审和反思程序，M★ 负责记忆程序进化，CoCo 负责最终评审评分。
 
-当前实验按用户要求保持 **paused**，本机 CoCo 服务已停止，GPU 0–3 已释放。当前选择文件 [config/active-pilot.json](config/active-pilot.json) 继续指向原有 15 篇、五轮小规模实验，状态见 [pilot-state.json](artifacts/pilot-0930-local/pilot-state.json)，结果见[自进化逐轮报告](artifacts/pilot-0930-local/report/自进化逐轮报告.md)。流式接收与流程计时已适配，新协议处于 prepared，说明见[流式 API 与流程耗时](docs/STREAMING_TIMING_0930.md)。
+2026-09-30 17:10 已按用户要求继续 15 篇、五轮小规模实验，当前选择文件 [config/active-pilot.json](config/active-pilot.json) 指向流式恢复协议。状态见 [pilot-state.json](artifacts/pilot-0930-streaming-resume/pilot-state.json)，结果见[自进化逐轮报告](artifacts/pilot-0930-streaming-resume/report/自进化逐轮报告.md)，实时进度见[流程耗时报告](artifacts/pilot-0930-streaming-resume/report/流程耗时报告.md)。本机 CoCo 与实验均由 systemd 托管。恢复先重评 9 个有效比较组，再继续第 4、5 轮；原检查点与评分保存在 `artifacts/pilot-0930-local/`。详情见[流式 API 与流程耗时](docs/STREAMING_TIMING_0930.md)。
 
 ## 架构
 
@@ -43,16 +43,16 @@ flowchart TD
 
 ```bash
 /data/xyj/envs/coco-original/bin/python deployment/pilot_0930.py status
-/data/xyj/envs/coco-original/bin/python deployment/pilot_0930.py validate --profile config/0930-pilot-streaming/profile.json
+/data/xyj/envs/coco-original/bin/python deployment/pilot_0930.py validate
 /data/xyj/envs/coco-original/bin/python deployment/pilot_0930.py report
 ```
 
-`status` 读取当前状态并核对进程身份；`validate` 核对源码身份、数据、原 CoCo 配置与冻结协议；`report` 整理已保存结果。当前产物目录为 `artifacts/pilot-0930-local/`。
+`status` 读取当前状态并核对进程身份；`validate` 核对源码身份、数据、原 CoCo 配置与冻结协议；`report` 整理已保存结果。当前产物目录为 `artifacts/pilot-0930-streaming-resume/`。
 
 `check` 检查实际服务与凭据，`run` 执行显式选择的冻结协议。新版本预检入口为：
 
 ```bash
-bash deployment/run_pilot_0930.sh validate --profile config/0930-pilot-streaming/profile.json
+bash deployment/run_pilot_0930.sh validate
 ```
 
 后台运行模板为 [deployment/systemd/agentreview-0930-pilot.service](deployment/systemd/agentreview-0930-pilot.service)，systemd 用户 linger 已启用；当前实验和模型服务保持停止。历史日志通过 `journalctl --user -u agentreview-0930-pilot.service` 查看。操作说明与结果位置见 [小规模运行说明](docs/PILOT_0930.md)。

@@ -35,3 +35,24 @@ def test_status_resolves_an_exited_worker_from_its_recorded_identity(tmp_path):
     assert status['status'] == 'interrupted'
     assert status['recorded_status'] == 'running'
     assert read_json(tmp_path / 'pilot-state.json')['status'] == 'running'
+
+
+def test_recovery_uses_frozen_evidence_and_keeps_failure_ledger(tmp_path, monkeypatch):
+    evidence = atomic_write_json(tmp_path / 'repair.json', {'cause': 'read timeout', 'repair': 'stream', 'validation': 'passed'})
+    protocol = atomic_write_json(tmp_path / 'protocol.json', {'recovery': {'evidence': pilot.binding(evidence)}})
+    run = pilot.PilotRun(protocol, tmp_path / 'run')
+    monkeypatch.setattr(pilot.PilotRun, 'check', lambda self: {'status': 'ready'})
+    monkeypatch.setattr(pilot.PilotRun, 'report', lambda self: {})
+    monkeypatch.setenv('AGENTREVIEW_TELEMETRY_ROOT', '')
+    monkeypatch.setenv('HF_HUB_OFFLINE', '')
+    calls = []
+    def recover(**kwargs):
+        calls.append(kwargs)
+        return {'status': 'paused', 'winner': None}
+    monkeypatch.setattr(pilot, 'run_shared_experiment', recover)
+    assert run.run()['status'] == 'paused'
+    assert calls[0]['repair_evidence'] == evidence
+    evidence.write_text('{}')
+    with pytest.raises(ValueError, match='Frozen artifact identity differs'):
+        run.run()
+    assert len(calls) == 1

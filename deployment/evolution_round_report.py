@@ -67,6 +67,22 @@ def mutation_artifacts(candidate):
     return value
 
 
+def committed_comparison(state):
+    """Display the published comparison while a replacement epoch is staged."""
+    champion = state.get("champion")
+    if champion is None:
+        return state
+    epoch = champion["evaluation_epoch"]
+    results, recipes = dict(state["results"]), dict(state["recipes"])
+    history = {(row["recipe"]["key"], row["result"]["evaluation_epoch"]): row
+               for row in state.get("assessment_history", [])}
+    for key, result in results.items():
+        if recipes[key]["split"] == "static" and result.get("status") == "complete" and result["evaluation_epoch"] != epoch:
+            previous = history[(key, epoch)]
+            results[key], recipes[key] = previous["result"], previous["recipe"]
+    return {**state, "results": results, "recipes": recipes}
+
+
 def report(root):
     root = Path(root)
     output = root / "report"
@@ -75,6 +91,15 @@ def report(root):
     state_path = root / "search/search.json"
     state = read_json(state_path) if state_path.exists() else {
         "status": "not_started", "recipes": {}, "results": {}, "attempts": {}, "pool": []}
+    policy_path = root / "search/failure-policy.json"
+    policy = read_json(policy_path) if policy_path.exists() else {}
+    recovery = None
+    if policy.get("status") == "reevaluating":
+        pending = policy["pending_candidates"]
+        recovery = {"evaluation_epoch": policy["evaluation_epoch"], "total": len(pending),
+                    "completed": sum(state["results"].get(key, {}).get("evaluation_epoch") == policy["evaluation_epoch"] for key in pending),
+                    "displayed_epoch": state["champion"]["evaluation_epoch"]}
+    state = committed_comparison(state)
     score_cache = {}
 
     def score(key):
@@ -140,7 +165,8 @@ def report(root):
         rounds.append(row)
     final_path = output / "paired-summary.json"
     final = read_json(final_path) if final_path.exists() else None
-    value = {"status": state["status"], "planned_rounds": len(rounds),
+    value = {"status": policy.get("status", state["status"]), "planned_rounds": len(rounds),
+             "recovery": recovery,
              "completed_rounds": sum(row["status"] in {"complete", "candidate_failed"} for row in rounds),
              "protocol": binding(root / "protocol.frozen.json"), "baselines": baselines,
              "initial_best_static": initial_best, "rounds": rounds,
@@ -164,11 +190,13 @@ def report(root):
                 "test_delta_vs_parent": row["test_delta_vs_parent"]["mean"] if row["test_delta_vs_parent"] else None})
     def number(value):
         return "待完成" if value is None else f"{value:.4f}"
-    lines = ["# 0930 小规模自进化逐轮报告", "", f"状态：{state['status']}；计划 {len(rounds)} 轮。",
+    lines = ["# 0930 小规模自进化逐轮报告", "", f"状态：{value['status']}；计划 {len(rounds)} 轮。",
         "", "固定评分集用于选择，轮换集只提供反思反馈；独立测试集在 Champion 冻结后打开。",
         "分数来自完整 CoCo 回执；失败和待执行项以状态展示。一次搜索、3 篇固定评分和3 篇测试支持探索性比较。",
         "", "## 初始对照", "", "| 实验组 | 固定评分 Paper. |", "|---|---:|"]
     lines += [f"| {key} | {number(s['mean'] if s else None)} |" for key, s in baselines.items()]
+    if recovery:
+        lines += ["", f"正在重评 epoch {recovery['evaluation_epoch']}：{recovery['completed']}/{recovery['total']} 个比较组完成。当前表格展示已提交的 epoch {recovery['displayed_epoch']} 成绩；重评全部提交后更新比较结果。"]
     lines += ["", "## 每轮变化和效果", "", "| 轮次 | 状态 | 父候选 | 父分数 | 新分数 | 相对父候选 | 本轮刷新最优 |", "|---:|---|---|---:|---:|---:|---|"]
     for row in rounds:
         parent_mean = row["parent_static"]["mean"] if row["parent_static"] else None

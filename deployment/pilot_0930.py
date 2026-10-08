@@ -48,6 +48,10 @@ class PilotRun:
             raise ValueError("Pilot runtime requires the implementation recorded by its protocol")
         for name in ("launcher", "reporter", "paired_reporter", "timing_reporter"):
             bound(implementation[name])
+        recovery = protocol.document.get("recovery")
+        if recovery:
+            for name in ("evidence", "source_protocol", "search_checkpoint", "failure_policy"):
+                bound(recovery[name])
         host = APISharedBackend(protocol=protocol, output_root=self.root / "preflight" / protocol.protocol_sha256)
         host.preflight()
         atomic_write_json(self.root / "protocol.frozen.json", read_json(self.protocol_path))
@@ -156,8 +160,10 @@ class PilotRun:
             launched = self.root / "launched.json"
             if not launched.exists():
                 atomic_write_json(launched, {"started": time.time(), "protocol": binding(self.protocol_path)})
+            recovery = read_json(self.protocol_path).get("recovery")
             search = stage("search", lambda: run_shared_experiment(
-                protocol_path=self.protocol_path, output_root=self.root / "search"))
+                protocol_path=self.protocol_path, output_root=self.root / "search",
+                repair_evidence=bound(recovery["evidence"]) if recovery else None))
             if search["status"] in {"complete", "ended"} and search.get("winner"):
                 final = stage("final_evaluation", lambda: run_shared_final_test(
                     protocol_path=self.protocol_path, output_root=self.root / "final",
