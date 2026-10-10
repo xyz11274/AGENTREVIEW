@@ -1,0 +1,16 @@
+{
+  "executable": "/data/xyj/envs/coco-original/bin/python",
+  "cwd": "/data/xyj/shengao/AgentReview_0930",
+  "modules": {
+    "agentreview": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/__init__.py",
+    "agentreview.research_v2.shared_experiment": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/shared_experiment.py",
+    "agentreview.research_v2.development_coco_worker": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/development_coco_worker.py",
+    "agentreview.reviewer_runtime.sandbox": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/reviewer_runtime/sandbox.py",
+    "memory_evolution": "/data/xyj/shengao/AgentReview_0930/AgentReview/memory_evolution/__init__.py",
+    "memory_evolution.embedding_adapter": "/data/xyj/shengao/AgentReview_0930/AgentReview/memory_evolution/embedding_adapter.py",
+    "_2_split": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_2_split.py",
+    "_3_classify": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/evaluation/_3_classify.py",
+    "src.utils": "/data/xyj/shengao/CoCoReviewBench_official_2580687/src/utils.py"
+  },
+  "scope": "same production executable/module paths/import flags; business worker identities separately recorded in stage artifacts"
+}

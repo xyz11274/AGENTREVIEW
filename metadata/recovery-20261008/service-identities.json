@@ -1,0 +1,94 @@
+{
+  "split": {
+    "role": "split",
+    "process": {
+      "pid": 2391881,
+      "uid": 1032,
+      "start_time": "693415154",
+      "argv": [
+        "/data/xyj/envs/qwen38serve/bin/python",
+        "-m",
+        "vllm.entrypoints.openai.api_server",
+        "--model",
+        "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+        "--served-model-name",
+        "Qwen3-8B-Split",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "13099",
+        "--dtype",
+        "bfloat16",
+        "--tensor-parallel-size",
+        "2",
+        "--max-model-len",
+        "65536",
+        "--gpu-memory-utilization",
+        "0.8",
+        "--max-num-seqs",
+        "8",
+        "--max-num-batched-tokens",
+        "2048",
+        "--enable-chunked-prefill",
+        "--enable-prefix-caching",
+        "--hf-overrides",
+        "{\"rope_scaling\": {\"rope_type\": \"yarn\", \"factor\": 4.0, \"original_max_position_embeddings\": 32768}}"
+      ]
+    },
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+    "actual_executable": "/data/xyj/envs/env_shengao/bin/python3.12",
+    "cwd": "/data/xyj/shengao/AgentReview_0930/artifacts/runtime-20261008/services",
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "4,5",
+      "PATH": "/data/xyj/envs/qwen38serve/bin:/data/xyj/.local/bin:/usr/local/cuda/bin:/data/xyj/.codex/tmp/arg0/codex-arg0jeMjHn:/data/xyj/.vscode-server/cli/servers/Stable-2a59476c9bfcb90b3ddc372c36762471b7dfad1c/server/bin/remote-cli:/data/xyj/.local/bin:/data/xyj/miniforge3/condabin:/data/xyj/nodejs/bin:/data/xyj/nodejs/bin:/usr/local/cuda/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/data/xyj/.vscode-server/extensions/openai.chatgpt-26.1002.51308-linux-x64/bin/linux-x86_64",
+      "NO_PROXY": "127.0.0.1,localhost,::1",
+      "no_proxy": "127.0.0.1,localhost,::1"
+    },
+    "credential_present": false
+  },
+  "classify": {
+    "role": "classify",
+    "process": {
+      "pid": 2391882,
+      "uid": 1032,
+      "start_time": "693415161",
+      "argv": [
+        "/data/xyj/envs/qwen38serve/bin/python",
+        "-m",
+        "vllm.entrypoints.openai.api_server",
+        "--model",
+        "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+        "--served-model-name",
+        "Qwen3-8B-Classify",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "13098",
+        "--dtype",
+        "bfloat16",
+        "--tensor-parallel-size",
+        "2",
+        "--max-model-len",
+        "32768",
+        "--gpu-memory-utilization",
+        "0.8",
+        "--max-num-seqs",
+        "8",
+        "--max-num-batched-tokens",
+        "2048",
+        "--enable-chunked-prefill",
+        "--enable-prefix-caching"
+      ]
+    },
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+    "actual_executable": "/data/xyj/envs/env_shengao/bin/python3.12",
+    "cwd": "/data/xyj/shengao/AgentReview_0930/artifacts/runtime-20261008/services",
+    "environment": {
+      "CUDA_VISIBLE_DEVICES": "6,7",
+      "PATH": "/data/xyj/envs/qwen38serve/bin:/data/xyj/.local/bin:/usr/local/cuda/bin:/data/xyj/.codex/tmp/arg0/codex-arg0jeMjHn:/data/xyj/.vscode-server/cli/servers/Stable-2a59476c9bfcb90b3ddc372c36762471b7dfad1c/server/bin/remote-cli:/data/xyj/.local/bin:/data/xyj/miniforge3/condabin:/data/xyj/nodejs/bin:/data/xyj/nodejs/bin:/usr/local/cuda/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/data/xyj/.vscode-server/extensions/openai.chatgpt-26.1002.51308-linux-x64/bin/linux-x86_64",
+      "NO_PROXY": "127.0.0.1,localhost,::1",
+      "no_proxy": "127.0.0.1,localhost,::1"
+    },
+    "credential_present": false
+  }
+}

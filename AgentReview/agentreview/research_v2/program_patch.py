@@ -41,9 +41,15 @@ def apply_program_patch(source: str, patch_body: str) -> str:
         elif line.strip():
             raise ValueError("A program edit starts with *** Update File: program.py")
     result = source
-    for operation in operations:
+    for index, operation in enumerate(operations, 1):
         text = "*** Begin Patch\n" + "".join(operation).rstrip("\n") + "\n*** End Patch\n"
-        result = apply_patch_in_memory(text, {VIRTUAL_FILE: result}).files[VIRTUAL_FILE]
+        try:
+            result = apply_patch_in_memory(text, {VIRTUAL_FILE: result}).files[VIRTUAL_FILE]
+        except (ValueError, RuntimeError, KeyError) as exc:
+            hints = [line.strip() for line in operation if line.startswith("@@")]
+            detail = str(exc).strip() or "hunk context did not match the current source"
+            raise ValueError(f"operation {index} on {VIRTUAL_FILE}: {type(exc).__name__}: "
+                             f"{detail}; context={hints[:3]}") from exc
     return result
 
 

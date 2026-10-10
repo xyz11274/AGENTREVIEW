@@ -1,0 +1,44 @@
+{
+  "classify": {
+    "argv_sha256": "2c3bf399a899b1d5609603f87a462b462c722929908f9a3bf8e7ad1172b3aaf5",
+    "base_url": "http://127.0.0.1:13098/v1",
+    "max_model_len": 32768,
+    "model": "Qwen3-8B-Classify",
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/classify_model",
+    "pid": 2391882,
+    "start_identity": "693415161",
+    "uid": 1032
+  },
+  "judge": {
+    "model_identity": {
+      "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+      "enable_thinking": true,
+      "max_model_len": 1048576,
+      "max_output_tokens": 131072,
+      "model": "deepseek-v4.1-flash",
+      "reasoning_effort": "high",
+      "response_model": "deepseek-v4-1-flash-260910",
+      "temperature": 0.0,
+      "token_accounting": {
+        "encoder_sha256": "502bdaec8a3fd88ebc24c4721a7038fbe42f2063c664638127056107920035c1",
+        "method": "deepseek-v4.1-local-estimate",
+        "source_revision": "dba1be0a40aa45a94ad051997016db3960a90277",
+        "tokenizer": {
+          "path": "/data/xyj/shengao/AgentReview_0930/AgentReview/agentreview/research_v2/vendor/deepseek_v41/tokenizer.json",
+          "sha256": "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b"
+        }
+      }
+    },
+    "transport": "ark-chat-completions"
+  },
+  "split": {
+    "argv_sha256": "cdebcb9cea1810ce8eca67cce0090db4b9779aaabea32cf50d7b279edcec8265",
+    "base_url": "http://127.0.0.1:13099/v1",
+    "max_model_len": 65536,
+    "model": "Qwen3-8B-Split",
+    "model_root": "/data/xyj/shengao/CoCoReviewBench/model/split_model",
+    "pid": 2391881,
+    "start_identity": "693415154",
+    "uid": 1032
+  }
+}

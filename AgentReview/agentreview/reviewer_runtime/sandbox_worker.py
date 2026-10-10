@@ -370,7 +370,7 @@ class ReviewPlanToolkit:
         return _tool_call("retrieve_current_s2", limit)
 
 
-def _snapshot_value(value, toolkit):
+def _snapshot_value(value, toolkit, path="knowledge_base_state"):
     if value is toolkit:
         return {"__mstar_type__": "toolkit"}
     if value is toolkit.db:
@@ -381,22 +381,23 @@ def _snapshot_value(value, toolkit):
         return {
             "__mstar_type__": "set",
             "items": [
-                _snapshot_value(item, toolkit) for item in sorted(value, key=repr)
+                _snapshot_value(item, toolkit, f"{path}[{index}]")
+                for index, item in enumerate(sorted(value, key=repr))
             ],
         }
     if isinstance(value, tuple):
         return {
             "__mstar_type__": "tuple",
-            "items": [_snapshot_value(item, toolkit) for item in value],
+            "items": [_snapshot_value(item, toolkit, f"{path}[{index}]") for index, item in enumerate(value)],
         }
     if isinstance(value, list):
-        return [_snapshot_value(item, toolkit) for item in value]
+        return [_snapshot_value(item, toolkit, f"{path}[{index}]") for index, item in enumerate(value)]
     if isinstance(value, dict):
-        return {str(key): _snapshot_value(item, toolkit) for key, item in value.items()}
+        return {str(key): _snapshot_value(item, toolkit, f"{path}[{key!r}]") for key, item in value.items()}
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     raise TypeError(
-        "MemoryProgram state is not checkpoint-serializable: " + type(value).__name__
+        "MemoryProgram state is not checkpoint-serializable: " + type(value).__name__ + " at " + path
     )
 
 
@@ -449,7 +450,7 @@ def _snapshot_memory(knowledge_base, toolkit):
     return {
         "snapshot_version": "mstar-memory-snapshot-v2",
         "knowledge_base_state": {
-            key: _snapshot_value(value, toolkit)
+            key: _snapshot_value(value, toolkit, f"knowledge_base_state.{key}")
             for key, value in knowledge_base.__dict__.items()
         },
         "sqlite_dump": list(toolkit.db.iterdump()),
@@ -686,7 +687,12 @@ def _run(program_path):
     toolkit = CapabilityToolkit()
     review_plan_toolkit = ReviewPlanToolkit()
     knowledge_base = program.KnowledgeBase(toolkit)
-    _send({"type": "ready"})
+    _send({"type": "ready", "identity": {
+        "executable": sys.executable, "cwd": os.getcwd(), "worker_file": __file__,
+        "program_file": program.__file__,
+        "program_sha256": hashlib.sha256(open(program_path, "rb").read()).hexdigest(),
+        "sys_path": sys.path, "environment_names": sorted(os.environ),
+    }})
     while True:
         command = _receive()
         command_id = command.get("id")

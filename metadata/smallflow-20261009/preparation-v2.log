@@ -1,0 +1,1 @@
+{'status': 'prepared_awaiting_user_start', 'profile': '/data/xyj/shengao/AgentReview_0930/config/0930-smallflow-20261009-v2/profile.json', 'output_root': '/data/xyj/shengao/AgentReview_0930/artifacts/smallflow-0930-20261009-v2', 'counts': {'build': 4, 'static': 3, 'rotating': 5, 'sealed_test': 3}, 'model_calls': 0, 'frozen_files': 70}

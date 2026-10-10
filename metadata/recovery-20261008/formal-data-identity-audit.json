@@ -1,0 +1,26 @@
+{
+  "historical_annotations": {
+    "path": "/data/xyj/shengao/AgentReview_0930/data/provenance/historical-use-annotations.json",
+    "sha256": "281ff2bec6f75f86368809d492f0b5553a7e1e2a9ad773942275ed039bd2ed62"
+  },
+  "no_memory_arms": [
+    "no-memory-vector_search",
+    "no-memory-llm_summarizer",
+    "no-memory-experience_learner"
+  ],
+  "pilot_development_overlap_sealed": [],
+  "sealed_multi_version_families": 1,
+  "sealed_text_or_reference_opened": false,
+  "sealed_work_families": 1299,
+  "source_protocol": {
+    "path": "/data/xyj/shengao/AgentReview_0930/config/0930/protocol.seed-0.frozen.json",
+    "sha256": "7deea1f28c4740c0733045361c5ecfdfbd76f55c050f259b3f5972b9ccd0b1af"
+  },
+  "split_counts": {
+    "build": 125,
+    "rotating": 125,
+    "sealed_test": 1300,
+    "static": 25
+  },
+  "strictly_unseen_claim": false
+}

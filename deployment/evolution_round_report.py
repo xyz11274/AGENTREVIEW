@@ -5,11 +5,44 @@ import csv
 import difflib
 import json
 import math
+import fcntl
+import os
+import tempfile
 from pathlib import Path
 
 from agentreview.research_v2.development_coco import validate_assessment_receipt
-from agentreview.research_v2.io import atomic_write_json, read_json
+from agentreview.research_v2.io import atomic_write_json, read_json, value_sha256
 from agentreview.research_v2.shared_experiment import binding, bound
+
+
+def write_generated_report(path, text):
+    """Replace only the marked generated block; retain existing human/history text."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    begin = "<!-- AGENTREVIEW_AUTO_ROUNDS_BEGIN -->"
+    end = "<!-- AGENTREVIEW_AUTO_ROUNDS_END -->"
+    with path.with_suffix(path.suffix + ".lock").open("a+b") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        old = path.read_text(encoding="utf-8") if path.exists() else ""
+        block = begin + "\n" + text.rstrip("\n") + "\n" + end
+        if begin in old or end in old:
+            if old.count(begin) != 1 or old.count(end) != 1 or old.index(begin) > old.index(end):
+                raise ValueError("Report markers must form one ordered pair; existing text retained")
+            updated = old[:old.index(begin)] + block + old[old.index(end) + len(end):]
+        else:
+            updated = old + ("\n\n" if old else "") + block + "\n"
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                             delete=False) as handle:
+                temporary = Path(handle.name)
+                handle.write(updated)
+                handle.flush()
+                os.fsync(handle.fileno())
+            temporary.replace(path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
 
 
 def scores_for(state, key):
@@ -83,6 +116,60 @@ def committed_comparison(state):
     return {**state, "results": results, "recipes": recipes}
 
 
+def recovery_progress(state, policy):
+    """Pending recovery survives paused/running transitions and retains each key."""
+    pending = policy.get("pending_candidates", [])
+    if not pending:
+        return None
+    epoch = policy["evaluation_epoch"]
+    groups = []
+    for key in pending:
+        result = state.get("results", {}).get(key, {})
+        complete = result.get("status") == "complete" and result.get("evaluation_epoch") == epoch
+        groups.append({"key": key, "status": "complete" if complete else "pending",
+                       "result_epoch": result.get("evaluation_epoch")})
+    completed = sum(group["status"] == "complete" for group in groups)
+    return {"evaluation_epoch": epoch, "total": len(groups), "completed": completed,
+            "pending": len(groups) - completed, "groups": groups,
+            "displayed_epoch": (state.get("champion") or {}).get("evaluation_epoch"),
+            "status": policy.get("status")}
+
+
+def failure_counts(state):
+    """Count observable proposal/validation events, including repaired proposals."""
+    refs = {}
+    for recipe in state.get("recipes", {}).values():
+        candidate = recipe.get("candidate", {})
+        for record in (candidate, candidate.get("proposal_failure") or {}):
+            if record.get("reflection"):
+                ref = record["reflection"]
+                refs[ref["path"]] = ref
+    for result in state.get("results", {}).values():
+        ref = (result.get("failure") or {}).get("reflection")
+        if ref:
+            refs[ref["path"]] = ref
+    generation, validation = 0, 0
+    for ref in refs.values():
+        for event in read_json(bound(ref)).get("events", []):
+            generation += event.get("error_type") == "Patch format error"
+            validation += bool(event.get("program") and event.get("error"))
+    return {"candidate_generation_failures": generation, "candidate_validation_failures": validation,
+            "failure_count_scope": "Unique bound reflection traces; proposal parsing and program validation attempts, including repaired attempts"}
+
+
+def winner_is_frozen(root, state, policy):
+    winner = state.get("winner")
+    path = Path(root) / "search/winner.json"
+    if not winner or not path.is_file():
+        return False
+    body = {key: value for key, value in winner.items() if key != "freeze_id"}
+    return (read_json(path) == winner and winner.get("status") == "complete"
+            and winner.get("protocol") == "research-v2-shared-frozen-system-v1"
+            and winner.get("freeze_id") == value_sha256(body)
+            and winner.get("experiment_protocol_sha256") == state.get("identity", {}).get("experiment_protocol_sha256")
+            and winner.get("promotion_policy", {}).get("evaluation_epoch") == policy.get("evaluation_epoch"))
+
+
 def report(root):
     root = Path(root)
     output = root / "report"
@@ -93,12 +180,13 @@ def report(root):
         "status": "not_started", "recipes": {}, "results": {}, "attempts": {}, "pool": []}
     policy_path = root / "search/failure-policy.json"
     policy = read_json(policy_path) if policy_path.exists() else {}
-    recovery = None
-    if policy.get("status") == "reevaluating":
-        pending = policy["pending_candidates"]
-        recovery = {"evaluation_epoch": policy["evaluation_epoch"], "total": len(pending),
-                    "completed": sum(state["results"].get(key, {}).get("evaluation_epoch") == policy["evaluation_epoch"] for key in pending),
-                    "displayed_epoch": state["champion"]["evaluation_epoch"]}
+    recovery = recovery_progress(state, policy)
+    current_epoch = policy.get("evaluation_epoch", (state.get("champion") or {}).get("evaluation_epoch", 0))
+    current_scores = [scores_for(state, key) for key, result in state["results"].items()
+                      if result.get("status") == "complete" and result.get("evaluation_epoch") == current_epoch]
+    current_scores = [score for score in current_scores if score is not None]
+    counts = failure_counts(state)
+    frozen = winner_is_frozen(root, state, policy)
     state = committed_comparison(state)
     score_cache = {}
 
@@ -167,7 +255,14 @@ def report(root):
     final = read_json(final_path) if final_path.exists() else None
     value = {"status": policy.get("status", state["status"]), "planned_rounds": len(rounds),
              "recovery": recovery,
-             "completed_rounds": sum(row["status"] in {"complete", "candidate_failed"} for row in rounds),
+             "completed_rounds": sum(row["status"] == "complete" and row["candidate_static"] is not None for row in rounds),
+             "settled_rounds": sum(row["status"] in {"complete", "candidate_failed"} for row in rounds),
+             "candidate_failed_rounds": sum(row["status"] == "candidate_failed" for row in rounds),
+             "current_epoch": current_epoch,
+             "displayed_epoch": (state.get("champion") or {}).get("evaluation_epoch"),
+             "complete_assessments_current_epoch": len(current_scores),
+             "valid_paper_evaluations_current_epoch": sum(len(score["per_paper"]) for score in current_scores),
+             "winner_frozen": frozen, **counts,
              "protocol": binding(root / "protocol.frozen.json"), "baselines": baselines,
              "initial_best_static": initial_best, "rounds": rounds,
              "final_comparisons": final["comparisons"] if final else None,
@@ -191,12 +286,18 @@ def report(root):
     def number(value):
         return "待完成" if value is None else f"{value:.4f}"
     lines = ["# 0930 小规模自进化逐轮报告", "", f"状态：{value['status']}；计划 {len(rounds)} 轮。",
+        f"有效完成 {value['completed_rounds']} 轮；候选失败 {value['candidate_failed_rounds']} 轮；已结束尝试 {value['settled_rounds']} 轮。",
+        f"当前 epoch：{current_epoch}；下表历史成绩 epoch：{value['displayed_epoch']}；Winner 正式冻结：{'是' if frozen else '否'}。",
+        f"当前 epoch 完整评分成功 {len(current_scores)} 组；有效系统×论文评分 {value['valid_paper_evaluations_current_epoch']} 条（不是独立论文样本数）。",
+        f"提案解析失败 {counts['candidate_generation_failures']} 次；程序验证失败 {counts['candidate_validation_failures']} 次（包括修复后通过的尝试；仅统计有绑定轨迹的事件）。",
         "", "固定评分集用于选择，轮换集只提供反思反馈；独立测试集在 Champion 冻结后打开。",
         "分数来自完整 CoCo 回执；失败和待执行项以状态展示。一次搜索、3 篇固定评分和3 篇测试支持探索性比较。",
         "", "## 初始对照", "", "| 实验组 | 固定评分 Paper. |", "|---|---:|"]
     lines += [f"| {key} | {number(s['mean'] if s else None)} |" for key, s in baselines.items()]
     if recovery:
-        lines += ["", f"正在重评 epoch {recovery['evaluation_epoch']}：{recovery['completed']}/{recovery['total']} 个比较组完成。当前表格展示已提交的 epoch {recovery['displayed_epoch']} 成绩；重评全部提交后更新比较结果。"]
+        lines += ["", f"恢复状态 {recovery['status']}，epoch {recovery['evaluation_epoch']}：{recovery['completed']}/{recovery['total']} 个比较组完成，待完成 {recovery['pending']} 组。当前表格展示已提交的 epoch {recovery['displayed_epoch']} 成绩；重评全部提交后更新比较结果。",
+                  "", "| 待重评组 | 状态 | 已有结果 epoch |", "|---|---|---|"]
+        lines += [f"| {group['key']} | {group['status']} | {group['result_epoch']} |" for group in recovery['groups']]
     lines += ["", "## 每轮变化和效果", "", "| 轮次 | 状态 | 父候选 | 父分数 | 新分数 | 相对父候选 | 本轮刷新最优 |", "|---:|---|---|---:|---:|---:|---|"]
     for row in rounds:
         parent_mean = row["parent_static"]["mean"] if row["parent_static"] else None
@@ -228,5 +329,5 @@ def report(root):
         lines += [f"| {key} | {row['mean_gain']:.4f} | {row['wins']}/{row['ties']}/{row['losses']} |" for key, row in final["comparisons"].items()]
     else:
         lines += ["独立测试待执行，完成后展示各系统的配对成绩。"]
-    (output / "自进化逐轮报告.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_generated_report(output / "自进化逐轮报告.md", "\n".join(lines) + "\n")
     return value

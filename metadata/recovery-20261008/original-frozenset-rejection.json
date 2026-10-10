@@ -1,0 +1,11 @@
+{
+  "errors": [
+    "protocol smoke failed for QUAL during snapshot: SandboxError: TypeError: MemoryProgram state is not checkpoint-serializable: frozenset at knowledge_base_state.signatures['QUAL'][0]",
+    "protocol smoke failed for CLAR during snapshot: SandboxError: TypeError: MemoryProgram state is not checkpoint-serializable: frozenset at knowledge_base_state.signatures['CLAR'][0]",
+    "protocol smoke failed for SIGN during snapshot: SandboxError: TypeError: MemoryProgram state is not checkpoint-serializable: frozenset at knowledge_base_state.signatures['SIGN'][0]",
+    "protocol smoke failed for ORIG during snapshot: SandboxError: TypeError: MemoryProgram state is not checkpoint-serializable: frozenset at knowledge_base_state.signatures['ORIG'][0]",
+    "protocol smoke failed for POL during snapshot: SandboxError: TypeError: MemoryProgram state is not checkpoint-serializable: frozenset at knowledge_base_state.signatures['POL'][0]"
+  ],
+  "sha256": "c93bdf10d7280ab6f20d51f3d59a15b9566d0bc402c16f63d29424e16eafa675",
+  "source": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a2-e0/program.py"
+}

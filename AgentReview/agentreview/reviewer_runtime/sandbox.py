@@ -252,6 +252,14 @@ class SandboxSession:
             raise SandboxError(
                 first.get("error") or "candidate sandbox failed to start"
             )
+        self.execution_identity = first.get("identity", {})
+        import hashlib
+        if self.execution_identity.get("program_sha256") != hashlib.sha256(candidate.read_bytes()).hexdigest():
+            self.close(force=True)
+            raise SandboxError("Sandbox loaded program differs from the supplied candidate")
+        from agentreview.research_v2.execution_telemetry import emit
+        emit(event="identity", stage="candidate_sandbox", source_path=str(self.program_path),
+             host_executable=sys.executable, child_pid=self._process.pid, **self.execution_identity)
 
     def _read_line(self) -> dict[str, Any]:
         if self._process is None or self._process.stdout is None:

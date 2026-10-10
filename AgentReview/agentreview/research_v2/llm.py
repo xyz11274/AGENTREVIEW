@@ -80,6 +80,8 @@ class OpenAICompletionClient:
         self.config = config
         self.client = OpenAI(base_url=config.base_url, api_key=require_api_key(config),
                              max_retries=0, timeout=config.timeout_seconds)
+        from .transport_observer import observe_client
+        observe_client(self.client)
 
     def close(self) -> None:
         self.client.close()
@@ -100,7 +102,8 @@ class OpenAICompletionClient:
                                      response_format=response_format)
         trace = current_request()
         if trace is not None:
-            trace.update(model=self.config.model, read_timeout_seconds=self.config.timeout_seconds)
+            trace.update(model=self.config.model, read_timeout_seconds=self.config.timeout_seconds,
+                         sdk_max_retries=getattr(self.client, "max_retries", None))
         with ExitStack() as resources:
             with span('api_admission', component=component):
                 resources.enter_context(request_slot(self.config.base_url))

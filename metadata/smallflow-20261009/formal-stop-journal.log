@@ -1,0 +1,11 @@
+Oct 09 11:21:55 ubun systemd[863826]: Started /data/xyj/shengao/AgentReview_0930/deployment/run_runtime_0930.sh formal run --study /data/xyj/shengao/AgentReview_0930/config/0930-runtime-20261008/study.frozen.json.
+Oct 09 11:41:42 ubun systemd[863826]: Stopping /data/xyj/shengao/AgentReview_0930/deployment/run_runtime_0930.sh formal run --study /data/xyj/shengao/AgentReview_0930/config/0930-runtime-20261008/study.frozen.json...
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: State 'stop-sigterm' timed out. Killing.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Killing process 3865607 (python) with signal SIGKILL.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Killing process 3866101 (python) with signal SIGKILL.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Killing process 3866438 (python) with signal SIGKILL.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Killing process 3866439 (python) with signal SIGKILL.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Main process exited, code=killed, status=9/KILL
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Failed with result 'timeout'.
+Oct 09 11:42:13 ubun systemd[863826]: Stopped /data/xyj/shengao/AgentReview_0930/deployment/run_runtime_0930.sh formal run --study /data/xyj/shengao/AgentReview_0930/config/0930-runtime-20261008/study.frozen.json.
+Oct 09 11:42:13 ubun systemd[863826]: agentreview-0930-study-20261009.service: Consumed 3min 3.187s CPU time.

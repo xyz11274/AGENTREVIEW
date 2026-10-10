@@ -1,0 +1,6 @@
+{
+  "approval_state": "awaiting_user_start",
+  "automatic_formal_launch": false,
+  "output_root": "/data/xyj/shengao/AgentReview_0930/artifacts/smallflow-0930-20261009",
+  "protocol": "protocol.frozen.json"
+}

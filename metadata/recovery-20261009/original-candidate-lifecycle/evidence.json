@@ -1,0 +1,75 @@
+{
+  "diagnostic_program": {
+    "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/diagnostic-program.py",
+    "sha256": "6db7fecbafbbea9d30c882efd27364e68608433e85f122c61c23f1e4d97c65bb"
+  },
+  "repair": "Persist sorted signature lists and reconstruct transient frozensets for unchanged Jaccard comparison",
+  "roles": [
+    {
+      "both_distinct_experiences_retrievable": true,
+      "duplicate_after_restore_does_not_change_state": true,
+      "original_pid": 3787817,
+      "restored_pid": 3787846,
+      "retrieval_equal": true,
+      "role": "QUAL",
+      "snapshot": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/QUAL.snapshot.json",
+        "sha256": "abe2d2836341600b08c62cf4acf3929deda4824cbf8056de2dd54bc60a11bb74"
+      }
+    },
+    {
+      "both_distinct_experiences_retrievable": true,
+      "duplicate_after_restore_does_not_change_state": true,
+      "original_pid": 3787871,
+      "restored_pid": 3787899,
+      "retrieval_equal": true,
+      "role": "CLAR",
+      "snapshot": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/CLAR.snapshot.json",
+        "sha256": "b4d7bf6a0c3e97fa2ba6f9f797ee80e4aa58d63ff43c49607a2f43723e4c7221"
+      }
+    },
+    {
+      "both_distinct_experiences_retrievable": true,
+      "duplicate_after_restore_does_not_change_state": true,
+      "original_pid": 3787933,
+      "restored_pid": 3787982,
+      "retrieval_equal": true,
+      "role": "SIGN",
+      "snapshot": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/SIGN.snapshot.json",
+        "sha256": "f708211fc9245d485587838b38cacf5ebfd18eefba070d88c641137f2a26bdeb"
+      }
+    },
+    {
+      "both_distinct_experiences_retrievable": true,
+      "duplicate_after_restore_does_not_change_state": true,
+      "original_pid": 3788011,
+      "restored_pid": 3788041,
+      "retrieval_equal": true,
+      "role": "ORIG",
+      "snapshot": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/ORIG.snapshot.json",
+        "sha256": "14a3815742f9a2a3aeec38082d7452b7966bfaad2c70fb4a6340d636d5ba0c7d"
+      }
+    },
+    {
+      "both_distinct_experiences_retrievable": true,
+      "duplicate_after_restore_does_not_change_state": true,
+      "original_pid": 3788064,
+      "restored_pid": 3788093,
+      "retrieval_equal": true,
+      "role": "POL",
+      "snapshot": {
+        "path": "/data/xyj/shengao/AgentReview_0930/metadata/recovery-20261009/original-candidate-lifecycle/POL.snapshot.json",
+        "sha256": "238d0ee530e23c0e346847099e3fd34755be081ec9614f658f510d960ebac7c2"
+      }
+    }
+  ],
+  "scope": "Local serialization diagnostic with deterministic toolkit embeddings; no model calls, scoring, pool admission, or strategy changes",
+  "source": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/pilot-0930-local/search/proposals/a2-e0/program.py",
+    "sha256": "c93bdf10d7280ab6f20d51f3d59a15b9566d0bc402c16f63d29424e16eafa675"
+  },
+  "status": "complete"
+}

@@ -1,0 +1,876 @@
+diff --git a/AgentReview/agentreview/research_v2/coco_integrity.py b/AgentReview/agentreview/research_v2/coco_integrity.py
+index ba90924e..9c0c1a30 100644
+--- a/AgentReview/agentreview/research_v2/coco_integrity.py
++++ b/AgentReview/agentreview/research_v2/coco_integrity.py
+@@ -16,6 +16,22 @@ from .request_admission import async_request_slot
+ from .execution_telemetry import span, RequestTrace
+ 
+ 
++def transport_diagnostics(client):
++    """Observe upstream attempts without changing retry, cache or score semantics."""
++    from .development_coco import failure_kind
++    groups = list(client.wire_attempts.values())
++    attempts = [attempt for group in groups for attempt in group]
++    failures = {}
++    for attempt in attempts:
++        if attempt.get("status") != "failed":
++            continue
++        error = attempt.get("error", {})
++        key = failure_kind(error.get("type", ""), error.get("message", ""))
++        failures[key] = failures.get(key, 0) + 1
++    return {"attempts": len(attempts), "repeated_attempts": sum(max(0, len(group) - 1) for group in groups),
++            "failed_attempts": sum(failures.values()), "failure_kinds": failures}
++
++
+ def audited_client_class(base):
+     class AuditedClient(base):
+         def __init__(self, *args, **kwargs):
+@@ -73,10 +89,17 @@ def audited_client_class(base):
+             try:
+                 record["tokens"] = await asyncio.to_thread(self._token_budget, api_payload)
+                 with RequestTrace(directory / f'attempt-{attempt}.progress.json', request_id=digest,
+-                                  component='coco:' + self.model_name, attempt=attempt):
++                                  component='coco:' + self.model_name, attempt=attempt,
++                                  sdk_max_retries=self.client.max_retries,
++                                  input_tokens=record['tokens']['input_tokens'],
++                                  output_budget=record['tokens']['output_budget']) as trace:
+                     async with async_request_slot(self.base_url):
+                         with span("coco_model_request", service=self.base_url, request_digest=digest):
+                             response = await self._perform_completion(api_payload)
++                    completion = response.model_dump(mode="json")
++                    trace.update(response_id=completion.get('id'), usage=completion.get('usage'),
++                        finish_reasons={str(c['index']): c.get('finish_reason') for c in completion.get('choices', [])},
++                        content_chars=sum(len(c.get('message', {}).get('content') or '') for c in completion.get('choices', [])))
+                 record["completion"] = response.model_dump(mode="json")
+                 if response.model != self.response_model:
+                     raise ValueError("CoCo endpoint returned a different configured model")
+diff --git a/AgentReview/agentreview/research_v2/development_coco.py b/AgentReview/agentreview/research_v2/development_coco.py
+index 1bf8295a..3813845c 100644
+--- a/AgentReview/agentreview/research_v2/development_coco.py
++++ b/AgentReview/agentreview/research_v2/development_coco.py
+@@ -270,13 +270,28 @@ def aggregate_paper_scores(records: list[dict[str, Any]]) -> dict[str, Any]:
+     return {"absolute_scores": scores, "paper_counts": counts}
+ 
+ 
++def failure_kind(error_type: str, message: str) -> str:
++    """Diagnostic classification; the official client's retry policy is unchanged."""
++    detail = (error_type + " " + message).lower()
++    if any(word in detail for word in ("importerror", "modulenotfounderror", "relative import")):
++        return "local_import"
++    if any(word in detail for word in ("timeout", "timed out")):
++        return "timeout"
++    if any(word in detail for word in ("api", "connection refused", "connection reset", "http", "rate limit")):
++        return "model_api"
++    if any(word in detail for word in ("cohort coverage", "incomplete judge", "missing", "fitness")):
++        return "incomplete_scoring"
++    return "local_runtime"
++
++
+ def _stage_failure(stage: str, exc: Exception) -> dict[str, Any]:
+     text = str(exc)
+     transient = isinstance(exc, subprocess.TimeoutExpired) or any(marker in text.lower() for marker in
+         ("connection refused", "connection reset", "timed out", "timeout", "service unavailable", "rate limit"))
+     deterministic = any(marker in text.lower() for marker in ("official classification failed", "official split failed", "incomplete judge", "fields differ", "prompt budget", "context window"))
+     return {"stage": stage, "category": "shared_runtime" if transient else "shared_evaluation",
+-            "message": text, "error_type": type(exc).__name__, "retryable": transient and deterministic is False,
++            "message": text, "error_type": type(exc).__name__,
++            "failure_kind": failure_kind(type(exc).__name__, text), "retryable": transient and deterministic is False,
+             "fingerprint": value_sha256({"stage": stage, "type": type(exc).__name__, "message": text})}
+ 
+ 
+@@ -292,7 +307,6 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
+         return _bound_file(state["result"])
+     if state["status"] == "failed":
+         raise DevelopmentCoCoFailure(state["failure"])
+-    worker = Path(__file__).with_name("development_coco_worker.py")
+     while len(state["attempts"]) < state["attempt_limit"]:
+         number = len(state["attempts"]) + 1
+         attempt = {"number": number, "status": "reserved"}
+@@ -301,8 +315,9 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
+         atomic_write_json(state_path, state, immutable=False)
+         log_path = stage_root / f"attempt-{number:03d}.log"
+         result_path = stage_root / f"result-{number:03d}.json"
+-        command = [config["python_executable"], "-s", "-B", str(worker), "--request", str(request_path), "--stage", stage, "--output", str(result_path)]
+-        environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "CUDA_VISIBLE_DEVICES": "", "TOKENIZERS_PARALLELISM": "false"}
++        command = [config["python_executable"], "-s", "-B", "-m", "agentreview.research_v2.development_coco_worker", "--request", str(request_path), "--stage", stage, "--output", str(result_path)]
++        environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "CUDA_VISIBLE_DEVICES": "", "TOKENIZERS_PARALLELISM": "false",
++                       "PYTHONPATH": str(Path(__file__).resolve().parents[2])}
+         environment.update(HF_HOME=config.get("hf_home", str(Path.home() / ".cache/huggingface")),
+                            HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
+                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
+@@ -315,7 +330,7 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
+             for name in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"):
+                 if name in os.environ:
+                     environment[name] = os.environ[name]
+-        for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT"):
++        for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT", "AGENTREVIEW_CALL_BUDGET"):
+             if name in os.environ:
+                 environment[name] = os.environ[name]
+         try:
+diff --git a/AgentReview/agentreview/research_v2/development_coco_worker.py b/AgentReview/agentreview/research_v2/development_coco_worker.py
+index 37e706d1..06e117f1 100644
+--- a/AgentReview/agentreview/research_v2/development_coco_worker.py
++++ b/AgentReview/agentreview/research_v2/development_coco_worker.py
+@@ -10,7 +10,6 @@ from pathlib import Path
+ from types import SimpleNamespace
+ from typing import Any
+ 
+-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+ from agentreview.research_v2.development_coco import (  # noqa: E402
+     _binding, _bound_file, _source_identity, _stage_failure, _validate_inputs,
+ )
+@@ -19,7 +18,7 @@ from agentreview.research_v2.config import ModelConfig
+ from agentreview.research_v2.llm import require_api_key, completion_payload
+ from agentreview.research_v2.token_accounting import count_chat_tokens
+ from agentreview.research_v2.execution_telemetry import span
+-from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge  # noqa: E402
++from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge, transport_diagnostics  # noqa: E402
+ 
+ 
+ def _load_standard(root: Path, name: str) -> Any:
+@@ -84,10 +83,13 @@ def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
+                     raise ValueError("Complete CoCo Judge request exceeds API context")
+                 return {**tokens, "output_budget": output}
+         client_type = ArkJudgeClient
+-    return client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
++    client = client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
+         max_workers=config["request_settings"][stage]["max_workers"],
+         cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
+         cache_version=value_sha256({"request": request, "stage": stage, "service": service, "integrity": "upstream-observed-v1"}))
++    from .transport_observer import observe_client
++    observe_client(client.client, asynchronous=client._use_async_openai)
++    return client
+ 
+ 
+ def _runtime(config, stage):
+@@ -200,7 +202,13 @@ def _evaluate(request: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]
+             references=references, input_file=classified, judge_client=client)
+         result["input"] = _binding(classified)
+         result["integrity"] = _integrity(client, request, "evaluation", result["completeness_checks"])
++        result["transport_diagnostics"] = transport_diagnostics(client)
+         return result
++    except Exception as exc:
++        # Upstream may return error text, then omit missing judgments. Preserve
++        # the original exception and also retain its underlying transport cause.
++        exc.coco_transport_diagnostics = transport_diagnostics(client)
++        raise
+     finally:
+         client.shutdown()
+ 
+@@ -215,6 +223,11 @@ def main() -> int:
+     try:
+         request = read_json(args.request)
+         config = read_json(_bound_file(request["inputs"]["scoring_config"]))
++        from .transport_observer import process_identity
++        atomic_write_json(target.with_suffix(".identity.json"), {
++            **process_identity(), "worker_file": __file__, "stage": args.stage,
++            "coco_root": config["coco_root"], "candidate": request.get("candidate_identity"),
++            "request": _binding(args.request)})
+         root = Path(config["coco_root"])
+         if _source_identity(root) != config["source_files"]:
+             raise ValueError("Frozen standard CoCo source identity changed")
+@@ -232,7 +245,10 @@ def main() -> int:
+         atomic_write_json(target, result)
+         return 0
+     except Exception as exc:
+-        atomic_write_json(target.with_suffix(".failure.json"), _stage_failure(args.stage, exc))
++        failure = _stage_failure(args.stage, exc)
++        if hasattr(exc, "coco_transport_diagnostics"):
++            failure["transport_diagnostics"] = exc.coco_transport_diagnostics
++        atomic_write_json(target.with_suffix(".failure.json"), failure)
+         print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+         return 2
+ 
+diff --git a/AgentReview/agentreview/research_v2/execution_telemetry.py b/AgentReview/agentreview/research_v2/execution_telemetry.py
+index 2c7160a9..e2bbde52 100644
+--- a/AgentReview/agentreview/research_v2/execution_telemetry.py
++++ b/AgentReview/agentreview/research_v2/execution_telemetry.py
+@@ -70,6 +70,7 @@ class RequestTrace:
+         self.last_saved = self.started
+         self.value = {'status': 'queued', 'started_at': time.time(), 'chunks': 0,
+                       'content_chars': 0, 'reasoning_chars': 0, 'first_chunk_seconds': None,
++                      'first_content_seconds': None, 'response_id': None, 'finish_reasons': {},
+                       'last_chunk_at': None, **tags}
+ 
+     def __enter__(self):
+@@ -90,13 +91,18 @@ class RequestTrace:
+     def chunk(self, value):
+         now = time.time()
+         self.value['chunks'] += 1
++        self.value['response_id'] = value.get('id') or self.value['response_id']
+         self.value['last_chunk_at'] = now
+         if self.value['first_chunk_seconds'] is None:
+             self.value['first_chunk_seconds'] = time.monotonic() - self.started
+         for choice in value.get('choices', []):
+             delta = choice.get('delta', {})
++            if delta.get('content') and self.value['first_content_seconds'] is None:
++                self.value['first_content_seconds'] = time.monotonic() - self.started
+             self.value['content_chars'] += len(delta.get('content') or '')
+             self.value['reasoning_chars'] += len(delta.get('reasoning_content') or '')
++            if choice.get('finish_reason') is not None:
++                self.value['finish_reasons'][str(choice['index'])] = choice['finish_reason']
+         self.stream.write(json.dumps({'received_at': now, 'chunk': value}, ensure_ascii=False) + '\n')
+         if value.get('usage'):
+             self.value['usage'] = value['usage']
+@@ -107,9 +113,16 @@ class RequestTrace:
+         try:
+             status = 'complete' if kind is None else ('interrupted' if issubclass(kind, (KeyboardInterrupt, SystemExit)) else 'failed')
+             details = {} if kind is None else {'error': {'type': kind.__name__, 'message': str(error)}}
++            if error is not None:
++                cause = error
++                chain = []
++                while cause is not None and len(chain) < 8:
++                    chain.append({'type': type(cause).__name__, 'message': str(cause)})
++                    cause = cause.__cause__
++                details['error']['causes'] = chain
+             self.update(status=status, finished_at=time.time(), **details)
+             emit(event='end', stage='api_request', span=self.identity,
+-                 seconds=self.value['elapsed_seconds'], status=status, **self.tags)
++                 seconds=self.value['elapsed_seconds'], status=status, **details, **self.tags)
+         finally:
+             self.stream.close()
+             _REQUEST.reset(self.token)
+diff --git a/AgentReview/agentreview/research_v2/llm.py b/AgentReview/agentreview/research_v2/llm.py
+index a0597abc..76935058 100644
+--- a/AgentReview/agentreview/research_v2/llm.py
++++ b/AgentReview/agentreview/research_v2/llm.py
+@@ -80,6 +80,8 @@ class OpenAICompletionClient:
+         self.config = config
+         self.client = OpenAI(base_url=config.base_url, api_key=require_api_key(config),
+                              max_retries=0, timeout=config.timeout_seconds)
++        from .transport_observer import observe_client
++        observe_client(self.client)
+ 
+     def close(self) -> None:
+         self.client.close()
+@@ -100,7 +102,8 @@ class OpenAICompletionClient:
+                                      response_format=response_format)
+         trace = current_request()
+         if trace is not None:
+-            trace.update(model=self.config.model, read_timeout_seconds=self.config.timeout_seconds)
++            trace.update(model=self.config.model, read_timeout_seconds=self.config.timeout_seconds,
++                         sdk_max_retries=getattr(self.client, "max_retries", None))
+         with ExitStack() as resources:
+             with span('api_admission', component=component):
+                 resources.enter_context(request_slot(self.config.base_url))
+diff --git a/AgentReview/agentreview/research_v2/mstar_adapter.py b/AgentReview/agentreview/research_v2/mstar_adapter.py
+index e16780b2..693e7d0e 100644
+--- a/AgentReview/agentreview/research_v2/mstar_adapter.py
++++ b/AgentReview/agentreview/research_v2/mstar_adapter.py
+@@ -62,7 +62,8 @@ class MstarReflection:
+ 
+     def _save(self):
+         atomic_write_json(self.directory / "mstar-trace.json", {
+-            "protocol": "mstar-program-evolution-v2", "status": self.status,
++            "protocol": "mstar-program-evolution-v3", "status": self.status,
++            "adaptation": "Initial format errors, including runtime repair, share the finite repair budget; latest error is returned to the next repair.",
+             "source": self.source, "max_fix_attempts": self.max_fix_attempts,
+             "calls": self.calls, "events": self.events}, immutable=False)
+ 
+@@ -111,16 +112,13 @@ class MstarReflection:
+             response = self._complete(prompt)
+             change = commit_message(response)
+             code, error = self._candidate(code, response)
+-            # Upstream runtime repair ends when its initial response has no usable program.
+-            attempts = 0 if violation is not None and error and error[0] == "Patch format error" else self.max_fix_attempts
+-            for _ in range(attempts):
++            for _ in range(self.max_fix_attempts):
+                 if error is None:
+                     break
+                 response = self._complete(repair_prompt(code=code, error_type=error[0],
+                     error_details=error[1], interface=self.interface))
+                 repaired, next_error = self._candidate(code, response)
+-                if next_error is None or next_error[0] != "Patch format error":
+-                    code, error = repaired, next_error
++                code, error = repaired, next_error
+             if error is None:
+                 self.status = "complete"
+                 return code, change
+diff --git a/AgentReview/agentreview/research_v2/mstar_prompts.py b/AgentReview/agentreview/research_v2/mstar_prompts.py
+index eada7f3a..6a9a7280 100644
+--- a/AgentReview/agentreview/research_v2/mstar_prompts.py
++++ b/AgentReview/agentreview/research_v2/mstar_prompts.py
+@@ -23,6 +23,9 @@ Place the markers on their own lines. A space prefixes context, - prefixes remov
+ and + prefixes addition. Supply context around each hunk. Apply hunks and repeated
+ program.py updates in sequence. An empty patch represents an unchanged program.
+ A complete fenced Python program is the upstream full-replacement representation.
++Use actual source lines as context hints, never prose such as "after the terms".
++If exact patch context is uncertain, return the entire program in a ```python
++fence instead. Do not emit placeholders or omit unchanged functions.
+ """
+ 
+ 
+@@ -54,6 +57,11 @@ Memory toolkit:
+ - log(event, payload), logger.debug(message): recorded memory diagnostics.
+ 
+ Execution:
++- KnowledgeBase state must survive snapshot and restoration in a fresh process.
++  Use str/int/float/bool/None, lists, string-keyed dictionaries, tuples and sets,
++  plus the supplied toolkit, SQLite and vector collection handles. frozenset and
++  arbitrary Python objects are not checkpoint-serializable. Keep persistent
++  state explicit; validation reports the unsupported type and field path.
+ - The host supplies write's {write_calls} LLM-call allowance and read's
+   {runtime['read_llm_calls']} allowance. KnowledgeItem induction consumes the
+   first build call; these allowances are numeric configuration values.
+diff --git a/AgentReview/agentreview/research_v2/program_patch.py b/AgentReview/agentreview/research_v2/program_patch.py
+index 55181c24..e76687ca 100644
+--- a/AgentReview/agentreview/research_v2/program_patch.py
++++ b/AgentReview/agentreview/research_v2/program_patch.py
+@@ -41,9 +41,15 @@ def apply_program_patch(source: str, patch_body: str) -> str:
+         elif line.strip():
+             raise ValueError("A program edit starts with *** Update File: program.py")
+     result = source
+-    for operation in operations:
++    for index, operation in enumerate(operations, 1):
+         text = "*** Begin Patch\n" + "".join(operation).rstrip("\n") + "\n*** End Patch\n"
+-        result = apply_patch_in_memory(text, {VIRTUAL_FILE: result}).files[VIRTUAL_FILE]
++        try:
++            result = apply_patch_in_memory(text, {VIRTUAL_FILE: result}).files[VIRTUAL_FILE]
++        except (ValueError, RuntimeError, KeyError) as exc:
++            hints = [line.strip() for line in operation if line.startswith("@@")]
++            detail = str(exc).strip() or "hunk context did not match the current source"
++            raise ValueError(f"operation {index} on {VIRTUAL_FILE}: {type(exc).__name__}: "
++                             f"{detail}; context={hints[:3]}") from exc
+     return result
+ 
+ 
+diff --git a/AgentReview/agentreview/research_v2/program_validation.py b/AgentReview/agentreview/research_v2/program_validation.py
+index 5dcb2a66..1692cee3 100644
+--- a/AgentReview/agentreview/research_v2/program_validation.py
++++ b/AgentReview/agentreview/research_v2/program_validation.py
+@@ -36,7 +36,7 @@ def _program_capabilities(program_path: str | Path) -> dict[str, Any]:
+         raise ValueError("Program capability manifest source hash mismatch")
+     return manifest
+ 
+-def _sample_dataclass(dataclass_type):
++def _sample_dataclass(dataclass_type, *, role="QUAL", sample=0):
+     from dataclasses import MISSING, fields
+ 
+     values = {}
+@@ -57,9 +57,10 @@ def _sample_dataclass(dataclass_type):
+     # Empty defaults otherwise skip the role-filtered write and query paths,
+     # accepting programs which fail on the first real review experience.
+     review_sample = {
+-        "topic": "Protocol smoke paper", "content": "traceable Review Experience",
+-        "reviewer_name": "QUAL", "reviewer_dimension": "QUAL",
+-        "query_text": "Protocol smoke paper: methodology and evidence",
++        "topic": f"Protocol smoke paper {sample}",
++        "content": f"traceable Review Experience {sample}",
++        "reviewer_name": role, "reviewer_dimension": role,
++        "query_text": f"Protocol smoke paper {sample}: methodology and evidence",
+     }
+     values.update({field.name: review_sample[field.name] for field in fields(dataclass_type)
+                    if field.name in review_sample})
+@@ -98,7 +99,7 @@ def validate_program(
+         def llm_completion(self, messages, **kwargs):
+             return "smoke summary"
+ 
+-    toolkit = MemoryToolkit(
++    toolkit_options = dict(
+         llm_client=SmokeLLM(),
+         **budget_options(runtime),
+         max_llm_calls_per_operation=max(write_calls, read_calls),
+@@ -108,7 +109,10 @@ def validate_program(
+             ]
+         },
+     )
+-    try:
++    def lifecycle(role):
++        toolkit = MemoryToolkit(**toolkit_options)
++        nonlocal phase
++        phase = "load"
+         with SandboxSession(
+             str(source),
+             toolkit,
+@@ -116,10 +120,17 @@ def validate_program(
+             require_bubblewrap=require_bubblewrap,
+         ) as sandbox:
+             program = sandbox.program_interface()
+-            item = _sample_dataclass(program.KnowledgeItem)
+-            query = _sample_dataclass(program.Query)
+-            with toolkit.operation("protocol_smoke_write", max_llm_calls=write_calls):
+-                sandbox.write(item, "traceable Review Experience")
++            # Exercise deduplication and state changes on a second distinct write.
++            # The validator requires replay equivalence, not a particular retrieval strategy.
++            for index in (0, 0, 1):
++                item = _sample_dataclass(program.KnowledgeItem, role=role, sample=index)
++                phase = f"write {index}"
++                with toolkit.operation("protocol_smoke_write", max_llm_calls=write_calls):
++                    sandbox.write(item, f"traceable Review Experience {index}")
++                phase = "snapshot"
++                snapshot = sandbox.snapshot()
++            query = _sample_dataclass(program.Query, role=role)
++            phase = "read"
+             with toolkit.operation("protocol_smoke_read", max_llm_calls=read_calls):
+                 result = sandbox.read(query)
+             if not isinstance(result, str):
+@@ -152,10 +163,38 @@ def validate_program(
+                 errors.append("plan_review disposition disagrees with capability trace")
+             if not set(selected_ids).issubset(candidate_ids):
+                 errors.append("plan_review selected an ID absent from capability results")
+-    except (SandboxError, MemoryBudgetError) as exc:
+-        detail = failure_detail(exc, phase="candidate_validation")
+-        if detail["category"] == "candidate":
+-            errors.append(f"protocol smoke failed: {type(exc).__name__}: {exc}")
+-        else:
+-            raise
++            after_read = sandbox.snapshot()
++        # Neither the process nor its host toolkit state may survive the restart.
++        phase = "restore"
++        restored_toolkit = MemoryToolkit(**toolkit_options)
++        with SandboxSession(str(source), restored_toolkit, timeout_seconds=10,
++                            require_bubblewrap=require_bubblewrap) as restored:
++            restored.restore(snapshot)
++            if restored.snapshot() != snapshot:
++                errors.append("lifecycle restore changed persisted Memory state")
++            query = _sample_dataclass(restored.program_interface().Query, role=role)
++            phase = "restored read"
++            with restored_toolkit.operation("protocol_smoke_read", max_llm_calls=read_calls):
++                recovered = restored.read(query)
++            restored_toolkit.validate_memory_context(recovered)
++            if recovered != result:
++                errors.append("lifecycle restored read differs from the original read with deterministic smoke tools")
++            with restored_toolkit.paper_scope("protocol-smoke-paper"):
++                with restored_toolkit.operation("review_plan", max_llm_calls=0,
++                        allowed_capabilities={"retrieve_current_s2"}):
++                    restored_plan = restored.plan_review(query, recovered)
++            if restored_plan != plan:
++                errors.append("lifecycle restored review plan differs from the original plan")
++            if restored.snapshot() != after_read:
++                errors.append("lifecycle restored read changed Memory state differently from the original read")
++    for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL"):
++        phase = "load"
++        try:
++            lifecycle(role)
++        except (SandboxError, MemoryBudgetError) as exc:
++            detail = failure_detail(exc, phase="candidate_validation")
++            if detail["category"] == "candidate":
++                errors.append(f"protocol smoke failed for {role} during {phase}: {type(exc).__name__}: {exc}")
++            else:
++                raise
+     return errors
+diff --git a/AgentReview/agentreview/reviewer_runtime/sandbox.py b/AgentReview/agentreview/reviewer_runtime/sandbox.py
+index 8f1f54f1..ef64cee9 100644
+--- a/AgentReview/agentreview/reviewer_runtime/sandbox.py
++++ b/AgentReview/agentreview/reviewer_runtime/sandbox.py
+@@ -252,6 +252,14 @@ class SandboxSession:
+             raise SandboxError(
+                 first.get("error") or "candidate sandbox failed to start"
+             )
++        self.execution_identity = first.get("identity", {})
++        import hashlib
++        if self.execution_identity.get("program_sha256") != hashlib.sha256(candidate.read_bytes()).hexdigest():
++            self.close(force=True)
++            raise SandboxError("Sandbox loaded program differs from the supplied candidate")
++        from agentreview.research_v2.execution_telemetry import emit
++        emit(event="identity", stage="candidate_sandbox", source_path=str(self.program_path),
++             host_executable=sys.executable, child_pid=self._process.pid, **self.execution_identity)
+ 
+     def _read_line(self) -> dict[str, Any]:
+         if self._process is None or self._process.stdout is None:
+diff --git a/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py b/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py
+index c3d64041..91bb38df 100644
+--- a/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py
++++ b/AgentReview/agentreview/reviewer_runtime/sandbox_worker.py
+@@ -370,7 +370,7 @@ class ReviewPlanToolkit:
+         return _tool_call("retrieve_current_s2", limit)
+ 
+ 
+-def _snapshot_value(value, toolkit):
++def _snapshot_value(value, toolkit, path="knowledge_base_state"):
+     if value is toolkit:
+         return {"__mstar_type__": "toolkit"}
+     if value is toolkit.db:
+@@ -381,22 +381,23 @@ def _snapshot_value(value, toolkit):
+         return {
+             "__mstar_type__": "set",
+             "items": [
+-                _snapshot_value(item, toolkit) for item in sorted(value, key=repr)
++                _snapshot_value(item, toolkit, f"{path}[{index}]")
++                for index, item in enumerate(sorted(value, key=repr))
+             ],
+         }
+     if isinstance(value, tuple):
+         return {
+             "__mstar_type__": "tuple",
+-            "items": [_snapshot_value(item, toolkit) for item in value],
++            "items": [_snapshot_value(item, toolkit, f"{path}[{index}]") for index, item in enumerate(value)],
+         }
+     if isinstance(value, list):
+-        return [_snapshot_value(item, toolkit) for item in value]
++        return [_snapshot_value(item, toolkit, f"{path}[{index}]") for index, item in enumerate(value)]
+     if isinstance(value, dict):
+-        return {str(key): _snapshot_value(item, toolkit) for key, item in value.items()}
++        return {str(key): _snapshot_value(item, toolkit, f"{path}[{key!r}]") for key, item in value.items()}
+     if value is None or isinstance(value, (str, int, float, bool)):
+         return value
+     raise TypeError(
+-        "MemoryProgram state is not checkpoint-serializable: " + type(value).__name__
++        "MemoryProgram state is not checkpoint-serializable: " + type(value).__name__ + " at " + path
+     )
+ 
+ 
+@@ -449,7 +450,7 @@ def _snapshot_memory(knowledge_base, toolkit):
+     return {
+         "snapshot_version": "mstar-memory-snapshot-v2",
+         "knowledge_base_state": {
+-            key: _snapshot_value(value, toolkit)
++            key: _snapshot_value(value, toolkit, f"knowledge_base_state.{key}")
+             for key, value in knowledge_base.__dict__.items()
+         },
+         "sqlite_dump": list(toolkit.db.iterdump()),
+@@ -686,7 +687,12 @@ def _run(program_path):
+     toolkit = CapabilityToolkit()
+     review_plan_toolkit = ReviewPlanToolkit()
+     knowledge_base = program.KnowledgeBase(toolkit)
+-    _send({"type": "ready"})
++    _send({"type": "ready", "identity": {
++        "executable": sys.executable, "cwd": os.getcwd(), "worker_file": __file__,
++        "program_file": program.__file__,
++        "program_sha256": hashlib.sha256(open(program_path, "rb").read()).hexdigest(),
++        "sys_path": sys.path, "environment_names": sorted(os.environ),
++    }})
+     while True:
+         command = _receive()
+         command_id = command.get("id")
+diff --git a/AgentReview/tests/test_pilot_0930.py b/AgentReview/tests/test_pilot_0930.py
+index 610fe2ec..dc981cc9 100644
+--- a/AgentReview/tests/test_pilot_0930.py
++++ b/AgentReview/tests/test_pilot_0930.py
+@@ -91,7 +91,8 @@ def test_report_does_not_promote_parent_improvement_below_best_or_impute_failure
+     assert "VALUE = 2" in Path(first["program_diff"]["path"]).read_text()
+     assert failed["candidate_static"] is failed["delta_vs_parent"] is None
+     assert pending["status"] == "not_started"
+-    assert report["completed_rounds"] == 2
++    assert report["completed_rounds"] == 1
++    assert report["settled_rounds"] == 2
+     assert report["final_comparisons"] is None
+ 
+ 
+diff --git a/AgentReview/tests/test_research_v2_development_coco.py b/AgentReview/tests/test_research_v2_development_coco.py
+index 02a74881..ae1eaacd 100644
+--- a/AgentReview/tests/test_research_v2_development_coco.py
++++ b/AgentReview/tests/test_research_v2_development_coco.py
+@@ -203,6 +203,32 @@ def test_persisted_stage_attempt_budget_stops_deterministic_retries(tmp_path, mo
+     assert len(read_json(tmp_path / "stages/classify/state.json")["attempts"]) == expected_calls
+ 
+ 
++def test_worker_runs_as_package_from_isolated_stage_directory(tmp_path, monkeypatch):
++    request = atomic_write_json(tmp_path / 'request.json', {'request': 'one'})
++    calls = []
++    def process(command, **kwargs):
++        calls.append((command, kwargs))
++        kwargs['stdout'].write(b'fixture failure')
++        return SimpleNamespace(returncode=2)
++    monkeypatch.setattr(coco.subprocess, 'run', process)
++    with pytest.raises(coco.DevelopmentCoCoFailure):
++        coco._run_stage(stage='split', request_path=request, output=tmp_path,
++            config={'max_stage_attempts': 1, 'timeout_seconds': 1, 'python_executable': sys.executable})
++    command, options = calls[0]
++    assert command[1:5] == ['-s', '-B', '-m', 'agentreview.research_v2.development_coco_worker']
++    assert options['env']['PYTHONPATH'] == str(Path(coco.__file__).resolve().parents[2])
++
++
++@pytest.mark.parametrize('error,kind', [
++    (ImportError('attempted relative import with no known parent package'), 'local_import'),
++    (TimeoutError('request timed out'), 'timeout'),
++    (RuntimeError('APIStatusError: Error code: 429'), 'model_api'),
++    (ValueError('Standard CoCo judging requires complete cohort coverage'), 'incomplete_scoring'),
++])
++def test_stage_failure_distinguishes_local_api_timeout_and_coverage(error, kind):
++    assert coco._stage_failure('evaluation', error)['failure_kind'] == kind
++
++
+ def standard_pure_functions():
+     """Compile the exact benchmark pure functions without importing model stacks."""
+     root = Path(__file__).resolve().parents[3] / "CoCoReviewBench"
+diff --git a/deployment/evolution_round_report.py b/deployment/evolution_round_report.py
+index 593dec90..fa6fe199 100644
+--- a/deployment/evolution_round_report.py
++++ b/deployment/evolution_round_report.py
+@@ -5,13 +5,46 @@ import csv
+ import difflib
+ import json
+ import math
++import fcntl
++import os
++import tempfile
+ from pathlib import Path
+ 
+ from agentreview.research_v2.development_coco import validate_assessment_receipt
+-from agentreview.research_v2.io import atomic_write_json, read_json
++from agentreview.research_v2.io import atomic_write_json, read_json, value_sha256
+ from agentreview.research_v2.shared_experiment import binding, bound
+ 
+ 
++def write_generated_report(path, text):
++    """Replace only the marked generated block; retain existing human/history text."""
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    begin = "<!-- AGENTREVIEW_AUTO_ROUNDS_BEGIN -->"
++    end = "<!-- AGENTREVIEW_AUTO_ROUNDS_END -->"
++    with path.with_suffix(path.suffix + ".lock").open("a+b") as lock:
++        fcntl.flock(lock, fcntl.LOCK_EX)
++        old = path.read_text(encoding="utf-8") if path.exists() else ""
++        block = begin + "\n" + text.rstrip("\n") + "\n" + end
++        if begin in old or end in old:
++            if old.count(begin) != 1 or old.count(end) != 1 or old.index(begin) > old.index(end):
++                raise ValueError("Report markers must form one ordered pair; existing text retained")
++            updated = old[:old.index(begin)] + block + old[old.index(end) + len(end):]
++        else:
++            updated = old + ("\n\n" if old else "") + block + "\n"
++        temporary = None
++        try:
++            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
++                                             delete=False) as handle:
++                temporary = Path(handle.name)
++                handle.write(updated)
++                handle.flush()
++                os.fsync(handle.fileno())
++            temporary.replace(path)
++        finally:
++            if temporary is not None:
++                temporary.unlink(missing_ok=True)
++
++
+ def scores_for(state, key):
+     result = state["results"].get(key, {})
+     if result.get("status") != "complete":
+@@ -83,6 +116,60 @@ def committed_comparison(state):
+     return {**state, "results": results, "recipes": recipes}
+ 
+ 
++def recovery_progress(state, policy):
++    """Pending recovery survives paused/running transitions and retains each key."""
++    pending = policy.get("pending_candidates", [])
++    if not pending:
++        return None
++    epoch = policy["evaluation_epoch"]
++    groups = []
++    for key in pending:
++        result = state.get("results", {}).get(key, {})
++        complete = result.get("status") == "complete" and result.get("evaluation_epoch") == epoch
++        groups.append({"key": key, "status": "complete" if complete else "pending",
++                       "result_epoch": result.get("evaluation_epoch")})
++    completed = sum(group["status"] == "complete" for group in groups)
++    return {"evaluation_epoch": epoch, "total": len(groups), "completed": completed,
++            "pending": len(groups) - completed, "groups": groups,
++            "displayed_epoch": (state.get("champion") or {}).get("evaluation_epoch"),
++            "status": policy.get("status")}
++
++
++def failure_counts(state):
++    """Count observable proposal/validation events, including repaired proposals."""
++    refs = {}
++    for recipe in state.get("recipes", {}).values():
++        candidate = recipe.get("candidate", {})
++        for record in (candidate, candidate.get("proposal_failure") or {}):
++            if record.get("reflection"):
++                ref = record["reflection"]
++                refs[ref["path"]] = ref
++    for result in state.get("results", {}).values():
++        ref = (result.get("failure") or {}).get("reflection")
++        if ref:
++            refs[ref["path"]] = ref
++    generation, validation = 0, 0
++    for ref in refs.values():
++        for event in read_json(bound(ref)).get("events", []):
++            generation += event.get("error_type") == "Patch format error"
++            validation += bool(event.get("program") and event.get("error"))
++    return {"candidate_generation_failures": generation, "candidate_validation_failures": validation,
++            "failure_count_scope": "Unique bound reflection traces; proposal parsing and program validation attempts, including repaired attempts"}
++
++
++def winner_is_frozen(root, state, policy):
++    winner = state.get("winner")
++    path = Path(root) / "search/winner.json"
++    if not winner or not path.is_file():
++        return False
++    body = {key: value for key, value in winner.items() if key != "freeze_id"}
++    return (read_json(path) == winner and winner.get("status") == "complete"
++            and winner.get("protocol") == "research-v2-shared-frozen-system-v1"
++            and winner.get("freeze_id") == value_sha256(body)
++            and winner.get("experiment_protocol_sha256") == state.get("identity", {}).get("experiment_protocol_sha256")
++            and winner.get("promotion_policy", {}).get("evaluation_epoch") == policy.get("evaluation_epoch"))
++
++
+ def report(root):
+     root = Path(root)
+     output = root / "report"
+@@ -93,12 +180,13 @@ def report(root):
+         "status": "not_started", "recipes": {}, "results": {}, "attempts": {}, "pool": []}
+     policy_path = root / "search/failure-policy.json"
+     policy = read_json(policy_path) if policy_path.exists() else {}
+-    recovery = None
+-    if policy.get("status") == "reevaluating":
+-        pending = policy["pending_candidates"]
+-        recovery = {"evaluation_epoch": policy["evaluation_epoch"], "total": len(pending),
+-                    "completed": sum(state["results"].get(key, {}).get("evaluation_epoch") == policy["evaluation_epoch"] for key in pending),
+-                    "displayed_epoch": state["champion"]["evaluation_epoch"]}
++    recovery = recovery_progress(state, policy)
++    current_epoch = policy.get("evaluation_epoch", (state.get("champion") or {}).get("evaluation_epoch", 0))
++    current_scores = [scores_for(state, key) for key, result in state["results"].items()
++                      if result.get("status") == "complete" and result.get("evaluation_epoch") == current_epoch]
++    current_scores = [score for score in current_scores if score is not None]
++    counts = failure_counts(state)
++    frozen = winner_is_frozen(root, state, policy)
+     state = committed_comparison(state)
+     score_cache = {}
+ 
+@@ -167,7 +255,14 @@ def report(root):
+     final = read_json(final_path) if final_path.exists() else None
+     value = {"status": policy.get("status", state["status"]), "planned_rounds": len(rounds),
+              "recovery": recovery,
+-             "completed_rounds": sum(row["status"] in {"complete", "candidate_failed"} for row in rounds),
++             "completed_rounds": sum(row["status"] == "complete" and row["candidate_static"] is not None for row in rounds),
++             "settled_rounds": sum(row["status"] in {"complete", "candidate_failed"} for row in rounds),
++             "candidate_failed_rounds": sum(row["status"] == "candidate_failed" for row in rounds),
++             "current_epoch": current_epoch,
++             "displayed_epoch": (state.get("champion") or {}).get("evaluation_epoch"),
++             "complete_assessments_current_epoch": len(current_scores),
++             "valid_paper_evaluations_current_epoch": sum(len(score["per_paper"]) for score in current_scores),
++             "winner_frozen": frozen, **counts,
+              "protocol": binding(root / "protocol.frozen.json"), "baselines": baselines,
+              "initial_best_static": initial_best, "rounds": rounds,
+              "final_comparisons": final["comparisons"] if final else None,
+@@ -191,12 +286,18 @@ def report(root):
+     def number(value):
+         return "待完成" if value is None else f"{value:.4f}"
+     lines = ["# 0930 小规模自进化逐轮报告", "", f"状态：{value['status']}；计划 {len(rounds)} 轮。",
++        f"有效完成 {value['completed_rounds']} 轮；候选失败 {value['candidate_failed_rounds']} 轮；已结束尝试 {value['settled_rounds']} 轮。",
++        f"当前 epoch：{current_epoch}；下表历史成绩 epoch：{value['displayed_epoch']}；Winner 正式冻结：{'是' if frozen else '否'}。",
++        f"当前 epoch 完整评分成功 {len(current_scores)} 组；有效系统×论文评分 {value['valid_paper_evaluations_current_epoch']} 条（不是独立论文样本数）。",
++        f"提案解析失败 {counts['candidate_generation_failures']} 次；程序验证失败 {counts['candidate_validation_failures']} 次（包括修复后通过的尝试；仅统计有绑定轨迹的事件）。",
+         "", "固定评分集用于选择，轮换集只提供反思反馈；独立测试集在 Champion 冻结后打开。",
+         "分数来自完整 CoCo 回执；失败和待执行项以状态展示。一次搜索、3 篇固定评分和3 篇测试支持探索性比较。",
+         "", "## 初始对照", "", "| 实验组 | 固定评分 Paper. |", "|---|---:|"]
+     lines += [f"| {key} | {number(s['mean'] if s else None)} |" for key, s in baselines.items()]
+     if recovery:
+-        lines += ["", f"正在重评 epoch {recovery['evaluation_epoch']}：{recovery['completed']}/{recovery['total']} 个比较组完成。当前表格展示已提交的 epoch {recovery['displayed_epoch']} 成绩；重评全部提交后更新比较结果。"]
++        lines += ["", f"恢复状态 {recovery['status']}，epoch {recovery['evaluation_epoch']}：{recovery['completed']}/{recovery['total']} 个比较组完成，待完成 {recovery['pending']} 组。当前表格展示已提交的 epoch {recovery['displayed_epoch']} 成绩；重评全部提交后更新比较结果。",
++                  "", "| 待重评组 | 状态 | 已有结果 epoch |", "|---|---|---|"]
++        lines += [f"| {group['key']} | {group['status']} | {group['result_epoch']} |" for group in recovery['groups']]
+     lines += ["", "## 每轮变化和效果", "", "| 轮次 | 状态 | 父候选 | 父分数 | 新分数 | 相对父候选 | 本轮刷新最优 |", "|---:|---|---|---:|---:|---:|---|"]
+     for row in rounds:
+         parent_mean = row["parent_static"]["mean"] if row["parent_static"] else None
+@@ -228,5 +329,5 @@ def report(root):
+         lines += [f"| {key} | {row['mean_gain']:.4f} | {row['wins']}/{row['ties']}/{row['losses']} |" for key, row in final["comparisons"].items()]
+     else:
+         lines += ["独立测试待执行，完成后展示各系统的配对成绩。"]
+-    (output / "自进化逐轮报告.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
++    write_generated_report(output / "自进化逐轮报告.md", "\n".join(lines) + "\n")
+     return value
+diff --git a/deployment/pilot_0930.py b/deployment/pilot_0930.py
+index e793f11b..06974bff 100644
+--- a/deployment/pilot_0930.py
++++ b/deployment/pilot_0930.py
+@@ -95,8 +95,9 @@ class PilotRun:
+                 "report_path": str(self.root / "report/自进化逐轮报告.md")}
+ 
+     def report(self):
++        result = report(self.root)
+         runtime_report(self.root, self.status())
+-        return report(self.root)
++        return result
+ 
+     def run(self):
+         self.root.mkdir(parents=True, exist_ok=True)
+diff --git a/deployment/runtime_report.py b/deployment/runtime_report.py
+index e1336db9..a2493798 100644
+--- a/deployment/runtime_report.py
++++ b/deployment/runtime_report.py
+@@ -1,10 +1,42 @@
+ """Render operation timings and live request progress from durable telemetry."""
+ from datetime import datetime
++import json
+ from pathlib import Path
+ import time
+ 
+ from agentreview.research_v2.execution_telemetry import summarize
+-from agentreview.research_v2.io import atomic_write_json
++from agentreview.research_v2.io import atomic_write_json, read_json
++from agentreview.research_v2.development_coco import failure_kind
++
++
++def coco_attempt_summary(root):
++    """Replay existing request spans, including retries absent from retry events."""
++    path = Path(root) / 'telemetry/worker-events.jsonl'
++    events, last = {}, {}
++    if path.exists():
++        # The telemetry reader already uses this lock to avoid partial JSON lines.
++        import fcntl
++        with path.open() as handle:
++            fcntl.flock(handle, fcntl.LOCK_SH)
++            rows = handle.readlines()
++        for line in rows:
++            row = json.loads(line)
++            if row.get('stage') != 'api_request' or not row.get('component', '').startswith('coco:'):
++                continue
++            span_id = row['span']
++            if row['event'] == 'progress':
++                last[span_id] = row
++            elif row['event'] == 'end':
++                events[span_id] = {**last.get(span_id, {}), **row}
++    failures = {}
++    for row in events.values():
++        if row.get('status') == 'failed':
++            error = row.get('error') or {}
++            kind = failure_kind(error.get('type', ''), error.get('message', ''))
++            failures[kind] = failures.get(kind, 0) + 1
++    return {'attempts': len(events), 'repeated_attempts': sum(row.get('attempt', 1) > 1 for row in events.values()),
++            'failed_attempts': sum(failures.values()), 'failure_kinds': failures,
++            'scope': 'CoCo transport attempts; upstream cache-only parse retries are not network attempts'}
+ 
+ 
+ STAGES = {
+@@ -28,6 +60,14 @@ def report(root, state):
+     value = summarize(root / 'telemetry', now=state.get('finished_at'))
+     value['updated_at'] = time.time()
+     value.update(status=state.get('status', 'prepared'), phase=state.get('phase', 'awaiting_start'))
++    value['coco_attempts'] = coco_attempt_summary(root)
++    rounds_path = root / 'report/evolution-rounds.json'
++    if rounds_path.exists():
++        rounds = read_json(rounds_path)
++        value['scoring_snapshot'] = {key: rounds.get(key) for key in (
++            'current_epoch', 'displayed_epoch', 'complete_assessments_current_epoch',
++            'valid_paper_evaluations_current_epoch', 'winner_frozen', 'recovery')}
++        value['scoring_snapshot']['source'] = str(rounds_path)
+     if value['status'] != 'running':
+         for operation in value['active']:
+             operation['status'] = 'interrupted'
+@@ -36,7 +76,8 @@ def report(root, state):
+     atomic_write_json(directory / 'runtime.json', value, immutable=False)
+     updated = datetime.fromtimestamp(value['updated_at']).astimezone().isoformat(timespec='seconds')
+     lines = ['# 实验流程耗时', '', f'更新时间：{updated}。状态：{value["status"]}；阶段：{value["phase"]}。', '',
+-             '耗时覆盖缓存读取和实际执行。各阶段含嵌套与并发操作，累计耗时用于阶段归因；总运行时长以外层阶段为准。', '',
++             '耗时覆盖缓存读取和实际执行。各阶段含嵌套与并发操作，累计耗时用于阶段归因；总运行时长以外层阶段为准。',
++             '下表“正常返回”仅表示函数调用结束，业务成功须以完整评分回执和正式 Winner 冻结为准。', '',
+              '## 当前操作', '', '| 阶段 | 状态 | 已用秒数 | 距最近分片秒数 | 接收字符（正文 / 思考） |',
+              '|---|---|---:|---:|---:|']
+     for operation in value['active']:
+@@ -48,18 +89,22 @@ def report(root, state):
+                      f'{operation["idle_seconds"]:.1f} | {operation.get("content_chars", 0)} / {operation.get("reasoning_chars", 0)} |')
+     if not value['active']:
+         lines.append('| 当前操作已结束 | — | — | — | — |')
+-    lines += ['', '## 阶段汇总', '', '| 阶段 | 完成 | 失败 | 中断 | 累计秒数 | 最长单次秒数 |',
++    lines += ['', '## 阶段汇总', '', '| 阶段 | 正常返回 | 异常退出 | 中断 | 累计秒数 | 最长单次秒数 |',
+               '|---|---:|---:|---:|---:|---:|---:|']
+     for stage, stats in sorted(value['stages'].items()):
+         lines.append(f'| {STAGES.get(stage, stage)} | {stats["complete"]} | {stats["failed"]} | '
+                      f'{stats["interrupted"]} | {stats["seconds"]:.1f} | {stats["max_seconds"]:.1f} |')
+-    lines += ['', '## 最近重试', '']
++    coco = value['coco_attempts']
++    lines += ['', '## CoCo 请求诊断', '',
++              f"尝试 {coco['attempts']} 次；重复尝试 {coco['repeated_attempts']} 次；失败 {coco['failed_attempts']} 次。",
++              f"失败原因：{coco['failure_kinds']}。统计含官方客户端的实际重复请求，不含只读取缓存的解析重试。",
++              '', '## 宿主最近重试', '']
+     for retry in value['retries'][-20:]:
+         lines.append(f'- {datetime.fromtimestamp(retry["time"]).astimezone().strftime("%H:%M:%S")} '
+                      f'{retry["component"]}：第 {retry["attempt"]} 次结束，{retry["delay_seconds"]:.1f} 秒后进行第 '
+                      f'{retry["next_attempt"]} 次；{retry["error_type"]}。')
+     if not value['retries']:
+-        lines.append('当前记录包含 0 次重试。')
++        lines.append('宿主 retry 事件为 0；CoCo 内部请求尝试单独见上表。')
+     lines += ['', '请求细节见各请求目录的 `attempt-N.progress.json`；收到的原始分片保存在 `attempt-N.stream.jsonl`。',
+               '首包时间表示收到第一个 SSE 数据分片的时间。字符数统计正文和思考增量，实际 token 用量采用服务端 usage。', '']
+     (directory / '流程耗时报告.md').write_text('\n'.join(lines))

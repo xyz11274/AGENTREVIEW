@@ -1,0 +1,48 @@
+{
+  "checked_at": 1791516367.9743054,
+  "branch": "0930",
+  "acceptance_status": "complete",
+  "acceptance": "/data/xyj/shengao/AgentReview_0930/artifacts/evolution-acceptance-20261009/acceptance.json",
+  "candidate_program": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/evolution-acceptance-20261009/search/proposals/a1-e1/program.py",
+    "sha256": "8053379d3543eed5f5ab28ca76228e2752746ae7333086386c7be45b75370117"
+  },
+  "candidate_assessment": {
+    "path": "/data/xyj/shengao/AgentReview_0930/artifacts/evolution-acceptance-20261009/search/assessments/e1/candidate-0001/r0/coco/assessment.json",
+    "sha256": "551662ba1eab6b7243f3315fc824206091663ec301c464b37395ea575d7f24aa"
+  },
+  "candidate_Paper.": 3.8,
+  "champion": {
+    "key": "seed-llm_summarizer",
+    "Paper.": 4.4
+  },
+  "formal": {
+    "unit": "agentreview-0930-study-20261009.service",
+    "state": {
+      "pid": 3865607,
+      "seed": 0,
+      "stage": "search",
+      "started_at": 1791516134.2216752,
+      "status": "running",
+      "study": {
+        "path": "/data/xyj/shengao/AgentReview_0930/config/0930-runtime-20261008/study.frozen.json",
+        "sha256": "0f6128094838bd1c7bdc04849aa65dcda098b187d43daf3012861963c958422e"
+      },
+      "updated_at": 1791516354.4320734
+    },
+    "parsed_bootstrap_reviews": 41,
+    "log": "/data/xyj/shengao/AgentReview_0930/artifacts/study-0930-runtime-20261009/study.log"
+  },
+  "protected_history": {
+    "checked_at": 1791516143.8440611,
+    "old_pilot": {
+      "protected_file_count": 2169,
+      "changed": []
+    },
+    "failed_acceptance": {
+      "protected_file_count": 160,
+      "changed": []
+    }
+  },
+  "blocking_conditions": []
+}

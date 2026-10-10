@@ -270,13 +270,28 @@ def aggregate_paper_scores(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {"absolute_scores": scores, "paper_counts": counts}
 
 
+def failure_kind(error_type: str, message: str) -> str:
+    """Diagnostic classification; the official client's retry policy is unchanged."""
+    detail = (error_type + " " + message).lower()
+    if any(word in detail for word in ("importerror", "modulenotfounderror", "relative import")):
+        return "local_import"
+    if any(word in detail for word in ("timeout", "timed out")):
+        return "timeout"
+    if any(word in detail for word in ("api", "connection refused", "connection reset", "http", "rate limit")):
+        return "model_api"
+    if any(word in detail for word in ("cohort coverage", "incomplete judge", "missing", "fitness")):
+        return "incomplete_scoring"
+    return "local_runtime"
+
+
 def _stage_failure(stage: str, exc: Exception) -> dict[str, Any]:
     text = str(exc)
     transient = isinstance(exc, subprocess.TimeoutExpired) or any(marker in text.lower() for marker in
         ("connection refused", "connection reset", "timed out", "timeout", "service unavailable", "rate limit"))
     deterministic = any(marker in text.lower() for marker in ("official classification failed", "official split failed", "incomplete judge", "fields differ", "prompt budget", "context window"))
     return {"stage": stage, "category": "shared_runtime" if transient else "shared_evaluation",
-            "message": text, "error_type": type(exc).__name__, "retryable": transient and deterministic is False,
+            "message": text, "error_type": type(exc).__name__,
+            "failure_kind": failure_kind(type(exc).__name__, text), "retryable": transient and deterministic is False,
             "fingerprint": value_sha256({"stage": stage, "type": type(exc).__name__, "message": text})}
 
 
@@ -292,7 +307,6 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
         return _bound_file(state["result"])
     if state["status"] == "failed":
         raise DevelopmentCoCoFailure(state["failure"])
-    worker = Path(__file__).with_name("development_coco_worker.py")
     while len(state["attempts"]) < state["attempt_limit"]:
         number = len(state["attempts"]) + 1
         attempt = {"number": number, "status": "reserved"}
@@ -301,8 +315,9 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
         atomic_write_json(state_path, state, immutable=False)
         log_path = stage_root / f"attempt-{number:03d}.log"
         result_path = stage_root / f"result-{number:03d}.json"
-        command = [config["python_executable"], "-s", "-B", str(worker), "--request", str(request_path), "--stage", stage, "--output", str(result_path)]
-        environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "CUDA_VISIBLE_DEVICES": "", "TOKENIZERS_PARALLELISM": "false"}
+        command = [config["python_executable"], "-s", "-B", "-m", "agentreview.research_v2.development_coco_worker", "--request", str(request_path), "--stage", stage, "--output", str(result_path)]
+        environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "CUDA_VISIBLE_DEVICES": "", "TOKENIZERS_PARALLELISM": "false",
+                       "PYTHONPATH": str(Path(__file__).resolve().parents[2])}
         environment.update(HF_HOME=config.get("hf_home", str(Path.home() / ".cache/huggingface")),
                            HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
                            NO_PROXY="127.0.0.1,localhost,::1", no_proxy="127.0.0.1,localhost,::1")
@@ -315,7 +330,7 @@ def _run_stage(*, stage: str, request_path: Path, output: Path, config: dict[str
             for name in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"):
                 if name in os.environ:
                     environment[name] = os.environ[name]
-        for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT"):
+        for name in ("AGENTREVIEW_EXECUTION_PROFILE", "AGENTREVIEW_EXECUTION_PROFILE_SHA256", "AGENTREVIEW_TELEMETRY_ROOT", "AGENTREVIEW_CALL_BUDGET", "AGENTREVIEW_REQUEST_WALL_SECONDS"):
             if name in os.environ:
                 environment[name] = os.environ[name]
         try:

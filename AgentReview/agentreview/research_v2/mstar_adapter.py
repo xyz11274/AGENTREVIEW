@@ -10,7 +10,7 @@ import difflib
 from pathlib import Path
 
 from .io import atomic_write_json, file_sha256, value_sha256
-from .mstar_prompts import interface_spec, reflection_prompt, repair_prompt
+from .mstar_prompts import MSTAR_PROTOCOL, interface_spec, reflection_prompt, repair_prompt
 from .program_patch import commit_message, dependency_identity, extract_program
 from .program_validation import validate_program
 
@@ -62,7 +62,8 @@ class MstarReflection:
 
     def _save(self):
         atomic_write_json(self.directory / "mstar-trace.json", {
-            "protocol": "mstar-program-evolution-v2", "status": self.status,
+            "protocol": MSTAR_PROTOCOL, "status": self.status,
+            "adaptation": "Initial format errors, including runtime repair, share the finite repair budget; latest error is returned to the next repair.",
             "source": self.source, "max_fix_attempts": self.max_fix_attempts,
             "calls": self.calls, "events": self.events}, immutable=False)
 
@@ -111,16 +112,13 @@ class MstarReflection:
             response = self._complete(prompt)
             change = commit_message(response)
             code, error = self._candidate(code, response)
-            # Upstream runtime repair ends when its initial response has no usable program.
-            attempts = 0 if violation is not None and error and error[0] == "Patch format error" else self.max_fix_attempts
-            for _ in range(attempts):
+            for _ in range(self.max_fix_attempts):
                 if error is None:
                     break
                 response = self._complete(repair_prompt(code=code, error_type=error[0],
                     error_details=error[1], interface=self.interface))
                 repaired, next_error = self._candidate(code, response)
-                if next_error is None or next_error[0] != "Patch format error":
-                    code, error = repaired, next_error
+                code, error = repaired, next_error
             if error is None:
                 self.status = "complete"
                 return code, change

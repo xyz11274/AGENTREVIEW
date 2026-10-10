@@ -1,0 +1,11 @@
+{
+  "checked_at": 1791516143.8440611,
+  "old_pilot": {
+    "protected_file_count": 2169,
+    "changed": []
+  },
+  "failed_acceptance": {
+    "protected_file_count": 160,
+    "changed": []
+  }
+}

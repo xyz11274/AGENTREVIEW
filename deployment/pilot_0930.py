@@ -95,8 +95,9 @@ class PilotRun:
                 "report_path": str(self.root / "report/自进化逐轮报告.md")}
 
     def report(self):
+        result = report(self.root)
         runtime_report(self.root, self.status())
-        return report(self.root)
+        return result
 
     def run(self):
         self.root.mkdir(parents=True, exist_ok=True)

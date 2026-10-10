@@ -203,6 +203,32 @@ def test_persisted_stage_attempt_budget_stops_deterministic_retries(tmp_path, mo
     assert len(read_json(tmp_path / "stages/classify/state.json")["attempts"]) == expected_calls
 
 
+def test_worker_runs_as_package_from_isolated_stage_directory(tmp_path, monkeypatch):
+    request = atomic_write_json(tmp_path / 'request.json', {'request': 'one'})
+    calls = []
+    def process(command, **kwargs):
+        calls.append((command, kwargs))
+        kwargs['stdout'].write(b'fixture failure')
+        return SimpleNamespace(returncode=2)
+    monkeypatch.setattr(coco.subprocess, 'run', process)
+    with pytest.raises(coco.DevelopmentCoCoFailure):
+        coco._run_stage(stage='split', request_path=request, output=tmp_path,
+            config={'max_stage_attempts': 1, 'timeout_seconds': 1, 'python_executable': sys.executable})
+    command, options = calls[0]
+    assert command[1:5] == ['-s', '-B', '-m', 'agentreview.research_v2.development_coco_worker']
+    assert options['env']['PYTHONPATH'] == str(Path(coco.__file__).resolve().parents[2])
+
+
+@pytest.mark.parametrize('error,kind', [
+    (ImportError('attempted relative import with no known parent package'), 'local_import'),
+    (TimeoutError('request timed out'), 'timeout'),
+    (RuntimeError('APIStatusError: Error code: 429'), 'model_api'),
+    (ValueError('Standard CoCo judging requires complete cohort coverage'), 'incomplete_scoring'),
+])
+def test_stage_failure_distinguishes_local_api_timeout_and_coverage(error, kind):
+    assert coco._stage_failure('evaluation', error)['failure_kind'] == kind
+
+
 def standard_pure_functions():
     """Compile the exact benchmark pure functions without importing model stacks."""
     root = Path(__file__).resolve().parents[3] / "CoCoReviewBench"

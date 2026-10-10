@@ -1,0 +1,24 @@
+{
+  "status": "stopped_by_user_request",
+  "requested_at": "2026-10-09 11:41:42 Asia/Shanghai",
+  "finished_at": 1791517432.618567,
+  "unit": "agentreview-0930-study-20261009.service",
+  "reason": "User requests small-sample plan and fixes before any further experiments",
+  "source_state": {
+    "pid": 3865607,
+    "seed": 0,
+    "stage": "search",
+    "started_at": 1791516134.2216752,
+    "status": "running",
+    "study": {
+      "path": "/data/xyj/shengao/AgentReview_0930/config/0930-runtime-20261008/study.frozen.json",
+      "sha256": "0f6128094838bd1c7bdc04849aa65dcda098b187d43daf3012861963c958422e"
+    },
+    "updated_at": 1791517315.5216215
+  },
+  "saved_role_reviews": 216,
+  "process_alive": false,
+  "service_stop": "SIGINT grace 30 seconds exhausted; systemd SIGKILL; top state may remain running",
+  "source_artifacts_preserved": true,
+  "restart_authorized": false
+}

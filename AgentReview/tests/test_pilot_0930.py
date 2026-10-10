@@ -91,7 +91,8 @@ def test_report_does_not_promote_parent_improvement_below_best_or_impute_failure
     assert "VALUE = 2" in Path(first["program_diff"]["path"]).read_text()
     assert failed["candidate_static"] is failed["delta_vs_parent"] is None
     assert pending["status"] == "not_started"
-    assert report["completed_rounds"] == 2
+    assert report["completed_rounds"] == 1
+    assert report["settled_rounds"] == 2
     assert report["final_comparisons"] is None
 
 

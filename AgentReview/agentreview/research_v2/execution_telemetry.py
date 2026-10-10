@@ -70,6 +70,7 @@ class RequestTrace:
         self.last_saved = self.started
         self.value = {'status': 'queued', 'started_at': time.time(), 'chunks': 0,
                       'content_chars': 0, 'reasoning_chars': 0, 'first_chunk_seconds': None,
+                      'first_content_seconds': None, 'response_id': None, 'finish_reasons': {},
                       'last_chunk_at': None, **tags}
 
     def __enter__(self):
@@ -90,13 +91,18 @@ class RequestTrace:
     def chunk(self, value):
         now = time.time()
         self.value['chunks'] += 1
+        self.value['response_id'] = value.get('id') or self.value['response_id']
         self.value['last_chunk_at'] = now
         if self.value['first_chunk_seconds'] is None:
             self.value['first_chunk_seconds'] = time.monotonic() - self.started
         for choice in value.get('choices', []):
             delta = choice.get('delta', {})
+            if delta.get('content') and self.value['first_content_seconds'] is None:
+                self.value['first_content_seconds'] = time.monotonic() - self.started
             self.value['content_chars'] += len(delta.get('content') or '')
             self.value['reasoning_chars'] += len(delta.get('reasoning_content') or '')
+            if choice.get('finish_reason') is not None:
+                self.value['finish_reasons'][str(choice['index'])] = choice['finish_reason']
         self.stream.write(json.dumps({'received_at': now, 'chunk': value}, ensure_ascii=False) + '\n')
         if value.get('usage'):
             self.value['usage'] = value['usage']
@@ -107,9 +113,16 @@ class RequestTrace:
         try:
             status = 'complete' if kind is None else ('interrupted' if issubclass(kind, (KeyboardInterrupt, SystemExit)) else 'failed')
             details = {} if kind is None else {'error': {'type': kind.__name__, 'message': str(error)}}
+            if error is not None:
+                cause = error
+                chain = []
+                while cause is not None and len(chain) < 8:
+                    chain.append({'type': type(cause).__name__, 'message': str(cause)})
+                    cause = cause.__cause__
+                details['error']['causes'] = chain
             self.update(status=status, finished_at=time.time(), **details)
             emit(event='end', stage='api_request', span=self.identity,
-                 seconds=self.value['elapsed_seconds'], status=status, **self.tags)
+                 seconds=self.value['elapsed_seconds'], status=status, **details, **self.tags)
         finally:
             self.stream.close()
             _REQUEST.reset(self.token)

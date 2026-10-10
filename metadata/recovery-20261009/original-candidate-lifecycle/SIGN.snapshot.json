@@ -1,0 +1,130 @@
+{
+  "collections": {
+    "research_v3_pattern_vector": {
+      "embedding_reconstruction": "per_record_v1",
+      "ids": [
+        "988300ebf0a8a57d9eab005a5cbfedd3581c8acf605dfc82b17eb1589c908e25",
+        "b8b17be6c31244bf4fbb9c0792edf363d6d65197c06cae15dc1fe1bb2e8eec6c",
+        "ccca658b4d169475dcca3493909a23e9ac49d77bb0bcb14f2c0793d64c4282c4",
+        "f204f70db5a19a9c03a612718782c85acdaf1290fe235a3ee0b7521ff774a867"
+      ],
+      "records": [
+        {
+          "embedding_dimension": 256,
+          "embedding_reconstruction": "toolkit_embed_text_v1",
+          "embedding_sha256": "f3db997e26005ec208fbbbb1f3e5a6558aadf0c05e4d06ccdcbc8b73d17908d1",
+          "id": "988300ebf0a8a57d9eab005a5cbfedd3581c8acf605dfc82b17eb1589c908e25",
+          "metadata": {
+            "keywords": "assumptions,baselines,diagnostic,estimates,independently,methodological,persistence,reproducible,require,tuned,variance",
+            "kind": "card",
+            "polarity": "",
+            "role": "SIGN",
+            "source_id": "0f21461c11b10b6a",
+            "subcategory": "",
+            "topic": "Persistence diagnostic"
+          },
+          "text": "DIMENSION: SIGN\nSOURCE: 0f21461c11b10b6a\nKEYWORDS: assumptions, baselines, diagnostic, estimates, independently, methodological, persistence, reproducible, require, tuned, variance"
+        },
+        {
+          "embedding_dimension": 256,
+          "embedding_reconstruction": "toolkit_embed_text_v1",
+          "embedding_sha256": "439cb740ce868c2da391421bdf6912709e7d3e8e0a42ec29685e9c756d03b932",
+          "id": "ccca658b4d169475dcca3493909a23e9ac49d77bb0bcb14f2c0793d64c4282c4",
+          "metadata": {
+            "keywords": "assumptions,baselines,diagnostic,estimates,independently,methodological,persistence,reproducible,require,tuned,variance",
+            "kind": "episode",
+            "polarity": "",
+            "role": "SIGN",
+            "source_id": "0f21461c11b10b6a",
+            "subcategory": "",
+            "topic": "Persistence diagnostic"
+          },
+          "text": "Methodological assumptions require independently tuned baselines and reproducible variance estimates."
+        },
+        {
+          "embedding_dimension": 256,
+          "embedding_reconstruction": "toolkit_embed_text_v1",
+          "embedding_sha256": "aeda9e39a27de2d403fa56738caebe9bd5e47ba12eb9f6390bfd45d9784a7281",
+          "id": "b8b17be6c31244bf4fbb9c0792edf363d6d65197c06cae15dc1fe1bb2e8eec6c",
+          "metadata": {
+            "keywords": "captions,clear,consistent,contained,cross,diagnostic,glossary,need,notation,persistence,references,self,terminology",
+            "kind": "card",
+            "polarity": "",
+            "role": "SIGN",
+            "source_id": "637f0ac118788963",
+            "subcategory": "",
+            "topic": "Persistence diagnostic"
+          },
+          "text": "DIMENSION: SIGN\nSOURCE: 637f0ac118788963\nKEYWORDS: captions, clear, consistent, contained, cross, diagnostic, glossary, need, notation, persistence, references, self, terminology"
+        },
+        {
+          "embedding_dimension": 256,
+          "embedding_reconstruction": "toolkit_embed_text_v1",
+          "embedding_sha256": "b26e211150a46f230b2b6630016383f97c512861ea2206eb7450f00f992c5c30",
+          "id": "f204f70db5a19a9c03a612718782c85acdaf1290fe235a3ee0b7521ff774a867",
+          "metadata": {
+            "keywords": "captions,clear,consistent,contained,cross,diagnostic,glossary,need,notation,persistence,references,self,terminology",
+            "kind": "episode",
+            "polarity": "",
+            "role": "SIGN",
+            "source_id": "637f0ac118788963",
+            "subcategory": "",
+            "topic": "Persistence diagnostic"
+          },
+          "text": "Notation glossary and self contained captions need consistent terminology and clear cross references."
+        }
+      ]
+    }
+  },
+  "knowledge_base_state": {
+    "collection": {
+      "__mstar_type__": "collection",
+      "name": "research_v3_pattern_vector"
+    },
+    "seen": {
+      "__mstar_type__": "set",
+      "items": [
+        "988300ebf0a8a57d9eab005a5cbfedd3581c8acf605dfc82b17eb1589c908e25",
+        "b8b17be6c31244bf4fbb9c0792edf363d6d65197c06cae15dc1fe1bb2e8eec6c",
+        "ccca658b4d169475dcca3493909a23e9ac49d77bb0bcb14f2c0793d64c4282c4",
+        "f204f70db5a19a9c03a612718782c85acdaf1290fe235a3ee0b7521ff774a867"
+      ]
+    },
+    "signatures": {
+      "SIGN": [
+        [
+          "assumptions",
+          "baselines",
+          "estimates",
+          "independently",
+          "methodological",
+          "reproducible",
+          "require",
+          "tuned",
+          "variance"
+        ],
+        [
+          "captions",
+          "clear",
+          "consistent",
+          "contained",
+          "cross",
+          "glossary",
+          "need",
+          "notation",
+          "references",
+          "self",
+          "terminology"
+        ]
+      ]
+    },
+    "toolkit": {
+      "__mstar_type__": "toolkit"
+    }
+  },
+  "snapshot_version": "mstar-memory-snapshot-v2",
+  "sqlite_dump": [
+    "BEGIN TRANSACTION;",
+    "COMMIT;"
+  ]
+}

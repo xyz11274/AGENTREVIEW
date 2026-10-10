@@ -1,0 +1,147 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+______________ test_study_report_reads_bound_telemetry_and_stage _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-139/test_study_report_reads_bound_0')
+
+    def test_study_report_reads_bound_telemetry_and_stage(tmp_path):
+        from runtime_report import report
+        telemetry = tmp_path / 'telemetry'
+        telemetry.mkdir()
+        (telemetry / 'worker-events.jsonl').write_text(json.dumps({
+            'event': 'start', 'span': 'request', 'stage': 'api_request',
+            'time': time.time(), 'component': 'specialist_review'}) + '\n')
+        result = report(tmp_path / 'runs/seed-0', {
+            'status': 'running', 'stage': 'search', 'telemetry_root': str(telemetry)})
+>       assert result['phase'] == 'search'
+E       AssertionError: assert 'awaiting_start' == 'search'
+E         
+E         - search
+E         + awaiting_start
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:23: AssertionError
+______________ test_reflector_receives_actual_static_restrictions ______________
+
+    def test_reflector_receives_actual_static_restrictions():
+        prompt = interface_spec({'build_llm_calls': 2, 'read_llm_calls': 1})
+>       assert 'only top-level assigned constants' in prompt
+E       AssertionError: assert 'only top-level assigned constants' in 'AgentReview memory program interface:\n\nProgram structure:\n- KnowledgeItem and Query are dataclasses. Field types: .... Treat retrieved experience as guidance;\n  derive current-paper claims and evidence from the current Frozen Paper.\n'
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:29: AssertionError
+_________ test_cumulative_budget_reuse_never_resets_usage_or_deadline __________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-139/test_cumulative_budget_reuse_n0')
+
+    def test_cumulative_budget_reuse_never_resets_usage_or_deadline(tmp_path):
+>       from agentreview.research_v2.runtime_limits import initialize_run_budget
+E       ModuleNotFoundError: No module named 'agentreview.research_v2.runtime_limits'
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:34: ModuleNotFoundError
+________________ test_missing_budget_is_rejected_before_launch _________________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-139/test_missing_budget_is_rejecte0')
+
+    def test_missing_budget_is_rejected_before_launch(tmp_path):
+>       from agentreview.research_v2.runtime_limits import initialize_run_budget
+E       ModuleNotFoundError: No module named 'agentreview.research_v2.runtime_limits'
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:48: ModuleNotFoundError
+________ test_progress_detects_exited_worker_without_rewriting_history _________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-139/test_progress_detects_exited_w0')
+
+    def test_progress_detects_exited_worker_without_rewriting_history(tmp_path):
+        from runtime_0930_progress import progress
+        path = tmp_path / 'study-state.json'
+        atomic_write_json(path, {'status': 'running', 'pid': 999999999, 'stage': 'search'})
+        original = path.read_bytes()
+        result = progress(tmp_path)
+>       assert result['study-state.json']['status'] == 'interrupted'
+E       AssertionError: assert 'running' == 'interrupted'
+E         
+E         - interrupted
+E         + running
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:60: AssertionError
+_____________ test_sync_request_deadline_covers_first_content_wait _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f86294ba990>
+
+    def test_sync_request_deadline_covers_first_content_wait(monkeypatch):
+        from test_streaming_transport import endpoint, event
+        from agentreview.research_v2.config import ModelConfig
+        from agentreview.research_v2.llm import OpenAICompletionClient
+        monkeypatch.setenv('AGENTREVIEW_REQUEST_WALL_SECONDS', '.12')
+        def send(handler, attempt):
+            time.sleep(.35)
+            try:
+                event(handler, content='late', finish='stop')
+                handler.wfile.write(b'data: [DONE]\n\n')
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+        with endpoint(monkeypatch, send) as (url, received):
+            client = OpenAICompletionClient(ModelConfig(base_url=url, model='test-model',
+                        response_model='test-model', timeout_seconds=2))
+            try:
+                started = time.monotonic()
+>               with pytest.raises(TimeoutError, match='wall-clock'):
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               Failed: DID NOT RAISE <class 'TimeoutError'>
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:100: Failed
+_____________ test_async_stream_deadline_cancels_continuous_output _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f86288c0830>
+
+    def test_async_stream_deadline_cancels_continuous_output(monkeypatch):
+        from test_streaming_transport import endpoint, event
+        from openai import AsyncOpenAI
+        from agentreview.research_v2.streaming import async_stream_completion
+        monkeypatch.setenv('AGENTREVIEW_REQUEST_WALL_SECONDS', '.10')
+        def send(handler, attempt):
+            try:
+                for _ in range(20):
+                    event(handler, content='partial')
+                    time.sleep(.02)
+                event(handler, finish='stop')
+                handler.wfile.write(b'data: [DONE]\n\n')
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+        async def request(url):
+            async with AsyncOpenAI(base_url=url, api_key='test', max_retries=0, timeout=2) as client:
+                with pytest.raises(TimeoutError, match='wall-clock'):
+                    await async_stream_completion(client, {'model': 'test-model', 'messages': [], 'stream': True})
+        with endpoint(monkeypatch, send) as (url, received):
+>           asyncio.run(request(url))
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../envs/env_shengao/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+url = 'http://127.0.0.1:46361/v1'
+
+    async def request(url):
+        async with AsyncOpenAI(base_url=url, api_key='test', max_retries=0, timeout=2) as client:
+>           with pytest.raises(TimeoutError, match='wall-clock'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'TimeoutError'>
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:125: Failed
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_study_report_reads_bound_telemetry_and_stage
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_reflector_receives_actual_static_restrictions
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_cumulative_budget_reuse_never_resets_usage_or_deadline
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_missing_budget_is_rejected_before_launch
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_progress_detects_exited_worker_without_rewriting_history
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_sync_request_deadline_covers_first_content_wait
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_async_stream_deadline_cancels_continuous_output
+7 failed, 1 deselected in 2.31s

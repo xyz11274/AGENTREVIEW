@@ -60,7 +60,7 @@ def generation_identity():
     import ast
     from agentreview.reviewer_identity import load_reviewer_suite, load_meta_synthesizer
     root = Path(__file__).parent
-    sources = [root / name for name in ("memory.py", "review.py", "review_preparation.py", "meta.py", "coco_native.py", "experiment_requests.py", "llm.py", "streaming.py", "config.py", "token_accounting.py", "retry.py", "embedding.py", "local_service.py", "constants.py", "request_admission.py", "execution_telemetry.py")]
+    sources = [root / name for name in ("memory.py", "review.py", "review_preparation.py", "meta.py", "coco_native.py", "experiment_requests.py", "llm.py", "streaming.py", "config.py", "token_accounting.py", "retry.py", "embedding.py", "local_service.py", "constants.py", "request_admission.py", "runtime_limits.py", "execution_telemetry.py")]
     sources.extend(root / name for name in ("io.py", "models.py", "s2.py", "data.py", "program_checks.py", "program_validation.py"))
     sources.extend([root.parent / name for name in ("reviewer_identity.py", "paper_context.py", "source_map.py")])
     sources.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))

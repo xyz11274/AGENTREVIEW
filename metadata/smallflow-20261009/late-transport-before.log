@@ -1,0 +1,60 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_late_headers_do_not_rewrite_finished_attempt _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-146/test_late_headers_do_not_rewri0')
+
+    def test_late_headers_do_not_rewrite_finished_attempt(tmp_path):
+        import httpx
+        from contextvars import copy_context
+        from agentreview.research_v2.execution_telemetry import RequestTrace
+        from agentreview.research_v2.transport_observer import response_headers
+        path = tmp_path / 'attempt-1.progress.json'
+        with pytest.raises(TimeoutError):
+            with RequestTrace(path, request_id='one'):
+                late = copy_context()
+                raise TimeoutError('wall-clock timeout')
+        original = path.read_bytes()
+>       late.run(response_headers, httpx.Response(200, headers={'x-request-id': 'late'}))
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:173: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+AgentReview/agentreview/research_v2/transport_observer.py:42: in response_headers
+    trace.update(http_status=response.status_code, response_headers_at=time.time(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <agentreview.research_v2.execution_telemetry.RequestTrace object at 0x7f75c819fdd0>
+values = {'http_status': 200, 'response_headers_at': 1791518185.3432224, 'server_request_id': 'late'}
+
+    def update(self, **values):
+        self.value.update(values, updated_at=time.time(), elapsed_seconds=time.monotonic()-self.started)
+        atomic_write_json(self.path, self.value, immutable=False)
+        emit(event='progress', stage='api_request', span=self.identity, **self.value)
+        self.last_saved = time.monotonic()
+>       self.stream.flush()
+E       ValueError: I/O operation on closed file.
+
+AgentReview/agentreview/research_v2/execution_telemetry.py:89: ValueError
+____________ test_expired_request_cannot_dispatch_late_http_attempt ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-xyj/pytest-146/test_expired_request_cannot_di0')
+
+    def test_expired_request_cannot_dispatch_late_http_attempt(tmp_path):
+        import httpx
+        from agentreview.research_v2.runtime_limits import request_deadline
+        from agentreview.research_v2.transport_observer import dispatch
+        from contextvars import copy_context
+        from unittest.mock import patch
+        with patch.dict('os.environ', {'AGENTREVIEW_REQUEST_WALL_SECONDS': '.01'}):
+            with request_deadline():
+                late = copy_context()
+            time.sleep(.02)
+>           with pytest.raises(TimeoutError, match='wall-clock'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'TimeoutError'>
+
+AgentReview/tests/test_smallflow_runtime_repairs.py:187: Failed
+=========================== short test summary info ============================
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_late_headers_do_not_rewrite_finished_attempt
+FAILED AgentReview/tests/test_smallflow_runtime_repairs.py::test_expired_request_cannot_dispatch_late_http_attempt
+2 failed, 10 deselected in 0.16s

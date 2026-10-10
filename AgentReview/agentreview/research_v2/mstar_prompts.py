@@ -1,7 +1,10 @@
 """M★ reflection prompts expressed directly against the AgentReview interface."""
 from __future__ import annotations
 
-from .program_checks import ALLOWED_FIELD_TYPES, DEFAULT_IMPORT_WHITELIST
+from .program_checks import (ALLOWED_FIELD_TYPES, DEFAULT_IMPORT_WHITELIST,
+                             FORBIDDEN_CALLS, FORBIDDEN_ATTRIBUTES)
+
+MSTAR_PROTOCOL = 'mstar-program-evolution-v4'
 
 PATCH_FORMAT = """Write a diagnosis and change summary followed by a V4A program edit:
 
@@ -23,6 +26,9 @@ Place the markers on their own lines. A space prefixes context, - prefixes remov
 and + prefixes addition. Supply context around each hunk. Apply hunks and repeated
 program.py updates in sequence. An empty patch represents an unchanged program.
 A complete fenced Python program is the upstream full-replacement representation.
+Use actual source lines as context hints, never prose such as "after the terms".
+If exact patch context is uncertain, return the entire program in a ```python
+fence instead. Do not emit placeholders or omit unchanged functions.
 """
 
 
@@ -37,6 +43,13 @@ Program structure:
   and read(self, query) -> str. Memory helpers belong to KnowledgeBase.
 - Four strings control memory interaction: INSTRUCTION_KNOWLEDGE_ITEM,
   INSTRUCTION_QUERY, INSTRUCTION_RESPONSE, ALWAYS_ON_KNOWLEDGE.
+- These four strings are the only top-level assigned constants. Put additional
+  configuration on KnowledgeBase instances or class attributes, not module-level
+  assignments. Top-level statements may otherwise be imports, class/function
+  definitions, or docstrings.
+- Forbidden calls: {', '.join(sorted(FORBIDDEN_CALLS))}. Use explicit fields;
+  getattr/setattr are forbidden even for toolkit handles. Forbidden attribute
+  access: {', '.join(sorted(FORBIDDEN_ATTRIBUTES))}.
 - Preserve the supplied plan_review function and its imports verbatim. Reviewer
   identities come from the frozen QUAL, CLAR, SIGN, ORIG and POL role definitions.
 - Available imports: {', '.join(sorted(DEFAULT_IMPORT_WHITELIST))}.
@@ -54,6 +67,11 @@ Memory toolkit:
 - log(event, payload), logger.debug(message): recorded memory diagnostics.
 
 Execution:
+- KnowledgeBase state must survive snapshot and restoration in a fresh process.
+  Use str/int/float/bool/None, lists, string-keyed dictionaries, tuples and sets,
+  plus the supplied toolkit, SQLite and vector collection handles. frozenset and
+  arbitrary Python objects are not checkpoint-serializable. Keep persistent
+  state explicit; validation reports the unsupported type and field path.
 - The host supplies write's {write_calls} LLM-call allowance and read's
   {runtime['read_llm_calls']} allowance. KnowledgeItem induction consumes the
   first build call; these allowances are numeric configuration values.

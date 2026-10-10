@@ -10,7 +10,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from agentreview.research_v2.development_coco import (  # noqa: E402
     _binding, _bound_file, _source_identity, _stage_failure, _validate_inputs,
 )
@@ -19,7 +18,7 @@ from agentreview.research_v2.config import ModelConfig
 from agentreview.research_v2.llm import require_api_key, completion_payload
 from agentreview.research_v2.token_accounting import count_chat_tokens
 from agentreview.research_v2.execution_telemetry import span
-from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge  # noqa: E402
+from agentreview.research_v2.coco_integrity import audited_client_class, audit_split, audit_classify, audit_judge, transport_diagnostics  # noqa: E402
 
 
 def _load_standard(root: Path, name: str) -> Any:
@@ -65,9 +64,18 @@ def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
                 self.response_model = judge.response_model
 
             async def _perform_completion(self, api_payload):
+                import asyncio
                 from .streaming import async_stream_completion
-                async with self._request_semaphore:
-                    return await async_stream_completion(self.client, api_payload)
+                from .runtime_limits import request_deadline, remaining_seconds, RequestWallTimeout
+                with request_deadline() as deadline:
+                    try:
+                        async with asyncio.timeout(remaining_seconds(deadline)):
+                            async with self._request_semaphore:
+                                return await async_stream_completion(self.client, api_payload)
+                    except TimeoutError as exc:
+                        if isinstance(exc, RequestWallTimeout):
+                            raise
+                        raise RequestWallTimeout('CoCo Judge request wall-clock timeout exhausted') from exc
 
             def _prepare_request(self, prompt, system_prompt=None, msg_history=None,
                                  temperature=0, max_completion_tokens=32768, **kwargs):
@@ -84,10 +92,13 @@ def _client(config: dict[str, Any], stage: str, request: dict[str, Any]) -> Any:
                     raise ValueError("Complete CoCo Judge request exceeds API context")
                 return {**tokens, "output_budget": output}
         client_type = ArkJudgeClient
-    return client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
+    client = client_type(api_key=api_key, base_url=service["base_url"], model_name=service["model"],
         max_workers=config["request_settings"][stage]["max_workers"],
         cache=True, cache_dir=str(Path(request["output_root"]) / "cache" / stage),
         cache_version=value_sha256({"request": request, "stage": stage, "service": service, "integrity": "upstream-observed-v1"}))
+    from .transport_observer import observe_client
+    observe_client(client.client, asynchronous=client._use_async_openai)
+    return client
 
 
 def _runtime(config, stage):
@@ -200,7 +211,13 @@ def _evaluate(request: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]
             references=references, input_file=classified, judge_client=client)
         result["input"] = _binding(classified)
         result["integrity"] = _integrity(client, request, "evaluation", result["completeness_checks"])
+        result["transport_diagnostics"] = transport_diagnostics(client)
         return result
+    except Exception as exc:
+        # Upstream may return error text, then omit missing judgments. Preserve
+        # the original exception and also retain its underlying transport cause.
+        exc.coco_transport_diagnostics = transport_diagnostics(client)
+        raise
     finally:
         client.shutdown()
 
@@ -215,6 +232,11 @@ def main() -> int:
     try:
         request = read_json(args.request)
         config = read_json(_bound_file(request["inputs"]["scoring_config"]))
+        from .transport_observer import process_identity
+        atomic_write_json(target.with_suffix(".identity.json"), {
+            **process_identity(), "worker_file": __file__, "stage": args.stage,
+            "coco_root": config["coco_root"], "candidate": request.get("candidate_identity"),
+            "request": _binding(args.request)})
         root = Path(config["coco_root"])
         if _source_identity(root) != config["source_files"]:
             raise ValueError("Frozen standard CoCo source identity changed")
@@ -232,7 +254,10 @@ def main() -> int:
         atomic_write_json(target, result)
         return 0
     except Exception as exc:
-        atomic_write_json(target.with_suffix(".failure.json"), _stage_failure(args.stage, exc))
+        failure = _stage_failure(args.stage, exc)
+        if hasattr(exc, "coco_transport_diagnostics"):
+            failure["transport_diagnostics"] = exc.coco_transport_diagnostics
+        atomic_write_json(target.with_suffix(".failure.json"), failure)
         print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
 

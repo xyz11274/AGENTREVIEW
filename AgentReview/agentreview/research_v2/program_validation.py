@@ -36,7 +36,7 @@ def _program_capabilities(program_path: str | Path) -> dict[str, Any]:
         raise ValueError("Program capability manifest source hash mismatch")
     return manifest
 
-def _sample_dataclass(dataclass_type):
+def _sample_dataclass(dataclass_type, *, role="QUAL", sample=0):
     from dataclasses import MISSING, fields
 
     values = {}
@@ -57,9 +57,10 @@ def _sample_dataclass(dataclass_type):
     # Empty defaults otherwise skip the role-filtered write and query paths,
     # accepting programs which fail on the first real review experience.
     review_sample = {
-        "topic": "Protocol smoke paper", "content": "traceable Review Experience",
-        "reviewer_name": "QUAL", "reviewer_dimension": "QUAL",
-        "query_text": "Protocol smoke paper: methodology and evidence",
+        "topic": f"Protocol smoke paper {sample}",
+        "content": f"traceable Review Experience {sample}",
+        "reviewer_name": role, "reviewer_dimension": role,
+        "query_text": f"Protocol smoke paper {sample}: methodology and evidence",
     }
     values.update({field.name: review_sample[field.name] for field in fields(dataclass_type)
                    if field.name in review_sample})
@@ -98,7 +99,7 @@ def validate_program(
         def llm_completion(self, messages, **kwargs):
             return "smoke summary"
 
-    toolkit = MemoryToolkit(
+    toolkit_options = dict(
         llm_client=SmokeLLM(),
         **budget_options(runtime),
         max_llm_calls_per_operation=max(write_calls, read_calls),
@@ -108,7 +109,10 @@ def validate_program(
             ]
         },
     )
-    try:
+    def lifecycle(role):
+        toolkit = MemoryToolkit(**toolkit_options)
+        nonlocal phase
+        phase = "load"
         with SandboxSession(
             str(source),
             toolkit,
@@ -116,10 +120,17 @@ def validate_program(
             require_bubblewrap=require_bubblewrap,
         ) as sandbox:
             program = sandbox.program_interface()
-            item = _sample_dataclass(program.KnowledgeItem)
-            query = _sample_dataclass(program.Query)
-            with toolkit.operation("protocol_smoke_write", max_llm_calls=write_calls):
-                sandbox.write(item, "traceable Review Experience")
+            # Exercise deduplication and state changes on a second distinct write.
+            # The validator requires replay equivalence, not a particular retrieval strategy.
+            for index in (0, 0, 1):
+                item = _sample_dataclass(program.KnowledgeItem, role=role, sample=index)
+                phase = f"write {index}"
+                with toolkit.operation("protocol_smoke_write", max_llm_calls=write_calls):
+                    sandbox.write(item, f"traceable Review Experience {index}")
+                phase = "snapshot"
+                snapshot = sandbox.snapshot()
+            query = _sample_dataclass(program.Query, role=role)
+            phase = "read"
             with toolkit.operation("protocol_smoke_read", max_llm_calls=read_calls):
                 result = sandbox.read(query)
             if not isinstance(result, str):
@@ -152,10 +163,38 @@ def validate_program(
                 errors.append("plan_review disposition disagrees with capability trace")
             if not set(selected_ids).issubset(candidate_ids):
                 errors.append("plan_review selected an ID absent from capability results")
-    except (SandboxError, MemoryBudgetError) as exc:
-        detail = failure_detail(exc, phase="candidate_validation")
-        if detail["category"] == "candidate":
-            errors.append(f"protocol smoke failed: {type(exc).__name__}: {exc}")
-        else:
-            raise
+            after_read = sandbox.snapshot()
+        # Neither the process nor its host toolkit state may survive the restart.
+        phase = "restore"
+        restored_toolkit = MemoryToolkit(**toolkit_options)
+        with SandboxSession(str(source), restored_toolkit, timeout_seconds=10,
+                            require_bubblewrap=require_bubblewrap) as restored:
+            restored.restore(snapshot)
+            if restored.snapshot() != snapshot:
+                errors.append("lifecycle restore changed persisted Memory state")
+            query = _sample_dataclass(restored.program_interface().Query, role=role)
+            phase = "restored read"
+            with restored_toolkit.operation("protocol_smoke_read", max_llm_calls=read_calls):
+                recovered = restored.read(query)
+            restored_toolkit.validate_memory_context(recovered)
+            if recovered != result:
+                errors.append("lifecycle restored read differs from the original read with deterministic smoke tools")
+            with restored_toolkit.paper_scope("protocol-smoke-paper"):
+                with restored_toolkit.operation("review_plan", max_llm_calls=0,
+                        allowed_capabilities={"retrieve_current_s2"}):
+                    restored_plan = restored.plan_review(query, recovered)
+            if restored_plan != plan:
+                errors.append("lifecycle restored review plan differs from the original plan")
+            if restored.snapshot() != after_read:
+                errors.append("lifecycle restored read changed Memory state differently from the original read")
+    for role in ("QUAL", "CLAR", "SIGN", "ORIG", "POL"):
+        phase = "load"
+        try:
+            lifecycle(role)
+        except (SandboxError, MemoryBudgetError) as exc:
+            detail = failure_detail(exc, phase="candidate_validation")
+            if detail["category"] == "candidate":
+                errors.append(f"protocol smoke failed for {role} during {phase}: {type(exc).__name__}: {exc}")
+            else:
+                raise
     return errors

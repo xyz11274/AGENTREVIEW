@@ -9,6 +9,7 @@ import hashlib
 
 from .io import atomic_write_json, file_sha256, read_json
 from .execution_telemetry import emit
+from .runtime_limits import request_deadline, remaining_seconds
 
 
 def profile():
@@ -77,22 +78,31 @@ def slot_for(base_url):
 
 @contextmanager
 def request_slot(base_url):
-    slot = slot_for(base_url)
-    if slot is None:
-        yield
-    else:
-        with slot:
+    with request_deadline() as deadline:
+        slot = slot_for(base_url)
+        try:
+            if slot is not None:
+                while not slot.try_acquire():
+                    remaining_seconds(deadline)
+                    time.sleep(.01)
+            remaining_seconds(deadline)
             yield
+        finally:
+            if slot is not None:
+                slot.close()
 
 
 @asynccontextmanager
 async def async_request_slot(base_url):
-    slot = slot_for(base_url)
-    try:
-        if slot is not None:
-            while not slot.try_acquire():
-                await asyncio.sleep(.01)
-        yield
-    finally:
-        if slot is not None:
-            slot.close()
+    with request_deadline() as deadline:
+        slot = slot_for(base_url)
+        try:
+            if slot is not None:
+                while not slot.try_acquire():
+                    remaining_seconds(deadline)
+                    await asyncio.sleep(.01)
+            remaining_seconds(deadline)
+            yield
+        finally:
+            if slot is not None:
+                slot.close()

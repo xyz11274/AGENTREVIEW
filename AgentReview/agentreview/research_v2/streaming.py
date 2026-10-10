@@ -1,9 +1,14 @@
 """Assemble Ark SSE deltas into the ordinary completion consumed by the host."""
 import httpx
+import asyncio
+from contextvars import copy_context
+from queue import Queue, Empty
+from threading import Event, Thread
 from openai import APIConnectionError, APITimeoutError
 from openai.types.chat import ChatCompletion
 
 from .execution_telemetry import current_request
+from .runtime_limits import request_deadline, remaining_seconds, RequestWallTimeout
 
 
 class InterruptedCompletionStream(ConnectionError):
@@ -48,14 +53,67 @@ class CompletionStream:
                                               'choices': choices, 'usage': self.usage})
 
 
+def _stream_chunks(client, payload, deadline):
+    if deadline is None:
+        with client.chat.completions.create(**payload) as stream:
+            yield from stream
+        return
+    # The SDK's read timeout resets on every received block. A separate deadline
+    # also bounds a stalled first block, connect, and an endlessly active stream.
+    # Only the consumer assembles/traces deltas; late worker output is discarded.
+    queue, cancelled, active = Queue(), Event(), []
+    def receive():
+        try:
+            with client.chat.completions.create(**payload) as stream:
+                active.append(stream)
+                if cancelled.is_set():
+                    return
+                for chunk in stream:
+                    if cancelled.is_set():
+                        return
+                    queue.put(('chunk', chunk))
+            queue.put(('done', None))
+        except BaseException as exc:
+            queue.put(('error', exc))
+    context = copy_context()
+    thread = Thread(target=lambda: context.run(receive), daemon=True,
+                    name='bounded-completion-stream')
+    thread.start()
+    try:
+        while True:
+            try:
+                kind, value = queue.get(timeout=remaining_seconds(deadline))
+            except Empty as exc:
+                raise RequestWallTimeout('Request wall-clock timeout exhausted in connect/stream') from exc
+            remaining_seconds(deadline)
+            if kind == 'done':
+                return
+            if kind == 'error':
+                raise value
+            yield value
+    finally:
+        cancelled.set()
+        if thread.is_alive() and active:
+            # Closing a response can itself wait on the transport read lock.
+            # Cleanup must not extend the caller's absolute deadline.
+            def close():
+                try:
+                    active[0].close()
+                except Exception:
+                    pass
+            Thread(target=close, daemon=True, name='completion-stream-cleanup').start()
+
+
 def stream_completion(client, payload):
     result = CompletionStream()
     trace = current_request()
     if trace is not None:
         trace.update(status='waiting_first_chunk')
     try:
-        with client.chat.completions.create(**payload) as stream:
-            for chunk in stream:
+        with request_deadline() as deadline:
+            if trace is not None:
+                trace.update(request_wall_remaining_seconds=remaining_seconds(deadline))
+            for chunk in _stream_chunks(client, payload, deadline):
                 result.add(chunk)
     except httpx.TimeoutException as exc:
         raise APITimeoutError(request=exc.request) from exc
@@ -70,10 +128,19 @@ async def async_stream_completion(client, payload):
     if trace is not None:
         trace.update(status='waiting_first_chunk')
     try:
-        stream = await client.chat.completions.create(**payload)
-        async with stream:
-            async for chunk in stream:
-                result.add(chunk)
+        with request_deadline() as deadline:
+            if trace is not None:
+                trace.update(request_wall_remaining_seconds=remaining_seconds(deadline))
+            try:
+                async with asyncio.timeout(remaining_seconds(deadline)):
+                    stream = await client.chat.completions.create(**payload)
+                    async with stream:
+                        async for chunk in stream:
+                            result.add(chunk)
+            except TimeoutError as exc:
+                if isinstance(exc, RequestWallTimeout):
+                    raise
+                raise RequestWallTimeout('Request wall-clock timeout exhausted in connect/stream') from exc
     except httpx.TimeoutException as exc:
         raise APITimeoutError(request=exc.request) from exc
     except httpx.TransportError as exc:

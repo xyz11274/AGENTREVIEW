@@ -14,6 +14,23 @@ from pathlib import Path
 from .io import atomic_write_json, read_json, value_sha256
 from .request_admission import async_request_slot
 from .execution_telemetry import span, RequestTrace
+from .runtime_limits import request_deadline, remaining_seconds, RequestWallTimeout
+
+
+def transport_diagnostics(client):
+    """Observe upstream attempts without changing retry, cache or score semantics."""
+    from .development_coco import failure_kind
+    groups = list(client.wire_attempts.values())
+    attempts = [attempt for group in groups for attempt in group]
+    failures = {}
+    for attempt in attempts:
+        if attempt.get("status") != "failed":
+            continue
+        error = attempt.get("error", {})
+        key = failure_kind(error.get("type", ""), error.get("message", ""))
+        failures[key] = failures.get(key, 0) + 1
+    return {"attempts": len(attempts), "repeated_attempts": sum(max(0, len(group) - 1) for group in groups),
+            "failed_attempts": sum(failures.values()), "failure_kinds": failures}
 
 
 def audited_client_class(base):
@@ -60,7 +77,14 @@ def audited_client_class(base):
             return {"input_tokens": count, "output_budget": output, "max_model_len": capacity}
 
         async def _perform_completion(self, api_payload):
-            return await super()._create_completion_async(api_payload)
+            with request_deadline() as deadline:
+                try:
+                    async with asyncio.timeout(remaining_seconds(deadline)):
+                        return await super()._create_completion_async(api_payload)
+                except TimeoutError as exc:
+                    if isinstance(exc, RequestWallTimeout):
+                        raise
+                    raise RequestWallTimeout('CoCo request wall-clock timeout exhausted') from exc
 
         async def _create_completion_async(self, api_payload):
             digest = value_sha256(api_payload)
@@ -73,10 +97,17 @@ def audited_client_class(base):
             try:
                 record["tokens"] = await asyncio.to_thread(self._token_budget, api_payload)
                 with RequestTrace(directory / f'attempt-{attempt}.progress.json', request_id=digest,
-                                  component='coco:' + self.model_name, attempt=attempt):
+                                  component='coco:' + self.model_name, attempt=attempt,
+                                  sdk_max_retries=self.client.max_retries,
+                                  input_tokens=record['tokens']['input_tokens'],
+                                  output_budget=record['tokens']['output_budget']) as trace:
                     async with async_request_slot(self.base_url):
                         with span("coco_model_request", service=self.base_url, request_digest=digest):
                             response = await self._perform_completion(api_payload)
+                    completion = response.model_dump(mode="json")
+                    trace.update(response_id=completion.get('id'), usage=completion.get('usage'),
+                        finish_reasons={str(c['index']): c.get('finish_reason') for c in completion.get('choices', [])},
+                        content_chars=sum(len(c.get('message', {}).get('content') or '') for c in completion.get('choices', [])))
                 record["completion"] = response.model_dump(mode="json")
                 if response.model != self.response_model:
                     raise ValueError("CoCo endpoint returned a different configured model")
