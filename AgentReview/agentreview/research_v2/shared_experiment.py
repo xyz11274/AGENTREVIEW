@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED, FIRST_EXCEPTION
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
@@ -61,14 +61,14 @@ def generation_identity():
     from agentreview.reviewer_identity import load_reviewer_suite, load_meta_synthesizer
     root = Path(__file__).parent
     sources = [root / name for name in ("memory.py", "review.py", "review_preparation.py", "meta.py", "coco_native.py", "experiment_requests.py", "llm.py", "streaming.py", "config.py", "token_accounting.py", "retry.py", "embedding.py", "local_service.py", "constants.py", "request_admission.py", "runtime_limits.py", "execution_telemetry.py")]
-    sources.extend(root / name for name in ("io.py", "models.py", "s2.py", "data.py", "program_checks.py", "program_validation.py"))
+    sources.extend(root / name for name in ("io.py", "models.py", "s2.py", "data.py", "program_checks.py", "program_validation.py", "paper_pipeline.py", "embedding_remote.py"))
     sources.extend([root.parent / name for name in ("reviewer_identity.py", "paper_context.py", "source_map.py")])
     sources.extend(sorted((root.parent / "reviewer_runtime").glob("*.py")))
     sources.extend(sorted((root.parents[1] / "memory_evolution").glob("embedding*.py")))
     sources.extend(sorted((root / "vendor/deepseek_v41").glob("*.*")))
     tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
     backend = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "APISharedBackend")
-    methods = [node for node in backend.body if isinstance(node, ast.FunctionDef) and node.name in {"client", "embedding", "memory_runtime", "_paper", "_s2", "_bootstrap", "_candidate_check", "_generate_paper", "_assess_streaming"}]
+    methods = [node for node in backend.body if isinstance(node, ast.FunctionDef) and node.name in {"client", "embedding", "memory_runtime", "_paper", "_s2", "_bootstrap", "_candidate_check", "_generate_paper", "_assess_streaming", "_assess_coupled", "_assess_pipeline"}]
     # The generation section of assess ends when the score manifest is committed.
     assess = next(node for node in backend.body if isinstance(node, ast.FunctionDef) and node.name == "assess")
     generation_nodes = []
@@ -154,10 +154,14 @@ class APISharedBackend:
             self.embedding_client = embedding_client(ResearchConfig(
                 embedding_provider=config["provider"], embedding_model=config["model"],
                 embedding_revision=config["revision"], embedding_cache_path=config["cache_path"],
-                embedding_device=config["device"]))
+                embedding_device=config["device"]), remote_service=config.get("remote_service"))
         config = self.config["embedding"]
-        return self.embedding_client, {"provider": config["provider"], "model": config["model"],
-                                      "revision": config["revision"], "cache_path": str(Path(config["cache_path"]).resolve())}
+        identity = {"provider": config["provider"], "model": config["model"],
+                    "revision": config["revision"], "cache_path": str(Path(config["cache_path"]).resolve())}
+        if config.get("remote_service") is not None:
+            identity.update(compute_identity=self.embedding_client.embedding_spec,
+                            compute_fingerprint=self.embedding_client.embedding_fingerprint)
+        return self.embedding_client, identity
 
     def memory_runtime(self):
         return {"query_mode": self.generation["memory_query_mode"],
@@ -365,28 +369,42 @@ class APISharedBackend:
         paper = self._paper(row)
         s2, intervention = self._s2(recipe["split"])
         role_reviews = {role: [] for role in ROLES}
-        # A client owns last_completion and its request log; never share that
-        # mutable transport state between concurrently processed papers.
-        with self.client(generation_dir / "paper-requests" / value_sha256(row["paper_id"])) as client:
-            if recipe["kind"] == "coco_native":
+        request_dir = generation_dir / "paper-requests" / value_sha256(row["paper_id"])
+        if recipe["kind"] == "coco_native":
+            with self.client(request_dir) as client:
                 from .coco_native import generate_native_review
                 result = generate_native_review(paper_path=paper, coco_root=self.scoring["coco_root"],
                     run_id=key, output_root=generation_dir / "native-raw" / value_sha256(row["paper_id"]),
                     completion_client=client, model_identity=self.model.identity(),
                     max_tokens=self.model.max_output_tokens, num_fewshot=self.generation["native_num_fewshot"])
                 path = atomic_write_json(generation_dir / "native" / f"{row['paper_id']}.json", result)
-            else:
-                paths = []
-                for role in ROLES:
+        else:
+            def run_role(role):
+                # Client, mutable completion metadata, Toolkit and sandbox are
+                # role-local. Only immutable snapshot inputs/encoder are shared.
+                with self.client(request_dir / role) as client:
                     run_specialist_review(paper_path=paper, role=role, program_path=bound(candidate["program"]),
                         snapshot_path=snapshots[role], run_id=key, output_root=generation_dir, completion_client=client,
                         model_identity=self.model.identity(), program_version=candidate["candidate_id"], frozen_s2_path=s2,
                         s2_intervention=intervention, embedding_client=embedding, embedding_identity=embedding_identity,
                         require_bubblewrap=self.require_bubblewrap, memory_enabled=recipe["memory_enabled"],
                         memory_runtime=self.memory_runtime(), max_tokens=self.model.max_output_tokens)
-                    path = generation_dir / "reviews" / key / row["paper_id"] / f"{role}.json"
-                    paths.append(path)
-                    role_reviews[role].append({"paper_id": row["paper_id"], **binding(path)})
+                return generation_dir / "reviews" / key / row["paper_id"] / f"{role}.json"
+            workers = (self.execution or {}).get("role_workers", 2 if self.execution is None else 1)
+            with ThreadPoolExecutor(max_workers=min(workers, len(ROLES))) as executor:
+                futures = {role: executor.submit(run_role, role) for role in ROLES}
+                try:
+                    done, _ = wait(list(futures.values()), return_when=FIRST_EXCEPTION)
+                    for future in done:
+                        future.result()
+                    paths = [futures[role].result() for role in ROLES]
+                except BaseException:
+                    for future in futures.values():
+                        future.cancel()
+                    raise
+            for role, path in zip(ROLES, paths, strict=True):
+                role_reviews[role].append({"paper_id": row["paper_id"], **binding(path)})
+            with self.client(request_dir / "meta") as client:
                 generate_final_review(paper_path=paper, review_paths=paths, mode=self.conditions["final_mode"],
                     run_id=key, output_root=generation_dir, completion_client=client, model_identity=self.model.identity(),
                     max_tokens=self.model.max_output_tokens)
@@ -395,6 +413,91 @@ class APISharedBackend:
 
     def _assess_streaming(self, *, recipe, epoch, directory, generation_dir, rows, snapshots,
                           embedding, embedding_identity):
+        kwargs = dict(recipe=recipe, epoch=epoch, directory=directory, generation_dir=generation_dir,
+                      rows=rows, snapshots=snapshots, embedding=embedding, embedding_identity=embedding_identity)
+        if self.execution["protocol"] == "shared-api-execution-v3":
+            return self._assess_pipeline(**kwargs)
+        return self._assess_coupled(**kwargs)
+
+    def _assess_pipeline(self, *, recipe, epoch, directory, generation_dir, rows, snapshots,
+                         embedding, embedding_identity):
+        from .cohort_receipt import compose
+        from .paper_pipeline import PaperPipeline
+        refs = rows[0]["assets"]["coco_reference"]
+        if any(row["assets"]["coco_reference"] != refs for row in rows):
+            raise ValueError("Evaluation cohort requires one partition-local reference manifest")
+        reference = bound(refs)
+        base_identity = {"experiment_protocol_sha256": self.protocol.protocol_sha256, "candidate": recipe["candidate"],
+            "snapshots": {role: binding(path) for role, path in snapshots.items()},
+            "memory_enabled": recipe["memory_enabled"], "non_memory_conditions": self.conditions,
+            "runtime": runtime_identity(), "generation_identity": generation_identity()}
+        by_id = {row["paper_id"]: row for row in rows}
+        def generate(pid):
+            part = directory / "coco" / "parts" / value_sha256(pid)
+            review, roles = self._generate_paper(recipe=recipe, row=by_id[pid], generation_dir=generation_dir,
+                snapshots=snapshots, embedding=embedding, embedding_identity=embedding_identity)
+            identity = {**base_identity, "role_reviews": roles}
+            manifest = atomic_write_json(part / "reviews.json", {"protocol": "research-v2-coco-review-manifest-v1",
+                "partition": recipe["split"], "paper_ids": [pid], "records": [review]})
+            return {"review": review, "roles": roles, "identity": identity, "manifest": binding(manifest)}
+        def verify_ticket(pid, payload):
+            review = read_json(bound(payload["review"]))
+            if review.get("paper_id") != pid or not str(review.get("review_text") or "").strip():
+                raise ValueError("Handoff requires a complete final review for the exact paper")
+            roles = payload["roles"]
+            if payload["identity"] != {**base_identity, "role_reviews": roles}:
+                raise ValueError("Handoff candidate/memory/runtime identity mismatch")
+            bound(recipe["candidate"]["program"]) if recipe["kind"] != "coco_native" else None
+            if recipe["kind"] != "coco_native":
+                ids = []
+                for role in ROLES:
+                    if len(roles.get(role, [])) != 1 or roles[role][0]["paper_id"] != pid:
+                        raise ValueError("Handoff requires each role for the exact paper")
+                    value = read_json(bound(roles[role][0]))
+                    snapshot = read_json(bound(base_identity["snapshots"][role]))
+                    if (value["role"] != role or value["paper_id"] != pid or
+                            value["program_version"] != recipe["candidate"]["candidate_id"] or
+                            value["memory_snapshot_id"] != snapshot["snapshot_id"] or
+                            value["model_identity"] != self.model.identity() or
+                            not value["review_text"].strip()):
+                        raise ValueError("Role handoff provenance differs from candidate snapshot")
+                    ids.append(value["review_id"])
+                if review["source_review_ids"] != ids or review["mode"] != self.conditions["final_mode"]:
+                    raise ValueError("Meta handoff lost the original ordered five-role inputs")
+            manifest = read_json(bound(payload["manifest"]))
+            if manifest != {"protocol": "research-v2-coco-review-manifest-v1", "partition": recipe["split"],
+                            "paper_ids": [pid], "records": [payload["review"]]}:
+                raise ValueError("Handoff review manifest identity mismatch")
+        def verify_result(pid, payload, value):
+            if value["review"] != payload["review"] or value["roles"] != payload["roles"]:
+                raise ValueError("Score result is associated with another final review")
+            receipt = validate_assessment_receipt(bound(value["assessment"]), expected_paper_ids=[pid],
+                candidate_identity=payload["identity"], expected_epoch=epoch)
+            if receipt["candidate_id"] != recipe["key"] or receipt["partition"] != recipe["split"]:
+                raise ValueError("Score result is associated with another candidate or partition")
+        def score(pid, payload):
+            part = directory / "coco" / "parts" / value_sha256(pid)
+            evaluate_final_reviews(review_manifest_path=bound(payload["manifest"]), reference_manifest_path=reference,
+                scoring_config_path=bound(self.config["scoring_config"]), output_root=part, partition=recipe["split"],
+                run_id=self.config["experiment_id"], candidate_id=recipe["key"], evaluation_epoch=epoch,
+                candidate_identity=payload["identity"], purpose="final_test" if recipe["split"] == "sealed_test" else "development")
+            return {"review": payload["review"], "roles": payload["roles"], "assessment": binding(part / "assessment.json")}
+        flow = PaperPipeline(directory / "pipeline", identity={"candidate": base_identity, "epoch": epoch,
+            "reference": refs, "scoring": self.config["scoring_config"], "recipe": recipe},
+            task_ids=recipe["paper_ids"], review_workers=self.execution["review_paper_workers"],
+            score_workers=self.execution["coco_paper_workers"], ready_capacity=self.execution["review_ready_capacity"])
+        results = flow.run(generate=generate, score=score, verify_ticket=verify_ticket, verify_result=verify_result)
+        ordered = [results[pid] for pid in recipe["paper_ids"]]
+        identity = {**base_identity, "role_reviews": {role: [ref for value in ordered for ref in value["roles"][role]] for role in ROLES}}
+        manifest = atomic_write_json(directory / "reviews.json", {"protocol": "research-v2-coco-review-manifest-v1",
+            "partition": recipe["split"], "paper_ids": recipe["paper_ids"], "records": [value["review"] for value in ordered]})
+        receipt = compose(children=[value["assessment"] for value in ordered], review_manifest=manifest,
+                          candidate_identity=identity, output=directory / "coco")
+        return {"status": "complete", "evaluation_epoch": epoch, "static_score": receipt["mean_score"],
+                "assessment": binding(directory / "coco" / "assessment.json"), "identity": identity, "role_diagnostics": {}}
+
+    def _assess_coupled(self, *, recipe, epoch, directory, generation_dir, rows, snapshots,
+                        embedding, embedding_identity):
         from .cohort_receipt import compose
         from .execution_telemetry import span
         refs = rows[0]["assets"]["coco_reference"]

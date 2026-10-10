@@ -19,9 +19,13 @@ def profile():
     if file_sha256(path) != os.environ.get("AGENTREVIEW_EXECUTION_PROFILE_SHA256"):
         raise ValueError("Execution profile differs from its frozen binding")
     value = read_json(path)
-    if (value.get("protocol") != "shared-api-execution-v2"
-            or type(value.get("paper_workers")) is not int or value["paper_workers"] <= 0
-            or not value.get("limits")
+    version = value.get("protocol")
+    fields = (("paper_workers",) if version == "shared-api-execution-v2" else
+              ("review_paper_workers", "coco_paper_workers", "review_ready_capacity", "role_workers"))
+    if (version not in {"shared-api-execution-v2", "shared-api-execution-v3"}
+            or any(type(value.get(n)) is not int or value[n] <= 0 for n in fields)
+            or not isinstance(value.get("admission_root"), str) or not value["admission_root"]
+            or not isinstance(value.get("limits"), dict) or not value["limits"]
             or any(type(n) is not int or n <= 0 for n in value["limits"].values())):
         raise ValueError("Execution profile requires positive concurrency values")
     return value
@@ -37,7 +41,12 @@ class Slot:
         # clients cannot silently choose incompatible capacities.
         with (self.root / "config.lock").open("a+b") as lock:
             fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-            atomic_write_json(self.root / "capacity.json", {"limit": limit})
+            path = self.root / "capacity.json"
+            if path.exists():
+                if read_json(path) != {"limit": limit}:
+                    raise ValueError(f"Shared service capacity differs for {port}; use a new frozen service identity")
+            else:
+                atomic_write_json(path, {"limit": limit})
 
     def try_acquire(self):
         for number in range(self.limit):
